@@ -146,7 +146,7 @@ class _$LockPreferenceImpl implements _LockPreference {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LockPreferenceImpl &&
@@ -332,7 +332,7 @@ class _$ThemePreferencesImpl implements _ThemePreferences {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ThemePreferencesImpl &&
@@ -541,7 +541,7 @@ class _$PreferencesImpl implements _Preferences {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$PreferencesImpl &&

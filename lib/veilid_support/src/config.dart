@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:veilid/veilid.dart';
 
 Future<VeilidConfig> getVeilidChatConfig() async {
@@ -18,8 +19,32 @@ Future<VeilidConfig> getVeilidChatConfig() async {
         config.copyWith(blockStore: config.blockStore.copyWith(delete: true));
   }
 
+  // ignore: do_not_use_environment
+  const envNetwork = String.fromEnvironment('NETWORK');
+  if (envNetwork.isNotEmpty) {
+    final bootstrap = kIsWeb
+        ? ['ws://bootstrap.$envNetwork.veilid.net:5150/ws']
+        : ['bootstrap.$envNetwork.veilid.net'];
+    config = config.copyWith(
+        network: config.network.copyWith(
+            routingTable:
+                config.network.routingTable.copyWith(bootstrap: bootstrap)));
+  }
+
+  // ignore: do_not_use_environment
+  const envBootstrap = String.fromEnvironment('BOOTSTRAP');
+  if (envBootstrap.isNotEmpty) {
+    final bootstrap = envBootstrap.split(',').map((e) => e.trim()).toList();
+    config = config.copyWith(
+        network: config.network.copyWith(
+            routingTable:
+                config.network.routingTable.copyWith(bootstrap: bootstrap)));
+  }
+
   return config.copyWith(
-    capabilities: const VeilidConfigCapabilities(disable: ['DHTV', 'TUNL']),
+    capabilities:
+        // XXX: Remove DHTV and DHTW when we get background sync implemented
+        const VeilidConfigCapabilities(disable: ['DHTV', 'DHTW', 'TUNL']),
     protectedStore: config.protectedStore.copyWith(allowInsecureFallback: true),
     // network: config.network.copyWith(
     //         dht: config.network.dht.copyWith(

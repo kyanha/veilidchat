@@ -6,15 +6,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../entities/local_account.dart';
 import '../proto/proto.dart' as proto;
-import '../proto/proto.dart'
-    show
-        ContactInvitation,
-        ContactInvitationRecord,
-        ContactRequest,
-        ContactRequestPrivate,
-        ContactResponse,
-        SignedContactInvitation,
-        SignedContactResponse;
 import '../tools/tools.dart';
 import '../veilid_support/veilid_support.dart';
 import 'account.dart';
@@ -48,7 +39,7 @@ class AcceptedOrRejectedContact {
 
 Future<AcceptedOrRejectedContact?> checkAcceptRejectContact(
     {required ActiveAccountInfo activeAccountInfo,
-    required ContactInvitationRecord contactInvitationRecord}) async {
+    required proto.ContactInvitationRecord contactInvitationRecord}) async {
   // Open the contact request inbox
   try {
     final pool = await DHTRecordPool.instance();
@@ -68,15 +59,17 @@ Future<AcceptedOrRejectedContact?> checkAcceptRejectContact(
             defaultSubkey: 1))
         .scope((contactRequestInbox) async {
       //
-      final signedContactResponse = await contactRequestInbox
-          .getProtobuf(SignedContactResponse.fromBuffer, forceRefresh: true);
+      final signedContactResponse = await contactRequestInbox.getProtobuf(
+          proto.SignedContactResponse.fromBuffer,
+          forceRefresh: true);
       if (signedContactResponse == null) {
         return null;
       }
 
       final contactResponseBytes =
           Uint8List.fromList(signedContactResponse.contactResponse);
-      final contactResponse = ContactResponse.fromBuffer(contactResponseBytes);
+      final contactResponse =
+          proto.ContactResponse.fromBuffer(contactResponseBytes);
       final contactIdentityMasterRecordKey = proto.TypedKeyProto.fromProto(
           contactResponse.identityMasterRecordKey);
       final cs = await pool.veilid.getCryptoSystem(recordKey.kind);
@@ -154,7 +147,7 @@ Future<AcceptedOrRejectedContact?> checkAcceptRejectContact(
 Future<void> deleteContactInvitation(
     {required bool accepted,
     required ActiveAccountInfo activeAccountInfo,
-    required ContactInvitationRecord contactInvitationRecord}) async {
+    required proto.ContactInvitationRecord contactInvitationRecord}) async {
   final pool = await DHTRecordPool.instance();
   final accountRecordKey =
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
@@ -235,7 +228,7 @@ Future<Uint8List> createContactInvitation(
       .deleteScope((localConversation) async {
     // dont bother reopening localConversation with writer
     // Make ContactRequestPrivate and encrypt with the writer secret
-    final crpriv = ContactRequestPrivate()
+    final crpriv = proto.ContactRequestPrivate()
       ..writerKey = contactRequestWriter.key.toProto()
       ..profile = activeAccountInfo.account.profile
       ..identityMasterRecordKey =
@@ -247,7 +240,7 @@ Future<Uint8List> createContactInvitation(
         await cs.encryptAeadWithNonce(crprivbytes, contactRequestWriter.secret);
 
     // Create ContactRequest and embed contactrequestprivate
-    final creq = ContactRequest()
+    final creq = proto.ContactRequest()
       ..encryptionKeyType = encryptionKeyType.toProto()
       ..private = encryptedContactRequestPrivate;
 
@@ -263,18 +256,18 @@ Future<Uint8List> createContactInvitation(
       await contactRequestInbox.eventualWriteProtobuf(creq);
 
       // Create ContactInvitation and SignedContactInvitation
-      final cinv = ContactInvitation()
+      final cinv = proto.ContactInvitation()
         ..contactRequestInboxKey = contactRequestInbox.key.toProto()
         ..writerSecret = encryptedSecret;
       final cinvbytes = cinv.writeToBuffer();
-      final scinv = SignedContactInvitation()
+      final scinv = proto.SignedContactInvitation()
         ..contactInvitation = cinvbytes
         ..identitySignature =
             (await cs.sign(identityKey, identitySecret, cinvbytes)).toProto();
       signedContactInvitationBytes = scinv.writeToBuffer();
 
       // Create ContactInvitationRecord
-      final cinvrec = ContactInvitationRecord()
+      final cinvrec = proto.ContactInvitationRecord()
         ..contactRequestInbox =
             contactRequestInbox.ownedDHTRecordPointer.toProto()
         ..writerKey = contactRequestWriter.key.toProto()
@@ -311,11 +304,11 @@ class ValidContactInvitation {
       required this.contactIdentityMaster,
       required this.writer});
 
-  SignedContactInvitation signedContactInvitation;
-  ContactInvitation contactInvitation;
+  proto.SignedContactInvitation signedContactInvitation;
+  proto.ContactInvitation contactInvitation;
   TypedKey contactRequestInboxKey;
-  ContactRequest contactRequest;
-  ContactRequestPrivate contactRequestPrivate;
+  proto.ContactRequest contactRequest;
+  proto.ContactRequestPrivate contactRequestPrivate;
   IdentityMaster contactIdentityMaster;
   KeyPair writer;
 }
@@ -327,7 +320,7 @@ typedef GetEncryptionKeyCallback = Future<SecretKey?> Function(
 
 Future<ValidContactInvitation?> validateContactInvitation(
     {required ActiveAccountInfo activeAccountInfo,
-    required IList<ContactInvitationRecord>? contactInvitationRecords,
+    required IList<proto.ContactInvitationRecord>? contactInvitationRecords,
     required Uint8List inviteData,
     required GetEncryptionKeyCallback getEncryptionKeyCallback}) async {
   final accountRecordKey =
@@ -434,7 +427,7 @@ Future<AcceptedContact?> acceptContactInvitation(
           remoteIdentityPublicKey: validContactInvitation.contactIdentityMaster
               .identityPublicTypedKey(),
           callback: (localConversation) async {
-            final contactResponse = ContactResponse()
+            final contactResponse = proto.ContactResponse()
               ..accept = true
               ..remoteConversationRecordKey = localConversation.key.toProto()
               ..identityMasterRecordKey = activeAccountInfo
@@ -450,13 +443,14 @@ Future<AcceptedContact?> acceptContactInvitation(
                 activeAccountInfo.userLogin.identitySecret.value,
                 contactResponseBytes);
 
-            final signedContactResponse = SignedContactResponse()
+            final signedContactResponse = proto.SignedContactResponse()
               ..contactResponse = contactResponseBytes
               ..identitySignature = identitySignature.toProto();
 
             // Write the acceptance to the inbox
             if (await contactRequestInbox.tryWriteProtobuf(
-                    SignedContactResponse.fromBuffer, signedContactResponse,
+                    proto.SignedContactResponse.fromBuffer,
+                    signedContactResponse,
                     subkey: 1) !=
                 null) {
               throw Exception('failed to accept contact invitation');
@@ -494,7 +488,7 @@ Future<bool> rejectContactInvitation(ActiveAccountInfo activeAccountInfo,
     final cs = await pool.veilid
         .getCryptoSystem(validContactInvitation.contactRequestInboxKey.kind);
 
-    final contactResponse = ContactResponse()
+    final contactResponse = proto.ContactResponse()
       ..accept = false
       ..identityMasterRecordKey = activeAccountInfo
           .localAccount.identityMaster.masterRecordKey
@@ -506,13 +500,13 @@ Future<bool> rejectContactInvitation(ActiveAccountInfo activeAccountInfo,
         activeAccountInfo.userLogin.identitySecret.value,
         contactResponseBytes);
 
-    final signedContactResponse = SignedContactResponse()
+    final signedContactResponse = proto.SignedContactResponse()
       ..contactResponse = contactResponseBytes
       ..identitySignature = identitySignature.toProto();
 
     // Write the rejection to the inbox
     if (await contactRequestInbox.tryWriteProtobuf(
-            SignedContactResponse.fromBuffer, signedContactResponse,
+            proto.SignedContactResponse.fromBuffer, signedContactResponse,
             subkey: 1) !=
         null) {
       log.error('failed to reject contact invitation');
@@ -524,7 +518,7 @@ Future<bool> rejectContactInvitation(ActiveAccountInfo activeAccountInfo,
 
 /// Get the active account contact invitation list
 @riverpod
-Future<IList<ContactInvitationRecord>?> fetchContactInvitationRecords(
+Future<IList<proto.ContactInvitationRecord>?> fetchContactInvitationRecords(
     FetchContactInvitationRecordsRef ref) async {
   // See if we've logged into this account or if it is locked
   final activeAccountInfo = await ref.watch(fetchActiveAccountProvider.future);
@@ -535,7 +529,7 @@ Future<IList<ContactInvitationRecord>?> fetchContactInvitationRecords(
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
   // Decode the contact invitation list from the DHT
-  IList<ContactInvitationRecord> out = const IListConst([]);
+  IList<proto.ContactInvitationRecord> out = const IListConst([]);
 
   try {
     await (await DHTShortArray.openOwned(
@@ -548,7 +542,7 @@ Future<IList<ContactInvitationRecord>?> fetchContactInvitationRecords(
         if (cir == null) {
           throw Exception('Failed to get contact invitation record');
         }
-        out = out.add(ContactInvitationRecord.fromBuffer(cir));
+        out = out.add(proto.ContactInvitationRecord.fromBuffer(cir));
       }
     });
   } on VeilidAPIExceptionTryAgain catch (_) {

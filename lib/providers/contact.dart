@@ -4,7 +4,6 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../proto/proto.dart' as proto;
-import '../proto/proto.dart' show Contact;
 
 import '../veilid_support/veilid_support.dart';
 import '../tools/tools.dart';
@@ -24,7 +23,7 @@ Future<void> createContact({
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
   // Create Contact
-  final contact = Contact()
+  final contact = proto.Contact()
     ..editedProfile = profile
     ..remoteProfile = profile
     ..identityMasterJson = jsonEncode(remoteIdentity.toJson())
@@ -51,7 +50,7 @@ Future<void> createContact({
 
 Future<void> deleteContact(
     {required ActiveAccountInfo activeAccountInfo,
-    required Contact contact}) async {
+    required proto.Contact contact}) async {
   final pool = await DHTRecordPool.instance();
   final accountRecordKey =
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
@@ -104,7 +103,7 @@ Future<void> deleteContact(
 
 /// Get the active account contact list
 @riverpod
-Future<IList<Contact>?> fetchContactList(FetchContactListRef ref) async {
+Future<IList<proto.Contact>?> fetchContactList(FetchContactListRef ref) async {
   // See if we've logged into this account or if it is locked
   final activeAccountInfo = await ref.watch(fetchActiveAccountProvider.future);
   if (activeAccountInfo == null) {
@@ -114,7 +113,7 @@ Future<IList<Contact>?> fetchContactList(FetchContactListRef ref) async {
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
   // Decode the contact list from the DHT
-  IList<Contact> out = const IListConst([]);
+  IList<proto.Contact> out = const IListConst([]);
   await (await DHTShortArray.openOwned(
           proto.OwnedDHTRecordPointerProto.fromProto(
               activeAccountInfo.account.contactList),
@@ -125,7 +124,7 @@ Future<IList<Contact>?> fetchContactList(FetchContactListRef ref) async {
       if (cir == null) {
         throw Exception('Failed to get contact');
       }
-      out = out.add(Contact.fromBuffer(cir));
+      out = out.add(proto.Contact.fromBuffer(cir));
     }
   });
 

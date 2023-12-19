@@ -47,7 +47,7 @@ dependencies:
   intl: ^0.18.0
   json_annotation: ^4.8.1
   loggy: ^2.0.3
-  mobile_scanner: ^3.4.1
+  mobile_scanner: ^3.5.1
   motion_toast: ^2.7.8
   mutex: ^3.0.1
   pasteboard: ^0.2.0

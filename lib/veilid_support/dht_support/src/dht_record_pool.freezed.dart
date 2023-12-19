@@ -156,7 +156,7 @@ class _$DHTRecordPoolAllocationsImpl implements _DHTRecordPoolAllocations {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$DHTRecordPoolAllocationsImpl &&
@@ -327,7 +327,7 @@ class _$OwnedDHTRecordPointerImpl implements _OwnedDHTRecordPointer {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$OwnedDHTRecordPointerImpl &&

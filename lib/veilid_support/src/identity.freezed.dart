@@ -126,7 +126,7 @@ class _$AccountRecordInfoImpl implements _AccountRecordInfo {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$AccountRecordInfoImpl &&
@@ -268,7 +268,7 @@ class _$IdentityImpl implements _Identity {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$IdentityImpl &&
@@ -503,7 +503,7 @@ class _$IdentityMasterImpl implements _IdentityMaster {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$IdentityMasterImpl &&

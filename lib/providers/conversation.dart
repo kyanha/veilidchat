@@ -4,7 +4,6 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../proto/proto.dart' as proto;
-import '../proto/proto.dart' show Conversation, Message;
 
 import '../tools/tools.dart';
 import '../veilid_init.dart';
@@ -79,7 +78,7 @@ Future<T> createConversation<T>(
             parent: localConversation.key, crypto: crypto, smplWriter: writer))
         .deleteScope((messages) async {
       // Write local conversation key
-      final conversation = Conversation()
+      final conversation = proto.Conversation()
         ..profile = activeAccountInfo.account.profile
         ..identityMasterJson =
             jsonEncode(activeAccountInfo.localAccount.identityMaster.toJson())
@@ -87,7 +86,7 @@ Future<T> createConversation<T>(
 
       //
       final update = await localConversation.tryWriteProtobuf(
-          Conversation.fromBuffer, conversation);
+          proto.Conversation.fromBuffer, conversation);
       if (update != null) {
         throw Exception('Failed to write local conversation');
       }
@@ -96,7 +95,7 @@ Future<T> createConversation<T>(
   });
 }
 
-Future<Conversation?> readRemoteConversation({
+Future<proto.Conversation?> readRemoteConversation({
   required ActiveAccountInfo activeAccountInfo,
   required TypedKey remoteConversationRecordKey,
   required TypedKey remoteIdentityPublicKey,
@@ -113,16 +112,16 @@ Future<Conversation?> readRemoteConversation({
       .scope((remoteConversation) async {
     //
     final conversation =
-        await remoteConversation.getProtobuf(Conversation.fromBuffer);
+        await remoteConversation.getProtobuf(proto.Conversation.fromBuffer);
     return conversation;
   });
 }
 
-Future<Conversation?> writeLocalConversation({
+Future<proto.Conversation?> writeLocalConversation({
   required ActiveAccountInfo activeAccountInfo,
   required TypedKey localConversationRecordKey,
   required TypedKey remoteIdentityPublicKey,
-  required Conversation conversation,
+  required proto.Conversation conversation,
 }) async {
   final accountRecordKey =
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
@@ -138,7 +137,7 @@ Future<Conversation?> writeLocalConversation({
       .scope((localConversation) async {
     //
     final update = await localConversation.tryWriteProtobuf(
-        Conversation.fromBuffer, conversation);
+        proto.Conversation.fromBuffer, conversation);
     if (update != null) {
       return update;
     }
@@ -146,7 +145,7 @@ Future<Conversation?> writeLocalConversation({
   });
 }
 
-Future<Conversation?> readLocalConversation({
+Future<proto.Conversation?> readLocalConversation({
   required ActiveAccountInfo activeAccountInfo,
   required TypedKey localConversationRecordKey,
   required TypedKey remoteIdentityPublicKey,
@@ -163,7 +162,8 @@ Future<Conversation?> readLocalConversation({
           parent: accountRecordKey, crypto: crypto))
       .scope((localConversation) async {
     //
-    final update = await localConversation.getProtobuf(Conversation.fromBuffer);
+    final update =
+        await localConversation.getProtobuf(proto.Conversation.fromBuffer);
     if (update != null) {
       return update;
     }
@@ -175,7 +175,7 @@ Future<void> addLocalConversationMessage(
     {required ActiveAccountInfo activeAccountInfo,
     required TypedKey localConversationRecordKey,
     required TypedKey remoteIdentityPublicKey,
-    required Message message}) async {
+    required proto.Message message}) async {
   final conversation = await readLocalConversation(
       activeAccountInfo: activeAccountInfo,
       localConversationRecordKey: localConversationRecordKey,
@@ -201,7 +201,7 @@ Future<bool> mergeLocalConversationMessages(
     {required ActiveAccountInfo activeAccountInfo,
     required TypedKey localConversationRecordKey,
     required TypedKey remoteIdentityPublicKey,
-    required IList<Message> newMessages}) async {
+    required IList<proto.Message> newMessages}) async {
   final conversation = await readLocalConversation(
       activeAccountInfo: activeAccountInfo,
       localConversationRecordKey: localConversationRecordKey,
@@ -262,7 +262,7 @@ Future<bool> mergeLocalConversationMessages(
   return changed;
 }
 
-Future<IList<Message>?> getLocalConversationMessages({
+Future<IList<proto.Message>?> getLocalConversationMessages({
   required ActiveAccountInfo activeAccountInfo,
   required TypedKey localConversationRecordKey,
   required TypedKey remoteIdentityPublicKey,
@@ -283,9 +283,9 @@ Future<IList<Message>?> getLocalConversationMessages({
   return (await DHTShortArray.openRead(messagesRecordKey,
           parent: localConversationRecordKey, crypto: crypto))
       .scope((messages) async {
-    var out = IList<Message>();
+    var out = IList<proto.Message>();
     for (var i = 0; i < messages.length; i++) {
-      final msg = await messages.getItemProtobuf(Message.fromBuffer, i);
+      final msg = await messages.getItemProtobuf(proto.Message.fromBuffer, i);
       if (msg == null) {
         throw Exception('Failed to get message');
       }
@@ -295,7 +295,7 @@ Future<IList<Message>?> getLocalConversationMessages({
   });
 }
 
-Future<IList<Message>?> getRemoteConversationMessages({
+Future<IList<proto.Message>?> getRemoteConversationMessages({
   required ActiveAccountInfo activeAccountInfo,
   required TypedKey remoteConversationRecordKey,
   required TypedKey remoteIdentityPublicKey,
@@ -316,9 +316,9 @@ Future<IList<Message>?> getRemoteConversationMessages({
   return (await DHTShortArray.openRead(messagesRecordKey,
           parent: remoteConversationRecordKey, crypto: crypto))
       .scope((messages) async {
-    var out = IList<Message>();
+    var out = IList<proto.Message>();
     for (var i = 0; i < messages.length; i++) {
-      final msg = await messages.getItemProtobuf(Message.fromBuffer, i);
+      final msg = await messages.getItemProtobuf(proto.Message.fromBuffer, i);
       if (msg == null) {
         throw Exception('Failed to get message');
       }
@@ -332,7 +332,7 @@ Future<IList<Message>?> getRemoteConversationMessages({
 class ActiveConversationMessages extends _$ActiveConversationMessages {
   /// Get message for active conversation
   @override
-  FutureOr<IList<Message>?> build() async {
+  FutureOr<IList<proto.Message>?> build() async {
     await eventualVeilid.future;
 
     final activeChat = ref.watch(activeChatStateProvider);

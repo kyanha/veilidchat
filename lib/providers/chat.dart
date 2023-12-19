@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../proto/proto.dart' as proto;
-import '../proto/proto.dart' show Chat, ChatType;
 
 import '../veilid_support/veilid_support.dart';
 import 'account.dart';
@@ -19,8 +18,8 @@ Future<void> getOrCreateChatSingleContact({
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
   // Create conversation type Chat
-  final chat = Chat()
-    ..type = ChatType.SINGLE_CONTACT
+  final chat = proto.Chat()
+    ..type = proto.ChatType.SINGLE_CONTACT
     ..remoteConversationKey = remoteConversationRecordKey.toProto();
 
   // Add Chat to account's list
@@ -35,7 +34,7 @@ Future<void> getOrCreateChatSingleContact({
       if (cbuf == null) {
         throw Exception('Failed to get chat');
       }
-      final c = Chat.fromBuffer(cbuf);
+      final c = proto.Chat.fromBuffer(cbuf);
       if (c == chat) {
         return;
       }
@@ -68,7 +67,7 @@ Future<void> deleteChat(
       if (cbuf == null) {
         throw Exception('Failed to get chat');
       }
-      final c = Chat.fromBuffer(cbuf);
+      final c = proto.Chat.fromBuffer(cbuf);
       if (c.remoteConversationKey == remoteConversationKey) {
         await chatList.tryRemoveItem(i);
 
@@ -84,7 +83,7 @@ Future<void> deleteChat(
 
 /// Get the active account contact list
 @riverpod
-Future<IList<Chat>?> fetchChatList(FetchChatListRef ref) async {
+Future<IList<proto.Chat>?> fetchChatList(FetchChatListRef ref) async {
   // See if we've logged into this account or if it is locked
   final activeAccountInfo = await ref.watch(fetchActiveAccountProvider.future);
   if (activeAccountInfo == null) {
@@ -94,7 +93,7 @@ Future<IList<Chat>?> fetchChatList(FetchChatListRef ref) async {
       activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
   // Decode the chat list from the DHT
-  IList<Chat> out = const IListConst([]);
+  IList<proto.Chat> out = const IListConst([]);
   await (await DHTShortArray.openOwned(
           proto.OwnedDHTRecordPointerProto.fromProto(
               activeAccountInfo.account.chatList),
@@ -105,7 +104,7 @@ Future<IList<Chat>?> fetchChatList(FetchChatListRef ref) async {
       if (cir == null) {
         throw Exception('Failed to get chat');
       }
-      out = out.add(Chat.fromBuffer(cir));
+      out = out.add(proto.Chat.fromBuffer(cir));
     }
   });
 

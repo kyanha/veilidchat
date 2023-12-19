@@ -3,7 +3,7 @@ PODS:
   - FMDB (2.7.5):
     - FMDB/standard (= 2.7.5)
   - FMDB/standard (2.7.5)
-  - mobile_scanner (3.0.0):
+  - mobile_scanner (3.5.5):
     - FlutterMacOS
   - pasteboard (0.0.1):
     - FlutterMacOS
@@ -76,7 +76,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
-  mobile_scanner: ed7618fb749adc6574563e053f3b8e5002c13994
+  mobile_scanner: d12930b68bf502497f78b8b5182aeccfaa1e04f6
   pasteboard: 9b69dba6fedbb04866be632205d532fe2f6b1d99
   path_provider_foundation: 29f094ae23ebbca9d3d0cec13889cd9060c0e943
   screen_retriever: 59634572a57080243dd1bf715e55b6c54f241a38

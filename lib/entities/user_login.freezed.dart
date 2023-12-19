@@ -182,7 +182,7 @@ class _$UserLoginImpl implements _UserLogin {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$UserLoginImpl &&
@@ -358,7 +358,7 @@ class _$ActiveLoginsImpl implements _ActiveLogins {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ActiveLoginsImpl &&
