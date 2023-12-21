@@ -14,7 +14,7 @@ part 'local_accounts.g.dart';
 
 const String veilidChatAccountKey = 'com.veilid.veilidchat';
 
-// Local account manager
+// Local accounts table
 @riverpod
 class LocalAccounts extends _$LocalAccounts
     with AsyncTableDBBacked<IList<LocalAccount>> {

@@ -1,10 +1,10 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../entities/local_account.dart';
-import '../proto/proto.dart' as proto;
 import '../entities/user_login.dart';
+import '../proto/proto.dart' as proto;
 import '../veilid_support/veilid_support.dart';
-
 import 'local_accounts.dart';
 import 'logins.dart';
 
@@ -17,22 +17,23 @@ enum AccountInfoStatus {
   accountReady,
 }
 
+@immutable
 class AccountInfo {
-  AccountInfo({
+  const AccountInfo({
     required this.status,
     required this.active,
     this.account,
   });
 
-  AccountInfoStatus status;
-  bool active;
-  proto.Account? account;
+  final AccountInfoStatus status;
+  final bool active;
+  final proto.Account? account;
 }
 
 /// Get an account from the identity key and if it is logged in and we
 /// have its secret available, return the account record contents
 @riverpod
-Future<AccountInfo> fetchAccount(FetchAccountRef ref,
+Future<AccountInfo> fetchAccountInfo(FetchAccountInfoRef ref,
     {required TypedKey accountMasterRecordKey}) async {
   // Get which local account we want to fetch the profile for
   final localAccount = await ref.watch(
@@ -40,7 +41,8 @@ Future<AccountInfo> fetchAccount(FetchAccountRef ref,
           .future);
   if (localAccount == null) {
     // Local account does not exist
-    return AccountInfo(status: AccountInfoStatus.noAccount, active: false);
+    return const AccountInfo(
+        status: AccountInfoStatus.noAccount, active: false);
   }
 
   // See if we've logged into this account or if it is locked
@@ -74,21 +76,31 @@ Future<AccountInfo> fetchAccount(FetchAccountRef ref,
       status: AccountInfoStatus.accountReady, active: active, account: account);
 }
 
+@immutable
 class ActiveAccountInfo {
-  ActiveAccountInfo({
+  const ActiveAccountInfo({
     required this.localAccount,
     required this.userLogin,
     required this.account,
   });
+  //
 
-  LocalAccount localAccount;
-  UserLogin userLogin;
-  proto.Account account;
+  KeyPair getConversationWriter() {
+    final identityKey = localAccount.identityMaster.identityPublicKey;
+    final identitySecret = userLogin.identitySecret;
+    return KeyPair(key: identityKey, secret: identitySecret.value);
+  }
+
+  //
+  final LocalAccount localAccount;
+  final UserLogin userLogin;
+  final proto.Account account;
 }
 
 /// Get the active account info
 @riverpod
-Future<ActiveAccountInfo?> fetchActiveAccount(FetchActiveAccountRef ref) async {
+Future<ActiveAccountInfo?> fetchActiveAccountInfo(
+    FetchActiveAccountInfoRef ref) async {
   // See if we've logged into this account or if it is locked
   final activeUserLogin = await ref.watch(loginsProvider.future
       .select((value) async => (await value).activeUserLogin));

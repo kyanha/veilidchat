@@ -6,7 +6,7 @@ part of 'account.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$fetchAccountHash() => r'f3072fdd89611b53cd9821613acab450b3c08820';
+String _$fetchAccountInfoHash() => r'3d2e3b3ddce5158d03bceaf82cdb35bae000280c';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -32,36 +32,36 @@ class _SystemHash {
 /// Get an account from the identity key and if it is logged in and we
 /// have its secret available, return the account record contents
 ///
-/// Copied from [fetchAccount].
-@ProviderFor(fetchAccount)
-const fetchAccountProvider = FetchAccountFamily();
+/// Copied from [fetchAccountInfo].
+@ProviderFor(fetchAccountInfo)
+const fetchAccountInfoProvider = FetchAccountInfoFamily();
 
 /// Get an account from the identity key and if it is logged in and we
 /// have its secret available, return the account record contents
 ///
-/// Copied from [fetchAccount].
-class FetchAccountFamily extends Family<AsyncValue<AccountInfo>> {
+/// Copied from [fetchAccountInfo].
+class FetchAccountInfoFamily extends Family<AsyncValue<AccountInfo>> {
   /// Get an account from the identity key and if it is logged in and we
   /// have its secret available, return the account record contents
   ///
-  /// Copied from [fetchAccount].
-  const FetchAccountFamily();
+  /// Copied from [fetchAccountInfo].
+  const FetchAccountInfoFamily();
 
   /// Get an account from the identity key and if it is logged in and we
   /// have its secret available, return the account record contents
   ///
-  /// Copied from [fetchAccount].
-  FetchAccountProvider call({
+  /// Copied from [fetchAccountInfo].
+  FetchAccountInfoProvider call({
     required Typed<FixedEncodedString43> accountMasterRecordKey,
   }) {
-    return FetchAccountProvider(
+    return FetchAccountInfoProvider(
       accountMasterRecordKey: accountMasterRecordKey,
     );
   }
 
   @override
-  FetchAccountProvider getProviderOverride(
-    covariant FetchAccountProvider provider,
+  FetchAccountInfoProvider getProviderOverride(
+    covariant FetchAccountInfoProvider provider,
   ) {
     return call(
       accountMasterRecordKey: provider.accountMasterRecordKey,
@@ -80,38 +80,38 @@ class FetchAccountFamily extends Family<AsyncValue<AccountInfo>> {
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'fetchAccountProvider';
+  String? get name => r'fetchAccountInfoProvider';
 }
 
 /// Get an account from the identity key and if it is logged in and we
 /// have its secret available, return the account record contents
 ///
-/// Copied from [fetchAccount].
-class FetchAccountProvider extends AutoDisposeFutureProvider<AccountInfo> {
+/// Copied from [fetchAccountInfo].
+class FetchAccountInfoProvider extends AutoDisposeFutureProvider<AccountInfo> {
   /// Get an account from the identity key and if it is logged in and we
   /// have its secret available, return the account record contents
   ///
-  /// Copied from [fetchAccount].
-  FetchAccountProvider({
+  /// Copied from [fetchAccountInfo].
+  FetchAccountInfoProvider({
     required Typed<FixedEncodedString43> accountMasterRecordKey,
   }) : this._internal(
-          (ref) => fetchAccount(
-            ref as FetchAccountRef,
+          (ref) => fetchAccountInfo(
+            ref as FetchAccountInfoRef,
             accountMasterRecordKey: accountMasterRecordKey,
           ),
-          from: fetchAccountProvider,
-          name: r'fetchAccountProvider',
+          from: fetchAccountInfoProvider,
+          name: r'fetchAccountInfoProvider',
           debugGetCreateSourceHash:
               const bool.fromEnvironment('dart.vm.product')
                   ? null
-                  : _$fetchAccountHash,
-          dependencies: FetchAccountFamily._dependencies,
+                  : _$fetchAccountInfoHash,
+          dependencies: FetchAccountInfoFamily._dependencies,
           allTransitiveDependencies:
-              FetchAccountFamily._allTransitiveDependencies,
+              FetchAccountInfoFamily._allTransitiveDependencies,
           accountMasterRecordKey: accountMasterRecordKey,
         );
 
-  FetchAccountProvider._internal(
+  FetchAccountInfoProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
@@ -125,12 +125,12 @@ class FetchAccountProvider extends AutoDisposeFutureProvider<AccountInfo> {
 
   @override
   Override overrideWith(
-    FutureOr<AccountInfo> Function(FetchAccountRef provider) create,
+    FutureOr<AccountInfo> Function(FetchAccountInfoRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
-      override: FetchAccountProvider._internal(
-        (ref) => create(ref as FetchAccountRef),
+      override: FetchAccountInfoProvider._internal(
+        (ref) => create(ref as FetchAccountInfoRef),
         from: from,
         name: null,
         dependencies: null,
@@ -143,12 +143,12 @@ class FetchAccountProvider extends AutoDisposeFutureProvider<AccountInfo> {
 
   @override
   AutoDisposeFutureProviderElement<AccountInfo> createElement() {
-    return _FetchAccountProviderElement(this);
+    return _FetchAccountInfoProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is FetchAccountProvider &&
+    return other is FetchAccountInfoProvider &&
         other.accountMasterRecordKey == accountMasterRecordKey;
   }
 
@@ -161,39 +161,40 @@ class FetchAccountProvider extends AutoDisposeFutureProvider<AccountInfo> {
   }
 }
 
-mixin FetchAccountRef on AutoDisposeFutureProviderRef<AccountInfo> {
+mixin FetchAccountInfoRef on AutoDisposeFutureProviderRef<AccountInfo> {
   /// The parameter `accountMasterRecordKey` of this provider.
   Typed<FixedEncodedString43> get accountMasterRecordKey;
 }
 
-class _FetchAccountProviderElement
-    extends AutoDisposeFutureProviderElement<AccountInfo> with FetchAccountRef {
-  _FetchAccountProviderElement(super.provider);
+class _FetchAccountInfoProviderElement
+    extends AutoDisposeFutureProviderElement<AccountInfo>
+    with FetchAccountInfoRef {
+  _FetchAccountInfoProviderElement(super.provider);
 
   @override
   Typed<FixedEncodedString43> get accountMasterRecordKey =>
-      (origin as FetchAccountProvider).accountMasterRecordKey;
+      (origin as FetchAccountInfoProvider).accountMasterRecordKey;
 }
 
-String _$fetchActiveAccountHash() =>
-    r'197e5dd793563ff1d9927309a5ec9db1c9f67f07';
+String _$fetchActiveAccountInfoHash() =>
+    r'85276ff85b0e82c8d3c6313250954f5b578697d1';
 
 /// Get the active account info
 ///
-/// Copied from [fetchActiveAccount].
-@ProviderFor(fetchActiveAccount)
-final fetchActiveAccountProvider =
+/// Copied from [fetchActiveAccountInfo].
+@ProviderFor(fetchActiveAccountInfo)
+final fetchActiveAccountInfoProvider =
     AutoDisposeFutureProvider<ActiveAccountInfo?>.internal(
-  fetchActiveAccount,
-  name: r'fetchActiveAccountProvider',
+  fetchActiveAccountInfo,
+  name: r'fetchActiveAccountInfoProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$fetchActiveAccountHash,
+      : _$fetchActiveAccountInfoHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef FetchActiveAccountRef
+typedef FetchActiveAccountInfoRef
     = AutoDisposeFutureProviderRef<ActiveAccountInfo?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

@@ -7,12 +7,12 @@ part of 'conversation.dart';
 // **************************************************************************
 
 String _$activeConversationMessagesHash() =>
-    r'61c9e16f1304c7929a971ec7711d2b6c7cadc5ea';
+    r'5579a9386f2046b156720ae799a0e77aca119b09';
 
 /// See also [ActiveConversationMessages].
 @ProviderFor(ActiveConversationMessages)
 final activeConversationMessagesProvider = AutoDisposeAsyncNotifierProvider<
-    ActiveConversationMessages, IList<Message>?>.internal(
+    ActiveConversationMessages, IList<proto.Message>?>.internal(
   ActiveConversationMessages.new,
   name: r'activeConversationMessagesProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -23,6 +23,6 @@ final activeConversationMessagesProvider = AutoDisposeAsyncNotifierProvider<
 );
 
 typedef _$ActiveConversationMessages
-    = AutoDisposeAsyncNotifier<IList<Message>?>;
+    = AutoDisposeAsyncNotifier<IList<proto.Message>?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
