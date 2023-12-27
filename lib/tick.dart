@@ -12,7 +12,7 @@ import 'old_to_refactor/providers/connection_state.dart';
 import 'old_to_refactor/providers/contact.dart';
 import 'old_to_refactor/providers/contact_invite.dart';
 import 'old_to_refactor/providers/conversation.dart';
-import 'veilid_init.dart';
+import 'init.dart';
 
 const int ticksPerContactInvitationCheck = 5;
 const int ticksPerNewMessageCheck = 5;

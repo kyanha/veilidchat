@@ -10,7 +10,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../proto/proto.dart' as proto;
 
 import '../../tools/tools.dart';
-import '../../veilid_init.dart';
+import '../../init.dart';
 import '../../veilid_support/veilid_support.dart';
 import 'account.dart';
 import 'chat.dart';

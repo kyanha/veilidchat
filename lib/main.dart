@@ -13,7 +13,6 @@ import 'theme/theme.dart';
 import 'tools/tools.dart';
 import 'init.dart';
 
-const String appName = "VeilidChat";
 
 void main() async {
   // Disable all debugprints in release mode

@@ -33,7 +33,7 @@ class Processor {
     } on Exception {}
 
     final updateStream =
-        await Veilid.instance.startupVeilidCore(await getVeilidChatConfig());
+        await Veilid.instance.startupVeilidCore(await getVeilidConfig());
     _updateStream = updateStream;
     _updateProcessor = processUpdates();
     _startedUp = true;

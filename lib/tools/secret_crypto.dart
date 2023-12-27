@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import '../local_accounts/local_account.dart';
-import '../veilid_init.dart';
+import '../init.dart';
 import '../veilid_support/veilid_support.dart';
 
 Future<Uint8List> encryptSecretToBytes(
