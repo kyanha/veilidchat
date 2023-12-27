@@ -4,14 +4,16 @@ import 'dart:io';
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
-import 'providers/window_control.dart';
+import 'old_to_refactor/providers/window_control.dart';
+import 'theme/theme.dart';
 import 'tools/tools.dart';
-import 'veilid_init.dart';
+import 'init.dart';
+
+const String appName = "VeilidChat";
 
 void main() async {
   // Disable all debugprints in release mode
@@ -34,8 +36,8 @@ void main() async {
 
     // Prepare theme
     WidgetsFlutterBinding.ensureInitialized();
-    final themeService = await ThemeService.instance;
-    final initTheme = themeService.initial;
+    final themeRepository = await ThemeRepository.instance;
+    final themeData = themeRepository.themeData();
 
     // Manage window on desktop platforms
     await WindowControl.initialize();
@@ -50,9 +52,7 @@ void main() async {
 
     // Run the app
     // Hot reloads will only restart this part, not Veilid
-    runApp(ProviderScope(
-        observers: const [StateLogger()],
-        child: LocalizedApp(delegate, VeilidChatApp(theme: initTheme))));
+    runApp(LocalizedApp(delegate, VeilidChatApp(themeData: themeData)));
   }, (error, stackTrace) {
     log.error('Dart Runtime: {$error}\n{$stackTrace}');
   });

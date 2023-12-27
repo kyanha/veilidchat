@@ -6,7 +6,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:motion_toast/motion_toast.dart';
 import 'package:quickalert/quickalert.dart';
 
-import 'theme_service.dart';
+import '../theme/theme.dart';
 
 extension BorderExt on Widget {
   DecoratedBox debugBorder() => DecoratedBox(

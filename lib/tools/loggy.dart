@@ -1,13 +1,15 @@
 import 'dart:io' show Platform;
 
 import 'package:ansicolor/ansicolor.dart';
+import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/intl.dart';
 import 'package:loggy/loggy.dart';
 
-import '../pages/developer.dart';
+import '../old_to_refactor/pages/developer.dart';
 import '../veilid_support/veilid_support.dart';
+import 'state_logger.dart';
 
 String wrapWithLogColor(LogLevel? level, String text) {
   // XXX: https://github.com/flutter/flutter/issues/64491
@@ -149,4 +151,7 @@ void initLoggy() {
   }
 
   Loggy('').level = getLogOptions(logLevel);
+
+  // Create state logger
+  Bloc.observer = const StateLogger();
 }

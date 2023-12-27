@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:veilid/veilid.dart';
 
 Future<T> tableScope<T>(
@@ -29,7 +31,7 @@ Future<T> transactionScope<T>(
   }
 }
 
-abstract mixin class AsyncTableDBBacked<T> {
+abstract mixin class TableDBBacked<T> {
   String tableName();
   String tableKeyName();
   T valueFromJson(Object? obj);
@@ -51,4 +53,49 @@ abstract mixin class AsyncTableDBBacked<T> {
     });
     return obj;
   }
+}
+
+class TableDBValue<T> extends TableDBBacked<T> {
+  TableDBValue({
+    required String tableName,
+    required String tableKeyName,
+    required T Function(Object? obj) valueFromJson,
+    required Object? Function(T obj) valueToJson,
+  })  : _tableName = tableName,
+        _valueFromJson = valueFromJson,
+        _valueToJson = valueToJson,
+        _tableKeyName = tableKeyName;
+
+  T? get value => _value;
+  T get requireValue => _value!;
+
+  Future<T> get() async {
+    final val = _value;
+    if (val != null) {
+      return val;
+    }
+    final loadedValue = await load();
+    return _value = loadedValue;
+  }
+
+  Future<void> set(T newVal) async {
+    _value = await store(newVal);
+  }
+
+  T? _value;
+  final String _tableName;
+  final String _tableKeyName;
+  final T Function(Object? obj) _valueFromJson;
+  final Object? Function(T obj) _valueToJson;
+
+  //////////////////////////////////////////////////////////////
+  /// AsyncTableDBBacked
+  @override
+  String tableName() => _tableName;
+  @override
+  String tableKeyName() => _tableKeyName;
+  @override
+  T valueFromJson(Object? obj) => _valueFromJson(obj);
+  @override
+  Object? valueToJson(T val) => _valueToJson(val);
 }

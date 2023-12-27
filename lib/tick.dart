@@ -4,21 +4,20 @@ import 'dart:async';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'proto/proto.dart' as proto;
-import 'providers/account.dart';
-import 'providers/chat.dart';
-import 'providers/connection_state.dart';
-import 'providers/contact.dart';
-import 'providers/contact_invite.dart';
-import 'providers/conversation.dart';
+import 'old_to_refactor/providers/account.dart';
+import 'old_to_refactor/providers/chat.dart';
+import 'old_to_refactor/providers/connection_state.dart';
+import 'old_to_refactor/providers/contact.dart';
+import 'old_to_refactor/providers/contact_invite.dart';
+import 'old_to_refactor/providers/conversation.dart';
 import 'veilid_init.dart';
 
 const int ticksPerContactInvitationCheck = 5;
 const int ticksPerNewMessageCheck = 5;
 
-class BackgroundTicker extends ConsumerStatefulWidget {
+class BackgroundTicker extends StatefulWidget {
   const BackgroundTicker({required this.builder, super.key});
 
   final Widget Function(BuildContext) builder;
@@ -33,7 +32,7 @@ class BackgroundTicker extends ConsumerStatefulWidget {
   }
 }
 
-class BackgroundTickerState extends ConsumerState<BackgroundTicker> {
+class BackgroundTickerState extends State<BackgroundTicker> {
   Timer? _tickTimer;
   bool _inTick = false;
   int _contactInvitationCheckTick = 0;

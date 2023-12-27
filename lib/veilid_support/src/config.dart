@@ -1,8 +1,37 @@
 import 'package:flutter/foundation.dart';
 import 'package:veilid/veilid.dart';
 
-Future<VeilidConfig> getVeilidChatConfig() async {
-  var config = await getDefaultVeilidConfig('VeilidChat');
+Map<String, dynamic> getDefaultVeilidPlatformConfig(String appName) {
+  if (kIsWeb) {
+    return const VeilidWASMConfig(
+            logging: VeilidWASMConfigLogging(
+                performance: VeilidWASMConfigLoggingPerformance(
+                    enabled: true,
+                    level: VeilidConfigLogLevel.debug,
+                    logsInTimings: true,
+                    logsInConsole: false),
+                api: VeilidWASMConfigLoggingApi(
+                    enabled: true, level: VeilidConfigLogLevel.info)))
+        .toJson();
+  }
+  return VeilidFFIConfig(
+          logging: VeilidFFIConfigLogging(
+              terminal: const VeilidFFIConfigLoggingTerminal(
+                enabled: false,
+                level: VeilidConfigLogLevel.debug,
+              ),
+              otlp: VeilidFFIConfigLoggingOtlp(
+                  enabled: false,
+                  level: VeilidConfigLogLevel.trace,
+                  grpcEndpoint: '127.0.0.1:4317',
+                  serviceName: appName),
+              api: const VeilidFFIConfigLoggingApi(
+                  enabled: true, level: VeilidConfigLogLevel.info)))
+      .toJson();
+}
+
+Future<VeilidConfig> getVeilidConfig(String appName) async {
+  var config = await getDefaultVeilidConfig(appName);
   // ignore: do_not_use_environment
   if (const String.fromEnvironment('DELETE_TABLE_STORE') == '1') {
     config =

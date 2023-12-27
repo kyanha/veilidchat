@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import '../entities/local_account.dart';
+import '../local_accounts/local_account.dart';
 import '../veilid_init.dart';
 import '../veilid_support/veilid_support.dart';
 

@@ -35,7 +35,7 @@ class OwnedDHTRecordPointer with _$OwnedDHTRecordPointer {
       _$OwnedDHTRecordPointerFromJson(json as Map<String, dynamic>);
 }
 
-class DHTRecordPool with AsyncTableDBBacked<DHTRecordPoolAllocations> {
+class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   DHTRecordPool._(Veilid veilid, VeilidRoutingContext routingContext)
       : _state = DHTRecordPoolAllocations(
             childrenByParent: IMap(),

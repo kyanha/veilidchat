@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:veilid/veilid.dart';
 
-import 'providers/connection_state.dart';
+import 'old_to_refactor/providers/connection_state.dart';
 import 'tools/tools.dart';
 import 'veilid_support/src/config.dart';
 import 'veilid_support/src/veilid_log.dart';
