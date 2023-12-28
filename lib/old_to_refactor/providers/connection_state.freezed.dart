@@ -30,8 +30,6 @@ abstract class $ConnectionStateCopyWith<$Res> {
       _$ConnectionStateCopyWithImpl<$Res, ConnectionState>;
   @useResult
   $Res call({VeilidStateAttachment attachment});
-
-  $VeilidStateAttachmentCopyWith<$Res> get attachment;
 }
 
 /// @nodoc
@@ -47,22 +45,14 @@ class _$ConnectionStateCopyWithImpl<$Res, $Val extends ConnectionState>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? attachment = null,
+    Object? attachment = freezed,
   }) {
     return _then(_value.copyWith(
-      attachment: null == attachment
+      attachment: freezed == attachment
           ? _value.attachment
           : attachment // ignore: cast_nullable_to_non_nullable
               as VeilidStateAttachment,
     ) as $Val);
-  }
-
-  @override
-  @pragma('vm:prefer-inline')
-  $VeilidStateAttachmentCopyWith<$Res> get attachment {
-    return $VeilidStateAttachmentCopyWith<$Res>(_value.attachment, (value) {
-      return _then(_value.copyWith(attachment: value) as $Val);
-    });
   }
 }
 
@@ -75,9 +65,6 @@ abstract class _$$ConnectionStateImplCopyWith<$Res>
   @override
   @useResult
   $Res call({VeilidStateAttachment attachment});
-
-  @override
-  $VeilidStateAttachmentCopyWith<$Res> get attachment;
 }
 
 /// @nodoc
@@ -91,10 +78,10 @@ class __$$ConnectionStateImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? attachment = null,
+    Object? attachment = freezed,
   }) {
     return _then(_$ConnectionStateImpl(
-      attachment: null == attachment
+      attachment: freezed == attachment
           ? _value.attachment
           : attachment // ignore: cast_nullable_to_non_nullable
               as VeilidStateAttachment,
@@ -120,12 +107,13 @@ class _$ConnectionStateImpl extends _ConnectionState {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ConnectionStateImpl &&
-            (identical(other.attachment, attachment) ||
-                other.attachment == attachment));
+            const DeepCollectionEquality()
+                .equals(other.attachment, attachment));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, attachment);
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(attachment));
 
   @JsonKey(ignore: true)
   @override

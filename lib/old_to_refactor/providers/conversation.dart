@@ -11,7 +11,7 @@ import '../../proto/proto.dart' as proto;
 
 import '../../tools/tools.dart';
 import '../../init.dart';
-import '../../veilid_support/veilid_support.dart';
+import '../../../packages/veilid_support/veilid_support.dart';
 import 'account.dart';
 import 'chat.dart';
 import 'contact.dart';

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:signal_strength_indicator/signal_strength_indicator.dart';
-import 'package:go_router/go_router.dart';
+import 'package:veilid_support/veilid_support.dart';
 
 import '../providers/connection_state.dart';
 import '../tools/tools.dart';
-import '../veilid_support/veilid_support.dart';
 
-class SignalStrengthMeterWidget extends ConsumerWidget {
+xxx move to feature level
+
+class SignalStrengthMeterWidget extends Widget {
   const SignalStrengthMeterWidget({super.key});
 
   @override

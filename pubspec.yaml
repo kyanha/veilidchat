@@ -75,6 +75,8 @@ dependencies:
   veilid:
     #   veilid: ^0.0.1
     path: ../veilid/veilid-flutter
+  veilid_support:
+    path: packages/veilid_support
   window_manager: ^0.3.5
   xterm: ^3.5.0
   zxing2: ^0.2.0

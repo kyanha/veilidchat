@@ -4,7 +4,7 @@ import 'package:bloc/bloc.dart';
 
 import '../../tools/tools.dart';
 import '../init.dart';
-import '../../veilid_support/veilid_support.dart';
+import '../../packages/veilid_support/veilid_support.dart';
 
 abstract class AsyncTableDBBackedCubit<State> extends Cubit<AsyncValue<State>>
     with TableDBBacked<State> {

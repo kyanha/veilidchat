@@ -5,14 +5,14 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'proto/proto.dart' as proto;
+import 'init.dart';
 import 'old_to_refactor/providers/account.dart';
 import 'old_to_refactor/providers/chat.dart';
 import 'old_to_refactor/providers/connection_state.dart';
 import 'old_to_refactor/providers/contact.dart';
 import 'old_to_refactor/providers/contact_invite.dart';
 import 'old_to_refactor/providers/conversation.dart';
-import 'init.dart';
+import 'proto/proto.dart' as proto;
 
 const int ticksPerContactInvitationCheck = 5;
 const int ticksPerNewMessageCheck = 5;

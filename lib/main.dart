@@ -8,11 +8,9 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
-import 'old_to_refactor/providers/window_control.dart';
+import 'init.dart';
 import 'theme/theme.dart';
 import 'tools/tools.dart';
-import 'init.dart';
-
 
 void main() async {
   // Disable all debugprints in release mode
@@ -39,7 +37,7 @@ void main() async {
     final themeData = themeRepository.themeData();
 
     // Manage window on desktop platforms
-    await WindowControl.initialize();
+    await initializeWindowControl();
 
     // Make localization delegate
     final delegate = await LocalizationDelegate.create(

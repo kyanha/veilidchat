@@ -13,7 +13,7 @@ import '../../providers/contact.dart';
 import '../../../local_accounts/local_accounts.dart';
 import '../../providers/logins.dart';
 import '../../../tools/tools.dart';
-import '../../../veilid_support/veilid_support.dart';
+import '../../../../packages/veilid_support/veilid_support.dart';
 
 class ChatsPage extends ConsumerStatefulWidget {
   const ChatsPage({super.key});

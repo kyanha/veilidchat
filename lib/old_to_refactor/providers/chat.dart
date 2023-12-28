@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../proto/proto.dart' as proto;
 
-import '../../veilid_support/veilid_support.dart';
+import '../../../packages/veilid_support/veilid_support.dart';
 import 'account.dart';
 
 part 'chat.g.dart';

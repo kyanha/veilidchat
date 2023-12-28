@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:loggy/loggy.dart';
 
 import '../old_to_refactor/pages/developer.dart';
-import '../veilid_support/veilid_support.dart';
+import '../../packages/veilid_support/veilid_support.dart';
 import 'state_logger.dart';
 
 String wrapWithLogColor(LogLevel? level, String text) {

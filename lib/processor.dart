@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:veilid/veilid.dart';
 
+import 'app.dart';
 import 'old_to_refactor/providers/connection_state.dart';
 import 'tools/tools.dart';
-import 'veilid_support/src/config.dart';
-import 'veilid_support/src/veilid_log.dart';
+import '../packages/veilid_support/src/config.dart';
+import '../packages/veilid_support/src/veilid_log.dart';
 
 class Processor {
   Processor();
@@ -27,13 +28,15 @@ class Processor {
 
     log.info('Veilid version: $_veilidVersion');
 
-    // In case of hot restart shut down first
+    // HACK: In case of hot restart shut down first
     try {
       await Veilid.instance.shutdownVeilidCore();
-    } on Exception {}
+    } on Exception {
+      // Do nothing on failure here
+    }
 
-    final updateStream =
-        await Veilid.instance.startupVeilidCore(await getVeilidConfig());
+    final updateStream = await Veilid.instance
+        .startupVeilidCore(await getVeilidConfig(VeilidChatApp.name));
     _updateStream = updateStream;
     _updateProcessor = processUpdates();
     _startedUp = true;

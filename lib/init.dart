@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'local_account_manager/local_account_manager.dart';
+import 'app.dart';
+import 'local_account_manager/account_manager.dart';
 import 'processor.dart';
 import 'tools/tools.dart';
-import 'veilid_support/veilid_support.dart';
-
-const String appName = 'VeilidChat';
+import '../packages/veilid_support/veilid_support.dart';
 
 final Completer<Veilid> eventualVeilid = Completer<Veilid>();
 final Processor processor = Processor();
@@ -20,7 +19,8 @@ Future<void> initializeVeilid() async {
   }
 
   // Init Veilid
-  Veilid.instance.initializeVeilidCore(getDefaultVeilidPlatformConfig(appName));
+  Veilid.instance
+      .initializeVeilidCore(getDefaultVeilidPlatformConfig(VeilidChatApp.name));
 
   // Veilid logging
   initVeilidLog();
@@ -34,7 +34,7 @@ Future<void> initializeVeilid() async {
 
 // Initialize repositories
 Future<void> initializeRepositories() async {
-  await AccountRepository.instance;
+  await AccountRepository.instance.init();
 }
 
 Future<void> initializeVeilidChat() async {

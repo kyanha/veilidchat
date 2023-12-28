@@ -14,7 +14,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../tools/tools.dart';
-import '../../veilid_support/veilid_support.dart';
+import '../../../packages/veilid_support/veilid_support.dart';
 
 final globalDebugTerminal = Terminal(
   maxLines: 50000,

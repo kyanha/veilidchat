@@ -7,7 +7,7 @@ import 'package:mutex/mutex.dart';
 import '../../entities/entities.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
-import '../../veilid_support/veilid_support.dart';
+import '../../../packages/veilid_support/veilid_support.dart';
 import 'account.dart';
 
 part 'contact_invitation_list_manager.g.dart';
@@ -115,11 +115,11 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
     final conversationWriter = _activeAccountInfo.getConversationWriter();
 
     // Encrypt the writer secret with the encryption key
-    final encryptedSecret = await encryptSecretToBytes(
+    final encryptedSecret = await encryptionKeyType.encryptSecretToBytes(
         secret: contactRequestWriter.secret,
         cryptoKind: cs.kind(),
         encryptionKey: encryptionKey,
-        encryptionKeyType: encryptionKeyType);
+    );
 
     // Create local chat DHT record with the account record key as its parent
     // Do not set the encryption of this key yet as it will not yet be written

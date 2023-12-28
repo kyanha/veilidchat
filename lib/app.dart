@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 
+import 'account_manager/account_manager.dart';
 import 'router/router.dart';
 import 'tick.dart';
 
@@ -14,6 +15,8 @@ class VeilidChatApp extends StatelessWidget {
     required this.themeData,
     super.key,
   });
+
+  static const String name = 'VeilidChat';
 
   final ThemeData themeData;
 
@@ -25,27 +28,42 @@ class VeilidChatApp extends StatelessWidget {
         initTheme: themeData,
         builder: (_, theme) => LocalizationProvider(
               state: LocalizationProvider.of(context).state,
-              child: BackgroundTicker(
-                  builder: (context) => BlocProvider(
-                        create: (context) => RouterCubit(),
-                        child: MaterialApp.router(
-                          debugShowCheckedModeBanner: false,
-                          routerConfig: router(
-                              routerCubit:
-                                  BlocProvider.of<RouterCubit>(context)),
-                          title: translate('app.title'),
-                          theme: theme,
-                          localizationsDelegates: [
-                            GlobalMaterialLocalizations.delegate,
-                            GlobalWidgetsLocalizations.delegate,
-                            FormBuilderLocalizations.delegate,
-                            localizationDelegate
-                          ],
-                          supportedLocales:
-                              localizationDelegate.supportedLocales,
-                          locale: localizationDelegate.currentLocale,
-                        ),
-                      )),
+              child: MultiBlocProvider(
+                  providers: [
+                    BlocProvider<RouterCubit>(
+                      create: (context) =>
+                          RouterCubit(AccountRepository.instance),
+                    ),
+                    BlocProvider<LocalAccountsCubit>(
+                      create: (context) =>
+                          LocalAccountsCubit(AccountRepository.instance),
+                    ),
+                    BlocProvider<UserLoginsCubit>(
+                      create: (context) =>
+                          UserLoginsCubit(AccountRepository.instance),
+                    ),
+                    BlocProvider<ActiveUserLoginCubit>(
+                      create: (context) =>
+                          ActiveUserLoginCubit(AccountRepository.instance),
+                    ),
+                  ],
+                  child: BackgroundTicker(
+                    builder: (context) => MaterialApp.router(
+                      debugShowCheckedModeBanner: false,
+                      routerConfig: router(
+                          routerCubit: BlocProvider.of<RouterCubit>(context)),
+                      title: translate('app.title'),
+                      theme: theme,
+                      localizationsDelegates: [
+                        GlobalMaterialLocalizations.delegate,
+                        GlobalWidgetsLocalizations.delegate,
+                        FormBuilderLocalizations.delegate,
+                        localizationDelegate
+                      ],
+                      supportedLocales: localizationDelegate.supportedLocales,
+                      locale: localizationDelegate.currentLocale,
+                    ),
+                  )),
             ));
   }
 

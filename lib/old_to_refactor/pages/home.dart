@@ -18,7 +18,7 @@ import '../../local_accounts/local_accounts.dart';
 import '../providers/logins.dart';
 import '../providers/window_control.dart';
 import '../../tools/tools.dart';
-import '../../veilid_support/veilid_support.dart';
+import '../../../packages/veilid_support/veilid_support.dart';
 import 'main_pager/main_pager.dart';
 
 class HomePage extends StatefulWidget {

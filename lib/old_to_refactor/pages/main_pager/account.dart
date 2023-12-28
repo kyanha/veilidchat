@@ -15,7 +15,7 @@ import '../../providers/contact.dart';
 import '../../providers/contact_invite.dart';
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
-import '../../../veilid_support/veilid_support.dart';
+import '../../../../packages/veilid_support/veilid_support.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
   const AccountPage({

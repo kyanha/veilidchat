@@ -21,10 +21,10 @@ packages:
     dependency: "direct main"
     description:
       name: animated_theme_switcher
-      sha256: de8ce9872d6e6676ab1140f76ff00cd0084a9dfee62168044062629927949652
+      sha256: "24ccd74437b8db78f6d1ec701804702817bced5f925b1b3419c7a93071e3d3e9"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.9"
+    version: "2.0.10"
   ansicolor:
     dependency: "direct main"
     description:
@@ -61,10 +61,10 @@ packages:
     dependency: "direct main"
     description:
       name: awesome_extensions
-      sha256: "79bb5a24f1224795e599c75ec047ca6f4718e17be535544350d213bb37bc88cd"
+      sha256: a8b68d567119b9be85bc62d8dc2ab6712d74c0130bdc31a52c53d1058c4fe33a
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.10"
+    version: "2.0.11"
   badges:
     dependency: "direct main"
     description:
@@ -897,10 +897,10 @@ packages:
     dependency: transitive
     description:
       name: path_provider_android
-      sha256: e595b98692943b4881b219f0a9e3945118d3c16bd7e2813f98ec6e532d905f72
+      sha256: "477184d672607c0a3bf68fbbf601805f92ef79c82b64b4d6eb318cbca4c48668"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.1"
+    version: "2.2.2"
   path_provider_foundation:
     dependency: transitive
     description:
@@ -1505,6 +1505,13 @@ packages:
       relative: true
     source: path
     version: "0.2.5"
+  veilid_support:
+    dependency: "direct main"
+    description:
+      path: "packages/veilid_support"
+      relative: true
+    source: path
+    version: "1.0.2+0"
   visibility_detector:
     dependency: transitive
     description:

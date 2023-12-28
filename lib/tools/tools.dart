@@ -5,6 +5,6 @@ export 'loggy.dart';
 export 'phono_byte.dart';
 export 'responsive.dart';
 export 'scanner_error_widget.dart';
-export 'secret_crypto.dart';
 export 'state_logger.dart';
 export 'widget_helpers.dart';
+export 'window_control.dart';
