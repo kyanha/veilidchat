@@ -1,18 +1,11 @@
-// XXX Eliminate this when we have ValueChanged
 import 'dart:async';
 
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:veilid_support/veilid_support.dart';
 
 import 'init.dart';
-import 'old_to_refactor/providers/account.dart';
-import 'old_to_refactor/providers/chat.dart';
-import 'old_to_refactor/providers/connection_state.dart';
-import 'old_to_refactor/providers/contact.dart';
-import 'old_to_refactor/providers/contact_invite.dart';
-import 'old_to_refactor/providers/conversation.dart';
-import 'proto/proto.dart' as proto;
+import 'veilid_processor/veilid_processor.dart';
 
 const int ticksPerContactInvitationCheck = 5;
 const int ticksPerNewMessageCheck = 5;
@@ -35,6 +28,9 @@ class BackgroundTicker extends StatefulWidget {
 class BackgroundTickerState extends State<BackgroundTicker> {
   Timer? _tickTimer;
   bool _inTick = false;
+  bool _inDoContactInvitationCheck = false;
+  bool _inDoNewMessageCheck = false;
+
   int _contactInvitationCheckTick = 0;
   int _newMessageCheckTick = 0;
 
@@ -65,32 +61,38 @@ class BackgroundTickerState extends State<BackgroundTicker> {
   }
 
   Future<void> _onTick() async {
-    // Don't tick until veilid is started and attached
-    if (!eventualVeilid.isCompleted) {
+    // Don't tick until we are initialized
+    if (!eventualInitialized.isCompleted) {
       return;
     }
-    if (!connectionState.state.isAttached) {
+    if (!ProcessorRepository
+        .instance.processorConnectionState.isPublicInternetReady) {
       return;
     }
 
     _inTick = true;
     try {
-      final unord = <Future<void>>[];
+      // Tick DHT record pool
+      if (!DHTRecordPool.instance.inTick) {
+        unawaited(DHTRecordPool.instance.tick());
+      }
+
       // Check extant contact invitations once every N seconds
       _contactInvitationCheckTick += 1;
       if (_contactInvitationCheckTick >= ticksPerContactInvitationCheck) {
         _contactInvitationCheckTick = 0;
-        unord.add(_doContactInvitationCheck());
+        if (!_inDoContactInvitationCheck) {
+          unawaited(_doContactInvitationCheck());
+        }
       }
 
       // Check new messages once every N seconds
       _newMessageCheckTick += 1;
       if (_newMessageCheckTick >= ticksPerNewMessageCheck) {
         _newMessageCheckTick = 0;
-        unord.add(_doNewMessageCheck());
-      }
-      if (unord.isNotEmpty) {
-        await Future.wait(unord);
+        if (!_inDoNewMessageCheck) {
+          unawaited(_doNewMessageCheck());
+        }
       }
     } finally {
       _inTick = false;
@@ -98,96 +100,118 @@ class BackgroundTickerState extends State<BackgroundTicker> {
   }
 
   Future<void> _doContactInvitationCheck() async {
-    if (!connectionState.state.isPublicInternetReady) {
+    if (_inDoContactInvitationCheck) {
       return;
     }
-    final contactInvitationRecords =
-        await ref.read(fetchContactInvitationRecordsProvider.future);
-    if (contactInvitationRecords == null) {
-      return;
-    }
-    final activeAccountInfo = await ref.read(fetchActiveAccountProvider.future);
-    if (activeAccountInfo == null) {
-      return;
-    }
+    _inDoContactInvitationCheck = true;
 
-    final allChecks = <Future<void>>[];
-    for (final contactInvitationRecord in contactInvitationRecords) {
-      allChecks.add(() async {
-        final acceptReject = await checkAcceptRejectContact(
-            activeAccountInfo: activeAccountInfo,
-            contactInvitationRecord: contactInvitationRecord);
-        if (acceptReject != null) {
-          final acceptedContact = acceptReject.acceptedContact;
-          if (acceptedContact != null) {
-            // Accept
-            await createContact(
-              activeAccountInfo: activeAccountInfo,
-              profile: acceptedContact.profile,
-              remoteIdentity: acceptedContact.remoteIdentity,
-              remoteConversationRecordKey:
-                  acceptedContact.remoteConversationRecordKey,
-              localConversationRecordKey:
-                  acceptedContact.localConversationRecordKey,
-            );
-            ref
-              ..invalidate(fetchContactInvitationRecordsProvider)
-              ..invalidate(fetchContactListProvider);
-          } else {
-            // Reject
-            ref.invalidate(fetchContactInvitationRecordsProvider);
-          }
-        }
-      }());
+    if (!ProcessorRepository
+        .instance.processorConnectionState.isPublicInternetReady) {
+      return;
     }
-    await Future.wait(allChecks);
+    //   final contactInvitationRecords =
+    //       await ref.read(fetchContactInvitationRecordsProvider.future);
+    //   if (contactInvitationRecords == null) {
+    //     return;
+    //   }
+    try {
+      //     final activeAccountInfo =
+      //         await ref.read(fetchActiveAccountProvider.future);
+      //     if (activeAccountInfo == null) {
+      //       return;
+      //     }
+
+      //     final allChecks = <Future<void>>[];
+      //     for (final contactInvitationRecord in contactInvitationRecords) {
+      //       allChecks.add(() async {
+      //         final acceptReject = await checkAcceptRejectContact(
+      //             activeAccountInfo: activeAccountInfo,
+      //             contactInvitationRecord: contactInvitationRecord);
+      //         if (acceptReject != null) {
+      //           final acceptedContact = acceptReject.acceptedContact;
+      //           if (acceptedContact != null) {
+      //             // Accept
+      //             await createContact(
+      //               activeAccountInfo: activeAccountInfo,
+      //               profile: acceptedContact.profile,
+      //               remoteIdentity: acceptedContact.remoteIdentity,
+      //               remoteConversationRecordKey:
+      //                   acceptedContact.remoteConversationRecordKey,
+      //               localConversationRecordKey:
+      //                   acceptedContact.localConversationRecordKey,
+      //             );
+      //             ref
+      //               ..invalidate(fetchContactInvitationRecordsProvider)
+      //               ..invalidate(fetchContactListProvider);
+      //           } else {
+      //             // Reject
+      //             ref.invalidate(fetchContactInvitationRecordsProvider);
+      //           }
+      //         }
+      //       }());
+      //     }
+      //     await Future.wait(allChecks);
+    } finally {
+      _inDoContactInvitationCheck = true;
+    }
   }
 
   Future<void> _doNewMessageCheck() async {
-    if (!connectionState.state.isPublicInternetReady) {
+    if (_inDoNewMessageCheck) {
       return;
     }
-    final activeChat = ref.read(activeChatStateProvider);
-    if (activeChat == null) {
-      return;
-    }
-    final activeAccountInfo = await ref.read(fetchActiveAccountProvider.future);
-    if (activeAccountInfo == null) {
-      return;
-    }
+    _inDoNewMessageCheck = true;
 
-    final contactList = ref.read(fetchContactListProvider).asData?.value ??
-        const IListConst([]);
-
-    final activeChatContactIdx = contactList.indexWhere(
-      (c) =>
-          proto.TypedKeyProto.fromProto(c.remoteConversationRecordKey) ==
-          activeChat,
-    );
-    if (activeChatContactIdx == -1) {
-      return;
-    }
-    final activeChatContact = contactList[activeChatContactIdx];
-    final remoteIdentityPublicKey =
-        proto.TypedKeyProto.fromProto(activeChatContact.identityPublicKey);
-    final remoteConversationRecordKey = proto.TypedKeyProto.fromProto(
-        activeChatContact.remoteConversationRecordKey);
-    final localConversationRecordKey = proto.TypedKeyProto.fromProto(
-        activeChatContact.localConversationRecordKey);
-
-    final newMessages = await getRemoteConversationMessages(
-        activeAccountInfo: activeAccountInfo,
-        remoteIdentityPublicKey: remoteIdentityPublicKey,
-        remoteConversationRecordKey: remoteConversationRecordKey);
-    if (newMessages != null && newMessages.isNotEmpty) {
-      final changed = await mergeLocalConversationMessages(
-          activeAccountInfo: activeAccountInfo,
-          localConversationRecordKey: localConversationRecordKey,
-          remoteIdentityPublicKey: remoteIdentityPublicKey,
-          newMessages: newMessages);
-      if (changed) {
-        ref.invalidate(activeConversationMessagesProvider);
+    try {
+      if (!ProcessorRepository
+          .instance.processorConnectionState.isPublicInternetReady) {
+        return;
       }
+      //     final activeChat = ref.read(activeChatStateProvider);
+      //     if (activeChat == null) {
+      //       return;
+      //     }
+      //     final activeAccountInfo =
+      //         await ref.read(fetchActiveAccountProvider.future);
+      //     if (activeAccountInfo == null) {
+      //       return;
+      //     }
+
+      //     final contactList = ref.read(fetchContactListProvider).asData?.value ??
+      //         const IListConst([]);
+
+      //     final activeChatContactIdx = contactList.indexWhere(
+      //       (c) =>
+      //           proto.TypedKeyProto.fromProto(c.remoteConversationRecordKey) ==
+      //           activeChat,
+      //     );
+      //     if (activeChatContactIdx == -1) {
+      //       return;
+      //     }
+      //     final activeChatContact = contactList[activeChatContactIdx];
+      //     final remoteIdentityPublicKey =
+      //         proto.TypedKeyProto.fromProto(activeChatContact.identityPublicKey);
+      //     final remoteConversationRecordKey = proto.TypedKeyProto.fromProto(
+      //         activeChatContact.remoteConversationRecordKey);
+      //     final localConversationRecordKey = proto.TypedKeyProto.fromProto(
+      //         activeChatContact.localConversationRecordKey);
+
+      //     final newMessages = await getRemoteConversationMessages(
+      //         activeAccountInfo: activeAccountInfo,
+      //         remoteIdentityPublicKey: remoteIdentityPublicKey,
+      //         remoteConversationRecordKey: remoteConversationRecordKey);
+      //     if (newMessages != null && newMessages.isNotEmpty) {
+      //       final changed = await mergeLocalConversationMessages(
+      //           activeAccountInfo: activeAccountInfo,
+      //           localConversationRecordKey: localConversationRecordKey,
+      //           remoteIdentityPublicKey: remoteIdentityPublicKey,
+      //           newMessages: newMessages);
+      //       if (changed) {
+      //         ref.invalidate(activeConversationMessagesProvider);
+      //       }
+      //     }
+    } finally {
+      _inDoNewMessageCheck = false;
     }
   }
 }

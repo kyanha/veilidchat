@@ -6,15 +6,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:veilid_support/veilid_support.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../theme/theme.dart';
 import '../../tools/tools.dart';
-import '../../../packages/veilid_support/veilid_support.dart';
 
 final globalDebugTerminal = Terminal(
   maxLines: 50000,
@@ -32,7 +32,7 @@ class DeveloperPage extends StatefulWidget {
   DeveloperPageState createState() => DeveloperPageState();
 }
 
-class DeveloperPageState extends ConsumerState<DeveloperPage> {
+class DeveloperPageState extends State<DeveloperPage> {
   final _terminalController = TerminalController();
   final _debugCommandController = TextEditingController();
   final _logLevelController = DropdownController(duration: 250.ms);

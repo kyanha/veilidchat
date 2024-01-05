@@ -3,7 +3,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import 'user_login.dart';
+import '../../models/models.dart';
 
 part 'active_logins.g.dart';
 part 'active_logins.freezed.dart';

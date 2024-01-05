@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:change_case/change_case.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../../../proto/proto.dart' as proto;
+import '../../../proto/proto.dart' as proto;
 
 enum EncryptionKeyType {
   none,

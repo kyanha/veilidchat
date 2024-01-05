@@ -2,16 +2,8 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../../../proto/proto.dart' as proto;
+import '../../models/models.dart';
 import 'active_logins.dart';
-import 'encryption_key_type.dart';
-import 'local_account.dart';
-import 'new_profile_spec.dart';
-import 'user_login.dart';
-
-export 'active_logins.dart';
-export 'encryption_key_type.dart';
-export 'local_account.dart';
-export 'user_login.dart';
 
 const String veilidChatAccountKey = 'com.veilid.veilidchat';
 
@@ -73,7 +65,7 @@ class AccountRepository {
     return localAccounts[idx];
   }
 
-  UserLogin? fetchLogin({required TypedKey accountMasterRecordKey}) {
+  UserLogin? fetchUserLogin({required TypedKey accountMasterRecordKey}) {
     final userLogins = _activeLogins.requireValue.userLogins;
     final idx = userLogins
         .indexWhere((e) => e.accountMasterRecordKey == accountMasterRecordKey);

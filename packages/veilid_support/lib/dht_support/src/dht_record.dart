@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:protobuf/protobuf.dart';
 
-import '../../../../veilid_support.dart';
+import '../../../veilid_support.dart';
 
 class DHTRecord {
   DHTRecord(
@@ -28,6 +28,7 @@ class DHTRecord {
   final DHTRecordCrypto _crypto;
   bool _open;
   bool _valid;
+  StreamSubscription<VeilidUpdateValueChange>? _watchSubscription;
 
   int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
 
@@ -47,9 +48,8 @@ class DHTRecord {
     if (!_open) {
       return;
     }
-    final pool = await DHTRecordPool.instance();
     await _routingContext.closeDHTRecord(_recordDescriptor.key);
-    pool.recordClosed(_recordDescriptor.key);
+    await DHTRecordPool.instance.recordClosed(_recordDescriptor.key);
     _open = false;
   }
 
@@ -60,8 +60,7 @@ class DHTRecord {
     if (_open) {
       await close();
     }
-    final pool = await DHTRecordPool.instance();
-    await pool.deleteDeep(key);
+    await DHTRecordPool.instance.deleteDeep(key);
     _valid = false;
   }
 
@@ -253,4 +252,20 @@ class DHTRecord {
           T Function(List<int>) fromBuffer, Future<T> Function(T) update,
           {int subkey = -1}) =>
       eventualUpdateBytes(protobufUpdate(fromBuffer, update), subkey: subkey);
+
+  Future<void> watch(
+      Future<void> Function(VeilidUpdateValueChange update) onUpdate,
+      {List<ValueSubkeyRange>? subkeys,
+      Timestamp? expiration,
+      int? count}) async {
+    // register watch with pool
+    _watchSubscription = await DHTRecordPool.instance.recordWatch(
+        _recordDescriptor.key, onUpdate,
+        subkeys: subkeys, expiration: expiration, count: count);
+  }
+
+  Future<void> cancelWatch() async {
+    // register watch with pool
+    await _watchSubscription?.cancel();
+  }
 }

@@ -69,7 +69,7 @@ class DHTShortArray {
       DHTRecordCrypto? crypto,
       KeyPair? smplWriter}) async {
     assert(stride <= maxElements, 'stride too long');
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
 
     late final DHTRecord dhtRecord;
     if (smplWriter != null) {
@@ -111,9 +111,7 @@ class DHTShortArray {
       {VeilidRoutingContext? routingContext,
       TypedKey? parent,
       DHTRecordCrypto? crypto}) async {
-    final pool = await DHTRecordPool.instance();
-
-    final dhtRecord = await pool.openRead(headRecordKey,
+    final dhtRecord = await DHTRecordPool.instance.openRead(headRecordKey,
         parent: parent, routingContext: routingContext, crypto: crypto);
     try {
       final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
@@ -132,8 +130,8 @@ class DHTShortArray {
     TypedKey? parent,
     DHTRecordCrypto? crypto,
   }) async {
-    final pool = await DHTRecordPool.instance();
-    final dhtRecord = await pool.openWrite(headRecordKey, writer,
+    final dhtRecord = await DHTRecordPool.instance.openWrite(
+        headRecordKey, writer,
         parent: parent, routingContext: routingContext, crypto: crypto);
     try {
       final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
@@ -214,17 +212,15 @@ class DHTShortArray {
 
   /// Open a linked record for reading or writing, same as the head record
   Future<DHTRecord> _openLinkedRecord(TypedKey recordKey) async {
-    final pool = await DHTRecordPool.instance();
-
     final writer = _headRecord.writer;
     return (writer != null)
-        ? await pool.openWrite(
+        ? await DHTRecordPool.instance.openWrite(
             recordKey,
             writer,
             parent: _headRecord.key,
             routingContext: _headRecord.routingContext,
           )
-        : await pool.openRead(
+        : await DHTRecordPool.instance.openRead(
             recordKey,
             parent: _headRecord.key,
             routingContext: _headRecord.routingContext,

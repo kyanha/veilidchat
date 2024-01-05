@@ -5,12 +5,12 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
-import 'package:veilid_support/veilid_support.dart';
 
-import '../../../components/default_app_bar.dart';
-import '../../../components/signal_strength_meter.dart';
-import '../../../entities/entities.dart';
+import '../../../layout/default_app_bar.dart';
 import '../../../tools/tools.dart';
+import '../../../veilid_processor/veilid_processor.dart';
+import '../../account_manager.dart';
+import '../../models/models.dart';
 
 class NewAccountPage extends StatefulWidget {
   const NewAccountPage({super.key});
@@ -95,8 +95,7 @@ class NewAccountPageState extends State<NewAccountPage> {
 
   @override
   Widget build(BuildContext context) {
-    final displayModalHUD =
-        isInAsyncCall || !localAccounts.hasValue || !logins.hasValue;
+    final displayModalHUD = isInAsyncCall;
 
     return Scaffold(
       // resizeToAvoidBottomInset: false,
@@ -116,7 +115,16 @@ class NewAccountPageState extends State<NewAccountPage> {
         onSubmit: (formKey) async {
           FocusScope.of(context).unfocus();
           try {
-            await createAccount();
+            final name =
+                _formKey.currentState!.fields[formFieldName]!.value as String;
+            final pronouns = _formKey.currentState!.fields[formFieldPronouns]!
+                    .value as String? ??
+                '';
+            final newProfileSpec =
+                NewProfileSpec(name: name, pronouns: pronouns);
+
+            await AccountRepository.instance
+                .createMasterIdentity(newProfileSpec);
           } on Exception catch (e) {
             if (context.mounted) {
               await showErrorModal(context, translate('new_account_page.error'),

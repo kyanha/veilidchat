@@ -1,3 +1,2 @@
-export 'scale_scheme.dart';
-export 'theme_preference.dart';
-export 'theme_repository.dart';
+export 'models/models.dart';
+export 'repository/theme_repository.dart';

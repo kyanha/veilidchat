@@ -78,7 +78,7 @@ class IdentityMaster with _$IdentityMaster {
 extension IdentityMasterExtension on IdentityMaster {
   /// Deletes a master identity and the identity record under it
   Future<void> delete() async {
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
     await (await pool.openRead(masterRecordKey)).delete();
   }
 
@@ -95,7 +95,7 @@ extension IdentityMasterExtension on IdentityMaster {
       {required SharedSecret identitySecret,
       required String accountKey}) async {
     // Read the identity key to get the account keys
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
 
     final identityRecordCrypto = await DHTRecordCryptoPrivate.fromSecret(
         identityRecordKey.kind, identitySecret);
@@ -129,7 +129,7 @@ extension IdentityMasterExtension on IdentityMaster {
     required String accountKey,
     required Future<T> Function(TypedKey parent) createAccountCallback,
   }) async {
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
 
     /////// Add account with profile to DHT
 
@@ -186,7 +186,7 @@ class IdentityMasterWithSecrets {
 
   /// Creates a new master identity and returns it with its secrets
   static Future<IdentityMasterWithSecrets> create() async {
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
 
     // IdentityMaster DHT record is public/unencrypted
     return (await pool.create(crypto: const DHTRecordCryptoPublic()))
@@ -245,7 +245,7 @@ class IdentityMasterWithSecrets {
 /// Opens an existing master identity and validates it
 Future<IdentityMaster> openIdentityMaster(
     {required TypedKey identityMasterRecordKey}) async {
-  final pool = await DHTRecordPool.instance();
+  final pool = DHTRecordPool.instance;
 
   // IdentityMaster DHT record is public/unencrypted
   return (await pool.openRead(identityMasterRecordKey))

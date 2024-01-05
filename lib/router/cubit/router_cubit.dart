@@ -5,15 +5,14 @@ import 'package:flutter/widgets.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../account_manager/account_manager.dart';
 import '../../init.dart';
-import '../../local_account_manager/respository/account_repository/account_repository.dart';
 import '../../old_to_refactor/pages/chat_only.dart';
-import '../../old_to_refactor/pages/developer.dart';
 import '../../old_to_refactor/pages/home.dart';
 import '../../old_to_refactor/pages/index.dart';
-import '../../account_manager/view/new_account_page/new_account_page.dart';
 import '../../old_to_refactor/pages/settings.dart';
 import '../../tools/tools.dart';
+import '../../veilid_processor/views/developer.dart';
 
 part 'router_cubit.freezed.dart';
 part 'router_cubit.g.dart';

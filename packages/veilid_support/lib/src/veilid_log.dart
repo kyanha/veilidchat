@@ -39,7 +39,7 @@ class VeilidLoggy implements LoggyType {
 
 Loggy get _veilidLoggy => Loggy<VeilidLoggy>('Veilid');
 
-Future<void> processLog(VeilidLog log) async {
+void processLog(VeilidLog log) {
   StackTrace? stackTrace;
   Object? error;
   final backtrace = log.backtrace;

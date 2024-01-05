@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import 'encryption_key_type.dart';
+import '../../models/encryption_key_type.dart';
 
 part 'local_account.g.dart';
 part 'local_account.freezed.dart';

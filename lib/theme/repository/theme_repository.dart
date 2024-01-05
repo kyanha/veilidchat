@@ -5,8 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'radix_generator.dart';
-import 'theme_preference.dart';
+import '../models/models.dart';
 
 ////////////////////////////////////////////////////////////////////////
 

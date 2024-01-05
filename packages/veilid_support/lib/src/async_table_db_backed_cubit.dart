@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 
-import '../../tools/tools.dart';
-import '../init.dart';
-import '../../packages/veilid_support/veilid_support.dart';
+import '../veilid_support.dart';
 
 abstract class AsyncTableDBBackedCubit<State> extends Cubit<AsyncValue<State>>
     with TableDBBacked<State> {
@@ -14,7 +12,6 @@ abstract class AsyncTableDBBackedCubit<State> extends Cubit<AsyncValue<State>>
 
   Future<void> _build() async {
     try {
-      await eventualVeilid.future;
       emit(AsyncValue.data(await load()));
     } on Exception catch (e, stackTrace) {
       emit(AsyncValue.error(e, stackTrace));

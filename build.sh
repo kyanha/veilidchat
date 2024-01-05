@@ -1,5 +1,10 @@
 #!/bin/bash
 set -e
+
+pushd packages/veilid_support > /dev/null
+./build.sh
+popd > /dev/null
+
 dart run build_runner build --delete-conflicting-outputs
 
 pushd lib > /dev/null

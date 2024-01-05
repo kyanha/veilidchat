@@ -6,9 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/intl.dart';
 import 'package:loggy/loggy.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../old_to_refactor/pages/developer.dart';
-import '../../packages/veilid_support/veilid_support.dart';
+import '../veilid_processor/views/developer.dart';
 import 'state_logger.dart';
 
 String wrapWithLogColor(LogLevel? level, String text) {
