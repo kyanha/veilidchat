@@ -58,6 +58,8 @@ Future<AccountInfo> fetchAccountInfo(FetchAccountInfoRef ref,
     return AccountInfo(status: AccountInfoStatus.accountLocked, active: active);
   }
 
+xxx login should open this key and leave it open, logout should close it
+
   // Pull the account DHT key, decode it and return it
   final pool = await DHTRecordPool.instance();
   final account = await (await pool.openOwned(

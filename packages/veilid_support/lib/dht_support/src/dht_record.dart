@@ -19,7 +19,10 @@ class DHTRecord {
         _writer = writer,
         _open = true,
         _valid = true,
-        _subkeySeqCache = {};
+        _subkeySeqCache = {},
+        needsWatchStateUpdate = false,
+        inWatchStateUpdate = false;
+
   final VeilidRoutingContext _routingContext;
   final DHTRecordDescriptor _recordDescriptor;
   final int _defaultSubkey;
@@ -28,7 +31,10 @@ class DHTRecord {
   final DHTRecordCrypto _crypto;
   bool _open;
   bool _valid;
-  StreamSubscription<VeilidUpdateValueChange>? _watchSubscription;
+  StreamController<VeilidUpdateValueChange>? watchController;
+  bool needsWatchStateUpdate;
+  bool inWatchStateUpdate;
+  WatchState? watchState;
 
   int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
 
@@ -37,6 +43,7 @@ class DHTRecord {
   PublicKey get owner => _recordDescriptor.owner;
   KeyPair? get ownerKeyPair => _recordDescriptor.ownerKeyPair();
   DHTSchema get schema => _recordDescriptor.schema;
+  int get subkeyCount => _recordDescriptor.schema.subkeyCount();
   KeyPair? get writer => _writer;
   OwnedDHTRecordPointer get ownedDHTRecordPointer =>
       OwnedDHTRecordPointer(recordKey: key, owner: ownerKeyPair!);
@@ -48,8 +55,9 @@ class DHTRecord {
     if (!_open) {
       return;
     }
+    await watchController?.close();
     await _routingContext.closeDHTRecord(_recordDescriptor.key);
-    await DHTRecordPool.instance.recordClosed(_recordDescriptor.key);
+    DHTRecordPool.instance.recordClosed(_recordDescriptor.key);
     _open = false;
   }
 
@@ -258,14 +266,36 @@ class DHTRecord {
       {List<ValueSubkeyRange>? subkeys,
       Timestamp? expiration,
       int? count}) async {
-    // register watch with pool
-    _watchSubscription = await DHTRecordPool.instance.recordWatch(
-        _recordDescriptor.key, onUpdate,
-        subkeys: subkeys, expiration: expiration, count: count);
+    // Set up watch requirements which will get picked up by the next tick
+    watchState =
+        WatchState(subkeys: subkeys, expiration: expiration, count: count);
+    needsWatchStateUpdate = true;
+  }
+
+  Future<StreamSubscription<VeilidUpdateValueChange>> listen(
+    Future<void> Function(VeilidUpdateValueChange update) onUpdate,
+  ) async {
+    // Set up watch requirements
+    watchController ??=
+        StreamController<VeilidUpdateValueChange>.broadcast(onCancel: () {
+      // If there are no more listeners then we can get rid of the controller
+      watchController = null;
+    });
+
+    return watchController!.stream.listen(
+        (update) {
+          Future.delayed(Duration.zero, () => onUpdate(update));
+        },
+        cancelOnError: true,
+        onError: (e) async {
+          await watchController!.close();
+          watchController = null;
+        });
   }
 
   Future<void> cancelWatch() async {
-    // register watch with pool
-    await _watchSubscription?.cancel();
+    // Tear down watch requirements
+    watchState = null;
+    needsWatchStateUpdate = true;
   }
 }
