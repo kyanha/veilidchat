@@ -18,8 +18,7 @@ class LocalAccountsCubit extends Cubit<LocalAccountsState> {
   }
 
   void _initAccountRepositorySubscription() {
-    _accountRepositorySubscription =
-        _accountRepository.changes().listen((change) {
+    _accountRepositorySubscription = _accountRepository.stream.listen((change) {
       switch (change) {
         case AccountRepositoryChange.localAccounts:
           emit(_accountRepository.getLocalAccounts());

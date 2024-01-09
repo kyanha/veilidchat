@@ -5,9 +5,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
+import '../account_manager/account_manager.dart';
+import '../account_manager/models/models.dart';
 import '../theme/theme.dart';
 import '../tools/tools.dart';
 import 'main_pager/main_pager.dart';
@@ -92,36 +94,48 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       BuildContext context,
       IList<LocalAccount> localAccounts,
       TypedKey activeUserLogin,
-      proto.Account account) {
+      DHTRecord accountRecord) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
 
-    return Column(children: <Widget>[
-      Row(children: [
-        IconButton(
-            icon: const Icon(Icons.settings),
-            color: scale.secondaryScale.text,
-            constraints: const BoxConstraints.expand(height: 64, width: 64),
-            style: ButtonStyle(
-                backgroundColor:
-                    MaterialStateProperty.all(scale.secondaryScale.border),
-                shape: MaterialStateProperty.all(const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16))))),
-            tooltip: translate('app_bar.settings_tooltip'),
-            onPressed: () async {
-              context.go('/home/settings');
-            }).paddingLTRB(0, 0, 8, 0),
-        ProfileWidget(
-          name: account.profile.name,
-          pronouns: account.profile.pronouns,
-        ).expanded(),
-      ]).paddingAll(8),
-      MainPager(
-              localAccounts: localAccounts,
-              activeUserLogin: activeUserLogin,
-              account: account)
-          .expanded()
-    ]);
+    return BlocProvider(
+        create: (context) => DefaultDHTRecordCubit(
+            record: accountRecord, decodeState: proto.Account.fromBuffer),
+        child: Column(children: <Widget>[
+          Row(children: [
+            IconButton(
+                icon: const Icon(Icons.settings),
+                color: scale.secondaryScale.text,
+                constraints: const BoxConstraints.expand(height: 64, width: 64),
+                style: ButtonStyle(
+                    backgroundColor:
+                        MaterialStateProperty.all(scale.secondaryScale.border),
+                    shape: MaterialStateProperty.all(
+                        const RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(16))))),
+                tooltip: translate('app_bar.settings_tooltip'),
+                onPressed: () async {
+                  context.go('/home/settings');
+                }).paddingLTRB(0, 0, 8, 0),
+            context
+                .watch<DefaultDHTRecordCubit<proto.Account>>()
+                .state
+                .builder((context, account) => ProfileWidget(
+                      name: account.profile.name,
+                      pronouns: account.profile.pronouns,
+                    ))
+                .expanded(),
+          ]).paddingAll(8),
+          context
+              .watch<DefaultDHTRecordCubit<proto.Account>>()
+              .state
+              .builder((context, account) => MainPager(
+                  localAccounts: localAccounts,
+                  activeUserLogin: activeUserLogin,
+                  account: account))
+              .expanded()
+        ]));
   }
 
   Widget buildUserPanel() => Builder(builder: (context) {
@@ -133,12 +147,9 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
           return waitingPage(context);
         }
 
-        final accountV = ref.watch(
-            fetchAccountProvider(accountMasterRecordKey: activeUserLogin));
-        if (!accountV.hasValue) {
-          return waitingPage(context);
-        }
-        final account = accountV.requireValue;
+        final account = AccountRepository.instance
+            .getAccountInfo(accountMasterRecordKey: activeUserLogin);
+
         switch (account.status) {
           case AccountInfoStatus.noAccount:
             Future.delayed(0.ms, () async {
@@ -147,11 +158,10 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   translate('home.missing_account_title'),
                   translate('home.missing_account_text'));
               // Delete account
-              await ref
-                  .read(localAccountsProvider.notifier)
+              await AccountRepository.instance
                   .deleteLocalAccount(activeUserLogin);
               // Switch to no active user login
-              await ref.read(loginsProvider.notifier).switchToAccount(null);
+              await AccountRepository.instance.switchToAccount(null);
             });
             return waitingPage(context);
           case AccountInfoStatus.accountInvalid:
@@ -161,11 +171,10 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   translate('home.invalid_account_title'),
                   translate('home.invalid_account_text'));
               // Delete account
-              await ref
-                  .read(localAccountsProvider.notifier)
+              await AccountRepository.instance
                   .deleteLocalAccount(activeUserLogin);
               // Switch to no active user login
-              await ref.read(loginsProvider.notifier).switchToAccount(null);
+              await AccountRepository.instance.switchToAccount(null);
             });
             return waitingPage(context);
           case AccountInfoStatus.accountLocked:
@@ -176,7 +185,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
               context,
               localAccounts,
               activeUserLogin,
-              account.account!,
+              account.accountRecord!,
             );
         }
       });

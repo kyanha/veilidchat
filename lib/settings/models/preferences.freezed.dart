@@ -226,6 +226,7 @@ abstract class $PreferencesCopyWith<$Res> {
       LanguagePreference language,
       LockPreference locking});
 
+  $ThemePreferencesCopyWith<$Res> get themePreferences;
   $LockPreferenceCopyWith<$Res> get locking;
 }
 
@@ -242,12 +243,12 @@ class _$PreferencesCopyWithImpl<$Res, $Val extends Preferences>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? themePreferences = freezed,
+    Object? themePreferences = null,
     Object? language = null,
     Object? locking = null,
   }) {
     return _then(_value.copyWith(
-      themePreferences: freezed == themePreferences
+      themePreferences: null == themePreferences
           ? _value.themePreferences
           : themePreferences // ignore: cast_nullable_to_non_nullable
               as ThemePreferences,
@@ -260,6 +261,14 @@ class _$PreferencesCopyWithImpl<$Res, $Val extends Preferences>
           : locking // ignore: cast_nullable_to_non_nullable
               as LockPreference,
     ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $ThemePreferencesCopyWith<$Res> get themePreferences {
+    return $ThemePreferencesCopyWith<$Res>(_value.themePreferences, (value) {
+      return _then(_value.copyWith(themePreferences: value) as $Val);
+    });
   }
 
   @override
@@ -285,6 +294,8 @@ abstract class _$$PreferencesImplCopyWith<$Res>
       LockPreference locking});
 
   @override
+  $ThemePreferencesCopyWith<$Res> get themePreferences;
+  @override
   $LockPreferenceCopyWith<$Res> get locking;
 }
 
@@ -299,12 +310,12 @@ class __$$PreferencesImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? themePreferences = freezed,
+    Object? themePreferences = null,
     Object? language = null,
     Object? locking = null,
   }) {
     return _then(_$PreferencesImpl(
-      themePreferences: freezed == themePreferences
+      themePreferences: null == themePreferences
           ? _value.themePreferences
           : themePreferences // ignore: cast_nullable_to_non_nullable
               as ThemePreferences,
@@ -348,8 +359,8 @@ class _$PreferencesImpl implements _Preferences {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$PreferencesImpl &&
-            const DeepCollectionEquality()
-                .equals(other.themePreferences, themePreferences) &&
+            (identical(other.themePreferences, themePreferences) ||
+                other.themePreferences == themePreferences) &&
             (identical(other.language, language) ||
                 other.language == language) &&
             (identical(other.locking, locking) || other.locking == locking));
@@ -357,8 +368,8 @@ class _$PreferencesImpl implements _Preferences {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType,
-      const DeepCollectionEquality().hash(themePreferences), language, locking);
+  int get hashCode =>
+      Object.hash(runtimeType, themePreferences, language, locking);
 
   @JsonKey(ignore: true)
   @override

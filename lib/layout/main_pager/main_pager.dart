@@ -24,7 +24,7 @@ import '../../../../packages/veilid_support/veilid_support.dart';
 import 'account.dart';
 import 'chats.dart';
 
-class MainPager extends ConsumerStatefulWidget {
+class MainPager extends StatefulWidget {
   const MainPager(
       {required this.localAccounts,
       required this.activeUserLogin,

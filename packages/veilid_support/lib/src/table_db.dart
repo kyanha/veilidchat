@@ -64,10 +64,12 @@ class TableDBValue<T> extends TableDBBacked<T> {
   })  : _tableName = tableName,
         _valueFromJson = valueFromJson,
         _valueToJson = valueToJson,
-        _tableKeyName = tableKeyName;
+        _tableKeyName = tableKeyName,
+        _streamController = StreamController<T>.broadcast();
 
   T? get value => _value;
   T get requireValue => _value!;
+  Stream<T> get stream => _streamController.stream;
 
   Future<T> get() async {
     final val = _value;
@@ -80,6 +82,7 @@ class TableDBValue<T> extends TableDBBacked<T> {
 
   Future<void> set(T newVal) async {
     _value = await store(newVal);
+    _streamController.add(newVal);
   }
 
   T? _value;
@@ -87,6 +90,7 @@ class TableDBValue<T> extends TableDBBacked<T> {
   final String _tableKeyName;
   final T Function(Object? obj) _valueFromJson;
   final Object? Function(T obj) _valueToJson;
+  final StreamController<T> _streamController;
 
   //////////////////////////////////////////////////////////////
   /// AsyncTableDBBacked

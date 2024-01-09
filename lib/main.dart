@@ -9,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
 import 'init.dart';
+import 'settings/preferences_repository.dart';
 import 'theme/theme.dart';
 import 'tools/tools.dart';
 
@@ -31,10 +32,11 @@ void main() async {
     // Logs
     initLoggy();
 
-    // Prepare theme
+    // Prepare preferences from SharedPreferences and theme
     WidgetsFlutterBinding.ensureInitialized();
-    final themeRepository = await ThemeRepository.instance;
-    final themeData = themeRepository.themeData();
+    await PreferencesRepository.instance.init();
+    final initialThemeData =
+        PreferencesRepository.instance.value.themePreferences.themeData();
 
     // Manage window on desktop platforms
     await initializeWindowControl();
@@ -45,11 +47,12 @@ void main() async {
     await initializeDateFormatting();
 
     // Start up Veilid and Veilid processor in the background
-    unawaited(initializeVeilid());
+    unawaited(initializeVeilidChat());
 
     // Run the app
     // Hot reloads will only restart this part, not Veilid
-    runApp(LocalizedApp(delegate, VeilidChatApp(themeData: themeData)));
+    runApp(LocalizedApp(
+        delegate, VeilidChatApp(initialThemeData: initialThemeData)));
   }, (error, stackTrace) {
     log.error('Dart Runtime: {$error}\n{$stackTrace}');
   });

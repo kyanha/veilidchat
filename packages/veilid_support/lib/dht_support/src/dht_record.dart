@@ -262,7 +262,6 @@ class DHTRecord {
       eventualUpdateBytes(protobufUpdate(fromBuffer, update), subkey: subkey);
 
   Future<void> watch(
-      Future<void> Function(VeilidUpdateValueChange update) onUpdate,
       {List<ValueSubkeyRange>? subkeys,
       Timestamp? expiration,
       int? count}) async {

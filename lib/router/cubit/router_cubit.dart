@@ -7,10 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../init.dart';
-import '../../old_to_refactor/pages/chat_only.dart';
-import '../../old_to_refactor/pages/home.dart';
-import '../../old_to_refactor/pages/index.dart';
-import '../../old_to_refactor/pages/settings.dart';
+import '../../layout/layout.dart';
 import '../../tools/tools.dart';
 import '../../veilid_processor/views/developer.dart';
 
@@ -32,7 +29,7 @@ class RouterCubit extends Cubit<RouterState> {
     });
     // Subscribe to repository streams
     _accountRepositorySubscription =
-        accountRepository.changes().listen((event) {
+        accountRepository.stream().listen((event) {
       switch (event) {
         case AccountRepositoryChange.localAccounts:
           emit(state.copyWith(
@@ -98,8 +95,8 @@ class RouterCubit extends Cubit<RouterState> {
     switch (goRouterState.matchedLocation) {
       case '/':
 
-        // Wait for veilid to be initialized
-        if (!eventualVeilid.isCompleted) {
+        // Wait for initialization to complete
+        if (!eventualInitialized.isCompleted) {
           return null;
         }
 

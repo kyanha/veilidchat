@@ -16,8 +16,7 @@ class ActiveUserLoginCubit extends Cubit<ActiveUserLoginState> {
   }
 
   void _initAccountRepositorySubscription() {
-    _accountRepositorySubscription =
-        _accountRepository.changes().listen((change) {
+    _accountRepositorySubscription = _accountRepository.stream.listen((change) {
       switch (change) {
         case AccountRepositoryChange.activeUserLogin:
           emit(_accountRepository.getActiveUserLogin());

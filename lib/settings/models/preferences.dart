@@ -1,6 +1,8 @@
 import 'package:change_case/change_case.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../theme/theme.dart';
+
 part 'preferences.freezed.dart';
 part 'preferences.g.dart';
 
@@ -16,6 +18,12 @@ class LockPreference with _$LockPreference {
 
   factory LockPreference.fromJson(dynamic json) =>
       _$LockPreferenceFromJson(json as Map<String, dynamic>);
+
+  static const LockPreference defaults = LockPreference(
+    inactivityLockSecs: 0,
+    lockWhenSwitching: false,
+    lockWithSystemLock: false,
+  );
 }
 
 // Theme supports multiple translations
@@ -25,6 +33,8 @@ enum LanguagePreference {
   factory LanguagePreference.fromJson(dynamic j) =>
       LanguagePreference.values.byName((j as String).toCamelCase());
   String toJson() => name.toPascalCase();
+
+  static const LanguagePreference defaults = LanguagePreference.englishUS;
 }
 
 // Preferences are stored in a table locally and globally affect all
@@ -39,4 +49,9 @@ class Preferences with _$Preferences {
 
   factory Preferences.fromJson(dynamic json) =>
       _$PreferencesFromJson(json as Map<String, dynamic>);
+
+  static const Preferences defaults = Preferences(
+      themePreferences: ThemePreferences.defaults,
+      language: LanguagePreference.defaults,
+      locking: LockPreference.defaults);
 }

@@ -1,11 +1,10 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../tools/tools.dart';
+import '../../theme/theme.dart';
 
-class ProfileWidget extends ConsumerWidget {
+class ProfileWidget extends StatelessWidget {
   const ProfileWidget({
     required this.name,
     this.pronouns,
@@ -17,7 +16,7 @@ class ProfileWidget extends ConsumerWidget {
 
   @override
   // ignore: prefer_expression_function_bodies
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     final textTheme = theme.textTheme;

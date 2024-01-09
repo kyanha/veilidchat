@@ -5,6 +5,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:motion_toast/motion_toast.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:veilid_support/veilid_support.dart';
 
 import '../theme/theme.dart';
 
@@ -40,6 +41,24 @@ Widget buildProgressIndicator(BuildContext context) {
 Widget waitingPage(BuildContext context) => ColoredBox(
     color: Theme.of(context).scaffoldBackgroundColor,
     child: Center(child: buildProgressIndicator(context)));
+
+Widget errorPage(BuildContext context, Object err, StackTrace? st) =>
+    ColoredBox(
+        color: Theme.of(context).colorScheme.error,
+        child: Center(child: Text(err.toString())));
+
+Widget asyncValueBuilder<T>(
+        AsyncValue<T> av, Widget Function(BuildContext, T) builder) =>
+    av.when(
+        loading: () => const Builder(builder: waitingPage),
+        error: (e, st) =>
+            Builder(builder: (context) => errorPage(context, e, st)),
+        data: (d) => Builder(builder: (context) => builder(context, d)));
+
+extension AsyncValueBuilderExt<T> on AsyncValue<T> {
+  Widget builder(Widget Function(BuildContext, T) builder) =>
+      asyncValueBuilder<T>(this, builder);
+}
 
 Future<void> showErrorModal(
     BuildContext context, String title, String text) async {
@@ -135,3 +154,7 @@ Future<T?> showStyledDialog<T>(
                           borderRadius: BorderRadius.circular(12))),
                   child: child.paddingAll(0)))));
 }
+
+bool get isPlatformDark =>
+    WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+    Brightness.dark;

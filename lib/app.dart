@@ -8,24 +8,25 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 
 import 'account_manager/account_manager.dart';
 import 'router/router.dart';
+import 'settings/settings.dart';
 import 'tick.dart';
 
 class VeilidChatApp extends StatelessWidget {
   const VeilidChatApp({
-    required this.themeData,
+    required this.initialThemeData,
     super.key,
   });
 
   static const String name = 'VeilidChat';
 
-  final ThemeData themeData;
+  final ThemeData initialThemeData;
 
   @override
   Widget build(BuildContext context) {
     final localizationDelegate = LocalizedApp.of(context).delegate;
 
     return ThemeProvider(
-        initTheme: themeData,
+        initTheme: initialThemeData,
         builder: (_, theme) => LocalizationProvider(
               state: LocalizationProvider.of(context).state,
               child: MultiBlocProvider(
@@ -46,6 +47,10 @@ class VeilidChatApp extends StatelessWidget {
                       create: (context) =>
                           ActiveUserLoginCubit(AccountRepository.instance),
                     ),
+                    BlocProvider<PreferencesCubit>(
+                      create: (context) =>
+                          PreferencesCubit(PreferencesRepository.instance),
+                    )
                   ],
                   child: BackgroundTicker(
                     builder: (context) => MaterialApp.router(
@@ -70,6 +75,7 @@ class VeilidChatApp extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<ThemeData>('themeData', themeData));
+    properties
+        .add(DiagnosticsProperty<ThemeData>('themeData', initialThemeData));
   }
 }

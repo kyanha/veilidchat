@@ -27,14 +27,15 @@ Future<void> initializeWindowControl() async {
       skipTaskbar: false,
     );
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await _doWindowSetup(TitleBarStyle.hidden, OrientationCapability.normal);
+      await changeWindowSetup(
+          TitleBarStyle.hidden, OrientationCapability.normal);
       await windowManager.show();
       await windowManager.focus();
     });
   }
 }
 
-Future<void> _doWindowSetup(TitleBarStyle titleBarStyle,
+Future<void> changeWindowSetup(TitleBarStyle titleBarStyle,
     OrientationCapability orientationCapability) async {
   if (isDesktop) {
     await windowManager.setTitleBarStyle(titleBarStyle);
@@ -57,9 +58,4 @@ Future<void> _doWindowSetup(TitleBarStyle titleBarStyle,
         ]);
     }
   }
-}
-
-Future<void> changeWindowSetup(TitleBarStyle titleBarStyle,
-    OrientationCapability orientationCapability) async {
-  await _doWindowSetup(titleBarStyle, orientationCapability);
 }

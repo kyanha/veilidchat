@@ -5,8 +5,8 @@ import 'package:bloc/bloc.dart';
 
 import '../../veilid_support.dart';
 
-class DhtRecordCubit<T> extends Cubit<AsyncValue<T>> {
-  DhtRecordCubit({
+class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
+  DHTRecordCubit({
     required DHTRecord record,
     required Future<T?> Function(DHTRecord) initialStateFunction,
     required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, ValueData)
@@ -48,7 +48,7 @@ class DhtRecordCubit<T> extends Cubit<AsyncValue<T>> {
 }
 
 // Cubit that watches the default subkey value of a dhtrecord
-class DefaultDHTRecordCubit<T> extends DhtRecordCubit<T> {
+class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
   DefaultDHTRecordCubit({
     required super.record,
     required T Function(List<int> data) decodeState,
