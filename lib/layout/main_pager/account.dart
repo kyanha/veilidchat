@@ -4,20 +4,15 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../../../components/contact_invitation_list_widget.dart';
-import '../../../components/contact_list_widget.dart';
-import '../../../entities/local_account.dart';
 import '../../../proto/proto.dart' as proto;
-import '../../providers/contact.dart';
-import '../../providers/contact_invite.dart';
-import '../../../theme/theme.dart';
-import '../../../tools/tools.dart';
-import '../../../../packages/veilid_support/veilid_support.dart';
+import '../../account_manager/account_manager.dart';
+import '../../contact_invitation/contact_invitation.dart';
+import '../../contacts/contacts.dart';
 
-class AccountPage extends ConsumerStatefulWidget {
+class AccountPage extends StatefulWidget {
   const AccountPage({
     required this.localAccounts,
     required this.activeUserLogin,
@@ -41,7 +36,7 @@ class AccountPage extends ConsumerStatefulWidget {
   }
 }
 
-class AccountPageState extends ConsumerState<AccountPage> {
+class AccountPageState extends State<AccountPage> {
   final _unfocusNode = FocusNode();
 
   @override

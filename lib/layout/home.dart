@@ -9,7 +9,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../proto/proto.dart' as proto;
 import '../account_manager/account_manager.dart';
-import '../account_manager/models/models.dart';
+import '../chat/chat.dart';
 import '../theme/theme.dart';
 import '../tools/tools.dart';
 import 'main_pager/main_pager.dart';
@@ -19,38 +19,6 @@ class HomePage extends StatefulWidget {
 
   @override
   HomePageState createState() => HomePageState();
-
-  static Widget buildChatComponent() {
-    final contactList = ref.watch(fetchContactListProvider).asData?.value ??
-        const IListConst([]);
-
-    final activeChat = ref.watch(activeChatStateProvider);
-    if (activeChat == null) {
-      return const EmptyChatWidget();
-    }
-
-    final activeAccountInfo =
-        ref.watch(fetchActiveAccountProvider).asData?.value;
-    if (activeAccountInfo == null) {
-      return const EmptyChatWidget();
-    }
-
-    final activeChatContactIdx = contactList.indexWhere(
-      (c) =>
-          proto.TypedKeyProto.fromProto(c.remoteConversationRecordKey) ==
-          activeChat,
-    );
-    if (activeChatContactIdx == -1) {
-      ref.read(activeChatStateProvider.notifier).state = null;
-      return const EmptyChatWidget();
-    }
-    final activeChatContact = contactList[activeChatContactIdx];
-
-    return ChatComponent(
-        activeAccountInfo: activeAccountInfo,
-        activeChat: activeChat,
-        activeChatContact: activeChatContact);
-  }
 }
 
 class HomePageState extends State<HomePage> with TickerProviderStateMixin {
@@ -196,7 +164,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget buildTabletLeftPane() =>
       Material(color: Colors.transparent, child: buildUserPanel());
 
-  Widget buildTabletRightPane() => HomePage.buildChatComponent();
+  Widget buildTabletRightPane() => buildChatComponent();
 
   // ignore: prefer_expression_function_bodies
   Widget buildTablet() => Builder(builder: (context) {

@@ -1,28 +1,19 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../components/chat_single_contact_list_widget.dart';
-import '../../../components/empty_chat_list_widget.dart';
-import '../../../entities/local_account.dart';
 import '../../../proto/proto.dart' as proto;
-import '../../providers/account.dart';
-import '../../providers/chat.dart';
-import '../../providers/contact.dart';
-import '../../../local_accounts/local_accounts.dart';
-import '../../providers/logins.dart';
-import '../../../tools/tools.dart';
-import '../../../../packages/veilid_support/veilid_support.dart';
+import '../../account_manager/account_manager.dart';
+import '../../tools/tools.dart';
 
-class ChatsPage extends ConsumerStatefulWidget {
+class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
 
   @override
   ChatsPageState createState() => ChatsPageState();
 }
 
-class ChatsPageState extends ConsumerState<ChatsPage> {
+class ChatsPageState extends State<ChatsPage> {
   final _unfocusNode = FocusNode();
 
   @override

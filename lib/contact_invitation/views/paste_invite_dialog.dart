@@ -3,14 +3,14 @@ import 'dart:typed_data';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../tools/tools.dart';
-import '../veilid_support/veilid_support.dart';
+import '../../theme/theme.dart';
+import '../../tools/tools.dart';
 import 'invite_dialog.dart';
 
-class PasteInviteDialog extends ConsumerStatefulWidget {
+class PasteInviteDialog extends StatefulWidget {
   const PasteInviteDialog({super.key});
 
   @override
@@ -24,7 +24,7 @@ class PasteInviteDialog extends ConsumerStatefulWidget {
   }
 }
 
-class PasteInviteDialogState extends ConsumerState<PasteInviteDialog> {
+class PasteInviteDialogState extends State<PasteInviteDialog> {
   final _pasteTextController = TextEditingController();
 
   @override

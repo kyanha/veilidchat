@@ -6,14 +6,13 @@ import 'package:basic_utils/basic_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../tools/tools.dart';
-import '../veilid_support/veilid_support.dart';
+import '../../tools/tools.dart';
 
-class ContactInvitationDisplayDialog extends ConsumerStatefulWidget {
+class ContactInvitationDisplayDialog extends StatefulWidget {
   const ContactInvitationDisplayDialog({
     required this.name,
     required this.message,
@@ -40,7 +39,7 @@ class ContactInvitationDisplayDialog extends ConsumerStatefulWidget {
 }
 
 class ContactInvitationDisplayDialogState
-    extends ConsumerState<ContactInvitationDisplayDialog> {
+    extends State<ContactInvitationDisplayDialog> {
   final focusNode = FocusNode();
   final formKey = GlobalKey<FormState>();
   late final AutoDisposeFutureProvider<Uint8List?> _generateFutureProvider;

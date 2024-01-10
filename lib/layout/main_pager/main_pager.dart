@@ -1,27 +1,23 @@
 import 'dart:async';
 
-import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:stylish_bottom_bar/model/bar_items.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../../../components/bottom_sheet_action_button.dart';
-import '../../../components/paste_invite_dialog.dart';
-import '../../../components/scan_invite_dialog.dart';
-import '../../../components/send_invite_dialog.dart';
-import '../../../entities/local_account.dart';
 import '../../../proto/proto.dart' as proto;
 import '../../../tools/tools.dart';
-import '../../../../packages/veilid_support/veilid_support.dart';
+import '../../account_manager/account_manager.dart';
+import '../../contact_invitation/contact_invitation.dart';
+import '../../theme/theme.dart';
 import 'account.dart';
+import 'bottom_sheet_action_button.dart';
 import 'chats.dart';
 
 class MainPager extends StatefulWidget {
@@ -50,8 +46,7 @@ class MainPager extends StatefulWidget {
   }
 }
 
-class MainPagerState extends ConsumerState<MainPager>
-    with TickerProviderStateMixin {
+class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
   //////////////////////////////////////////////////////////////////
 
   final _unfocusNode = FocusNode();
@@ -151,64 +146,6 @@ class MainPagerState extends ConsumerState<MainPager>
         });
   }
 
-  Widget _newContactInvitationBottomSheetBuilder(
-      // ignore: prefer_expression_function_bodies
-      BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-    final scale = theme.extension<ScaleScheme>()!;
-
-    return KeyboardListener(
-        focusNode: FocusNode(),
-        onKeyEvent: (ke) {
-          if (ke.logicalKey == LogicalKeyboardKey.escape) {
-            Navigator.pop(context);
-          }
-        },
-        child: SizedBox(
-            height: 200,
-            child: Column(children: [
-              Text(translate('accounts_menu.invite_contact'),
-                      style: textTheme.titleMedium)
-                  .paddingAll(8),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                Column(children: [
-                  IconButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        await SendInviteDialog.show(context);
-                      },
-                      iconSize: 64,
-                      icon: const Icon(Icons.contact_page),
-                      color: scale.primaryScale.background),
-                  Text(translate('accounts_menu.create_invite'))
-                ]),
-                Column(children: [
-                  IconButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        await ScanInviteDialog.show(context);
-                      },
-                      iconSize: 64,
-                      icon: const Icon(Icons.qr_code_scanner),
-                      color: scale.primaryScale.background),
-                  Text(translate('accounts_menu.scan_invite'))
-                ]),
-                Column(children: [
-                  IconButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        await PasteInviteDialog.show(context);
-                      },
-                      iconSize: 64,
-                      icon: const Icon(Icons.paste),
-                      color: scale.primaryScale.background),
-                  Text(translate('accounts_menu.paste_invite'))
-                ])
-              ]).expanded()
-            ])));
-  }
-
   // ignore: prefer_expression_function_bodies
   Widget _onNewChatBottomSheetBuilder(BuildContext context) {
     return const SizedBox(
@@ -221,7 +158,7 @@ class MainPagerState extends ConsumerState<MainPager>
   Widget _bottomSheetBuilder(BuildContext context) {
     if (_currentPage == 0) {
       // New contact invitation
-      return _newContactInvitationBottomSheetBuilder(context);
+      return newContactInvitationBottomSheetBuilder(context);
     } else if (_currentPage == 1) {
       // New chat
       return _onNewChatBottomSheetBuilder(context);

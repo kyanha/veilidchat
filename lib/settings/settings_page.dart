@@ -1,17 +1,13 @@
 import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 import '../layout/default_app_bar.dart';
 import '../theme/theme.dart';
+import '../tools/tools.dart';
 import '../veilid_processor/veilid_processor.dart';
-import 'preferences_cubit.dart';
-import 'preferences_repository.dart';
 import 'settings.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -68,8 +64,8 @@ class SettingsPageState extends State<SettingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<PreferencesCubit,
-          AsyncValue<Preferences>>(
+  Widget build(BuildContext context) => AsyncBlocBuilder<PreferencesCubit,
+          Preferences>(
       builder: (context, state) => ThemeSwitchingArea(
               child: Scaffold(
             // resizeToAvoidBottomInset: false,
@@ -94,14 +90,16 @@ class SettingsPageState extends State<SettingsPage> {
                               label:
                                   Text(translate('settings_page.color_theme'))),
                           items: _getThemeDropdownItems(),
-                          initialValue: themePreferences.colorPreference,
+                          initialValue: state.themePreferences.colorPreference,
                           onChanged: (value) async {
-                            final newPrefs = themePreferences.copyWith(
-                                colorPreference: value as ColorPreference);
-                            await themeService.save(newPrefs);
+                            final newPrefs = state.copyWith(
+                                themePreferences: state.themePreferences
+                                    .copyWith(
+                                        colorPreference:
+                                            value as ColorPreference));
                             switcher.changeTheme(
-                                theme: themeService.get(newPrefs));
-                            ref.invalidate(themeServiceProvider);
+                                theme: newPrefs.themePreferences.themeData());
+                            await PreferencesRepository.instance.set(newPrefs);
                             setState(() {});
                           })),
                   ThemeSwitcher.withTheme(
@@ -111,15 +109,17 @@ class SettingsPageState extends State<SettingsPage> {
                               label: Text(
                                   translate('settings_page.brightness_mode'))),
                           items: _getBrightnessDropdownItems(),
-                          initialValue: themePreferences.brightnessPreference,
+                          initialValue:
+                              state.themePreferences.brightnessPreference,
                           onChanged: (value) async {
-                            final newPrefs = themePreferences.copyWith(
-                                brightnessPreference:
-                                    value as BrightnessPreference);
-                            await themeService.save(newPrefs);
+                            final newPrefs = state.copyWith(
+                                themePreferences: state.themePreferences
+                                    .copyWith(
+                                        brightnessPreference:
+                                            value as BrightnessPreference));
                             switcher.changeTheme(
-                                theme: themeService.get(newPrefs));
-                            ref.invalidate(themeServiceProvider);
+                                theme: newPrefs.themePreferences.themeData());
+                            await PreferencesRepository.instance.set(newPrefs);
                             setState(() {});
                           })),
                 ],

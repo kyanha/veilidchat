@@ -5,19 +5,14 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../entities/local_account.dart';
-import '../providers/account.dart';
-import '../providers/contact_invite.dart';
-import '../tools/tools.dart';
-import '../veilid_support/veilid_support.dart';
+import '../../account_manager/account_manager.dart';
+import '../../tools/tools.dart';
 import 'contact_invitation_display.dart';
-import 'enter_password.dart';
-import 'enter_pin.dart';
 
-class SendInviteDialog extends ConsumerStatefulWidget {
+class SendInviteDialog extends StatefulWidget {
   const SendInviteDialog({super.key});
 
   @override
@@ -31,7 +26,7 @@ class SendInviteDialog extends ConsumerStatefulWidget {
   }
 }
 
-class SendInviteDialogState extends ConsumerState<SendInviteDialog> {
+class SendInviteDialogState extends State<SendInviteDialog> {
   final _messageTextController = TextEditingController(
       text: translate('send_invite_dialog.connect_with_me'));
 
@@ -135,7 +130,8 @@ class SendInviteDialogState extends ConsumerState<SendInviteDialog> {
     final navigator = Navigator.of(context);
 
     // Start generation
-    final activeAccountInfo = await ref.read(fetchActiveAccountProvider.future);
+    final activeAccountInfo =
+        await AccountRepository.instance.fetchActiveAccountInfo();
     if (activeAccountInfo == null) {
       navigator.pop();
       return;

@@ -2,13 +2,12 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:pinput/pinput.dart';
 
-import '../tools/tools.dart';
+import '../theme/theme.dart';
 
-class EnterPinDialog extends ConsumerStatefulWidget {
+class EnterPinDialog extends StatefulWidget {
   const EnterPinDialog({
     required this.reenter,
     required this.description,
@@ -30,7 +29,7 @@ class EnterPinDialog extends ConsumerStatefulWidget {
   }
 }
 
-class EnterPinDialogState extends ConsumerState<EnterPinDialog> {
+class EnterPinDialogState extends State<EnterPinDialog> {
   final pinController = TextEditingController();
   final focusNode = FocusNode();
   final formKey = GlobalKey<FormState>();

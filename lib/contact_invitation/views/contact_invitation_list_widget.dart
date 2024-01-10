@@ -2,13 +2,12 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../proto/proto.dart' as proto;
-import '../tools/tools.dart';
+import '../../proto/proto.dart' as proto;
+import '../../theme/theme.dart';
 import 'contact_invitation_item_widget.dart';
 
-class ContactInvitationListWidget extends ConsumerStatefulWidget {
+class ContactInvitationListWidget extends StatefulWidget {
   const ContactInvitationListWidget({
     required this.contactInvitationRecordList,
     super.key,
@@ -28,7 +27,7 @@ class ContactInvitationListWidget extends ConsumerStatefulWidget {
 }
 
 class ContactInvitationListWidgetState
-    extends ConsumerState<ContactInvitationListWidget> {
+    extends State<ContactInvitationListWidget> {
   final ScrollController _scrollController = ScrollController();
 
   @override

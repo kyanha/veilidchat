@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/window_control.dart';
-import 'home.dart';
+import '../chat/chat.dart';
+import '../tools/tools.dart';
 
 class ChatOnlyPage extends StatefulWidget {
   const ChatOnlyPage({super.key});
@@ -11,7 +10,7 @@ class ChatOnlyPage extends StatefulWidget {
   ChatOnlyPageState createState() => ChatOnlyPageState();
 }
 
-class ChatOnlyPageState extends ConsumerState<ChatOnlyPage>
+class ChatOnlyPageState extends State<ChatOnlyPage>
     with TickerProviderStateMixin {
   final _unfocusNode = FocusNode();
 
@@ -21,7 +20,7 @@ class ChatOnlyPageState extends ConsumerState<ChatOnlyPage>
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       setState(() {});
-      await ref.read(windowControlProvider.notifier).changeWindowSetup(
+      await changeWindowSetup(
           TitleBarStyle.normal, OrientationCapability.normal);
     });
   }
@@ -33,13 +32,9 @@ class ChatOnlyPageState extends ConsumerState<ChatOnlyPage>
   }
 
   @override
-  Widget build(BuildContext context) {
-    ref.watch(windowControlProvider);
-
-    return SafeArea(
-        child: GestureDetector(
-      onTap: () => FocusScope.of(context).requestFocus(_unfocusNode),
-      child: HomePage.buildChatComponent(context, ref),
-    ));
-  }
+  Widget build(BuildContext context) => SafeArea(
+          child: GestureDetector(
+        onTap: () => FocusScope.of(context).requestFocus(_unfocusNode),
+        child: buildChatComponent(),
+      ));
 }

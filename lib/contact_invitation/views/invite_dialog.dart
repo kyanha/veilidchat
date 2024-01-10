@@ -3,19 +3,12 @@ import 'dart:async';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
-import '../entities/local_account.dart';
-import '../providers/account.dart';
-import '../providers/contact.dart';
-import '../providers/contact_invite.dart';
-import '../tools/tools.dart';
-import 'enter_password.dart';
-import 'enter_pin.dart';
-import 'profile_widget.dart';
+import '../../account_manager/account_manager.dart';
+import '../../tools/tools.dart';
 
-class InviteDialog extends ConsumerStatefulWidget {
+class InviteDialog extends StatefulWidget {
   const InviteDialog(
       {required this.onValidationCancelled,
       required this.onValidationSuccess,
@@ -58,7 +51,7 @@ class InviteDialog extends ConsumerStatefulWidget {
   }
 }
 
-class InviteDialogState extends ConsumerState<InviteDialog> {
+class InviteDialogState extends State<InviteDialog> {
   ValidContactInvitation? _validInvitation;
   bool _isValidating = false;
   bool _isAccepting = false;

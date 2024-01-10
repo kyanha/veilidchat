@@ -7,13 +7,13 @@ import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../proto/proto.dart' as proto;
-import '../providers/account.dart';
-import '../providers/chat.dart';
-import '../providers/conversation.dart';
-import '../tools/tools.dart';
-import '../veilid_init.dart';
-import '../veilid_support/veilid_support.dart';
+import '../../old_to_refactor/proto/proto.dart' as proto;
+import '../../old_to_refactor/providers/account.dart';
+import '../../old_to_refactor/providers/chat.dart';
+import '../../old_to_refactor/providers/conversation.dart';
+import '../../old_to_refactor/tools/tools.dart';
+import '../../old_to_refactor/veilid_init.dart';
+import '../../old_to_refactor/veilid_support/veilid_support.dart';
 
 class ChatComponent extends ConsumerStatefulWidget {
   const ChatComponent(

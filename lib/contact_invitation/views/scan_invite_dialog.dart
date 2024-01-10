@@ -6,14 +6,14 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pasteboard/pasteboard.dart';
 import 'package:zxing2/qrcode.dart';
 
-import '../tools/tools.dart';
+import '../../theme/theme.dart';
+import '../../tools/tools.dart';
 import 'invite_dialog.dart';
 
 class BarcodeOverlay extends CustomPainter {
@@ -31,9 +31,6 @@ class BarcodeOverlay extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (barcode.corners == null) {
-      return;
-    }
     final adjustedSize = applyBoxFit(boxFit, arguments.size, size);
 
     var verticalPadding = size.height - adjustedSize.destination.height;
@@ -50,15 +47,14 @@ class BarcodeOverlay extends CustomPainter {
       horizontalPadding = 0;
     }
 
-    final ratioWidth =
-        (Platform.isIOS ? capture.width! : arguments.size.width) /
-            adjustedSize.destination.width;
+    final ratioWidth = (Platform.isIOS ? capture.width : arguments.size.width) /
+        adjustedSize.destination.width;
     final ratioHeight =
-        (Platform.isIOS ? capture.height! : arguments.size.height) /
+        (Platform.isIOS ? capture.height : arguments.size.height) /
             adjustedSize.destination.height;
 
     final adjustedOffset = <Offset>[];
-    for (final offset in barcode.corners!) {
+    for (final offset in barcode.corners) {
       adjustedOffset.add(
         Offset(
           offset.dx / ratioWidth + horizontalPadding,
@@ -107,7 +103,7 @@ class ScannerOverlay extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class ScanInviteDialog extends ConsumerStatefulWidget {
+class ScanInviteDialog extends StatefulWidget {
   const ScanInviteDialog({super.key});
 
   @override
@@ -121,7 +117,7 @@ class ScanInviteDialog extends ConsumerStatefulWidget {
   }
 }
 
-class ScanInviteDialogState extends ConsumerState<ScanInviteDialog> {
+class ScanInviteDialogState extends State<ScanInviteDialog> {
   bool scanned = false;
 
   @override

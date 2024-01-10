@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BottomSheetActionButton extends ConsumerStatefulWidget {
+class BottomSheetActionButton extends StatefulWidget {
   const BottomSheetActionButton(
       {required this.bottomSheetBuilder,
       required this.builder,
@@ -32,8 +31,7 @@ class BottomSheetActionButton extends ConsumerStatefulWidget {
   }
 }
 
-class BottomSheetActionButtonState
-    extends ConsumerState<BottomSheetActionButton> {
+class BottomSheetActionButtonState extends State<BottomSheetActionButton> {
   bool _showFab = true;
 
   @override

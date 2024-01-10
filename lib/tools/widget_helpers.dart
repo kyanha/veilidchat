@@ -1,6 +1,7 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:blurry_modal_progress_hud/blurry_modal_progress_hud.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:motion_toast/motion_toast.dart';
@@ -58,6 +59,22 @@ Widget asyncValueBuilder<T>(
 extension AsyncValueBuilderExt<T> on AsyncValue<T> {
   Widget builder(Widget Function(BuildContext, T) builder) =>
       asyncValueBuilder<T>(this, builder);
+}
+
+class AsyncBlocBuilder<B extends StateStreamable<AsyncValue<S>>, S>
+    extends BlocBuilder<B, AsyncValue<S>> {
+  AsyncBlocBuilder({
+    required BlocWidgetBuilder<S> builder,
+    Widget Function(BuildContext)? loading,
+    Widget Function(BuildContext, Object, StackTrace?)? error,
+    super.key,
+    super.bloc,
+    super.buildWhen,
+  }) : super(
+            builder: (context, state) => state.when(
+                loading: () => (loading ?? waitingPage)(context),
+                error: (e, st) => (error ?? errorPage)(context, e, st),
+                data: (d) => builder(context, d)));
 }
 
 Future<void> showErrorModal(

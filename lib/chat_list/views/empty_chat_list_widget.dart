@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
-import '../tools/tools.dart';
+import '../../theme/theme.dart';
 
-class EmptyChatListWidget extends ConsumerWidget {
+class EmptyChatListWidget extends StatelessWidget {
   const EmptyChatListWidget({super.key});
 
   @override
   // ignore: prefer_expression_function_bodies
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;

@@ -1,24 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import '../proto/proto.dart' as proto;
-import '../pages/main_pager/main_pager.dart';
-import '../providers/account.dart';
-import '../providers/chat.dart';
-import '../providers/contact.dart';
-import '../theme/theme.dart';
+import '../../proto/proto.dart' as proto;
+import '../../theme/theme.dart';
 
-class ContactItemWidget extends ConsumerWidget {
+class ContactItemWidget extends StatelessWidget {
   const ContactItemWidget({required this.contact, super.key});
 
   final proto.Contact contact;
 
   @override
   // ignore: prefer_expression_function_bodies
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(
+    BuildContext context,
+  ) {
     final theme = Theme.of(context);
     //final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
