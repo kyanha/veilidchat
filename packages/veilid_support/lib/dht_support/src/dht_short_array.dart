@@ -29,8 +29,6 @@ class _DHTShortArrayCache {
   }
 }
 
-xxxx add listening to head and linked records
-
 class DHTShortArray {
   DHTShortArray._({required DHTRecord headRecord})
       : _headRecord = headRecord,
@@ -610,4 +608,33 @@ class DHTShortArray {
     Future<T> Function(T) update,
   ) =>
       eventualUpdateItem(pos, protobufUpdate(fromBuffer, update));
+
+  Future<void> watch() async {
+    // Watch head and all linked records
+    try {
+      await [_headRecord.watch(), ..._head.linkedRecords.map((r) => r.watch())]
+          .wait;
+    } finally {
+      await [
+        _headRecord.cancelWatch(),
+        ..._head.linkedRecords.map((r) => r.cancelWatch())
+      ].wait;
+    }
+  }
+
+  Future<void> listen(
+    Future<void> Function() onChanged,
+  ) async {
+    _headRecord.listen((update) => {
+      xxx
+    }
+  }
+
+  Future<void> cancelWatch() async {
+    // Watch head and all linked records
+    await _headRecord.cancelWatch();
+    for (final lr in _head.linkedRecords) {
+      await lr.cancelWatch();
+    }
+  }
 }
