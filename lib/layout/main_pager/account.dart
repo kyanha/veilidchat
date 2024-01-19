@@ -11,6 +11,7 @@ import '../../../proto/proto.dart' as proto;
 import '../../account_manager/account_manager.dart';
 import '../../contact_invitation/contact_invitation.dart';
 import '../../contacts/contacts.dart';
+import '../../theme/theme.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({

@@ -82,66 +82,40 @@ class AccountRepository {
     return userLogins[idx];
   }
 
-  AccountInfo getAccountInfo({required TypedKey accountMasterRecordKey}) {
+  AccountInfo? getAccountInfo({TypedKey? accountMasterRecordKey}) {
+    // Get active user if we have one
+    if (accountMasterRecordKey == null) {
+      final activeUserLogin = getActiveUserLogin();
+      if (activeUserLogin == null) {
+        // No user logged in
+        return null;
+      }
+      accountMasterRecordKey = activeUserLogin;
+    }
+
     // Get which local account we want to fetch the profile for
     final localAccount =
         fetchLocalAccount(accountMasterRecordKey: accountMasterRecordKey);
     if (localAccount == null) {
       // Local account does not exist
       return const AccountInfo(
-          status: AccountInfoStatus.noAccount, active: false);
+          status: AccountInfoStatus.noAccount,
+          active: false,
+          activeAccountInfo: null);
     }
 
     // See if we've logged into this account or if it is locked
     final activeUserLogin = getActiveUserLogin();
     final active = activeUserLogin == accountMasterRecordKey;
 
-    final login =
+    final userLogin =
         fetchUserLogin(accountMasterRecordKey: accountMasterRecordKey);
-    if (login == null) {
-      // Account was locked
-      return AccountInfo(
-          status: AccountInfoStatus.accountLocked, active: active);
-    }
-
-    // Pull the account DHT key, decode it and return it
-    final pool = DHTRecordPool.instance;
-    final accountRecord =
-        pool.getOpenedRecord(login.accountRecordInfo.accountRecord.recordKey);
-    if (accountRecord == null) {
-      // Account could not be read or decrypted from DHT
-      return AccountInfo(
-          status: AccountInfoStatus.accountInvalid, active: active);
-    }
-
-    // Got account, decrypted and decoded
-    return AccountInfo(
-        status: AccountInfoStatus.accountReady,
-        active: active,
-        accountRecord: accountRecord);
-  }
-
-  Future<ActiveAccountInfo?> fetchActiveAccountInfo() async {
-    // See if we've logged into this account or if it is locked
-    final activeUserLogin = getActiveUserLogin();
-    if (activeUserLogin == null) {
-      // No user logged in
-      return null;
-    }
-
-    // Get the user login
-    final userLogin = fetchUserLogin(accountMasterRecordKey: activeUserLogin);
     if (userLogin == null) {
       // Account was locked
-      return null;
-    }
-
-    // Get which local account we want to fetch the profile for
-    final localAccount =
-        fetchLocalAccount(accountMasterRecordKey: activeUserLogin);
-    if (localAccount == null) {
-      // Local account does not exist
-      return null;
+      return AccountInfo(
+          status: AccountInfoStatus.accountLocked,
+          active: active,
+          activeAccountInfo: null);
     }
 
     // Pull the account DHT key, decode it and return it
@@ -149,14 +123,21 @@ class AccountRepository {
     final accountRecord = pool
         .getOpenedRecord(userLogin.accountRecordInfo.accountRecord.recordKey);
     if (accountRecord == null) {
-      return null;
+      // Account could not be read or decrypted from DHT
+      return AccountInfo(
+          status: AccountInfoStatus.accountInvalid,
+          active: active,
+          activeAccountInfo: null);
     }
 
     // Got account, decrypted and decoded
-    return ActiveAccountInfo(
-      localAccount: localAccount,
-      userLogin: userLogin,
-      accountRecord: accountRecord,
+    return AccountInfo(
+      status: AccountInfoStatus.accountReady,
+      active: active,
+      activeAccountInfo: ActiveAccountInfo(
+          localAccount: localAccount,
+          userLogin: userLogin,
+          accountRecord: accountRecord),
     );
   }
 
@@ -411,24 +392,21 @@ class AccountRepository {
     // For all user logins if they arent open yet
     final activeLogins = await _activeLogins.get();
     for (final userLogin in activeLogins.userLogins) {
+      //// Account record key /////////////////////////////
       final accountRecordKey =
           userLogin.accountRecordInfo.accountRecord.recordKey;
       final existingAccountRecord = pool.getOpenedRecord(accountRecordKey);
-      if (existingAccountRecord != null) {
-        continue;
+      if (existingAccountRecord == null) {
+        final localAccount = fetchLocalAccount(
+            accountMasterRecordKey: userLogin.accountMasterRecordKey);
+
+        // Record not yet open, do it
+        final record = await pool.openOwned(
+            userLogin.accountRecordInfo.accountRecord,
+            parent: localAccount!.identityMaster.identityRecordKey);
+        // Watch the record's only (default) key
+        await record.watch();
       }
-      final localAccount = fetchLocalAccount(
-          accountMasterRecordKey: userLogin.accountMasterRecordKey);
-
-      // Record not yet open, do it
-      final record = await pool.openOwned(
-          userLogin.accountRecordInfo.accountRecord,
-          parent: localAccount!.identityMaster.identityRecordKey);
-      // Watch the record's only (default) key
-      await record.watch();
-
-      // .scope(
-      // (accountRec) => accountRec.getProtobuf(proto.Account.fromBuffer));
     }
   }
 
@@ -437,6 +415,7 @@ class AccountRepository {
 
     final activeLogins = await _activeLogins.get();
     for (final userLogin in activeLogins.userLogins) {
+      //// Account record key /////////////////////////////
       final accountRecordKey =
           userLogin.accountRecordInfo.accountRecord.recordKey;
       final accountRecord = pool.getOpenedRecord(accountRecordKey);

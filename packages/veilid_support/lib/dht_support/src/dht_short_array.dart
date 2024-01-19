@@ -29,6 +29,8 @@ class _DHTShortArrayCache {
   }
 }
 
+xxxx add listening to head and linked records
+
 class DHTShortArray {
   DHTShortArray._({required DHTRecord headRecord})
       : _headRecord = headRecord,

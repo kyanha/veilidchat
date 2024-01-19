@@ -67,8 +67,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final scale = theme.extension<ScaleScheme>()!;
 
     return BlocProvider(
-        create: (context) => DefaultDHTRecordCubit(
-            record: accountRecord, decodeState: proto.Account.fromBuffer),
+        create: (context) => AccountRecordCubit(record: accountRecord),
         child: Column(children: <Widget>[
           Row(children: [
             IconButton(
@@ -87,7 +86,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   context.go('/home/settings');
                 }).paddingLTRB(0, 0, 8, 0),
             context
-                .watch<DefaultDHTRecordCubit<proto.Account>>()
+                .watch<AccountRecordCubit>()
                 .state
                 .builder((context, account) => ProfileWidget(
                       name: account.profile.name,
@@ -96,7 +95,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 .expanded(),
           ]).paddingAll(8),
           context
-              .watch<DefaultDHTRecordCubit<proto.Account>>()
+              .watch<AccountRecordCubit>()
               .state
               .builder((context, account) => MainPager(
                   localAccounts: localAccounts,

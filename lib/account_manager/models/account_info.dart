@@ -1,5 +1,6 @@
 import 'package:meta/meta.dart';
-import 'package:veilid_support/veilid_support.dart';
+
+import 'active_account_info.dart';
 
 enum AccountInfoStatus {
   noAccount,
@@ -13,10 +14,10 @@ class AccountInfo {
   const AccountInfo({
     required this.status,
     required this.active,
-    this.accountRecord,
+    required this.activeAccountInfo,
   });
 
   final AccountInfoStatus status;
   final bool active;
-  final DHTRecord? accountRecord;
+  final ActiveAccountInfo? activeAccountInfo;
 }
