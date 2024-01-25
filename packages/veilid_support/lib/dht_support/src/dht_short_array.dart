@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:mutex/mutex.dart';
 import 'package:protobuf/protobuf.dart';
 
 import '../../../../veilid_support.dart';
@@ -32,7 +33,9 @@ class _DHTShortArrayCache {
 class DHTShortArray {
   DHTShortArray._({required DHTRecord headRecord})
       : _headRecord = headRecord,
-        _head = _DHTShortArrayCache() {
+        _head = _DHTShortArrayCache(),
+        _subscriptions = {},
+        _listenMutex = Mutex() {
     late final int stride;
     switch (headRecord.schema) {
       case DHTSchemaDFLT(oCnt: final oCnt):
@@ -58,6 +61,14 @@ class DHTShortArray {
 
   // Cached representation refreshed from head record
   _DHTShortArrayCache _head;
+
+  // Subscription to head and linked record internal changes
+  final Map<TypedKey, StreamSubscription<VeilidUpdateValueChange>>
+      _subscriptions;
+  // Stream of external changes
+  StreamController<void>? _watchController;
+  // Watch mutex to ensure we keep the representation valid
+  final Mutex _listenMutex;
 
   // Create a DHTShortArray
   // if smplWriter is specified, uses a SMPL schema with a single writer
@@ -273,6 +284,11 @@ class DHTShortArray {
           linkedKeys.map((key) => (sameRecords[key] ?? newRecords[key])!))
       ..index.addAll(index)
       ..free.addAll(free);
+
+    // Update watch if we have one in case linked records have been added
+    if (_watchController != null) {
+      await _watchAllRecords();
+    }
   }
 
   /// Pull the latest or updated copy of the head record from the network
@@ -280,7 +296,7 @@ class DHTShortArray {
       {bool forceRefresh = true, bool onlyUpdates = false}) async {
     // Get an updated head record copy if one exists
     final head = await _headRecord.getProtobuf(proto.DHTShortArray.fromBuffer,
-        forceRefresh: forceRefresh, onlyUpdates: onlyUpdates);
+        subkey: 0, forceRefresh: forceRefresh, onlyUpdates: onlyUpdates);
     if (head == null) {
       if (onlyUpdates) {
         // No update
@@ -297,6 +313,7 @@ class DHTShortArray {
   ////////////////////////////////////////////////////////////////
 
   Future<void> close() async {
+    await _watchController?.close();
     final futures = <Future<void>>[_headRecord.close()];
     for (final lr in _head.linkedRecords) {
       futures.add(lr.close());
@@ -305,7 +322,9 @@ class DHTShortArray {
   }
 
   Future<void> delete() async {
-    final futures = <Future<void>>[_headRecord.close()];
+    await _watchController?.close();
+
+    final futures = <Future<void>>[_headRecord.delete()];
     for (final lr in _head.linkedRecords) {
       futures.add(lr.delete());
     }
@@ -332,13 +351,50 @@ class DHTShortArray {
     }
   }
 
-  DHTRecord? _getRecord(int recordNumber) {
+  DHTRecord? _getLinkedRecord(int recordNumber) {
     if (recordNumber == 0) {
       return _headRecord;
     }
     recordNumber--;
     if (recordNumber >= _head.linkedRecords.length) {
       return null;
+    }
+    return _head.linkedRecords[recordNumber];
+  }
+
+  Future<DHTRecord> _getOrCreateLinkedRecord(int recordNumber) async {
+    if (recordNumber == 0) {
+      return _headRecord;
+    }
+    final pool = DHTRecordPool.instance;
+    recordNumber--;
+    while (recordNumber >= _head.linkedRecords.length) {
+      // Linked records must use SMPL schema so writer can be specified
+      // Use the same writer as the head record
+      final smplWriter = _headRecord.writer!;
+      final parent = pool.getParentRecordKey(_headRecord.key);
+      final routingContext = _headRecord.routingContext;
+      final crypto = _headRecord.crypto;
+
+      final schema = DHTSchema.smpl(
+          oCnt: 0,
+          members: [DHTSchemaMember(mKey: smplWriter.key, mCnt: _stride)]);
+      final dhtCreateRecord = await pool.create(
+          parent: parent,
+          routingContext: routingContext,
+          schema: schema,
+          crypto: crypto,
+          writer: smplWriter);
+      // Reopen with SMPL writer
+      await dhtCreateRecord.close();
+      final dhtRecord = await pool.openWrite(dhtCreateRecord.key, smplWriter,
+          parent: parent, routingContext: routingContext, crypto: crypto);
+
+      // Add to linked records
+      _head.linkedRecords.add(dhtRecord);
+      if (!await _tryWriteHead()) {
+        await _refreshHead();
+      }
     }
     return _head.linkedRecords[recordNumber];
   }
@@ -368,7 +424,7 @@ class DHTShortArray {
     }
     final index = _head.index[pos];
     final recordNumber = index ~/ _stride;
-    final record = _getRecord(recordNumber);
+    final record = _getLinkedRecord(recordNumber);
     assert(record != null, 'Record does not exist');
 
     final recordSubkey = (index % _stride) + ((recordNumber == 0) ? 1 : 0);
@@ -472,7 +528,7 @@ class DHTShortArray {
       final removedIdx = _head.index.removeAt(pos);
       _freeIndex(removedIdx);
       final recordNumber = removedIdx ~/ _stride;
-      final record = _getRecord(recordNumber);
+      final record = _getLinkedRecord(recordNumber);
       assert(record != null, 'Record does not exist');
       final recordSubkey =
           (removedIdx % _stride) + ((recordNumber == 0) ? 1 : 0);
@@ -532,11 +588,10 @@ class DHTShortArray {
     final index = _head.index[pos];
 
     final recordNumber = index ~/ _stride;
-    final record = _getRecord(recordNumber);
-    assert(record != null, 'Record does not exist');
+    final record = await _getOrCreateLinkedRecord(recordNumber);
 
     final recordSubkey = (index % _stride) + ((recordNumber == 0) ? 1 : 0);
-    return record!.tryWriteBytes(newValue, subkey: recordSubkey);
+    return record.tryWriteBytes(newValue, subkey: recordSubkey);
   }
 
   Future<void> eventualWriteItem(int pos, Uint8List newValue) async {
@@ -609,32 +664,97 @@ class DHTShortArray {
   ) =>
       eventualUpdateItem(pos, protobufUpdate(fromBuffer, update));
 
-  Future<void> watch() async {
-    // Watch head and all linked records
+  // Watch head and all linked records
+  Future<void> _watchAllRecords() async {
+    // This will update any existing watches if necessary
     try {
       await [_headRecord.watch(), ..._head.linkedRecords.map((r) => r.watch())]
           .wait;
-    } finally {
-      await [
-        _headRecord.cancelWatch(),
-        ..._head.linkedRecords.map((r) => r.cancelWatch())
-      ].wait;
+
+      // Update changes to the head record
+      if (!_subscriptions.containsKey(_headRecord.key)) {
+        _subscriptions[_headRecord.key] =
+            await _headRecord.listen(_onUpdateRecord);
+      }
+      // Update changes to any linked records
+      for (final lr in _head.linkedRecords) {
+        if (!_subscriptions.containsKey(lr.key)) {
+          _subscriptions[lr.key] = await lr.listen(_onUpdateRecord);
+        }
+      }
+    } on Exception {
+      // If anything fails, try to cancel the watches
+      await _cancelRecordWatches();
+      rethrow;
     }
   }
 
-  Future<void> listen(
-    Future<void> Function() onChanged,
-  ) async {
-    _headRecord.listen((update) => {
-      xxx
-    }
-  }
-
-  Future<void> cancelWatch() async {
-    // Watch head and all linked records
+  // Stop watching for changes to head and linked records
+  Future<void> _cancelRecordWatches() async {
     await _headRecord.cancelWatch();
     for (final lr in _head.linkedRecords) {
       await lr.cancelWatch();
     }
+    await _subscriptions.values.map((s) => s.cancel()).wait;
+    _subscriptions.clear();
   }
+
+  // Called when a head or linked record changes
+  Future<void> _onUpdateRecord(VeilidUpdateValueChange update) async {
+    final record = _head.linkedRecords.firstWhere(
+        (element) => element.key == update.key,
+        orElse: () => _headRecord);
+
+    // If head record subkey zero changes, then the layout
+    // of the dhtshortarray has changed
+    var updateHead = false;
+    if (record == _headRecord && update.subkeys.containsSubkey(0)) {
+      updateHead = true;
+    }
+
+    // If we have any other subkeys to update, do them first
+    final unord = List<Future<Uint8List?>>.empty(growable: true);
+    for (final skr in update.subkeys) {
+      for (var subkey = skr.low; subkey <= skr.high; subkey++) {
+        // Skip head subkey
+        if (subkey == 0) {
+          continue;
+        }
+        // Get the subkey, which caches the result in the local record store
+        unord.add(record.get(subkey: subkey, forceRefresh: true));
+      }
+    }
+    await unord.wait;
+
+    // Then update the head record
+    if (updateHead) {
+      await _refreshHead(forceRefresh: false);
+    }
+    // Then commit the change to any listeners
+    _watchController?.sink.add(null);
+  }
+
+  Future<StreamSubscription<void>> listen(
+    void Function() onChanged,
+  ) =>
+      _listenMutex.protect(() async {
+        // If don't have a controller yet, set it up
+        if (_watchController == null) {
+          // Set up watch requirements
+          _watchController = StreamController<void>.broadcast(onCancel: () {
+            // If there are no more listeners then we can get
+            // rid of the controller and drop our subscriptions
+            unawaited(_listenMutex.protect(() async {
+              // Cancel watches of head and linked records
+              await _cancelRecordWatches();
+              _watchController = null;
+            }));
+          });
+
+          // Start watching head and linked records
+          await _watchAllRecords();
+        }
+        // Return subscription
+        return _watchController!.stream.listen((_) => onChanged());
+      });
 }

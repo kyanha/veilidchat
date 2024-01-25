@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart';
 
 import '../../../veilid_support.dart';
@@ -31,9 +33,13 @@ class DHTRecord {
   final DHTRecordCrypto _crypto;
   bool _open;
   bool _valid;
+  @internal
   StreamController<VeilidUpdateValueChange>? watchController;
+  @internal
   bool needsWatchStateUpdate;
+  @internal
   bool inWatchStateUpdate;
+  @internal
   WatchState? watchState;
 
   int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
@@ -45,6 +51,7 @@ class DHTRecord {
   DHTSchema get schema => _recordDescriptor.schema;
   int get subkeyCount => _recordDescriptor.schema.subkeyCount();
   KeyPair? get writer => _writer;
+  DHTRecordCrypto get crypto => _crypto;
   OwnedDHTRecordPointer get ownedDHTRecordPointer =>
       OwnedDHTRecordPointer(recordKey: key, owner: ownerKeyPair!);
 
@@ -266,9 +273,12 @@ class DHTRecord {
       Timestamp? expiration,
       int? count}) async {
     // Set up watch requirements which will get picked up by the next tick
-    watchState =
-        WatchState(subkeys: subkeys, expiration: expiration, count: count);
-    needsWatchStateUpdate = true;
+    final oldWatchState = watchState;
+    watchState = WatchState(
+        subkeys: subkeys?.lock, expiration: expiration, count: count);
+    if (oldWatchState != watchState) {
+      needsWatchStateUpdate = true;
+    }
   }
 
   Future<StreamSubscription<VeilidUpdateValueChange>> listen(
@@ -294,7 +304,9 @@ class DHTRecord {
 
   Future<void> cancelWatch() async {
     // Tear down watch requirements
-    watchState = null;
-    needsWatchStateUpdate = true;
+    if (watchState != null) {
+      watchState = null;
+      needsWatchStateUpdate = true;
+    }
   }
 }

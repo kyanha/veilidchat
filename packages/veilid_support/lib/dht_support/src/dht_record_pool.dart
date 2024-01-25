@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -37,13 +38,19 @@ class OwnedDHTRecordPointer with _$OwnedDHTRecordPointer {
 }
 
 /// Watch state
-class WatchState {
-  WatchState(
-      {required this.subkeys, required this.expiration, required this.count});
-  List<ValueSubkeyRange>? subkeys;
-  Timestamp? expiration;
-  int? count;
-  Timestamp? realExpiration;
+class WatchState extends Equatable {
+  const WatchState(
+      {required this.subkeys,
+      required this.expiration,
+      required this.count,
+      this.realExpiration});
+  final IList<ValueSubkeyRange>? subkeys;
+  final Timestamp? expiration;
+  final int? count;
+  final Timestamp? realExpiration;
+
+  @override
+  List<Object?> get props => [subkeys, expiration, count, realExpiration];
 }
 
 class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
@@ -400,11 +407,17 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
               try {
                 final realExpiration = await kv.value.routingContext
                     .watchDHTValues(kv.key,
-                        subkeys: ws.subkeys,
+                        subkeys: ws.subkeys?.toList(),
                         count: ws.count,
                         expiration: ws.expiration);
                 kv.value.needsWatchStateUpdate = false;
-                ws.realExpiration = realExpiration;
+
+                // Update watch state with real expiration
+                kv.value.watchState = WatchState(
+                    subkeys: ws.subkeys,
+                    expiration: ws.expiration,
+                    count: ws.count,
+                    realExpiration: realExpiration);
               } on VeilidAPIException {
                 // Failed to cancel DHT watch, try again next tick
               }

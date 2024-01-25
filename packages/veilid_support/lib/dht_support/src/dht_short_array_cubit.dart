@@ -21,7 +21,7 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
       } on Exception catch (e) {
         emit(AsyncValue.error(e));
       }
-
+xxx do this now
       shortArray. xxx add listen to head and linked records in dht_short_array
 
       _subscription = await record.listen((update) async {
