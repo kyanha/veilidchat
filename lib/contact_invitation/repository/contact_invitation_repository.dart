@@ -1,16 +1,11 @@
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:mutex/mutex.dart';
+import 'package:veilid_support/veilid_support.dart';
 
-import '../../entities/entities.dart';
+import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
-import '../../../packages/veilid_support/veilid_support.dart';
-import 'account.dart';
-
-part 'contact_invitation_list_manager.g.dart';
+import '../models/models.dart';
 
 //////////////////////////////////////////////////
 
@@ -24,22 +19,6 @@ typedef GetEncryptionKeyCallback = Future<SecretKey?> Function(
     EncryptionKeyType encryptionKeyType,
     Uint8List encryptedSecret);
 
-//////////////////////////////////////////////////
-@immutable
-class AcceptedContact {
-  const AcceptedContact({
-    required this.profile,
-    required this.remoteIdentity,
-    required this.remoteConversationRecordKey,
-    required this.localConversationRecordKey,
-  });
-
-  final proto.Profile profile;
-  final IdentityMaster remoteIdentity;
-  final TypedKey remoteConversationRecordKey;
-  final TypedKey localConversationRecordKey;
-}
-
 @immutable
 class InvitationStatus {
   const InvitationStatus({required this.acceptedContact});
@@ -50,75 +29,65 @@ class InvitationStatus {
 
 //////////////////////////////////////////////////
 // Mutable state for per-account contact invitations
-@riverpod
-class ContactInvitationListManager extends _$ContactInvitationListManager {
-  ContactInvitationListManager._({
+class ContactInvitationRepository {
+  ContactInvitationRepository._({
     required ActiveAccountInfo activeAccountInfo,
+    required proto.Account account,
     required DHTShortArray dhtRecord,
   })  : _activeAccountInfo = activeAccountInfo,
-        _dhtRecord = dhtRecord,
-        _records = IList();
+        _account = account,
+        _dhtRecord = dhtRecord;
 
-  @override
-  FutureOr<IList<proto.ContactInvitationRecord>> build(
-      ActiveAccountInfo activeAccountInfo) async {
-    // Load initial todo list from the remote repository
-    ref.onDispose  xxxx call close and pass dhtrecord through... could use a context object 
-    and a DHTValueChangeProvider that we watch in build that updates when dht records change
-    return _open(activeAccountInfo);
-  }
-
-  static Future<ContactInvitationListManager> _open(
-      ActiveAccountInfo activeAccountInfo) async {
+  static Future<ContactInvitationRepository> open(
+      ActiveAccountInfo activeAccountInfo, proto.Account account) async {
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-    final dhtRecord = await DHTShortArray.openOwned(
+    final contactInvitationListRecordKey =
         proto.OwnedDHTRecordPointerProto.fromProto(
-            activeAccountInfo.account.contactInvitationRecords),
+            account.contactInvitationRecords);
+
+    final dhtRecord = await DHTShortArray.openOwned(
+        contactInvitationListRecordKey,
         parent: accountRecordKey);
 
-    return ContactInvitationListManager._(
-        activeAccountInfo: activeAccountInfo, dhtRecord: dhtRecord);
+    return ContactInvitationRepository._(
+        activeAccountInfo: activeAccountInfo,
+        account: account,
+        dhtRecord: dhtRecord);
   }
 
   Future<void> close() async {
-    state = "";
     await _dhtRecord.close();
   }
 
-  Future<void> refresh() async {
-    for (var i = 0; i < _dhtRecord.length; i++) {
-      final cir = await _dhtRecord.getItem(i);
-      if (cir == null) {
-        throw Exception('Failed to get contact invitation record');
-      }
-      _records = _records.add(proto.ContactInvitationRecord.fromBuffer(cir));
-    }
-  }
+  // Future<void> refresh() async {
+  //   for (var i = 0; i < _dhtRecord.length; i++) {
+  //     final cir = await _dhtRecord.getItem(i);
+  //     if (cir == null) {
+  //       throw Exception('Failed to get contact invitation record');
+  //     }
+  //     _records = _records.add(proto.ContactInvitationRecord.fromBuffer(cir));
+  //   }
+  // }
 
   Future<Uint8List> createInvitation(
       {required EncryptionKeyType encryptionKeyType,
       required String encryptionKey,
       required String message,
       required Timestamp? expiration}) async {
-    final pool = await DHTRecordPool.instance();
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-    final identityKey =
-        _activeAccountInfo.localAccount.identityMaster.identityPublicKey;
-    final identitySecret = _activeAccountInfo.userLogin.identitySecret.value;
+    final pool = DHTRecordPool.instance;
 
     // Generate writer keypair to share with new contact
     final cs = await pool.veilid.bestCryptoSystem();
     final contactRequestWriter = await cs.generateKeyPair();
-    final conversationWriter = _activeAccountInfo.getConversationWriter();
+    final conversationWriter = _activeAccountInfo.conversationWriter;
 
     // Encrypt the writer secret with the encryption key
     final encryptedSecret = await encryptionKeyType.encryptSecretToBytes(
-        secret: contactRequestWriter.secret,
-        cryptoKind: cs.kind(),
-        encryptionKey: encryptionKey,
+      secret: contactRequestWriter.secret,
+      cryptoKind: cs.kind(),
+      encryptionKey: encryptionKey,
     );
 
     // Create local chat DHT record with the account record key as its parent
@@ -127,7 +96,7 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
     // identity key
     late final Uint8List signedContactInvitationBytes;
     await (await pool.create(
-            parent: accountRecordKey,
+            parent: _activeAccountInfo.accountRecordKey,
             schema: DHTSchema.smpl(oCnt: 0, members: [
               DHTSchemaMember(mKey: conversationWriter.key, mCnt: 1)
             ])))
@@ -136,7 +105,7 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
       // Make ContactRequestPrivate and encrypt with the writer secret
       final crpriv = proto.ContactRequestPrivate()
         ..writerKey = contactRequestWriter.key.toProto()
-        ..profile = _activeAccountInfo.account.profile
+        ..profile = _account.profile
         ..identityMasterRecordKey =
             _activeAccountInfo.userLogin.accountMasterRecordKey.toProto()
         ..chatRecordKey = localConversation.key.toProto()
@@ -152,7 +121,7 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
 
       // Create DHT unicast inbox for ContactRequest
       await (await pool.create(
-              parent: accountRecordKey,
+              parent: _activeAccountInfo.accountRecordKey,
               schema: DHTSchema.smpl(oCnt: 1, members: [
                 DHTSchemaMember(mCnt: 1, mKey: contactRequestWriter.key)
               ]),
@@ -168,8 +137,9 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
         final cinvbytes = cinv.writeToBuffer();
         final scinv = proto.SignedContactInvitation()
           ..contactInvitation = cinvbytes
-          ..identitySignature =
-              (await cs.sign(identityKey, identitySecret, cinvbytes)).toProto();
+          ..identitySignature = (await cs.sign(
+                  conversationWriter.key, conversationWriter.secret, cinvbytes))
+              .toProto();
         signedContactInvitationBytes = scinv.writeToBuffer();
 
         // Create ContactInvitationRecord
@@ -185,15 +155,9 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
 
         // Add ContactInvitationRecord to account's list
         // if this fails, don't keep retrying, user can try again later
-        await (await DHTShortArray.openOwned(
-                proto.OwnedDHTRecordPointerProto.fromProto(
-                    _activeAccountInfo.account.contactInvitationRecords),
-                parent: accountRecordKey))
-            .scope((cirList) async {
-          if (await cirList.tryAddItem(cinvrec.writeToBuffer()) == false) {
-            throw Exception('Failed to add contact invitation record');
-          }
-        });
+        if (await _dhtRecord.tryAddItem(cinvrec.writeToBuffer()) == false) {
+          throw Exception('Failed to add contact invitation record');
+        }
       });
     });
 
@@ -203,77 +167,71 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
   Future<void> deleteInvitation(
       {required bool accepted,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove ContactInvitationRecord from account's list
-    await (await DHTShortArray.openOwned(
+    for (var i = 0; i < _dhtRecord.length; i++) {
+      final item = await _dhtRecord.getItemProtobuf(
+          proto.ContactInvitationRecord.fromBuffer, i);
+      if (item == null) {
+        throw Exception('Failed to get contact invitation record');
+      }
+      if (item.contactRequestInbox.recordKey ==
+          contactInvitationRecord.contactRequestInbox.recordKey) {
+        await _dhtRecord.tryRemoveItem(i);
+        break;
+      }
+    }
+    await (await pool.openOwned(
             proto.OwnedDHTRecordPointerProto.fromProto(
-                _activeAccountInfo.account.contactInvitationRecords),
+                contactInvitationRecord.contactRequestInbox),
             parent: accountRecordKey))
-        .scope((cirList) async {
-      for (var i = 0; i < cirList.length; i++) {
-        final item = await cirList.getItemProtobuf(
-            proto.ContactInvitationRecord.fromBuffer, i);
-        if (item == null) {
-          throw Exception('Failed to get contact invitation record');
-        }
-        if (item.contactRequestInbox.recordKey ==
-            contactInvitationRecord.contactRequestInbox.recordKey) {
-          await cirList.tryRemoveItem(i);
-          break;
-        }
-      }
-      await (await pool.openOwned(
-              proto.OwnedDHTRecordPointerProto.fromProto(
-                  contactInvitationRecord.contactRequestInbox),
-              parent: accountRecordKey))
-          .scope((contactRequestInbox) async {
-        // Wipe out old invitation so it shows up as invalid
-        await contactRequestInbox.tryWriteBytes(Uint8List(0));
-        await contactRequestInbox.delete();
-      });
-      if (!accepted) {
-        await (await pool.openRead(
-                proto.TypedKeyProto.fromProto(
-                    contactInvitationRecord.localConversationRecordKey),
-                parent: accountRecordKey))
-            .delete();
-      }
+        .scope((contactRequestInbox) async {
+      // Wipe out old invitation so it shows up as invalid
+      await contactRequestInbox.tryWriteBytes(Uint8List(0));
+      await contactRequestInbox.delete();
     });
+    if (!accepted) {
+      await (await pool.openRead(
+              proto.TypedKeyProto.fromProto(
+                  contactInvitationRecord.localConversationRecordKey),
+              parent: accountRecordKey))
+          .delete();
+    }
   }
 
   Future<ValidContactInvitation?> validateInvitation(
       {required Uint8List inviteData,
       required GetEncryptionKeyCallback getEncryptionKeyCallback}) async {
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
+    final pool = DHTRecordPool.instance;
 
+    // Get contact request inbox from invitation
     final signedContactInvitation =
         proto.SignedContactInvitation.fromBuffer(inviteData);
-
     final contactInvitationBytes =
         Uint8List.fromList(signedContactInvitation.contactInvitation);
     final contactInvitation =
         proto.ContactInvitation.fromBuffer(contactInvitationBytes);
-
     final contactRequestInboxKey =
         proto.TypedKeyProto.fromProto(contactInvitation.contactRequestInboxKey);
 
     ValidContactInvitation? out;
 
-    final pool = await DHTRecordPool.instance();
     final cs = await pool.veilid.getCryptoSystem(contactRequestInboxKey.kind);
 
     // See if we're chatting to ourselves, if so, don't delete it here
+    final isSelf = _contactIdentityMaster.identityPublicKey ==
+        _activeAccountInfo.localAccount.identityMaster.identityPublicKey;
+xxx this doesn't work and the upper one doesnt either
     final isSelf = _records.indexWhere((cir) =>
             proto.TypedKeyProto.fromProto(cir.contactRequestInbox.recordKey) ==
             contactRequestInboxKey) !=
         -1;
 
     await (await pool.openRead(contactRequestInboxKey,
-            parent: accountRecordKey))
+            parent: _activeAccountInfo.accountRecordKey))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
       //
       final contactRequest = await contactRequestInbox
@@ -315,8 +273,8 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
           key: proto.CryptoKeyProto.fromProto(contactRequestPrivate.writerKey),
           secret: writerSecret);
 
-      out = ValidContactInvitation._(
-          contactInvitationManager: this,
+      out = ValidContactInvitation(
+          activeAccountInfo: _activeAccountInfo,
           signedContactInvitation: signedContactInvitation,
           contactInvitation: contactInvitation,
           contactRequestInboxKey: contactRequestInboxKey,
@@ -334,7 +292,7 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
     // Open the contact request inbox
     try {
-      final pool = await DHTRecordPool.instance();
+      final pool = DHTRecordPool.instance;
       final accountRecordKey =
           activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
       final writerKey =
@@ -436,6 +394,7 @@ class ContactInvitationListManager extends _$ContactInvitationListManager {
   //
 
   final ActiveAccountInfo _activeAccountInfo;
+  final proto.Account _account;
   final DHTShortArray _dhtRecord;
-  IList<proto.ContactInvitationRecord> _records;
+  //IList<proto.ContactInvitationRecord> _records;
 }

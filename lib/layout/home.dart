@@ -7,7 +7,6 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../proto/proto.dart' as proto;
 import '../account_manager/account_manager.dart';
 import '../chat/chat.dart';
 import '../theme/theme.dart';
@@ -115,7 +114,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
 
         final account = AccountRepository.instance
-            .getAccountInfo(accountMasterRecordKey: activeUserLogin);
+            .getAccountInfo(accountMasterRecordKey: activeUserLogin)!;
 
         switch (account.status) {
           case AccountInfoStatus.noAccount:
@@ -152,7 +151,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
               context,
               localAccounts,
               activeUserLogin,
-              account.accountRecord!,
+              account.activeAccountInfo!.accountRecord,
             );
         }
       });

@@ -497,6 +497,9 @@ class DHTShortArray {
   }
 
   Future<bool> trySwapItem(int aPos, int bPos) async {
+    if (aPos == bPos) {
+      return false;
+    }
     await _refreshHead(onlyUpdates: true);
 
     final oldHead = _DHTShortArrayCache.from(_head);
@@ -517,6 +520,9 @@ class DHTShortArray {
       _head = oldHead;
       return false;
     }
+
+    // A change happened, notify any listeners
+    _watchController?.sink.add(null);
     return true;
   }
 
@@ -539,7 +545,12 @@ class DHTShortArray {
         return null;
       }
 
-      return record!.get(subkey: recordSubkey);
+      final result = await record!.get(subkey: recordSubkey);
+      if (result != null) {
+        // A change happened, notify any listeners
+        _watchController?.sink.add(null);
+      }
+      return result;
     } on Exception catch (_) {
       // Exception on write means state needs to be reverted
       _head = oldHead;
@@ -575,6 +586,10 @@ class DHTShortArray {
       _head = oldHead;
       return false;
     }
+
+    // A change happened, notify any listeners
+    _watchController?.sink.add(null);
+
     return true;
   }
 
@@ -591,7 +606,13 @@ class DHTShortArray {
     final record = await _getOrCreateLinkedRecord(recordNumber);
 
     final recordSubkey = (index % _stride) + ((recordNumber == 0) ? 1 : 0);
-    return record.tryWriteBytes(newValue, subkey: recordSubkey);
+    final result = await record.tryWriteBytes(newValue, subkey: recordSubkey);
+
+    if (result != null) {
+      // A change happened, notify any listeners
+      _watchController?.sink.add(null);
+    }
+    return result;
   }
 
   Future<void> eventualWriteItem(int pos, Uint8List newValue) async {

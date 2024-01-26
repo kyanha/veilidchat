@@ -13,7 +13,10 @@ class ActiveAccountInfo {
   });
   //
 
-  KeyPair getConversationWriter() {
+  TypedKey get accountRecordKey =>
+      userLogin.accountRecordInfo.accountRecord.recordKey;
+
+  KeyPair get conversationWriter {
     final identityKey = localAccount.identityMaster.identityPublicKey;
     final identitySecret = userLogin.identitySecret;
     return KeyPair(key: identityKey, secret: identitySecret.value);

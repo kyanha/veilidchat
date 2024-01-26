@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
@@ -57,6 +55,8 @@ class AccountPageState extends State<AccountPage> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
+
+    final records = widget.account.contactInvitationRecords;
 
     final contactInvitationRecordList =
         ref.watch(fetchContactInvitationRecordsProvider).asData?.value ??
