@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
@@ -7,36 +9,61 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../account_manager/account_manager.dart';
-import '../chat/chat.dart';
-import '../theme/theme.dart';
-import '../tools/tools.dart';
-import 'main_pager/main_pager.dart';
+import '../../../account_manager/account_manager.dart';
+import '../../../contact_invitation/contact_invitation.dart';
+import '../../../proto/proto.dart' as proto;
+import '../../../theme/theme.dart';
+import '../../../tools/tools.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class HomeAccountReady extends StatefulWidget {
+  const HomeAccountReady(
+      {required IList<LocalAccount> localAccounts,
+      required TypedKey activeUserLogin,
+      required ActiveAccountInfo activeAccountInfo,
+      required proto.Account account,
+      super.key})
+      : _localAccounts = localAccounts,
+        _activeUserLogin = activeUserLogin,
+        _activeAccountInfo = activeAccountInfo,
+        _account = account;
+
+  final IList<LocalAccount> _localAccounts;
+  final TypedKey _activeUserLogin;
+  final ActiveAccountInfo _activeAccountInfo;
+  final proto.Account _account;
 
   @override
-  HomePageState createState() => HomePageState();
+  HomeAccountReadyState createState() => HomeAccountReadyState();
 }
 
-class HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  final _unfocusNode = FocusNode();
+class HomeAccountReadyState extends State<HomeAccountReady>
+    with TickerProviderStateMixin {
+  //
+  ContactInvitationRepository? _contactInvitationRepository;
 
+  //
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.normal);
+    // Async initialize repositories for the active user
+    // xxx: this should not be necessary
+    // xxx: but RepositoryProvider doesn't call dispose()
+    Future.delayed(Duration.zero, () async {
+      //
+      final cir = await ContactInvitationRepository.open(
+          widget._activeAccountInfo, widget._account);
+
+      setState(() {
+        _contactInvitationRepository = cir;
+      });
     });
   }
 
   @override
   void dispose() {
-    _unfocusNode.dispose();
     super.dispose();
+    _contactInvitationRepository?.dispose();
   }
 
   // ignore: prefer_expression_function_bodies
@@ -64,6 +91,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       DHTRecord accountRecord) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+
+xxx get rid of the cubit here and 
 
     return BlocProvider(
         create: (context) => AccountRecordCubit(record: accountRecord),
@@ -103,6 +132,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
               .expanded()
         ]));
   }
+
+xxx get rid of this whole function
 
   Widget buildUserPanel() => Builder(builder: (context) {
         final activeUserLogin = context.watch<ActiveUserLoginCubit>().state;
@@ -190,21 +221,15 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scale = theme.extension<ScaleScheme>()!;
+    if (_contactInvitationRepository == null) {
+      return waitingPage(context);
+    }
 
-    return SafeArea(
-        child: GestureDetector(
-            onTap: () => FocusScope.of(context).requestFocus(_unfocusNode),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                  color: scale.primaryScale.activeElementBackground),
-              child: responsiveVisibility(
-                context: context,
-                phone: false,
-              )
-                  ? buildTablet()
-                  : buildPhone(),
-            )));
+    return responsiveVisibility(
+      context: context,
+      phone: false,
+    )
+        ? buildTablet()
+        : buildPhone();
   }
 }

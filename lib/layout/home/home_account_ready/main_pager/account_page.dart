@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../../proto/proto.dart' as proto;
-import '../../account_manager/account_manager.dart';
-import '../../contact_invitation/contact_invitation.dart';
-import '../../contacts/contacts.dart';
-import '../../theme/theme.dart';
+import '../../../../proto/proto.dart' as proto;
+import '../../../account_manager/account_manager.dart';
+import '../../../contact_invitation/contact_invitation.dart';
+import '../../../contacts/contacts.dart';
+import '../../../theme/theme.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({

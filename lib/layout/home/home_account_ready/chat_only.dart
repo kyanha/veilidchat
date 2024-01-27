@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../chat/chat.dart';
-import '../tools/tools.dart';
+import '../../../chat/chat.dart';
+import '../../../tools/tools.dart';
 
 class ChatOnlyPage extends StatefulWidget {
   const ChatOnlyPage({super.key});

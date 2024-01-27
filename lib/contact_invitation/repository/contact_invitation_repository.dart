@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -27,6 +29,7 @@ class InvitationStatus {
 
 //////////////////////////////////////////////////
 
+
 //////////////////////////////////////////////////
 // Mutable state for per-account contact invitations
 class ContactInvitationRepository {
@@ -37,9 +40,14 @@ class ContactInvitationRepository {
   })  : _activeAccountInfo = activeAccountInfo,
         _account = account,
         _dhtRecord = dhtRecord;
+  
+  void dispose() {
+    unawaited(close());
+  }
 
   static Future<ContactInvitationRepository> open(
       ActiveAccountInfo activeAccountInfo, proto.Account account) async {
+
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 

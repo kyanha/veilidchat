@@ -136,7 +136,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
       navigator.pop();
       return;
     }
-    final generator = createContactInvitation(
+    final generator = ContactInvitationRespositoryxxx.createContactInvitation(
         activeAccountInfo: activeAccountInfo,
         encryptionKeyType: _encryptionKeyType,
         encryptionKey: _encryptionKey,

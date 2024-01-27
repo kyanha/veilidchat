@@ -60,11 +60,14 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
             parentByChild: IMap(),
             rootRecords: ISet()),
         _opened = <TypedKey, DHTRecord>{},
+        _locks = AsyncTagLock(),
         _routingContext = routingContext,
         _veilid = veilid;
 
   // Persistent DHT record list
   DHTRecordPoolAllocations _state;
+  // Lock table to ensure we don't open the same record more than once
+  final AsyncTagLock<TypedKey> _locks;
   // Which DHT records are currently open
   final Map<TypedKey, DHTRecord> _opened;
   // Default routing context to use for new keys
@@ -115,6 +118,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     if (rec == null) {
       throw StateError('record already closed');
     }
+    _locks.unlockTag(key);
   }
 
   Future<void> deleteDeep(TypedKey parent) async {
@@ -247,6 +251,8 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       TypedKey? parent,
       int defaultSubkey = 0,
       DHTRecordCrypto? crypto}) async {
+    await _locks.lockTag(recordKey);
+
     final dhtctx = routingContext ?? _routingContext;
 
     late final DHTRecord rec;
@@ -278,6 +284,8 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     int defaultSubkey = 0,
     DHTRecordCrypto? crypto,
   }) async {
+    await _locks.lockTag(recordKey);
+
     final dhtctx = routingContext ?? _routingContext;
 
     late final DHTRecord rec;
@@ -325,7 +333,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
         crypto: crypto,
       );
 
-  /// Look up an opened DHRRecord
+  /// Look up an opened DHTRecord
   DHTRecord? getOpenedRecord(TypedKey recordKey) => _opened[recordKey];
 
   /// Get the parent of a DHTRecord key if it exists

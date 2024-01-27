@@ -11,14 +11,14 @@ import 'package:stylish_bottom_bar/model/bar_items.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../../proto/proto.dart' as proto;
-import '../../../tools/tools.dart';
-import '../../account_manager/account_manager.dart';
-import '../../contact_invitation/contact_invitation.dart';
-import '../../theme/theme.dart';
-import 'account.dart';
+import '../../../../proto/proto.dart' as proto;
+import '../../../../tools/tools.dart';
+import '../../../account_manager/account_manager.dart';
+import '../../../contact_invitation/contact_invitation.dart';
+import '../../../theme/theme.dart';
+import 'account_page.dart';
 import 'bottom_sheet_action_button.dart';
-import 'chats.dart';
+import 'chats_page.dart';
 
 class MainPager extends StatefulWidget {
   const MainPager(

@@ -2,9 +2,9 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 
-import '../../../proto/proto.dart' as proto;
-import '../../account_manager/account_manager.dart';
-import '../../tools/tools.dart';
+import '../../../../proto/proto.dart' as proto;
+import '../../../account_manager/account_manager.dart';
+import '../../../tools/tools.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
