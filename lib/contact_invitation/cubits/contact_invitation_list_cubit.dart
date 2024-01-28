@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -29,22 +30,19 @@ class InvitationStatus {
 
 //////////////////////////////////////////////////
 
-
 //////////////////////////////////////////////////
 // Mutable state for per-account contact invitations
-class ContactInvitationRepository {
-  ContactInvitationRepository._({
+
+class ContactInvitationListCubit extends DHTShortArrayCubit<proto.ContactInvitation> {
+  ContactInvitationListCubit({
     required ActiveAccountInfo activeAccountInfo,
     required proto.Account account,
     required DHTShortArray dhtRecord,
   })  : _activeAccountInfo = activeAccountInfo,
         _account = account,
-        _dhtRecord = dhtRecord;
-  
-  void dispose() {
-    unawaited(close());
-  }
-
+        _dhtRecord = dhtRecord,
+        super(shortArray: dhtRecord, decodeElement: proto.ContactInvitation.fromBuffer);
+xxx convert the rest of this to cubit
   static Future<ContactInvitationRepository> open(
       ActiveAccountInfo activeAccountInfo, proto.Account account) async {
 
@@ -65,8 +63,10 @@ class ContactInvitationRepository {
         dhtRecord: dhtRecord);
   }
 
+  @override
   Future<void> close() async {
     await _dhtRecord.close();
+    await super.close();
   }
 
   // Future<void> refresh() async {

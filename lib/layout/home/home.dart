@@ -9,8 +9,8 @@ import '../../tools/tools.dart';
 import 'home_account_invalid.dart';
 import 'home_account_locked.dart';
 import 'home_account_missing.dart';
-import 'home_account_ready.dart';
 import 'home_account_ready/home_account_ready.dart';
+import 'home_no_active.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -40,9 +40,11 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget buildWithLogin(BuildContext context, IList<LocalAccount> localAccounts,
       Typed<FixedEncodedString43>? activeUserLogin) {
+    final activeUserLogin = context.watch<ActiveUserLoginCubit>().state;
+
     if (activeUserLogin == null) {
       // If no logged in user is active, show the loading panel
-      return waitingPage(context);
+      return const HomeNoActive();
     }
 
     final accountInfo = AccountRepository.instance
@@ -72,8 +74,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
-    final activeUserLogin = context.watch<ActiveUserLoginCubit>().state;
-    final localAccounts = context.watch<LocalAccountsCubit>().state;
 
     return SafeArea(
         child: GestureDetector(
@@ -81,7 +81,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
             child: DecoratedBox(
                 decoration: BoxDecoration(
                     color: scale.primaryScale.activeElementBackground),
-                child:
-                    buildWithLogin(context, localAccounts, activeUserLogin))));
+                child: buildWithLogin(context))));
   }
 }

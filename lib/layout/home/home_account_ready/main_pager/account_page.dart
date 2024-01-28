@@ -5,34 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../../../account_manager/account_manager.dart';
 import '../../../../proto/proto.dart' as proto;
-import '../../../account_manager/account_manager.dart';
-import '../../../contact_invitation/contact_invitation.dart';
-import '../../../contacts/contacts.dart';
-import '../../../theme/theme.dart';
+import '../../../../theme/theme.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({
-    required this.localAccounts,
-    required this.activeUserLogin,
-    required this.account,
     super.key,
   });
 
-  final IList<LocalAccount> localAccounts;
-  final TypedKey activeUserLogin;
-  final proto.Account account;
-
   @override
   AccountPageState createState() => AccountPageState();
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(IterableProperty<LocalAccount>('localAccounts', localAccounts))
-      ..add(DiagnosticsProperty<TypedKey>('activeUserLogin', activeUserLogin))
-      ..add(DiagnosticsProperty<proto.Account>('account', account));
-  }
 }
 
 class AccountPageState extends State<AccountPage> {

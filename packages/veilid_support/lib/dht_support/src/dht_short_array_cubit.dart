@@ -7,12 +7,32 @@ import '../../veilid_support.dart';
 
 class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
   DHTShortArrayCubit({
+    required Future<DHTShortArray> Function() open,
+    required T Function(List<int> data) decodeElement,
+  })  : _decodeElement = decodeElement,
+        _wantsUpdate = false,
+        _isUpdating = false,
+        _wantsCloseRecord = false,
+        super(const AsyncValue.loading()) {
+    Future.delayed(Duration.zero, () async {
+      // Open DHT record
+      _shortArray = await open();
+      _wantsCloseRecord = true;
+
+      // Make initial state update
+      _update();
+      _subscription = await _shortArray.listen(_update);
+    });
+  }
+
+  DHTShortArrayCubit.value({
     required DHTShortArray shortArray,
     required T Function(List<int> data) decodeElement,
   })  : _shortArray = shortArray,
         _decodeElement = decodeElement,
         _wantsUpdate = false,
         _isUpdating = false,
+        _wantsCloseRecord = false,
         super(const AsyncValue.loading()) {
     // Make initial state update
     _update();
@@ -65,12 +85,16 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
   Future<void> close() async {
     await _subscription?.cancel();
     _subscription = null;
+    if (_wantsCloseRecord) {
+      await _shortArray.close();
+    }
     await super.close();
   }
 
-  final DHTShortArray _shortArray;
+  late final DHTShortArray _shortArray;
   final T Function(List<int> data) _decodeElement;
   StreamSubscription<void>? _subscription;
   bool _wantsUpdate;
   bool _isUpdating;
+  bool _wantsCloseRecord;
 }

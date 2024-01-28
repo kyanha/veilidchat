@@ -5,18 +5,13 @@
 import 'dart:convert';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:veilid_support/veilid_support.dart';
 
+import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
-
 import '../../tools/tools.dart';
-import '../../init.dart';
-import '../../../packages/veilid_support/veilid_support.dart';
-import 'account.dart';
-import 'chat.dart';
-import 'contact.dart';
 
-part 'conversation.g.dart';
+import 'chat.dart';
 
 class Conversation {
   Conversation._(
