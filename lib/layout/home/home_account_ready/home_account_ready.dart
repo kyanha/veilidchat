@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../../contact_invitation/contact_invitation.dart';
@@ -19,11 +17,13 @@ import 'main_pager/main_pager.dart';
 class HomeAccountReady extends StatefulWidget {
   const HomeAccountReady(
       {required ActiveAccountInfo activeAccountInfo,
-      required Account account,
+      required proto.Account account,
       super.key})
-      : _accountReadyContext = accountReadyContext;
+      : _activeAccountInfo = activeAccountInfo,
+        _account = account;
 
-  final AccountReadyContext _accountReadyContext;
+  final ActiveAccountInfo _activeAccountInfo;
+  final proto.Account _account;
 
   @override
   HomeAccountReadyState createState() => HomeAccountReadyState();
@@ -32,31 +32,9 @@ class HomeAccountReady extends StatefulWidget {
 class HomeAccountReadyState extends State<HomeAccountReady>
     with TickerProviderStateMixin {
   //
-  ContactInvitationRepository? _contactInvitationRepository;
-
-  //
   @override
   void initState() {
     super.initState();
-
-    // Async initialize repositories for the active user
-    // xxx: this should not be necessary
-    // xxx: but RepositoryProvider doesn't call dispose()
-    Future.delayed(Duration.zero, () async {
-      //
-      final cir = await ContactInvitationRepository.open(
-          widget.activeAccountInfo, widget._accountReadyContext.account);
-
-      setState(() {
-        _contactInvitationRepository = cir;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _contactInvitationRepository?.dispose();
   }
 
   Widget buildUnlockAccount(
@@ -87,11 +65,11 @@ class HomeAccountReadyState extends State<HomeAccountReady>
               context.go('/home/settings');
             }).paddingLTRB(0, 0, 8, 0),
         ProfileWidget(
-          name: widget._accountReadyContext.account.profile.name,
-          pronouns: widget._accountReadyContext.account.profile.pronouns,
+          name: widget._account.profile.name,
+          pronouns: widget._account.profile.pronouns,
         ).expanded(),
       ]).paddingAll(8),
-      MainPager().expanded()
+      const MainPager().expanded()
     ]);
   }
 
@@ -129,18 +107,14 @@ class HomeAccountReadyState extends State<HomeAccountReady>
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_contactInvitationRepository == null) {
-      return waitingPage(context);
-    }
-
-    return RepositoryProvider.value(
-        value: _contactInvitationRepository,
-        child: responsiveVisibility(
-          context: context,
-          phone: false,
-        )
-            ? buildTablet(context)
-            : buildPhone(context));
-  }
+  Widget build(BuildContext context) => BlocProvider(
+      create: (context) => ContactInvitationListCubit(
+          activeAccountInfo: widget._activeAccountInfo,
+          account: widget._account),
+      child: responsiveVisibility(
+        context: context,
+        phone: false,
+      )
+          ? buildTablet(context)
+          : buildPhone(context));
 }

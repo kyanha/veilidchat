@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 import '../models/models.dart';
@@ -33,19 +33,19 @@ class InvitationStatus {
 //////////////////////////////////////////////////
 // Mutable state for per-account contact invitations
 
-class ContactInvitationListCubit extends DHTShortArrayCubit<proto.ContactInvitation> {
+class ContactInvitationListCubit
+    extends DHTShortArrayCubit<proto.ContactInvitationRecord> {
   ContactInvitationListCubit({
     required ActiveAccountInfo activeAccountInfo,
     required proto.Account account,
-    required DHTShortArray dhtRecord,
   })  : _activeAccountInfo = activeAccountInfo,
         _account = account,
-        _dhtRecord = dhtRecord,
-        super(shortArray: dhtRecord, decodeElement: proto.ContactInvitation.fromBuffer);
-xxx convert the rest of this to cubit
-  static Future<ContactInvitationRepository> open(
-      ActiveAccountInfo activeAccountInfo, proto.Account account) async {
+        super(
+            open: () => _open(activeAccountInfo, account),
+            decodeElement: proto.ContactInvitationRecord.fromBuffer);
 
+  static Future<DHTShortArray> _open(
+      ActiveAccountInfo activeAccountInfo, proto.Account account) async {
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
@@ -57,27 +57,8 @@ xxx convert the rest of this to cubit
         contactInvitationListRecordKey,
         parent: accountRecordKey);
 
-    return ContactInvitationRepository._(
-        activeAccountInfo: activeAccountInfo,
-        account: account,
-        dhtRecord: dhtRecord);
+    return dhtRecord;
   }
-
-  @override
-  Future<void> close() async {
-    await _dhtRecord.close();
-    await super.close();
-  }
-
-  // Future<void> refresh() async {
-  //   for (var i = 0; i < _dhtRecord.length; i++) {
-  //     final cir = await _dhtRecord.getItem(i);
-  //     if (cir == null) {
-  //       throw Exception('Failed to get contact invitation record');
-  //     }
-  //     _records = _records.add(proto.ContactInvitationRecord.fromBuffer(cir));
-  //   }
-  // }
 
   Future<Uint8List> createInvitation(
       {required EncryptionKeyType encryptionKeyType,
@@ -98,7 +79,8 @@ xxx convert the rest of this to cubit
       encryptionKey: encryptionKey,
     );
 
-    // Create local chat DHT record with the account record key as its parent
+    // Create local conversation DHT record with the account record key as its
+    // parent.
     // Do not set the encryption of this key yet as it will not yet be written
     // to and it will be eventually encrypted with the DH of the contact's
     // identity key
@@ -163,7 +145,7 @@ xxx convert the rest of this to cubit
 
         // Add ContactInvitationRecord to account's list
         // if this fails, don't keep retrying, user can try again later
-        if (await _dhtRecord.tryAddItem(cinvrec.writeToBuffer()) == false) {
+        if (await shortArray.tryAddItem(cinvrec.writeToBuffer()) == false) {
           throw Exception('Failed to add contact invitation record');
         }
       });
@@ -180,15 +162,15 @@ xxx convert the rest of this to cubit
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove ContactInvitationRecord from account's list
-    for (var i = 0; i < _dhtRecord.length; i++) {
-      final item = await _dhtRecord.getItemProtobuf(
+    for (var i = 0; i < shortArray.length; i++) {
+      final item = await shortArray.getItemProtobuf(
           proto.ContactInvitationRecord.fromBuffer, i);
       if (item == null) {
         throw Exception('Failed to get contact invitation record');
       }
       if (item.contactRequestInbox.recordKey ==
           contactInvitationRecord.contactRequestInbox.recordKey) {
-        await _dhtRecord.tryRemoveItem(i);
+        await shortArray.tryRemoveItem(i);
         break;
       }
     }
@@ -229,11 +211,11 @@ xxx convert the rest of this to cubit
 
     final cs = await pool.veilid.getCryptoSystem(contactRequestInboxKey.kind);
 
-    // See if we're chatting to ourselves, if so, don't delete it here
-    final isSelf = _contactIdentityMaster.identityPublicKey ==
-        _activeAccountInfo.localAccount.identityMaster.identityPublicKey;
-xxx this doesn't work and the upper one doesnt either
-    final isSelf = _records.indexWhere((cir) =>
+    // Compare the invitation's contact request
+    // inbox with our list of extant invitations
+    // If we're chatting to ourselves,
+    // we are validating an invitation we have created
+    final isSelf = state.data!.value.indexWhere((cir) =>
             proto.TypedKeyProto.fromProto(cir.contactRequestInbox.recordKey) ==
             contactRequestInboxKey) !=
         -1;
@@ -283,10 +265,7 @@ xxx this doesn't work and the upper one doesnt either
 
       out = ValidContactInvitation(
           activeAccountInfo: _activeAccountInfo,
-          signedContactInvitation: signedContactInvitation,
-          contactInvitation: contactInvitation,
           contactRequestInboxKey: contactRequestInboxKey,
-          contactRequest: contactRequest,
           contactRequestPrivate: contactRequestPrivate,
           contactIdentityMaster: contactIdentityMaster,
           writer: writer);
@@ -296,13 +275,12 @@ xxx this doesn't work and the upper one doesnt either
   }
 
   Future<InvitationStatus?> checkInvitationStatus(
-      {required ActiveAccountInfo activeAccountInfo,
-      required proto.ContactInvitationRecord contactInvitationRecord}) async {
+      {required proto.ContactInvitationRecord contactInvitationRecord}) async {
     // Open the contact request inbox
     try {
       final pool = DHTRecordPool.instance;
-      final accountRecordKey =
-          activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
+      final accountRecordKey = _activeAccountInfo
+          .userLogin.accountRecordInfo.accountRecord.recordKey;
       final writerKey =
           proto.CryptoKeyProto.fromProto(contactInvitationRecord.writerKey);
       final writerSecret =
@@ -350,11 +328,14 @@ xxx this doesn't work and the upper one doesnt either
         // Pull profile from remote conversation key
         final remoteConversationRecordKey = proto.TypedKeyProto.fromProto(
             contactResponse.remoteConversationRecordKey);
-        final remoteConversation = await readRemoteConversation(
-            activeAccountInfo: activeAccountInfo,
+
+        final conversation = ConversationManager(
+            activeAccountInfo: _activeAccountInfo,
             remoteIdentityPublicKey:
                 contactIdentityMaster.identityPublicTypedKey(),
             remoteConversationRecordKey: remoteConversationRecordKey);
+
+        final remoteConversation = await conversation.readRemoteConversation();
         if (remoteConversation == null) {
           log.info('Remote conversation could not be read. Waiting...');
           return null;
@@ -362,11 +343,9 @@ xxx this doesn't work and the upper one doesnt either
         // Complete the local conversation now that we have the remote profile
         final localConversationRecordKey = proto.TypedKeyProto.fromProto(
             contactInvitationRecord.localConversationRecordKey);
-        return createConversation(
-            activeAccountInfo: activeAccountInfo,
-            remoteIdentityPublicKey:
-                contactIdentityMaster.identityPublicTypedKey(),
+        return conversation.initLocalConversation(
             existingConversationRecordKey: localConversationRecordKey,
+            profile: xxx LOCAL PROFILE HERE NOT REMOTE
             // ignore: prefer_expression_function_bodies
             callback: (localConversation) async {
               return InvitationStatus(
@@ -400,9 +379,6 @@ xxx this doesn't work and the upper one doesnt either
   }
 
   //
-
   final ActiveAccountInfo _activeAccountInfo;
   final proto.Account _account;
-  final DHTShortArray _dhtRecord;
-  //IList<proto.ContactInvitationRecord> _records;
 }

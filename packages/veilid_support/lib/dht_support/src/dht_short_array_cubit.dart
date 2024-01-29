@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:meta/meta.dart';
 
 import '../../veilid_support.dart';
 
@@ -39,6 +40,19 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
     Future.delayed(Duration.zero, () async {
       _subscription = await shortArray.listen(_update);
     });
+  }
+
+  Future<void> refresh({bool forceRefresh = false}) async {
+    var out = IList<T>();
+    // xxx could be parallelized but we need to watch out for rate limits
+    for (var i = 0; i < _shortArray.length; i++) {
+      final cir = await _shortArray.getItem(i, forceRefresh: forceRefresh);
+      if (cir == null) {
+        throw Exception('Failed to get short array element');
+      }
+      out = out.add(_decodeElement(cir));
+    }
+    emit(AsyncValue.data(out));
   }
 
   void _update() {
@@ -90,6 +104,9 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
     }
     await super.close();
   }
+
+  @protected
+  DHTShortArray get shortArray => _shortArray;
 
   late final DHTShortArray _shortArray;
   final T Function(List<int> data) _decodeElement;

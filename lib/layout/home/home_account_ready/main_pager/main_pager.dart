@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,41 +7,22 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:stylish_bottom_bar/model/bar_items.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
-import 'package:veilid_support/veilid_support.dart';
 
-import '../../../../proto/proto.dart' as proto;
+import '../../../../contact_invitation/contact_invitation.dart';
+import '../../../../theme/theme.dart';
 import '../../../../tools/tools.dart';
-import '../../../account_manager/account_manager.dart';
-import '../../../contact_invitation/contact_invitation.dart';
-import '../../../theme/theme.dart';
 import 'account_page.dart';
 import 'bottom_sheet_action_button.dart';
 import 'chats_page.dart';
 
 class MainPager extends StatefulWidget {
-  const MainPager(
-      {required this.localAccounts,
-      required this.activeUserLogin,
-      required this.account,
-      super.key});
-
-  final IList<LocalAccount> localAccounts;
-  final TypedKey activeUserLogin;
-  final proto.Account account;
+  const MainPager({super.key});
 
   @override
   MainPagerState createState() => MainPagerState();
 
   static MainPagerState? of(BuildContext context) =>
       context.findAncestorStateOfType<MainPagerState>();
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(IterableProperty<LocalAccount>('localAccounts', localAccounts))
-      ..add(DiagnosticsProperty<TypedKey>('activeUserLogin', activeUserLogin))
-      ..add(DiagnosticsProperty<proto.Account>('account', account));
-  }
 }
 
 class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
@@ -187,12 +166,9 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
                   _currentPage = index;
                 });
               },
-              children: [
-                AccountPage(
-                    localAccounts: widget.localAccounts,
-                    activeUserLogin: widget.activeUserLogin,
-                    account: widget.account),
-                const ChatsPage(),
+              children: const [
+                AccountPage(),
+                ChatsPage(),
               ])),
       // appBar: AppBar(
       //   toolbarHeight: 24,

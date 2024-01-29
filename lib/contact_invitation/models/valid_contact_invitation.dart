@@ -4,8 +4,8 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
-import '../models/models.dart';
-import 'contact_invitation_repository.dart';
+import 'models.dart';
+import '../cubits/contact_invitation_list_cubit.dart';
 
 //////////////////////////////////////////////////
 ///
@@ -14,18 +14,12 @@ class ValidContactInvitation {
   @internal
   ValidContactInvitation(
       {required ActiveAccountInfo activeAccountInfo,
-      required proto.SignedContactInvitation signedContactInvitation,
-      required proto.ContactInvitation contactInvitation,
       required TypedKey contactRequestInboxKey,
-      required proto.ContactRequest contactRequest,
       required proto.ContactRequestPrivate contactRequestPrivate,
       required IdentityMaster contactIdentityMaster,
       required KeyPair writer})
       : _activeAccountInfo = activeAccountInfo,
-        _signedContactInvitation = signedContactInvitation,
-        _contactInvitation = contactInvitation,
         _contactRequestInboxKey = contactRequestInboxKey,
-        _contactRequest = contactRequest,
         _contactRequestPrivate = contactRequestPrivate,
         _contactIdentityMaster = contactIdentityMaster,
         _writer = writer;
@@ -140,8 +134,5 @@ class ValidContactInvitation {
   final TypedKey _contactRequestInboxKey;
   final IdentityMaster _contactIdentityMaster;
   final KeyPair _writer;
-  proto.SignedContactInvitation _signedContactInvitation;
-  proto.ContactInvitation _contactInvitation;
-  proto.ContactRequest _contactRequest;
-  proto.ContactRequestPrivate _contactRequestPrivate;
+  final proto.ContactRequestPrivate _contactRequestPrivate;
 }

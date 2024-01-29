@@ -2,6 +2,7 @@
 // Each Contact in the ContactList has at most one Conversation between the
 // remote contact and the local account
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -11,32 +12,86 @@ import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 
-import 'chat.dart';
-
-class Conversation {
-  Conversation._(
+class ConversationManager {
+  ConversationManager(
       {required ActiveAccountInfo activeAccountInfo,
-      required TypedKey localConversationRecordKey,
       required TypedKey remoteIdentityPublicKey,
-      required TypedKey remoteConversationRecordKey})
+      TypedKey? localConversationRecordKey,
+      TypedKey? remoteConversationRecordKey})
       : _activeAccountInfo = activeAccountInfo,
         _localConversationRecordKey = localConversationRecordKey,
         _remoteIdentityPublicKey = remoteIdentityPublicKey,
         _remoteConversationRecordKey = remoteConversationRecordKey;
 
-  Future<Conversation> open() async {}
+  // Initialize a local conversation
+  // If we were the initiator of the conversation there may be an
+  // incomplete 'existingConversationRecord' that we need to fill
+  // in now that we have the remote identity key
+  Future<T> initLocalConversation<T>(
+      {required proto.Profile profile,
+      required FutureOr<T> Function(DHTRecord) callback,
+      TypedKey? existingConversationRecordKey}) async {
+    final pool = DHTRecordPool.instance;
+    final accountRecordKey =
+        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-  Future<void> close() async {
-    //
+    final crypto = await getConversationCrypto();
+    final writer = _activeAccountInfo.conversationWriter;
+
+    // Open with SMPL scheme for identity writer
+    late final DHTRecord localConversationRecord;
+    if (existingConversationRecordKey != null) {
+      localConversationRecord = await pool.openWrite(
+          existingConversationRecordKey, writer,
+          parent: accountRecordKey, crypto: crypto);
+    } else {
+      final localConversationRecordCreate = await pool.create(
+          parent: accountRecordKey,
+          crypto: crypto,
+          schema: DHTSchema.smpl(
+              oCnt: 0, members: [DHTSchemaMember(mKey: writer.key, mCnt: 1)]));
+      await localConversationRecordCreate.close();
+      localConversationRecord = await pool.openWrite(
+          localConversationRecordCreate.key, writer,
+          parent: accountRecordKey, crypto: crypto);
+    }
+    final out = localConversationRecord
+        // ignore: prefer_expression_function_bodies
+        .deleteScope((localConversation) async {
+      // Make messages log
+      return (await DHTShortArray.create(
+              parent: localConversation.key,
+              crypto: crypto,
+              smplWriter: writer))
+          .deleteScope((messages) async {
+        // Write local conversation key
+        final conversation = proto.Conversation()
+          ..profile = profile
+          ..identityMasterJson = jsonEncode(
+              _activeAccountInfo.localAccount.identityMaster.toJson())
+          ..messages = messages.record.key.toProto();
+
+        //
+        final update = await localConversation.tryWriteProtobuf(
+            proto.Conversation.fromBuffer, conversation);
+        if (update != null) {
+          throw Exception('Failed to write local conversation');
+        }
+        return await callback(localConversation);
+      });
+    });
+    // If success, save the new local conversation record key in this object
+    _localConversationRecordKey = localConversationRecord.key;
+    return out;
   }
 
   Future<proto.Conversation?> readRemoteConversation() async {
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
 
     final crypto = await getConversationCrypto();
-    return (await pool.openRead(_remoteConversationRecordKey,
+    return (await pool.openRead(_remoteConversationRecordKey!,
             parent: accountRecordKey, crypto: crypto))
         .scope((remoteConversation) async {
       //
@@ -49,10 +104,10 @@ class Conversation {
   Future<proto.Conversation?> readLocalConversation() async {
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
 
     final crypto = await getConversationCrypto();
-    return (await pool.openRead(_localConversationRecordKey,
+    return (await pool.openRead(_localConversationRecordKey!,
             parent: accountRecordKey, crypto: crypto))
         .scope((localConversation) async {
       //
@@ -70,12 +125,12 @@ class Conversation {
   }) async {
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-    final pool = await DHTRecordPool.instance();
+    final pool = DHTRecordPool.instance;
 
     final crypto = await getConversationCrypto();
-    final writer = _activeAccountInfo.getConversationWriter();
+    final writer = _activeAccountInfo.conversationWriter;
 
-    return (await pool.openWrite(_localConversationRecordKey, writer,
+    return (await pool.openWrite(_localConversationRecordKey!, writer,
             parent: accountRecordKey, crypto: crypto))
         .scope((localConversation) async {
       //
@@ -97,7 +152,7 @@ class Conversation {
     final messagesRecordKey =
         proto.TypedKeyProto.fromProto(conversation.messages);
     final crypto = await getConversationCrypto();
-    final writer = _activeAccountInfo.getConversationWriter();
+    final writer = _activeAccountInfo.conversationWriter;
 
     await (await DHTShortArray.openWrite(messagesRecordKey, writer,
             parent: _localConversationRecordKey, crypto: crypto))
@@ -116,7 +171,7 @@ class Conversation {
     final messagesRecordKey =
         proto.TypedKeyProto.fromProto(conversation.messages);
     final crypto = await getConversationCrypto();
-    final writer = _activeAccountInfo.getConversationWriter();
+    final writer = _activeAccountInfo.conversationWriter;
 
     newMessages = newMessages.sort((a, b) => Timestamp.fromInt64(a.timestamp)
         .compareTo(Timestamp.fromInt64(b.timestamp)));
@@ -195,9 +250,8 @@ class Conversation {
     if (conversationCrypto != null) {
       return conversationCrypto;
     }
-    final veilid = await eventualVeilid.future;
     final identitySecret = _activeAccountInfo.userLogin.identitySecret;
-    final cs = await veilid.getCryptoSystem(identitySecret.kind);
+    final cs = await Veilid.instance.getCryptoSystem(identitySecret.kind);
     final sharedSecret =
         await cs.cachedDH(_remoteIdentityPublicKey.value, identitySecret.value);
 
@@ -232,119 +286,60 @@ class Conversation {
   }
 
   final ActiveAccountInfo _activeAccountInfo;
-  final TypedKey _localConversationRecordKey;
   final TypedKey _remoteIdentityPublicKey;
-  final TypedKey _remoteConversationRecordKey;
+  TypedKey? _localConversationRecordKey;
+  TypedKey? _remoteConversationRecordKey;
   //
   DHTRecordCrypto? _conversationCrypto;
 }
 
-// Create a conversation
-// If we were the initiator of the conversation there may be an
-// incomplete 'existingConversationRecord' that we need to fill
-// in now that we have the remote identity key
-Future<T> createConversation<T>(
-    {required ActiveAccountInfo activeAccountInfo,
-    required TypedKey remoteIdentityPublicKey,
-    required FutureOr<T> Function(DHTRecord) callback,
-    TypedKey? existingConversationRecordKey}) async {
-  final pool = await DHTRecordPool.instance();
-  final accountRecordKey =
-      activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-  final crypto = await getConversationCrypto(
-      activeAccountInfo: activeAccountInfo,
-      remoteIdentityPublicKey: remoteIdentityPublicKey);
-  final writer = activeAccountInfo.getConversationWriter();
+// //
+// //
+// //
+// //
 
-  // Open with SMPL scheme for identity writer
-  late final DHTRecord localConversationRecord;
-  if (existingConversationRecordKey != null) {
-    localConversationRecord = await pool.openWrite(
-        existingConversationRecordKey, writer,
-        parent: accountRecordKey, crypto: crypto);
-  } else {
-    final localConversationRecordCreate = await pool.create(
-        parent: accountRecordKey,
-        crypto: crypto,
-        schema: DHTSchema.smpl(
-            oCnt: 0, members: [DHTSchemaMember(mKey: writer.key, mCnt: 1)]));
-    await localConversationRecordCreate.close();
-    localConversationRecord = await pool.openWrite(
-        localConversationRecordCreate.key, writer,
-        parent: accountRecordKey, crypto: crypto);
-  }
-  return localConversationRecord
-      // ignore: prefer_expression_function_bodies
-      .deleteScope((localConversation) async {
-    // Make messages log
-    return (await DHTShortArray.create(
-            parent: localConversation.key, crypto: crypto, smplWriter: writer))
-        .deleteScope((messages) async {
-      // Write local conversation key
-      final conversation = proto.Conversation()
-        ..profile = activeAccountInfo.account.profile
-        ..identityMasterJson =
-            jsonEncode(activeAccountInfo.localAccount.identityMaster.toJson())
-        ..messages = messages.record.key.toProto();
+// @riverpod
+// class ActiveConversationMessages extends _$ActiveConversationMessages {
+//   /// Get message for active conversation
+//   @override
+//   FutureOr<IList<proto.Message>?> build() async {
+//     await eventualVeilid.future;
 
-      //
-      final update = await localConversation.tryWriteProtobuf(
-          proto.Conversation.fromBuffer, conversation);
-      if (update != null) {
-        throw Exception('Failed to write local conversation');
-      }
-      return await callback(localConversation);
-    });
-  });
-}
+//     final activeChat = ref.watch(activeChatStateProvider);
+//     if (activeChat == null) {
+//       return null;
+//     }
 
-//
-//
-//
-//
+//     final activeAccountInfo =
+//         await ref.watch(fetchActiveAccountProvider.future);
+//     if (activeAccountInfo == null) {
+//       return null;
+//     }
 
-@riverpod
-class ActiveConversationMessages extends _$ActiveConversationMessages {
-  /// Get message for active conversation
-  @override
-  FutureOr<IList<proto.Message>?> build() async {
-    await eventualVeilid.future;
+//     final contactList = ref.watch(fetchContactListProvider).asData?.value ??
+//         const IListConst([]);
 
-    final activeChat = ref.watch(activeChatStateProvider);
-    if (activeChat == null) {
-      return null;
-    }
+//     final activeChatContactIdx = contactList.indexWhere(
+//       (c) =>
+//           proto.TypedKeyProto.fromProto(c.remoteConversationRecordKey) ==
+//           activeChat,
+//     );
+//     if (activeChatContactIdx == -1) {
+//       return null;
+//     }
+//     final activeChatContact = contactList[activeChatContactIdx];
+//     final remoteIdentityPublicKey =
+//         proto.TypedKeyProto.fromProto(activeChatContact.identityPublicKey);
+//     // final remoteConversationRecordKey = proto.TypedKeyProto.fromProto(
+//     //     activeChatContact.remoteConversationRecordKey);
+//     final localConversationRecordKey = proto.TypedKeyProto.fromProto(
+//         activeChatContact.localConversationRecordKey);
 
-    final activeAccountInfo =
-        await ref.watch(fetchActiveAccountProvider.future);
-    if (activeAccountInfo == null) {
-      return null;
-    }
-
-    final contactList = ref.watch(fetchContactListProvider).asData?.value ??
-        const IListConst([]);
-
-    final activeChatContactIdx = contactList.indexWhere(
-      (c) =>
-          proto.TypedKeyProto.fromProto(c.remoteConversationRecordKey) ==
-          activeChat,
-    );
-    if (activeChatContactIdx == -1) {
-      return null;
-    }
-    final activeChatContact = contactList[activeChatContactIdx];
-    final remoteIdentityPublicKey =
-        proto.TypedKeyProto.fromProto(activeChatContact.identityPublicKey);
-    // final remoteConversationRecordKey = proto.TypedKeyProto.fromProto(
-    //     activeChatContact.remoteConversationRecordKey);
-    final localConversationRecordKey = proto.TypedKeyProto.fromProto(
-        activeChatContact.localConversationRecordKey);
-
-    return await getLocalConversationMessages(
-      activeAccountInfo: activeAccountInfo,
-      localConversationRecordKey: localConversationRecordKey,
-      remoteIdentityPublicKey: remoteIdentityPublicKey,
-    );
-  }
-}
+//     return await getLocalConversationMessages(
+//       activeAccountInfo: activeAccountInfo,
+//       localConversationRecordKey: localConversationRecordKey,
+//       remoteIdentityPublicKey: remoteIdentityPublicKey,
+//     );
+//   }
+// }

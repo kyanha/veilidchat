@@ -61,12 +61,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return BlocProvider(
             create: (context) => AccountRecordCubit(
                 record: accountInfo.activeAccountInfo!.accountRecord),
-            child: context.watch<AccountRecordCubit>().state.builder(
-                (context, account) => HomeAccountReady(
-                    localAccounts: localAccounts,
-                    activeUserLogin: activeUserLogin,
-                    activeAccountInfo: accountInfo.activeAccountInfo!,
-                    account: account)));
+            child: HomeAccountReady());
     }
   }
 

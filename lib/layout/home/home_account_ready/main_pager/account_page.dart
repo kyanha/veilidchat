@@ -2,11 +2,11 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../../../account_manager/account_manager.dart';
-import '../../../../proto/proto.dart' as proto;
+import '../../../../contact_invitation/contact_invitation.dart';
 import '../../../../theme/theme.dart';
 
 class AccountPage extends StatefulWidget {
@@ -39,19 +39,17 @@ class AccountPageState extends State<AccountPage> {
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
 
-    final records = widget.account.contactInvitationRecords;
-
     final contactInvitationRecordList =
-        ref.watch(fetchContactInvitationRecordsProvider).asData?.value ??
+        context.watch<ContactInvitationListCubit>().state.data?.value ??
             const IListConst([]);
-    final contactList = ref.watch(fetchContactListProvider).asData?.value ??
+    final contactList = context.watch<ContactListCubit>().state.data?.value ??
         const IListConst([]);
 
     return SizedBox(
         child: Column(children: <Widget>[
       if (contactInvitationRecordList.isNotEmpty)
         ExpansionTile(
-          tilePadding: EdgeInsets.fromLTRB(8, 0, 8, 0),
+          tilePadding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
           backgroundColor: scale.primaryScale.border,
           collapsedBackgroundColor: scale.primaryScale.border,
           shape: RoundedRectangleBorder(
