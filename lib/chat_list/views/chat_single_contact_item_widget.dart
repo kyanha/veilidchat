@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import '../../chat/cubits/active_chat_cubit.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
+import '../chat_list.dart';
 
 class ChatSingleContactItemWidget extends StatelessWidget {
   const ChatSingleContactItemWidget({required proto.Contact contact, super.key})
@@ -20,10 +23,10 @@ class ChatSingleContactItemWidget extends StatelessWidget {
     //final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
 
-    final activeChat = ref.watch(activeChatStateProvider);
+    final activeChatCubit = context.watch<ActiveChatCubit>();
     final remoteConversationRecordKey =
-        proto.TypedKeyProto.fromProto(contact.remoteConversationRecordKey);
-    final selected = activeChat == remoteConversationRecordKey;
+        proto.TypedKeyProto.fromProto(_contact.remoteConversationRecordKey);
+    final selected = activeChatCubit.state == remoteConversationRecordKey;
 
     return Container(
         margin: const EdgeInsets.fromLTRB(0, 4, 0, 0),
@@ -34,21 +37,16 @@ class ChatSingleContactItemWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             )),
         child: Slidable(
-            key: ObjectKey(contact),
+            key: ObjectKey(_contact),
             endActionPane: ActionPane(
               motion: const DrawerMotion(),
               children: [
                 SlidableAction(
                     onPressed: (context) async {
-                      final activeAccountInfo =
-                          await ref.read(fetchActiveAccountProvider.future);
-                      if (activeAccountInfo != null) {
-                        await deleteChat(
-                            activeAccountInfo: activeAccountInfo,
-                            remoteConversationRecordKey:
-                                remoteConversationRecordKey);
-                        ref.invalidate(fetchChatListProvider);
-                      }
+                      final chatListCubit = context.read<ChatListCubit>();
+                      await chatListCubit.deleteChat(
+                          remoteConversationRecordKey:
+                              remoteConversationRecordKey);
                     },
                     backgroundColor: scale.tertiaryScale.background,
                     foregroundColor: scale.tertiaryScale.text,
@@ -68,16 +66,14 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             // The child of the Slidable is what the user sees when the
             // component is not dragged.
             child: ListTile(
-                onTap: () async {
-                  ref.read(activeChatStateProvider.notifier).state =
-                      remoteConversationRecordKey;
-                  ref.invalidate(fetchChatListProvider);
+                onTap: () {
+                  activeChatCubit.setActiveChat(remoteConversationRecordKey);
                 },
-                title: Text(contact.editedProfile.name),
+                title: Text(_contact.editedProfile.name),
 
                 /// xxx show last message here
-                subtitle: (contact.editedProfile.pronouns.isNotEmpty)
-                    ? Text(contact.editedProfile.pronouns)
+                subtitle: (_contact.editedProfile.pronouns.isNotEmpty)
+                    ? Text(_contact.editedProfile.pronouns)
                     : null,
                 iconColor: scale.tertiaryScale.background,
                 textColor: scale.tertiaryScale.text,
@@ -89,6 +85,6 @@ class ChatSingleContactItemWidget extends StatelessWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<proto.Contact>('contact', contact));
+    properties.add(DiagnosticsProperty<proto.Contact>('contact', _contact));
   }
 }
