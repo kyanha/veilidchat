@@ -5,6 +5,7 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -129,9 +130,11 @@ class SendInviteDialogState extends State<SendInviteDialog> {
   Future<void> _onGenerateButtonPressed() async {
     final navigator = Navigator.of(context);
 
+xxx continue here 
+
     // Start generation
-    final activeAccountInfo =
-        await AccountRepository.instance.fetchActiveAccountInfo();
+    final activeAccountInfo = context.read<ActiveAccountInfo>();
+
     if (activeAccountInfo == null) {
       navigator.pop();
       return;

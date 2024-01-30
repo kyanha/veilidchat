@@ -1,6 +1,7 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -58,10 +59,12 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       case AccountInfoStatus.accountLocked:
         return const HomeAccountLocked();
       case AccountInfoStatus.accountReady:
-        return BlocProvider(
-            create: (context) => AccountRecordCubit(
-                record: accountInfo.activeAccountInfo!.accountRecord),
-            child: HomeAccountReady());
+        return Provider.value(
+            value: accountInfo.activeAccountInfo,
+            child: BlocProvider(
+                create: (context) => AccountRecordCubit(
+                    record: accountInfo.activeAccountInfo!.accountRecord),
+                child: HomeAccountReady()));
     }
   }
 

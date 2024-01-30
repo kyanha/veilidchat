@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
@@ -9,21 +7,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../../contact_invitation/contact_invitation.dart';
-import '../../../proto/proto.dart' as proto;
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
 import 'main_pager/main_pager.dart';
 
 class HomeAccountReady extends StatefulWidget {
-  const HomeAccountReady(
-      {required ActiveAccountInfo activeAccountInfo,
-      required proto.Account account,
-      super.key})
-      : _activeAccountInfo = activeAccountInfo,
-        _account = account;
-
-  final ActiveAccountInfo _activeAccountInfo;
-  final proto.Account _account;
+  const HomeAccountReady({super.key});
 
   @override
   HomeAccountReadyState createState() => HomeAccountReadyState();
@@ -64,10 +53,7 @@ class HomeAccountReadyState extends State<HomeAccountReady>
             onPressed: () async {
               context.go('/home/settings');
             }).paddingLTRB(0, 0, 8, 0),
-        ProfileWidget(
-          name: widget._account.profile.name,
-          pronouns: widget._account.profile.pronouns,
-        ).expanded(),
+        const ProfileWidget().expanded(),
       ]).paddingAll(8),
       const MainPager().expanded()
     ]);
@@ -107,14 +93,22 @@ class HomeAccountReadyState extends State<HomeAccountReady>
   }
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-      create: (context) => ContactInvitationListCubit(
-          activeAccountInfo: widget._activeAccountInfo,
-          account: widget._account),
-      child: responsiveVisibility(
-        context: context,
-        phone: false,
-      )
-          ? buildTablet(context)
-          : buildPhone(context));
+  Widget build(BuildContext context) {
+    final activeAccountInfo = context.watch<ActiveAccountInfo>();
+    final accountData = context.watch<AccountRecordCubit>().state.data;
+
+    if (accountData == null) {
+      return waitingPage(context);
+    }
+
+    return BlocProvider(
+        create: (context) => ContactInvitationListCubit(
+            activeAccountInfo: activeAccountInfo, account: accountData.value),
+        child: responsiveVisibility(
+          context: context,
+          phone: false,
+        )
+            ? buildTablet(context)
+            : buildPhone(context));
+  }
 }

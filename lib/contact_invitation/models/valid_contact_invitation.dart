@@ -2,10 +2,10 @@ import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 import 'models.dart';
-import '../cubits/contact_invitation_list_cubit.dart';
 
 //////////////////////////////////////////////////
 ///
@@ -14,11 +14,13 @@ class ValidContactInvitation {
   @internal
   ValidContactInvitation(
       {required ActiveAccountInfo activeAccountInfo,
+      required proto.Account account,
       required TypedKey contactRequestInboxKey,
       required proto.ContactRequestPrivate contactRequestPrivate,
       required IdentityMaster contactIdentityMaster,
       required KeyPair writer})
       : _activeAccountInfo = activeAccountInfo,
+        _account = account,
         _contactRequestInboxKey = contactRequestInboxKey,
         _contactRequestPrivate = contactRequestPrivate,
         _contactIdentityMaster = contactIdentityMaster,
@@ -38,10 +40,12 @@ class ValidContactInvitation {
           .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
         // Create local conversation key for this
         // contact and send via contact response
-        return createConversation(
+        final conversation = ConversationManager(
             activeAccountInfo: _activeAccountInfo,
             remoteIdentityPublicKey:
-                _contactIdentityMaster.identityPublicTypedKey(),
+                _contactIdentityMaster.identityPublicTypedKey());
+        return conversation.initLocalConversation(
+            profile: _account.profile,
             callback: (localConversation) async {
               final contactResponse = proto.ContactResponse()
                 ..accept = true
@@ -72,7 +76,7 @@ class ValidContactInvitation {
                 throw Exception('failed to accept contact invitation');
               }
               return AcceptedContact(
-                profile: _contactRequestPrivate.profile,
+                remoteProfile: _contactRequestPrivate.profile,
                 remoteIdentity: _contactIdentityMaster,
                 remoteConversationRecordKey: proto.TypedKeyProto.fromProto(
                     _contactRequestPrivate.chatRecordKey),
@@ -131,6 +135,7 @@ class ValidContactInvitation {
 
   //
   final ActiveAccountInfo _activeAccountInfo;
+  final proto.Account _account;
   final TypedKey _contactRequestInboxKey;
   final IdentityMaster _contactIdentityMaster;
   final KeyPair _writer;

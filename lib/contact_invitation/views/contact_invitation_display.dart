@@ -7,20 +7,23 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../tools/tools.dart';
 
+class InvitationGeneratorCubit extends FutureCubit<Uint8List> {
+  InvitationGeneratorCubit(super.fut);
+}
+
 class ContactInvitationDisplayDialog extends StatefulWidget {
   const ContactInvitationDisplayDialog({
-    required this.name,
     required this.message,
     required this.generator,
     super.key,
   });
 
-  final String name;
   final String message;
   final FutureOr<Uint8List> generator;
 
@@ -32,7 +35,6 @@ class ContactInvitationDisplayDialog extends StatefulWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(StringProperty('name', name))
       ..add(StringProperty('message', message))
       ..add(DiagnosticsProperty<FutureOr<Uint8List>?>('generator', generator));
   }
@@ -42,14 +44,10 @@ class ContactInvitationDisplayDialogState
     extends State<ContactInvitationDisplayDialog> {
   final focusNode = FocusNode();
   final formKey = GlobalKey<FormState>();
-  late final AutoDisposeFutureProvider<Uint8List?> _generateFutureProvider;
 
   @override
   void initState() {
     super.initState();
-
-    _generateFutureProvider =
-        AutoDisposeFutureProvider<Uint8List>((ref) async => widget.generator);
   }
 
   @override
@@ -76,7 +74,9 @@ class ContactInvitationDisplayDialogState
     //final scale = theme.extension<ScaleScheme>()!;
     final textTheme = theme.textTheme;
 
-    final signedContactInvitationBytesV = ref.watch(_generateFutureProvider);
+    final signedContactInvitationBytesV =
+        context.watch<InvitationGeneratorCubit>().state;
+
     final cardsize =
         min<double>(MediaQuery.of(context).size.shortestSide - 48.0, 400);
 
@@ -90,49 +90,43 @@ class ContactInvitationDisplayDialogState
                 maxHeight: cardsize),
             child: signedContactInvitationBytesV.when(
                 loading: () => buildProgressIndicator(context),
-                data: (data) {
-                  if (data == null) {
-                    Navigator.of(context).pop();
-                    return const Text('');
-                  }
-                  return Form(
-                      key: formKey,
-                      child: Column(children: [
-                        FittedBox(
-                                child: Text(
-                                    translate(
-                                        'send_invite_dialog.contact_invitation'),
-                                    style: textTheme.headlineSmall!
-                                        .copyWith(color: Colors.black)))
-                            .paddingAll(8),
-                        FittedBox(
-                                child: QrImageView.withQr(
-                                    size: 300,
-                                    qr: QrCode.fromUint8List(
-                                        data: data,
-                                        errorCorrectLevel:
-                                            QrErrorCorrectLevel.L)))
-                            .expanded(),
-                        Text(widget.message,
-                                softWrap: true,
-                                style: textTheme.labelLarge!
-                                    .copyWith(color: Colors.black))
-                            .paddingAll(8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.copy),
-                          label: Text(
-                              translate('send_invite_dialog.copy_invitation')),
-                          onPressed: () async {
-                            showInfoToast(
-                                context,
-                                translate(
-                                    'send_invite_dialog.invitation_copied'));
-                            await Clipboard.setData(ClipboardData(
-                                text: makeTextInvite(widget.message, data)));
-                          },
-                        ).paddingAll(16),
-                      ]));
-                },
+                data: (data) => Form(
+                    key: formKey,
+                    child: Column(children: [
+                      FittedBox(
+                              child: Text(
+                                  translate(
+                                      'send_invite_dialog.contact_invitation'),
+                                  style: textTheme.headlineSmall!
+                                      .copyWith(color: Colors.black)))
+                          .paddingAll(8),
+                      FittedBox(
+                              child: QrImageView.withQr(
+                                  size: 300,
+                                  qr: QrCode.fromUint8List(
+                                      data: data,
+                                      errorCorrectLevel:
+                                          QrErrorCorrectLevel.L)))
+                          .expanded(),
+                      Text(widget.message,
+                              softWrap: true,
+                              style: textTheme.labelLarge!
+                                  .copyWith(color: Colors.black))
+                          .paddingAll(8),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.copy),
+                        label: Text(
+                            translate('send_invite_dialog.copy_invitation')),
+                        onPressed: () async {
+                          showInfoToast(
+                              context,
+                              translate(
+                                  'send_invite_dialog.invitation_copied'));
+                          await Clipboard.setData(ClipboardData(
+                              text: makeTextInvite(widget.message, data)));
+                        },
+                      ).paddingAll(16),
+                    ])),
                 error: (e, s) {
                   Navigator.of(context).pop();
                   showErrorToast(context,

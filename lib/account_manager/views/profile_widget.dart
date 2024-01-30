@@ -1,22 +1,25 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../theme/theme.dart';
+import '../../tools/tools.dart';
+import '../cubit/cubit.dart';
 
 class ProfileWidget extends StatelessWidget {
   const ProfileWidget({
-    required this.name,
-    this.pronouns,
     super.key,
   });
-
-  final String name;
-  final String? pronouns;
 
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
+    final accountData = context.watch<AccountRecordCubit>().state.data;
+    if (accountData == null) {
+      return waitingPage(context);
+    }
+    final account = accountData.value;
+
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     final textTheme = theme.textTheme;
@@ -28,21 +31,14 @@ class ProfileWidget extends StatelessWidget {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
       child: Column(children: [
         Text(
-          name,
+          account.profile.name,
           style: textTheme.headlineSmall,
           textAlign: TextAlign.left,
         ).paddingAll(4),
-        if (pronouns != null && pronouns!.isNotEmpty)
-          Text(pronouns!, style: textTheme.bodyMedium).paddingLTRB(4, 0, 4, 4),
+        if (account.profile.pronouns.isNotEmpty)
+          Text(account.profile.pronouns, style: textTheme.bodyMedium)
+              .paddingLTRB(4, 0, 4, 4),
       ]),
     );
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(StringProperty('name', name))
-      ..add(StringProperty('pronouns', pronouns));
   }
 }

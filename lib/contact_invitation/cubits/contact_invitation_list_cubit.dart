@@ -265,6 +265,7 @@ class ContactInvitationListCubit
 
       out = ValidContactInvitation(
           activeAccountInfo: _activeAccountInfo,
+          account: _account,
           contactRequestInboxKey: contactRequestInboxKey,
           contactRequestPrivate: contactRequestPrivate,
           contactIdentityMaster: contactIdentityMaster,
@@ -345,12 +346,12 @@ class ContactInvitationListCubit
             contactInvitationRecord.localConversationRecordKey);
         return conversation.initLocalConversation(
             existingConversationRecordKey: localConversationRecordKey,
-            profile: xxx LOCAL PROFILE HERE NOT REMOTE
+            profile: _account.profile,
             // ignore: prefer_expression_function_bodies
             callback: (localConversation) async {
               return InvitationStatus(
                   acceptedContact: AcceptedContact(
-                      profile: remoteConversation.profile,
+                      remoteProfile: remoteConversation.profile,
                       remoteIdentity: contactIdentityMaster,
                       remoteConversationRecordKey: remoteConversationRecordKey,
                       localConversationRecordKey: localConversationRecordKey));

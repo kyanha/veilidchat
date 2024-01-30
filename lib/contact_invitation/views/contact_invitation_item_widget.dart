@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
-import 'contact_invitation_display.dart';
+import '../contact_invitation.dart';
 
 class ContactInvitationItemWidget extends StatelessWidget {
   const ContactInvitationItemWidget(
@@ -48,15 +49,11 @@ class ContactInvitationItemWidget extends StatelessWidget {
                 // A SlidableAction can have an icon and/or a label.
                 SlidableAction(
                     onPressed: (context) async {
-                      final activeAccountInfo =
-                          await ref.read(fetchActiveAccountProvider.future);
-                      if (activeAccountInfo != null) {
-                        await deleteContactInvitation(
-                            accepted: false,
-                            activeAccountInfo: activeAccountInfo,
-                            contactInvitationRecord: contactInvitationRecord);
-                        ref.invalidate(fetchContactInvitationRecordsProvider);
-                      }
+                      final contactInvitationListCubit =
+                          context.read<ContactInvitationListCubit>();
+                      await contactInvitationListCubit.deleteInvitation(
+                          accepted: false,
+                          contactInvitationRecord: contactInvitationRecord);
                     },
                     backgroundColor: scale.tertiaryScale.background,
                     foregroundColor: scale.tertiaryScale.text,
@@ -93,22 +90,21 @@ class ContactInvitationItemWidget extends StatelessWidget {
             child: ListTile(
                 //title: Text(translate('contact_list.invitation')),
                 onTap: () async {
-                  final activeAccountInfo =
-                      await ref.read(fetchActiveAccountProvider.future);
-                  if (activeAccountInfo != null) {
-                    // ignore: use_build_context_synchronously
-                    if (!context.mounted) {
-                      return;
-                    }
-                    await showDialog<void>(
-                        context: context,
-                        builder: (context) => ContactInvitationDisplayDialog(
-                              name: activeAccountInfo.localAccount.name,
-                              message: contactInvitationRecord.message,
-                              generator: Uint8List.fromList(
-                                  contactInvitationRecord.invitation),
-                            ));
+                  // ignore: use_build_context_synchronously
+                  if (!context.mounted) {
+                    return;
                   }
+                  await showDialog<void>(
+                      context: context,
+                      builder: (context) => BlocProvider(
+                          create: (context) => InvitationGeneratorCubit(
+                              Future.value(Uint8List.fromList(
+                                  contactInvitationRecord.invitation))),
+                          child: ContactInvitationDisplayDialog(
+                            message: contactInvitationRecord.message,
+                            generator: Uint8List.fromList(
+                                contactInvitationRecord.invitation),
+                          )));
                 },
                 title: Text(
                   contactInvitationRecord.message.isEmpty

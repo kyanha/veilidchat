@@ -7,10 +7,10 @@ import '../../proto/proto.dart' as proto;
 
 import '../../../packages/veilid_support/veilid_support.dart';
 import '../../tools/tools.dart';
-import 'account.dart';
-import 'chat.dart';
+import '../../old_to_refactor/providers/account.dart';
+import '../../old_to_refactor/providers/chat.dart';
 
-part 'contact.g.dart';
+part '../../old_to_refactor/providers/contact.g.dart';
 
 Future<void> createContact({
   required ActiveAccountInfo activeAccountInfo,
