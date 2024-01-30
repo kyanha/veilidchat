@@ -6,6 +6,8 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../account_manager/account_manager.dart';
+import '../../../chat/chat.dart';
+import '../../../chat_list/chat_list.dart';
 import '../../../contact_invitation/contact_invitation.dart';
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
@@ -106,9 +108,18 @@ class HomeAccountReadyState extends State<HomeAccountReady>
       return waitingPage(context);
     }
 
-    return BlocProvider(
-        create: (context) => ContactInvitationListCubit(
-            activeAccountInfo: activeAccountInfo, account: accountData.value),
+    return MultiBlocProvider(
+        providers: [
+          BlocProvider(
+              create: (context) => ContactInvitationListCubit(
+                  activeAccountInfo: activeAccountInfo,
+                  account: accountData.value)),
+          BlocProvider(
+              create: (context) => ChatListCubit(
+                  activeAccountInfo: activeAccountInfo,
+                  account: accountData.value)),
+          BlocProvider(create: (context) => ActiveChatCubit(null))
+        ],
         child: responsiveVisibility(
           context: context,
           phone: false,

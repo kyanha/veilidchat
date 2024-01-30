@@ -1,12 +1,11 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 import '../../../../contact_invitation/contact_invitation.dart';
+import '../../../../contacts/contacts.dart';
 import '../../../../theme/theme.dart';
 
 class AccountPage extends StatefulWidget {

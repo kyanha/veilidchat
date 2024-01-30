@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import '../../chat_list/chat_list.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
+import '../contacts.dart';
 
 class ContactItemWidget extends StatelessWidget {
   const ContactItemWidget({required this.contact, super.key});
@@ -38,16 +41,15 @@ class ContactItemWidget extends StatelessWidget {
               children: [
                 SlidableAction(
                     onPressed: (context) async {
-                      final activeAccountInfo =
-                          await ref.read(fetchActiveAccountProvider.future);
-                      if (activeAccountInfo != null) {
-                        await deleteContact(
-                            activeAccountInfo: activeAccountInfo,
-                            contact: contact);
-                        ref
-                          ..invalidate(fetchContactListProvider)
-                          ..invalidate(fetchChatListProvider);
-                      }
+                      final contactListCubit = context.read<ContactListCubit>();
+                      final chatListCubit = context.read<ChatListCubit>();
+
+                      // Remove any chats for this contact
+                      await chatListCubit.deleteChat(
+                          remoteConversationRecordKey: remoteConversationKey);
+
+                      // Delete the contact itself
+                      await contactListCubit.deleteContact(contact: contact);
                     },
                     backgroundColor: scale.tertiaryScale.background,
                     foregroundColor: scale.tertiaryScale.text,

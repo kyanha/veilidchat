@@ -1,8 +1,6 @@
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../theme/theme.dart';
@@ -39,8 +37,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Widget buildWithLogin(BuildContext context, IList<LocalAccount> localAccounts,
-      Typed<FixedEncodedString43>? activeUserLogin) {
+  Widget buildWithLogin(BuildContext context) {
     final activeUserLogin = context.watch<ActiveUserLoginCubit>().state;
 
     if (activeUserLogin == null) {
@@ -64,7 +61,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
             child: BlocProvider(
                 create: (context) => AccountRecordCubit(
                     record: accountInfo.activeAccountInfo!.accountRecord),
-                child: HomeAccountReady()));
+                child: const HomeAccountReady()));
     }
   }
 

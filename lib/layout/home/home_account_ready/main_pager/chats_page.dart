@@ -27,14 +27,9 @@ class ChatsPageState extends State<ChatsPage> {
     super.dispose();
   }
 
-  /// We have an active, unlocked, user login
-  Widget buildChatList(
-    BuildContext context,
-    IList<LocalAccount> localAccounts,
-    TypedKey activeUserLogin,
-    proto.Account account,
-    // ignore: prefer_expression_function_bodies
-  ) {
+  @override
+  // ignore: prefer_expression_function_bodies
+  Widget build(BuildContext context) {
     final contactList = ref.watch(fetchContactListProvider).asData?.value ??
         const IListConst([]);
     final chatList =
@@ -47,45 +42,4 @@ class ChatsPageState extends State<ChatsPage> {
             .expanded(),
       if (chatList.isEmpty) const EmptyChatListWidget().expanded(),
     ]);
-  }
-
-  @override
-  // ignore: prefer_expression_function_bodies
-  Widget build(BuildContext context) {
-    final localAccountsV = ref.watch(localAccountsProvider);
-    final loginsV = ref.watch(loginsProvider);
-
-    if (!localAccountsV.hasValue || !loginsV.hasValue) {
-      return waitingPage(context);
-    }
-    final localAccounts = localAccountsV.requireValue;
-    final logins = loginsV.requireValue;
-
-    final activeUserLogin = logins.activeUserLogin;
-    if (activeUserLogin == null) {
-      // If no logged in user is active show a placeholder
-      return waitingPage(context);
-    }
-    final accountV = ref
-        .watch(fetchAccountProvider(accountMasterRecordKey: activeUserLogin));
-    if (!accountV.hasValue) {
-      return waitingPage(context);
-    }
-    final account = accountV.requireValue;
-    switch (account.status) {
-      case AccountInfoStatus.noAccount:
-        return waitingPage(context);
-      case AccountInfoStatus.accountInvalid:
-        return waitingPage(context);
-      case AccountInfoStatus.accountLocked:
-        return waitingPage(context);
-      case AccountInfoStatus.accountReady:
-        return buildChatList(
-          context,
-          localAccounts,
-          activeUserLogin,
-          account.account!,
-        );
-    }
-  }
 }
