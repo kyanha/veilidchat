@@ -34,37 +34,42 @@ class HomeAccountReadyState extends State<HomeAccountReady>
     return const Center(child: Text('unlock account'));
   }
 
-  Widget buildUserPanel(BuildContext context) {
-    final theme = Theme.of(context);
-    final scale = theme.extension<ScaleScheme>()!;
+  Widget buildUserPanel() => Builder(builder: (context) {
+        final account = context.watch<AccountRecordCubit>().state;
+        final theme = Theme.of(context);
+        final scale = theme.extension<ScaleScheme>()!;
 
-    return Column(children: <Widget>[
-      Row(children: [
-        IconButton(
-            icon: const Icon(Icons.settings),
-            color: scale.secondaryScale.text,
-            constraints: const BoxConstraints.expand(height: 64, width: 64),
-            style: ButtonStyle(
-                backgroundColor:
-                    MaterialStateProperty.all(scale.secondaryScale.border),
-                shape: MaterialStateProperty.all(const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16))))),
-            tooltip: translate('app_bar.settings_tooltip'),
-            onPressed: () async {
-              context.go('/home/settings');
-            }).paddingLTRB(0, 0, 8, 0),
-        const ProfileWidget().expanded(),
-      ]).paddingAll(8),
-      const MainPager().expanded()
-    ]);
-  }
+        return Column(children: <Widget>[
+          Row(children: [
+            IconButton(
+                icon: const Icon(Icons.settings),
+                color: scale.secondaryScale.text,
+                constraints: const BoxConstraints.expand(height: 64, width: 64),
+                style: ButtonStyle(
+                    backgroundColor:
+                        MaterialStateProperty.all(scale.secondaryScale.border),
+                    shape: MaterialStateProperty.all(
+                        const RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(16))))),
+                tooltip: translate('app_bar.settings_tooltip'),
+                onPressed: () async {
+                  context.go('/home/settings');
+                }).paddingLTRB(0, 0, 8, 0),
+            asyncValueBuilder(account,
+                    (_, account) => ProfileWidget(profile: account.profile))
+                .expanded(),
+          ]).paddingAll(8),
+          const MainPager().expanded()
+        ]);
+      });
 
   Widget buildPhone(BuildContext context) =>
-      Material(color: Colors.transparent, child: buildUserPanel(context));
+      Material(color: Colors.transparent, child: buildUserPanel());
 
   Widget buildTabletLeftPane(BuildContext context) => Builder(
       builder: (context) =>
-          Material(color: Colors.transparent, child: buildUserPanel(context)));
+          Material(color: Colors.transparent, child: buildUserPanel()));
 
   Widget buildTabletRightPane(BuildContext context) => buildChatComponent();
 

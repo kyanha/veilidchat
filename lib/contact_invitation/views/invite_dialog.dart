@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../tools/tools.dart';
+import '../contact_invitation.dart';
 
 class InviteDialog extends StatefulWidget {
   const InviteDialog(
@@ -66,22 +68,14 @@ class InviteDialogState extends State<InviteDialog> {
 
   Future<void> _onAccept() async {
     final navigator = Navigator.of(context);
+    final activeAccountInfo = context.read<ActiveAccountInfo>();
 
     setState(() {
       _isAccepting = true;
     });
-    final activeAccountInfo = await ref.read(fetchActiveAccountProvider.future);
-    if (activeAccountInfo == null) {
-      setState(() {
-        _isAccepting = false;
-      });
-      navigator.pop();
-      return;
-    }
     final validInvitation = _validInvitation;
     if (validInvitation != null) {
-      final acceptedContact =
-          await acceptContactInvitation(activeAccountInfo, validInvitation);
+      final acceptedContact = await validInvitation.accept();
       if (acceptedContact != null) {
         // initiator when accept is received will create
         // contact in the case of a 'note to self'
@@ -91,7 +85,7 @@ class InviteDialogState extends State<InviteDialog> {
         if (!isSelf) {
           await createContact(
             activeAccountInfo: activeAccountInfo,
-            profile: acceptedContact.profile,
+            profile: acceptedContact.remoteProfile,
             remoteIdentity: acceptedContact.remoteIdentity,
             remoteConversationRecordKey:
                 acceptedContact.remoteConversationRecordKey,
@@ -99,9 +93,6 @@ class InviteDialogState extends State<InviteDialog> {
                 acceptedContact.localConversationRecordKey,
           );
         }
-        ref
-          ..invalidate(fetchContactInvitationRecordsProvider)
-          ..invalidate(fetchContactListProvider);
       } else {
         if (context.mounted) {
           showErrorToast(context, 'invite_dialog.failed_to_accept');
@@ -120,17 +111,9 @@ class InviteDialogState extends State<InviteDialog> {
     setState(() {
       _isAccepting = true;
     });
-    final activeAccountInfo = await ref.read(fetchActiveAccountProvider.future);
-    if (activeAccountInfo == null) {
-      setState(() {
-        _isAccepting = false;
-      });
-      navigator.pop();
-      return;
-    }
     final validInvitation = _validInvitation;
     if (validInvitation != null) {
-      if (await rejectContactInvitation(activeAccountInfo, validInvitation)) {
+      if (await validInvitation.reject()) {
         // do nothing right now
       } else {
         if (context.mounted) {
@@ -148,67 +131,56 @@ class InviteDialogState extends State<InviteDialog> {
     required Uint8List inviteData,
   }) async {
     try {
-      final activeAccountInfo =
-          await ref.read(fetchActiveAccountProvider.future);
-      if (activeAccountInfo == null) {
-        setState(() {
-          _isValidating = false;
-          _validInvitation = null;
-        });
-        return;
-      }
-      final contactInvitationRecords =
-          await ref.read(fetchContactInvitationRecordsProvider.future);
+      final contactInvitationListCubit =
+          context.read<ContactInvitationListCubit>();
 
       setState(() {
         _isValidating = true;
         _validInvitation = null;
       });
-      final validatedContactInvitation = await validateContactInvitation(
-          activeAccountInfo: activeAccountInfo,
-          contactInvitationRecords: contactInvitationRecords,
-          inviteData: inviteData,
-          getEncryptionKeyCallback:
-              (cs, encryptionKeyType, encryptedSecret) async {
-            String encryptionKey;
-            switch (encryptionKeyType) {
-              case EncryptionKeyType.none:
-                encryptionKey = '';
-              case EncryptionKeyType.pin:
-                final description =
-                    translate('invite_dialog.protected_with_pin');
-                if (!context.mounted) {
-                  return null;
+      final validatedContactInvitation =
+          await contactInvitationListCubit.validateInvitation(
+              inviteData: inviteData,
+              getEncryptionKeyCallback:
+                  (cs, encryptionKeyType, encryptedSecret) async {
+                String encryptionKey;
+                switch (encryptionKeyType) {
+                  case EncryptionKeyType.none:
+                    encryptionKey = '';
+                  case EncryptionKeyType.pin:
+                    final description =
+                        translate('invite_dialog.protected_with_pin');
+                    if (!context.mounted) {
+                      return null;
+                    }
+                    final pin = await showDialog<String>(
+                        context: context,
+                        builder: (context) => EnterPinDialog(
+                            reenter: false, description: description));
+                    if (pin == null) {
+                      return null;
+                    }
+                    encryptionKey = pin;
+                  case EncryptionKeyType.password:
+                    final description =
+                        translate('invite_dialog.protected_with_password');
+                    if (!context.mounted) {
+                      return null;
+                    }
+                    final password = await showDialog<String>(
+                        context: context,
+                        builder: (context) =>
+                            EnterPasswordDialog(description: description));
+                    if (password == null) {
+                      return null;
+                    }
+                    encryptionKey = password;
                 }
-                final pin = await showDialog<String>(
-                    context: context,
-                    builder: (context) => EnterPinDialog(
-                        reenter: false, description: description));
-                if (pin == null) {
-                  return null;
-                }
-                encryptionKey = pin;
-              case EncryptionKeyType.password:
-                final description =
-                    translate('invite_dialog.protected_with_password');
-                if (!context.mounted) {
-                  return null;
-                }
-                final password = await showDialog<String>(
-                    context: context,
-                    builder: (context) =>
-                        EnterPasswordDialog(description: description));
-                if (password == null) {
-                  return null;
-                }
-                encryptionKey = password;
-            }
-            return decryptSecretFromBytes(
-                secretBytes: encryptedSecret,
-                cryptoKind: cs.kind(),
-                encryptionKeyType: encryptionKeyType,
-                encryptionKey: encryptionKey);
-          });
+                return encryptionKeyType.decryptSecretFromBytes(
+                    secretBytes: encryptedSecret,
+                    cryptoKind: cs.kind(),
+                    encryptionKey: encryptionKey);
+              });
 
       // Check if validation was cancelled
       if (validatedContactInvitation == null) {
@@ -297,14 +269,11 @@ class InviteDialogState extends State<InviteDialog> {
               if (_validInvitation != null && !_isValidating)
                 Column(children: [
                   Container(
-                      constraints: const BoxConstraints(maxHeight: 64),
-                      width: double.infinity,
-                      child: ProfileWidget(
-                        name: _validInvitation!
-                            .contactRequestPrivate.profile.name,
-                        pronouns: _validInvitation!
-                            .contactRequestPrivate.profile.pronouns,
-                      )).paddingLTRB(0, 0, 0, 8),
+                          constraints: const BoxConstraints(maxHeight: 64),
+                          width: double.infinity,
+                          child: ProfileWidget(
+                              profile: _validInvitation!.remoteProfile))
+                      .paddingLTRB(0, 0, 0, 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [

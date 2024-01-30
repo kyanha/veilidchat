@@ -26,6 +26,8 @@ class ValidContactInvitation {
         _contactIdentityMaster = contactIdentityMaster,
         _writer = writer;
 
+  proto.Profile get remoteProfile => _contactRequestPrivate.profile;
+
   Future<AcceptedContact?> accept() async {
     final pool = DHTRecordPool.instance;
     try {

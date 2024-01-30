@@ -10,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../old_to_refactor/proto/proto.dart' as proto;
 import '../../old_to_refactor/providers/account.dart';
 import '../../old_to_refactor/providers/chat.dart';
-import '../../old_to_refactor/providers/conversation.dart';
+import '../../contacts/models/conversation.dart';
 import '../../old_to_refactor/tools/tools.dart';
 import '../../old_to_refactor/veilid_init.dart';
 import '../../old_to_refactor/veilid_support/veilid_support.dart';

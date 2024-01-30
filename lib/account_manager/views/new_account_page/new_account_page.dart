@@ -10,7 +10,6 @@ import '../../../layout/default_app_bar.dart';
 import '../../../tools/tools.dart';
 import '../../../veilid_processor/veilid_processor.dart';
 import '../../account_manager.dart';
-import '../../models/models.dart';
 
 class NewAccountPage extends StatefulWidget {
   const NewAccountPage({super.key});

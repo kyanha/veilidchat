@@ -11,7 +11,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../tools/tools.dart';
-import 'contact_invitation_display.dart';
+import '../contact_invitation.dart';
 
 class SendInviteDialog extends StatefulWidget {
   const SendInviteDialog({super.key});
@@ -130,17 +130,11 @@ class SendInviteDialogState extends State<SendInviteDialog> {
   Future<void> _onGenerateButtonPressed() async {
     final navigator = Navigator.of(context);
 
-xxx continue here 
-
     // Start generation
-    final activeAccountInfo = context.read<ActiveAccountInfo>();
+    final contactInvitationListCubit =
+        context.read<ContactInvitationListCubit>();
 
-    if (activeAccountInfo == null) {
-      navigator.pop();
-      return;
-    }
-    final generator = ContactInvitationRespositoryxxx.createContactInvitation(
-        activeAccountInfo: activeAccountInfo,
+    final generator = contactInvitationListCubit.createInvitation(
         encryptionKeyType: _encryptionKeyType,
         encryptionKey: _encryptionKey,
         message: _messageTextController.text,
@@ -152,14 +146,12 @@ xxx continue here
     await showDialog<void>(
         context: context,
         builder: (context) => ContactInvitationDisplayDialog(
-              name: activeAccountInfo.localAccount.name,
               message: _messageTextController.text,
               generator: generator,
             ));
     // if (ret == null) {
     //   return;
     // }
-    ref.invalidate(fetchContactInvitationRecordsProvider);
     navigator.pop();
   }
 
