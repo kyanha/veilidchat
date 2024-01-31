@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../contacts/contacts.dart';
 import '../../tools/tools.dart';
 import '../contact_invitation.dart';
 
@@ -69,6 +70,7 @@ class InviteDialogState extends State<InviteDialog> {
   Future<void> _onAccept() async {
     final navigator = Navigator.of(context);
     final activeAccountInfo = context.read<ActiveAccountInfo>();
+    final contactList = context.read<ContactListCubit>();
 
     setState(() {
       _isAccepting = true;
@@ -83,9 +85,8 @@ class InviteDialogState extends State<InviteDialog> {
             activeAccountInfo.localAccount.identityMaster.identityPublicKey ==
                 acceptedContact.remoteIdentity.identityPublicKey;
         if (!isSelf) {
-          await createContact(
-            activeAccountInfo: activeAccountInfo,
-            profile: acceptedContact.remoteProfile,
+          await contactList.createContact(
+            remoteProfile: acceptedContact.remoteProfile,
             remoteIdentity: acceptedContact.remoteIdentity,
             remoteConversationRecordKey:
                 acceptedContact.remoteConversationRecordKey,

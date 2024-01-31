@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import '../../chat_list/chat_list.dart';
+import '../../layout/layout.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../contacts.dart';
@@ -70,23 +71,14 @@ class ContactItemWidget extends StatelessWidget {
             // component is not dragged.
             child: ListTile(
                 onTap: () async {
-                  final activeAccountInfo =
-                      await ref.read(fetchActiveAccountProvider.future);
-                  if (activeAccountInfo != null) {
-                    // Start a chat
-                    await getOrCreateChatSingleContact(
-                        activeAccountInfo: activeAccountInfo,
-                        remoteConversationRecordKey: remoteConversationKey);
-                    ref
-                      ..invalidate(fetchContactListProvider)
-                      ..invalidate(fetchChatListProvider);
-                    // Click over to chats
-                    if (context.mounted) {
-                      await MainPager.of(context)?.pageController.animateToPage(
-                          1,
-                          duration: 250.ms,
-                          curve: Curves.easeInOut);
-                    }
+                  // Start a chat
+                  final chatListCubit = context.read<ChatListCubit>();
+                  await chatListCubit.getOrCreateChatSingleContact(
+                      remoteConversationRecordKey: remoteConversationKey);
+                  // Click over to chats
+                  if (context.mounted) {
+                    await MainPager.of(context)?.pageController.animateToPage(1,
+                        duration: 250.ms, curve: Curves.easeInOut);
                   }
 
                   //   // ignore: use_build_context_synchronously

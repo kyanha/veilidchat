@@ -1,46 +1,18 @@
 import 'dart:async';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../old_to_refactor/proto/proto.dart' as proto;
-import '../../old_to_refactor/providers/account.dart';
-import '../../old_to_refactor/providers/chat.dart';
-import '../../contacts/models/conversation.dart';
-import '../../old_to_refactor/tools/tools.dart';
-import '../../old_to_refactor/veilid_init.dart';
-import '../../old_to_refactor/veilid_support/veilid_support.dart';
-
-class ChatComponent extends ConsumerStatefulWidget {
-  const ChatComponent(
-      {required this.activeAccountInfo,
-      required this.activeChat,
-      required this.activeChatContact,
-      super.key});
-
-  final ActiveAccountInfo activeAccountInfo;
-  final TypedKey activeChat;
-  final proto.Contact activeChatContact;
+class ChatComponent extends StatefulWidget {
+  const ChatComponent({super.key});
 
   @override
   ChatComponentState createState() => ChatComponentState();
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty<ActiveAccountInfo>(
-          'activeAccountInfo', activeAccountInfo))
-      ..add(DiagnosticsProperty<TypedKey>('activeChat', activeChat))
-      ..add(DiagnosticsProperty<proto.Contact>(
-          'activeChatContact', activeChatContact));
-  }
 }
 
-class ChatComponentState extends ConsumerState<ChatComponent> {
+class ChatComponentState extends State<ChatComponent> {
   final _unfocusNode = FocusNode();
   late final types.User _localUser;
   late final types.User _remoteUser;
