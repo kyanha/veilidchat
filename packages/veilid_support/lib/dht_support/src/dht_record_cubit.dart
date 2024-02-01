@@ -5,13 +5,17 @@ import 'package:bloc/bloc.dart';
 
 import '../../veilid_support.dart';
 
+typedef InitialStateFunction<T> = Future<T?> Function(DHTRecord);
+typedef StateFunction<T> = Future<T?> Function(
+    DHTRecord, List<ValueSubkeyRange>, Uint8List);
+
 class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   DHTRecordCubit({
     required Future<DHTRecord> Function() open,
-    required Future<T?> Function(DHTRecord) initialStateFunction,
-    required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
-        stateFunction,
+    required InitialStateFunction<T> initialStateFunction,
+    required StateFunction<T> stateFunction,
   })  : _wantsCloseRecord = false,
+        _stateFunction = stateFunction,
         super(const AsyncValue.loading()) {
     Future.delayed(Duration.zero, () async {
       // Do record open/create
@@ -27,6 +31,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
     required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
         stateFunction,
   })  : _record = record,
+        _stateFunction = stateFunction,
         _wantsCloseRecord = false,
         super(const AsyncValue.loading()) {
     Future.delayed(Duration.zero, () async {
@@ -75,9 +80,12 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   Future<void> refresh(List<ValueSubkeyRange> subkeys) async {
     for (final skr in subkeys) {
       for (var sk = skr.low; sk <= skr.high; sk++) {
-        final data = await _record.get(subkey: sk, forceRefresh: true);
-        final newState = await stateFunction(_record, subkeys, data);
-        xxx continue here
+        final data = await _record.get(
+            subkey: sk, forceRefresh: true, onlyUpdates: true);
+        if (data != null) {
+          final newState = await _stateFunction(_record, subkeys, data);
+          xxx remove sk from update
+        }
       }
     }
   }
@@ -85,6 +93,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   StreamSubscription<VeilidUpdateValueChange>? _subscription;
   late DHTRecord _record;
   bool _wantsCloseRecord;
+  final StateFunction<T> _stateFunction;
 }
 
 // Cubit that watches the default subkey value of a dhtrecord
