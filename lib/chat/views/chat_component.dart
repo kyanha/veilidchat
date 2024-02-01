@@ -2,8 +2,12 @@ import 'dart:async';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+
+import '../../theme/theme.dart';
+import '../chat.dart';
 
 class ChatComponent extends StatefulWidget {
   const ChatComponent({super.key});
@@ -144,8 +148,7 @@ class ChatComponentState extends State<ChatComponent> {
                       IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () async {
-                            ref.read(activeChatStateProvider.notifier).state =
-                                null;
+                            context.read<ActiveChatCubit>().setActiveChat(null);
                           }).paddingLTRB(16, 0, 16, 0)
                     ]),
                   ),

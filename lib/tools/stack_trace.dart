@@ -6,7 +6,7 @@ Never throwErrorWithCombinedStackTrace(Object error, StackTrace stackTrace) {
   final chain = Chain([
     Trace.current(),
     ...Chain.forTrace(stackTrace).traces,
-  ]); // .foldFrames((frame) => frame.package == 'riverpod');
+  ]); // .foldFrames((frame) => frame.package == 'xxx');
 
   Error.throwWithStackTrace(error, chain.toTrace().vmTrace);
 }

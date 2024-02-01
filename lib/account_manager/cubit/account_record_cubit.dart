@@ -7,7 +7,7 @@ import '../../proto/proto.dart' as proto;
 class AccountRecordCubit extends DefaultDHTRecordCubit<proto.Account> {
   AccountRecordCubit({
     required super.record,
-  }) : super(decodeState: proto.Account.fromBuffer);
+  }) : super.value(decodeState: proto.Account.fromBuffer);
 
   @override
   Future<void> close() async {
