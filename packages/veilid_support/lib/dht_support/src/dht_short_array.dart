@@ -721,21 +721,18 @@ class DHTShortArray {
   }
 
   // Called when a head or linked record changes
-  Future<void> _onUpdateRecord(VeilidUpdateValueChange update) async {
-    final record = _head.linkedRecords.firstWhere(
-        (element) => element.key == update.key,
-        orElse: () => _headRecord);
-
+  Future<void> _onUpdateRecord(
+      DHTRecord record, Uint8List data, List<ValueSubkeyRange> subkeys) async {
     // If head record subkey zero changes, then the layout
     // of the dhtshortarray has changed
     var updateHead = false;
-    if (record == _headRecord && update.subkeys.containsSubkey(0)) {
+    if (record == _headRecord && subkeys.containsSubkey(0)) {
       updateHead = true;
     }
 
     // If we have any other subkeys to update, do them first
     final unord = List<Future<Uint8List?>>.empty(growable: true);
-    for (final skr in update.subkeys) {
+    for (final skr in subkeys) {
       for (var subkey = skr.low; subkey <= skr.high; subkey++) {
         // Skip head subkey
         if (subkey == 0) {

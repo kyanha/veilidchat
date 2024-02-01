@@ -282,7 +282,9 @@ class DHTRecord {
   }
 
   Future<StreamSubscription<VeilidUpdateValueChange>> listen(
-    Future<void> Function(VeilidUpdateValueChange update) onUpdate,
+    Future<void> Function(
+            DHTRecord record, Uint8List data, List<ValueSubkeyRange> subkeys)
+        onUpdate,
   ) async {
     // Set up watch requirements
     watchController ??=
@@ -293,7 +295,12 @@ class DHTRecord {
 
     return watchController!.stream.listen(
         (update) {
-          Future.delayed(Duration.zero, () => onUpdate(update));
+          Future.delayed(Duration.zero, () async {
+            final out = await _crypto.decrypt(
+                update.valueData.data, update.subkeys.first.low);
+
+            await onUpdate(this, out, update.subkeys);
+          });
         },
         cancelOnError: true,
         onError: (e) async {

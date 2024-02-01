@@ -9,7 +9,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   DHTRecordCubit({
     required Future<DHTRecord> Function() open,
     required Future<T?> Function(DHTRecord) initialStateFunction,
-    required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, ValueData)
+    required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
         stateFunction,
   })  : _wantsCloseRecord = false,
         super(const AsyncValue.loading()) {
@@ -24,7 +24,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   DHTRecordCubit.value({
     required DHTRecord record,
     required Future<T?> Function(DHTRecord) initialStateFunction,
-    required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, ValueData)
+    required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
         stateFunction,
   })  : _record = record,
         _wantsCloseRecord = false,
@@ -36,7 +36,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
 
   Future<void> _init(
     Future<T?> Function(DHTRecord) initialStateFunction,
-    Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, ValueData)
+    Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
         stateFunction,
   ) async {
     // Make initial state update
@@ -49,10 +49,9 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       emit(AsyncValue.error(e));
     }
 
-    _subscription = await _record.listen((update) async {
+    _subscription = await _record.listen((record, data, subkeys) async {
       try {
-        final newState =
-            await stateFunction(_record, update.subkeys, update.valueData);
+        final newState = await stateFunction(record, subkeys, data);
         if (newState != null) {
           emit(AsyncValue.data(newState));
         }
@@ -71,6 +70,16 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       _wantsCloseRecord = false;
     }
     await super.close();
+  }
+
+  Future<void> refresh(List<ValueSubkeyRange> subkeys) async {
+    for (final skr in subkeys) {
+      for (var sk = skr.low; sk <= skr.high; sk++) {
+        final data = await _record.get(subkey: sk, forceRefresh: true);
+        final newState = await stateFunction(_record, subkeys, data);
+        xxx continue here
+      }
+    }
   }
 
   StreamSubscription<VeilidUpdateValueChange>? _subscription;
@@ -105,9 +114,9 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
         return decodeState(initialData);
       };
 
-  static Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, ValueData)
+  static Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
       _makeStateFunction<T>(T Function(List<int> data) decodeState) =>
-          (record, subkeys, valueData) async {
+          (record, subkeys, updatedata) async {
             final defaultSubkey = record.subkeyOrDefault(-1);
             if (subkeys.containsSubkey(defaultSubkey)) {
               final Uint8List data;
@@ -119,7 +128,7 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
                 }
                 data = maybeData;
               } else {
-                data = valueData.data;
+                data = updatedata;
               }
               final newState = decodeState(data);
               return newState;
@@ -127,6 +136,6 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
             return null;
           };
 
-  xxx add refresh/get mechanism to DHTRecordCubit and here too, then propagage to conversation_cubit
-  xxx should just be a 'get' like in dht_short_array_cubit
+  // xxx add refresh/get mechanism to DHTRecordCubit and here too, then propagage to conversation_cubit
+  // xxx should just be a 'get' like in dht_short_array_cubit
 }
