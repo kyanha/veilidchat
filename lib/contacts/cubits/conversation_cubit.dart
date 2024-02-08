@@ -74,61 +74,69 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     await super.close();
   }
 
+  void updateLocalConversationState(AsyncValue<proto.Conversation> avconv) {
+    final newState = avconv.when(
+      data: (conv) {
+        _incrementalState = ConversationState(
+            localConversation: conv,
+            remoteConversation: _incrementalState.remoteConversation);
+        // return loading still if state isn't complete
+        if ((_localConversationRecordKey != null &&
+                _incrementalState.localConversation == null) ||
+            (_remoteConversationRecordKey != null &&
+                _incrementalState.remoteConversation == null)) {
+          return const AsyncValue<ConversationState>.loading();
+        }
+        // state is complete, all required keys are open
+        return AsyncValue.data(_incrementalState);
+      },
+      loading: AsyncValue<ConversationState>.loading,
+      error: AsyncValue<ConversationState>.error,
+    );
+    emit(newState);
+  }
+
+  void updateRemoteConversationState(AsyncValue<proto.Conversation> avconv) {
+    final newState = avconv.when(
+      data: (conv) {
+        _incrementalState = ConversationState(
+            localConversation: _incrementalState.localConversation,
+            remoteConversation: conv);
+        // return loading still if state isn't complete
+        if ((_localConversationRecordKey != null &&
+                _incrementalState.localConversation == null) ||
+            (_remoteConversationRecordKey != null &&
+                _incrementalState.remoteConversation == null)) {
+          return const AsyncValue<ConversationState>.loading();
+        }
+        // state is complete, all required keys are open
+        return AsyncValue.data(_incrementalState);
+      },
+      loading: AsyncValue<ConversationState>.loading,
+      error: AsyncValue<ConversationState>.error,
+    );
+    emit(newState);
+  }
+
   // Open local converation key
   Future<void> _setLocalConversation(DHTRecord localConversationRecord) async {
+    assert(_localConversationCubit == null,
+        'shoud not set local conversation twice');
     _localConversationCubit = DefaultDHTRecordCubit.value(
         record: localConversationRecord,
         decodeState: proto.Conversation.fromBuffer);
-    _localConversationCubit!.stream.listen((avconv) {
-      final newState = avconv.when(
-        data: (conv) {
-          _incrementalState = ConversationState(
-              localConversation: conv,
-              remoteConversation: _incrementalState.remoteConversation);
-          // return loading still if state isn't complete
-          if ((_localConversationRecordKey != null &&
-                  _incrementalState.localConversation == null) ||
-              (_remoteConversationRecordKey != null &&
-                  _incrementalState.remoteConversation == null)) {
-            return const AsyncValue<ConversationState>.loading();
-          }
-          // state is complete, all required keys are open
-          return AsyncValue.data(_incrementalState);
-        },
-        loading: AsyncValue<ConversationState>.loading,
-        error: AsyncValue<ConversationState>.error,
-      );
-      emit(newState);
-    });
+    _localConversationCubit!.stream.listen(updateLocalConversationState);
   }
 
   // Open remote converation key
   Future<void> _setRemoteConversation(
       DHTRecord remoteConversationRecord) async {
+    assert(_remoteConversationCubit == null,
+        'shoud not set remote conversation twice');
     _remoteConversationCubit = DefaultDHTRecordCubit.value(
         record: remoteConversationRecord,
         decodeState: proto.Conversation.fromBuffer);
-    _remoteConversationCubit!.stream.listen((avconv) {
-      final newState = avconv.when(
-        data: (conv) {
-          _incrementalState = ConversationState(
-              localConversation: _incrementalState.localConversation,
-              remoteConversation: conv);
-          // return loading still if state isn't complete
-          if ((_localConversationRecordKey != null &&
-                  _incrementalState.localConversation == null) ||
-              (_remoteConversationRecordKey != null &&
-                  _incrementalState.remoteConversation == null)) {
-            return const AsyncValue<ConversationState>.loading();
-          }
-          // state is complete, all required keys are open
-          return AsyncValue.data(_incrementalState);
-        },
-        loading: AsyncValue<ConversationState>.loading,
-        error: AsyncValue<ConversationState>.error,
-      );
-      emit(newState);
-    });
+    _remoteConversationCubit!.stream.listen(updateRemoteConversationState);
   }
 
   // Initialize a local conversation
@@ -136,6 +144,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   // incomplete 'existingConversationRecord' that we need to fill
   // in now that we have the remote identity key
   // The ConversationCubit must not already have a local conversation
+  // The callback allows for more initialization to occur and for
+  // cleanup to delete records upon failure of the callback
   Future<T> initLocalConversation<T>(
       {required proto.Profile profile,
       required FutureOr<T> Function(DHTRecord) callback,
@@ -176,20 +186,25 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
               crypto: crypto,
               smplWriter: writer))
           .deleteScope((messages) async {
-        // Write local conversation key
+        // Create initial local conversation key contents
         final conversation = proto.Conversation()
           ..profile = profile
           ..identityMasterJson = jsonEncode(
               _activeAccountInfo.localAccount.identityMaster.toJson())
           ..messages = messages.record.key.toProto();
 
-        //
+        // Write initial conversation to record
         final update = await localConversation.tryWriteProtobuf(
             proto.Conversation.fromBuffer, conversation);
         if (update != null) {
           throw Exception('Failed to write local conversation');
         }
-        return await callback(localConversation);
+        final out = await callback(localConversation);
+
+        // Upon success emit the local conversation record to the state
+        updateLocalConversationState(AsyncValue.data(conversation));
+
+        return out;
       });
     });
 
@@ -202,70 +217,29 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
   // Force refresh of conversation keys
   Future<void> refresh() async {
-    if (_localConversationCubit != null) {
-      xxx use defaultdhtrecordcubit refresh mechanism
+    final lcc = _localConversationCubit;
+    final rcc = _remoteConversationCubit;
+
+    if (lcc != null) {
+      await lcc.refreshDefault();
+    }
+    if (rcc != null) {
+      await rcc.refreshDefault();
     }
   }
 
-  // Future<proto.Conversation?> readRemoteConversation() async {
-  //   final accountRecordKey =
-  //       _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-  //   final pool = DHTRecordPool.instance;
+  Future<proto.Conversation?> writeLocalConversation({
+    required proto.Conversation conversation,
+  }) async {
+    final update = await _localConversationCubit!.record
+        .tryWriteProtobuf(proto.Conversation.fromBuffer, conversation);
 
-  //   final crypto = await getConversationCrypto();
-  //   return (await pool.openRead(_remoteConversationRecordKey!,
-  //           parent: accountRecordKey, crypto: crypto))
-  //       .scope((remoteConversation) async {
-  //     //
-  //     final conversation =
-  //         await remoteConversation.getProtobuf(proto.Conversation.fromBuffer);
-  //     return conversation;
-  //   });
-  // }
+    if (update != null) {
+      updateLocalConversationState(AsyncValue.data(conversation));
+    }
 
-  // Future<proto.Conversation?> readLocalConversation() async {
-  //   final accountRecordKey =
-  //       _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-  //   final pool = DHTRecordPool.instance;
-
-  //   final crypto = await getConversationCrypto();
-  //   return (await pool.openRead(_localConversationRecordKey!,
-  //           parent: accountRecordKey, crypto: crypto))
-  //       .scope((localConversation) async {
-  //     //
-  //     final update =
-  //         await localConversation.getProtobuf(proto.Conversation.fromBuffer);
-  //     if (update != null) {
-  //       return update;
-  //     }
-  //     return null;
-  //   });
-  // }
-
-  // Future<proto.Conversation?> writeLocalConversation({
-  //   required proto.Conversation conversation,
-  // }) async {
-  //   final accountRecordKey =
-  //       _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-  //   final pool = DHTRecordPool.instance;
-
-  //   final crypto = await getConversationCrypto();
-  //   final writer = _activeAccountInfo.conversationWriter;
-
-  //   return (await pool.openWrite(_localConversationRecordKey!, writer,
-  //           parent: accountRecordKey, crypto: crypto))
-  //       .scope((localConversation) async {
-  //     //
-  //     final update = await localConversation.tryWriteProtobuf(
-  //         proto.Conversation.fromBuffer, conversation);
-  //     if (update != null) {
-  //       return update;
-  //     }
-  //     return null;
-  //   });
-  // }
-
-  //
+    return update;
+  }
 
   Future<DHTRecordCrypto> getConversationCrypto() async {
     var conversationCrypto = _conversationCrypto;
@@ -286,7 +260,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   final ActiveAccountInfo _activeAccountInfo;
   final TypedKey _remoteIdentityPublicKey;
   TypedKey? _localConversationRecordKey;
-  TypedKey? _remoteConversationRecordKey;
+  final TypedKey? _remoteConversationRecordKey;
   DefaultDHTRecordCubit<proto.Conversation>? _localConversationCubit;
   DefaultDHTRecordCubit<proto.Conversation>? _remoteConversationCubit;
   ConversationState _incrementalState;

@@ -78,17 +78,28 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   }
 
   Future<void> refresh(List<ValueSubkeyRange> subkeys) async {
+    var updateSubkeys = [...subkeys];
+
     for (final skr in subkeys) {
       for (var sk = skr.low; sk <= skr.high; sk++) {
         final data = await _record.get(
             subkey: sk, forceRefresh: true, onlyUpdates: true);
         if (data != null) {
-          final newState = await _stateFunction(_record, subkeys, data);
-          xxx remove sk from update
+          final newState = await _stateFunction(_record, updateSubkeys, data);
+          if (newState != null) {
+            // Emit the new state
+            emit(AsyncValue.data(newState));
+          }
+          return;
         }
+        // remove sk from update list
+        // if we did not get an update for that subkey
+        updateSubkeys = updateSubkeys.removeSubkey(sk);
       }
     }
   }
+
+  DHTRecord get record => _record;
 
   StreamSubscription<VeilidUpdateValueChange>? _subscription;
   late DHTRecord _record;
@@ -113,7 +124,7 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
           stateFunction: _makeStateFunction(decodeState),
         );
 
-  static Future<T?> Function(DHTRecord) _makeInitialStateFunction<T>(
+  static InitialStateFunction<T> _makeInitialStateFunction<T>(
           T Function(List<int> data) decodeState) =>
       (record) async {
         final initialData = await record.get();
@@ -123,28 +134,30 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
         return decodeState(initialData);
       };
 
-  static Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
-      _makeStateFunction<T>(T Function(List<int> data) decodeState) =>
-          (record, subkeys, updatedata) async {
-            final defaultSubkey = record.subkeyOrDefault(-1);
-            if (subkeys.containsSubkey(defaultSubkey)) {
-              final Uint8List data;
-              final firstSubkey = subkeys.firstOrNull!.low;
-              if (firstSubkey != defaultSubkey) {
-                final maybeData = await record.get(forceRefresh: true);
-                if (maybeData == null) {
-                  return null;
-                }
-                data = maybeData;
-              } else {
-                data = updatedata;
-              }
-              final newState = decodeState(data);
-              return newState;
+  static StateFunction<T> _makeStateFunction<T>(
+          T Function(List<int> data) decodeState) =>
+      (record, subkeys, updatedata) async {
+        final defaultSubkey = record.subkeyOrDefault(-1);
+        if (subkeys.containsSubkey(defaultSubkey)) {
+          final Uint8List data;
+          final firstSubkey = subkeys.firstOrNull!.low;
+          if (firstSubkey != defaultSubkey) {
+            final maybeData = await record.get(forceRefresh: true);
+            if (maybeData == null) {
+              return null;
             }
-            return null;
-          };
+            data = maybeData;
+          } else {
+            data = updatedata;
+          }
+          final newState = decodeState(data);
+          return newState;
+        }
+        return null;
+      };
 
-  // xxx add refresh/get mechanism to DHTRecordCubit and here too, then propagage to conversation_cubit
-  // xxx should just be a 'get' like in dht_short_array_cubit
+  Future<void> refreshDefault() async {
+    final defaultSubkey = _record.subkeyOrDefault(-1);
+    await refresh([ValueSubkeyRange(low: defaultSubkey, high: defaultSubkey)]);
+  }
 }
