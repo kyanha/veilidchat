@@ -42,7 +42,7 @@ class ValidContactInvitation {
           .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
         // Create local conversation key for this
         // contact and send via contact response
-        final conversation = ConversationManager(
+        final conversation = ConversationCubit(
             activeAccountInfo: _activeAccountInfo,
             remoteIdentityPublicKey:
                 _contactIdentityMaster.identityPublicTypedKey());

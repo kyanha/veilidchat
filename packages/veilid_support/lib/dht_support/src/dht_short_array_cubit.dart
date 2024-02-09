@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:meta/meta.dart';
 
 import '../../veilid_support.dart';
 
@@ -105,7 +104,6 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
     await super.close();
   }
 
-  @protected
   DHTShortArray get shortArray => _shortArray;
 
   late final DHTShortArray _shortArray;

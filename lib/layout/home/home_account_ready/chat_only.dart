@@ -35,6 +35,6 @@ class ChatOnlyPageState extends State<ChatOnlyPage>
   Widget build(BuildContext context) => SafeArea(
           child: GestureDetector(
         onTap: () => FocusScope.of(context).requestFocus(_unfocusNode),
-        child: buildChatComponent(),
+        child: const ChatComponent(),
       ));
 }

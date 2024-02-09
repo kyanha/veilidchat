@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../chat/chat.dart';
 import '../../proto/proto.dart' as proto;
 
 @immutable
@@ -181,31 +182,31 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         // ignore: prefer_expression_function_bodies
         .deleteScope((localConversation) async {
       // Make messages log
-      return (await DHTShortArray.create(
-              parent: localConversation.key,
-              crypto: crypto,
-              smplWriter: writer))
-          .deleteScope((messages) async {
-        // Create initial local conversation key contents
-        final conversation = proto.Conversation()
-          ..profile = profile
-          ..identityMasterJson = jsonEncode(
-              _activeAccountInfo.localAccount.identityMaster.toJson())
-          ..messages = messages.record.key.toProto();
+      return MessagesCubit.initLocalMessages(
+          activeAccountInfo: _activeAccountInfo,
+          remoteIdentityPublicKey: _remoteIdentityPublicKey,
+          localConversationKey: localConversation.key,
+          callback: (messages) async {
+            // Create initial local conversation key contents
+            final conversation = proto.Conversation()
+              ..profile = profile
+              ..identityMasterJson = jsonEncode(
+                  _activeAccountInfo.localAccount.identityMaster.toJson())
+              ..messages = messages.record.key.toProto();
 
-        // Write initial conversation to record
-        final update = await localConversation.tryWriteProtobuf(
-            proto.Conversation.fromBuffer, conversation);
-        if (update != null) {
-          throw Exception('Failed to write local conversation');
-        }
-        final out = await callback(localConversation);
+            // Write initial conversation to record
+            final update = await localConversation.tryWriteProtobuf(
+                proto.Conversation.fromBuffer, conversation);
+            if (update != null) {
+              throw Exception('Failed to write local conversation');
+            }
+            final out = await callback(localConversation);
 
-        // Upon success emit the local conversation record to the state
-        updateLocalConversationState(AsyncValue.data(conversation));
+            // Upon success emit the local conversation record to the state
+            updateLocalConversationState(AsyncValue.data(conversation));
 
-        return out;
-      });
+            return out;
+          });
     });
 
     // If success, save the new local conversation record key in this object

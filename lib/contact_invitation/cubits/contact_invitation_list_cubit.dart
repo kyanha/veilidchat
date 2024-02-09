@@ -330,17 +330,20 @@ class ContactInvitationListCubit
         final remoteConversationRecordKey = proto.TypedKeyProto.fromProto(
             contactResponse.remoteConversationRecordKey);
 
-        final conversation = ConversationManager(
+        final conversation = ConversationCubit(
             activeAccountInfo: _activeAccountInfo,
             remoteIdentityPublicKey:
                 contactIdentityMaster.identityPublicTypedKey(),
             remoteConversationRecordKey: remoteConversationRecordKey);
+        await conversation.refresh();
 
-        final remoteConversation = await conversation.readRemoteConversation();
+        final remoteConversation =
+            conversation.state.data?.value.remoteConversation;
         if (remoteConversation == null) {
           log.info('Remote conversation could not be read. Waiting...');
           return null;
         }
+
         // Complete the local conversation now that we have the remote profile
         final localConversationRecordKey = proto.TypedKeyProto.fromProto(
             contactInvitationRecord.localConversationRecordKey);

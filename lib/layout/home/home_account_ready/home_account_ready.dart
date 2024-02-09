@@ -73,7 +73,7 @@ class HomeAccountReadyState extends State<HomeAccountReady>
       builder: (context) =>
           Material(color: Colors.transparent, child: buildUserPanel()));
 
-  Widget buildTabletRightPane(BuildContext context) => buildChatComponent();
+  Widget buildTabletRightPane(BuildContext context) => const ChatComponent();
 
   // ignore: prefer_expression_function_bodies
   Widget buildTablet(BuildContext context) {
