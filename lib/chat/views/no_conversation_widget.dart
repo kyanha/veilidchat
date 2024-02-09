@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-//XXX should rename this
-class NoContactWidget extends StatelessWidget {
-  const NoContactWidget({super.key});
+class NoConversationWidget extends StatelessWidget {
+  const NoConversationWidget({super.key});
 
   @override
   // ignore: prefer_expression_function_bodies
