@@ -24,6 +24,8 @@ class ChatSingleContactItemWidget extends StatelessWidget {
     final scale = theme.extension<ScaleScheme>()!;
 
     final activeChatCubit = context.watch<ActiveChatCubit>();
+    final activeConversationsCubit = context.watch<ActiveConversationsCubit>();
+
     final remoteConversationRecordKey =
         proto.TypedKeyProto.fromProto(_contact.remoteConversationRecordKey);
     final selected = activeChatCubit.state == remoteConversationRecordKey;
@@ -67,6 +69,8 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             // component is not dragged.
             child: ListTile(
                 onTap: () {
+                  xxx deal with async 
+                  activeConversationsCubit.addConversation(contact: _contact);
                   activeChatCubit.setActiveChat(remoteConversationRecordKey);
                 },
                 title: Text(_contact.editedProfile.name),

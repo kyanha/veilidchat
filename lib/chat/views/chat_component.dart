@@ -115,96 +115,97 @@ class ChatComponentState extends State<ChatComponent> {
 
     final activeChatCubit = context.watch<ActiveChatCubit>();
     final contactListCubit = context.watch<ContactListCubit>();
+    final activeAccountInfo = context.watch<ActiveAccountInfo>();
 
     final activeChatContactKey = activeChatCubit.state;
     if (activeChatContactKey == null) {
       return const NoConversationWidget();
     }
     return contactListCubit.state.builder((context, contactList) {
-      
       // Get active chat contact profile
       final activeChatContactIdx = contactList.indexWhere(
           (c) => activeChatContactKey == c.remoteConversationRecordKey);
       late final proto.Contact activeChatContact;
       if (activeChatContactIdx == -1) {
-        activeChatCubit.setActiveChat(null);
         return const NoConversationWidget();
       } else {
         activeChatContact = contactList[activeChatContactIdx];
       }
       final contactName = activeChatContact.editedProfile.name;
 
-      // Make a messages cubit for this conversation
-      xxx
+      // final protoMessages =
+      //     ref.watch(activeConversationMessagesProvider).asData?.value;
+      // if (protoMessages == null) {
+      //   return waitingPage(context);
+      // }
+      // final messages = <types.Message>[];
+      // for (final protoMessage in protoMessages) {
+      //   final message = protoMessageToMessage(protoMessage);
+      //   messages.insert(0, message);
+      // }
 
-      final protoMessages =
-          ref.watch(activeConversationMessagesProvider).asData?.value;
-      if (protoMessages == null) {
-        return waitingPage(context);
-      }
-      final messages = <types.Message>[];
-      for (final protoMessage in protoMessages) {
-        final message = protoMessageToMessage(protoMessage);
-        messages.insert(0, message);
-      }
-
-      return DefaultTextStyle(
-          style: textTheme.bodySmall!,
-          child: Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: Stack(
-              children: [
-                Column(
+      return BlocProvider(
+          create: (context) => MessagesCubit(
+              activeAccountInfo: activeAccountInfo,
+              remoteIdentityPublicKey: activeChatContact.identityPublicKey, localConversationRecordKey: activeChatContact.localConversationRecordKey, localMessagesRecordKey: activeChatContact.,
+              ),
+          child: DefaultTextStyle(
+              style: textTheme.bodySmall!,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Stack(
                   children: [
-                    Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: scale.primaryScale.subtleBorder,
-                      ),
-                      child: Row(children: [
-                        Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Padding(
-                              padding: const EdgeInsetsDirectional.fromSTEB(
-                                  16, 0, 16, 0),
-                              child: Text(contactName,
-                                  textAlign: TextAlign.start,
-                                  style: textTheme.titleMedium),
-                            )),
-                        const Spacer(),
-                        IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () async {
-                              context
-                                  .read<ActiveChatCubit>()
-                                  .setActiveChat(null);
-                            }).paddingLTRB(16, 0, 16, 0)
-                      ]),
-                    ),
-                    Expanded(
-                      child: DecoratedBox(
-                        decoration: const BoxDecoration(),
-                        child: Chat(
-                          theme: chatTheme,
-                          messages: messages,
-                          //onAttachmentPressed: _handleAttachmentPressed,
-                          //onMessageTap: _handleMessageTap,
-                          //onPreviewDataFetched: _handlePreviewDataFetched,
-
-                          onSendPressed: (message) {
-                            unawaited(_handleSendPressed(message));
-                          },
-                          //showUserAvatars: false,
-                          //showUserNames: true,
-                          user: _localUser,
+                    Column(
+                      children: [
+                        Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: scale.primaryScale.subtleBorder,
+                          ),
+                          child: Row(children: [
+                            Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Padding(
+                                  padding: const EdgeInsetsDirectional.fromSTEB(
+                                      16, 0, 16, 0),
+                                  child: Text(contactName,
+                                      textAlign: TextAlign.start,
+                                      style: textTheme.titleMedium),
+                                )),
+                            const Spacer(),
+                            IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () async {
+                                  context
+                                      .read<ActiveChatCubit>()
+                                      .setActiveChat(null);
+                                }).paddingLTRB(16, 0, 16, 0)
+                          ]),
                         ),
-                      ),
+                        Expanded(
+                          child: DecoratedBox(
+                            decoration: const BoxDecoration(),
+                            child: Chat(
+                              theme: chatTheme,
+                              messages: messages,
+                              //onAttachmentPressed: _handleAttachmentPressed,
+                              //onMessageTap: _handleMessageTap,
+                              //onPreviewDataFetched: _handlePreviewDataFetched,
+
+                              onSendPressed: (message) {
+                                unawaited(_handleSendPressed(message));
+                              },
+                              //showUserAvatars: false,
+                              //showUserNames: true,
+                              user: _localUser,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ));
+              )));
     });
   }
 }

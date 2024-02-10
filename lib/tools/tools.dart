@@ -1,4 +1,5 @@
 export 'animations.dart';
+export 'cubit_map.dart';
 export 'enter_password.dart';
 export 'enter_pin.dart';
 export 'loggy.dart';

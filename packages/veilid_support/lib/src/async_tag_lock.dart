@@ -39,6 +39,15 @@ class AsyncTagLock<T> {
     }
   }
 
+  Future<R> protect<R>(T tag, {required Future<R> Function() closure}) async {
+    await lockTag(tag);
+    try {
+      return await closure();
+    } finally {
+      unlockTag(tag);
+    }
+  }
+
   //
   final Mutex _tableLock;
   final Map<T, _AsyncTagLockEntry> _locks;

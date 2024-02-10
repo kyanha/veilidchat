@@ -9,6 +9,7 @@ import '../../../account_manager/account_manager.dart';
 import '../../../chat/chat.dart';
 import '../../../chat_list/chat_list.dart';
 import '../../../contact_invitation/contact_invitation.dart';
+import '../../../contacts/contacts.dart';
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
 import 'main_pager/main_pager.dart';
@@ -115,9 +116,16 @@ class HomeAccountReadyState extends State<HomeAccountReady>
                   activeAccountInfo: activeAccountInfo,
                   account: accountData.value)),
           BlocProvider(
+              create: (context) => ContactListCubit(
+                  activeAccountInfo: activeAccountInfo,
+                  account: accountData.value)),
+          BlocProvider(
               create: (context) => ChatListCubit(
                   activeAccountInfo: activeAccountInfo,
                   account: accountData.value)),
+          BlocProvider(
+              create: (context) => ActiveConversationsCubit(
+                  activeAccountInfo: activeAccountInfo)),
           BlocProvider(create: (context) => ActiveChatCubit(null))
         ],
         child: responsiveVisibility(

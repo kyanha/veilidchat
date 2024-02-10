@@ -13,12 +13,12 @@ abstract class StreamWrapperCubit<State> extends Cubit<AsyncValue<State>> {
         onError: (Object error, StackTrace stackTrace) {
       emit(AsyncValue.error(error, stackTrace));
     });
+  }
 
-    @override
-    Future<void> close() async {
-      await _subscription.cancel();
-      await super.close();
-    }
+  @override
+  Future<void> close() async {
+    await _subscription.cancel();
+    await super.close();
   }
 
   late final StreamSubscription<State> _subscription;
