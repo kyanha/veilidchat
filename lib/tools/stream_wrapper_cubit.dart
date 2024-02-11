@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 abstract class StreamWrapperCubit<State> extends Cubit<AsyncValue<State>> {
   StreamWrapperCubit(Stream<State> stream, {State? defaultState})

@@ -1,3 +1,4 @@
+import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:blurry_modal_progress_hud/blurry_modal_progress_hud.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +7,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:motion_toast/motion_toast.dart';
 import 'package:quickalert/quickalert.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 import '../theme/theme.dart';
 

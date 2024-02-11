@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 typedef BlocMapState<K, S> = IMap<K, S>;
 
@@ -47,6 +47,14 @@ abstract class BlocMapCubit<K, S, B extends BlocBase<S>>
       emit(state.add(key, bloc.state));
     });
   }
+
+  Future<void> addState(K key, S value) =>
+      _tagLock.protect(key, closure: () async {
+        // Remove entry with the same key if it exists
+        await _internalRemove(key);
+
+        emit(state.add(key, value));
+      });
 
   Future<void> _internalRemove(K key) async {
     final sub = _entries.remove(key);

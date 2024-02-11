@@ -1,8 +1,7 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
-
-import '../veilid_support.dart';
 
 abstract class FutureCubit<State> extends Cubit<AsyncValue<State>> {
   FutureCubit(Future<State> fut) : super(const AsyncValue.loading()) {

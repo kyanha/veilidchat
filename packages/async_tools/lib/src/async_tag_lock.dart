@@ -2,8 +2,8 @@ import 'package:mutex/mutex.dart';
 
 class _AsyncTagLockEntry {
   _AsyncTagLockEntry()
-      : mutex = Mutex(),
-        waitingCount = 1;
+      : mutex = Mutex.locked(),
+        waitingCount = 0;
   //
   Mutex mutex;
   int waitingCount;
@@ -16,16 +16,26 @@ class AsyncTagLock<T> {
 
   Future<void> lockTag(T tag) async {
     await _tableLock.protect(() async {
-      var lockEntry = _locks[tag];
+      final lockEntry = _locks[tag];
       if (lockEntry != null) {
         lockEntry.waitingCount++;
+        await lockEntry.mutex.acquire();
+        lockEntry.waitingCount--;
       } else {
-        lockEntry = _locks[tag] = _AsyncTagLockEntry();
+        _locks[tag] = _AsyncTagLockEntry();
       }
-
-      await lockEntry.mutex.acquire();
-      lockEntry.waitingCount--;
     });
+  }
+
+  bool isLocked(T tag) => _locks.containsKey(tag);
+
+  bool tryLock(T tag) {
+    final lockEntry = _locks[tag];
+    if (lockEntry != null) {
+      return false;
+    }
+    _locks[tag] = _AsyncTagLockEntry();
+    return true;
   }
 
   void unlockTag(T tag) {

@@ -169,4 +169,21 @@ abstract class AsyncValue<T> with _$AsyncValue<T> {
         loading: () => const AsyncValue.loading(),
         error: AsyncValue.error,
       );
+
+  /// Check two AsyncData instances for equality
+  bool equalsData(AsyncValue<T> other,
+          {required bool Function(T a, T b) equals}) =>
+      other.when(
+          data: (nd) => when(
+              data: (d) => equals(d, nd),
+              loading: () => true,
+              error: (_e, _st) => true),
+          loading: () => when(
+              data: (_) => true,
+              loading: () => false,
+              error: (_e, _st) => true),
+          error: (ne, nst) => when(
+              data: (_) => true,
+              loading: () => true,
+              error: (e, st) => e != ne || st != nst));
 }

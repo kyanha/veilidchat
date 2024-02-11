@@ -7,6 +7,8 @@ environment:
   sdk: '>=3.0.5 <4.0.0'  
 
 dependencies:
+  async_tools:
+    path: ../async_tools
   bloc: ^8.1.2
   equatable: ^2.0.5
   fast_immutable_collections: ^9.1.5
@@ -14,7 +16,6 @@ dependencies:
   json_annotation: ^4.8.1
   loggy: ^2.0.3
   meta: ^1.10.0
-  mutex: ^3.1.0
   protobuf: ^3.0.0
   veilid:
     #   veilid: ^0.0.1

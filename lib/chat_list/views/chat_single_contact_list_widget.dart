@@ -10,8 +10,6 @@ import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import '../chat_list.dart';
-import 'chat_single_contact_item_widget.dart';
-import 'empty_chat_list_widget.dart';
 
 class ChatSingleContactListWidget extends StatelessWidget {
   const ChatSingleContactListWidget({super.key});

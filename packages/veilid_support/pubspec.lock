@@ -33,6 +33,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
+  async_tools:
+    dependency: "direct main"
+    description:
+      path: "../async_tools"
+      relative: true
+    source: path
+    version: "1.0.0"
   bloc:
     dependency: "direct main"
     description:
@@ -404,12 +411,11 @@ packages:
     source: hosted
     version: "1.0.4"
   mutex:
-    dependency: "direct main"
+    dependency: transitive
     description:
-      name: mutex
-      sha256: "8827da25de792088eb33e572115a5eb0d61d61a3c01acbc8bcbe76ed78f1a1f2"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../mutex"
+      relative: true
+    source: path
     version: "3.1.0"
   node_preamble:
     dependency: transitive
@@ -784,5 +790,5 @@ packages:
     source: hosted
     version: "3.1.2"
 sdks:
-  dart: ">=3.2.0-194.0.dev <4.0.0"
+  dart: ">=3.2.6 <4.0.0"
   flutter: ">=3.10.6"

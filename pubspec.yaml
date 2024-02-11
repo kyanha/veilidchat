@@ -11,6 +11,8 @@ dependencies:
   animated_theme_switcher: ^2.0.10
   ansicolor: ^2.0.2
   archive: ^3.4.10
+  async_tools:
+    path: packages/async_tools
   awesome_extensions: ^2.0.12
   badges: ^3.1.2
   basic_utils: ^5.7.0
@@ -51,7 +53,8 @@ dependencies:
   meta: ^1.10.0
   mobile_scanner: ^3.5.7
   motion_toast: ^2.8.0
-  mutex: ^3.1.0
+  mutex:
+    path: packages/mutex
   pasteboard: ^0.2.0
   path: ^1.8.3
   path_provider: ^2.1.2

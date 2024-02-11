@@ -1,3 +1,4 @@
+import 'package:async_tools/async_tools.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,7 +25,9 @@ class ChatSingleContactItemWidget extends StatelessWidget {
     final scale = theme.extension<ScaleScheme>()!;
 
     final activeChatCubit = context.watch<ActiveChatCubit>();
-    final activeConversationsCubit = context.watch<ActiveConversationsCubit>();
+    // final activeConversation = context.select<ActiveConversationsCubit, >();
+    // final activeConversationMessagesCubit =
+    //     context.watch<ActiveConversationMessagesCubit>(); xxx does this need to be here?
 
     final remoteConversationRecordKey =
         proto.TypedKeyProto.fromProto(_contact.remoteConversationRecordKey);
@@ -69,9 +72,13 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             // component is not dragged.
             child: ListTile(
                 onTap: () {
-                  xxx deal with async 
-                  activeConversationsCubit.addConversation(contact: _contact);
-                  activeChatCubit.setActiveChat(remoteConversationRecordKey);
+                  final activeConversationsCubit =
+                      context.read<ActiveConversationsCubit>();
+                  singleFuture(activeChatCubit, () async {
+                    await activeConversationsCubit.addConversation(
+                        contact: _contact);
+                    activeChatCubit.setActiveChat(remoteConversationRecordKey);
+                  });
                 },
                 title: Text(_contact.editedProfile.name),
 

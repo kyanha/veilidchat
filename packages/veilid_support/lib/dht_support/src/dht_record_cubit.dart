@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
 
 import '../../veilid_support.dart';

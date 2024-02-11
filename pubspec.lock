@@ -57,6 +57,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.11.0"
+  async_tools:
+    dependency: "direct main"
+    description:
+      path: "packages/async_tools"
+      relative: true
+    source: path
+    version: "1.0.0"
   awesome_extensions:
     dependency: "direct main"
     description:
@@ -832,10 +839,9 @@ packages:
   mutex:
     dependency: "direct main"
     description:
-      name: mutex
-      sha256: "8827da25de792088eb33e572115a5eb0d61d61a3c01acbc8bcbe76ed78f1a1f2"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/mutex"
+      relative: true
+    source: path
     version: "3.1.0"
   nested:
     dependency: transitive
@@ -1609,5 +1615,5 @@ packages:
     source: hosted
     version: "0.9.0"
 sdks:
-  dart: ">=3.2.3 <4.0.0"
+  dart: ">=3.2.6 <4.0.0"
   flutter: ">=3.16.6"
