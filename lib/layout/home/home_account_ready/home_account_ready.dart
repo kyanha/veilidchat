@@ -74,7 +74,15 @@ class HomeAccountReadyState extends State<HomeAccountReady>
       builder: (context) =>
           Material(color: Colors.transparent, child: buildUserPanel()));
 
-  Widget buildTabletRightPane(BuildContext context) => const ChatComponent();
+  Widget buildTabletRightPane(BuildContext context) {
+    final activeChatRemoteConversationKey =
+        context.watch<ActiveChatCubit>().state;
+    if (activeChatRemoteConversationKey == null) {
+      return const EmptyChatWidget();
+    }
+    return ChatComponent.builder(
+        remoteConversationRecordKey: activeChatRemoteConversationKey);
+  }
 
   // ignore: prefer_expression_function_bodies
   Widget buildTablet(BuildContext context) {
@@ -106,7 +114,7 @@ class HomeAccountReadyState extends State<HomeAccountReady>
     final accountData = context.watch<AccountRecordCubit>().state.data;
 
     if (accountData == null) {
-      return waitingPage(context);
+      return waitingPage();
     }
 
     return MultiBlocProvider(

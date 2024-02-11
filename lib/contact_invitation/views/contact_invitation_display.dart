@@ -89,7 +89,7 @@ class ContactInvitationDisplayDialogState
                 minHeight: cardsize,
                 maxHeight: cardsize),
             child: signedContactInvitationBytesV.when(
-                loading: () => buildProgressIndicator(context),
+                loading: buildProgressIndicator,
                 data: (data) => Form(
                     key: formKey,
                     child: Column(children: [

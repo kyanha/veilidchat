@@ -56,8 +56,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin {
       case AccountInfoStatus.accountLocked:
         return const HomeAccountLocked();
       case AccountInfoStatus.accountReady:
-        return Provider.value(
-            value: accountInfo.activeAccountInfo,
+        return Provider<ActiveAccountInfo>.value(
+            value: accountInfo.activeAccountInfo!,
             child: BlocProvider(
                 create: (context) => AccountRecordCubit(
                     record: accountInfo.activeAccountInfo!.accountRecord),

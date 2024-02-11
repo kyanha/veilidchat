@@ -25,10 +25,6 @@ class ChatSingleContactItemWidget extends StatelessWidget {
     final scale = theme.extension<ScaleScheme>()!;
 
     final activeChatCubit = context.watch<ActiveChatCubit>();
-    // final activeConversation = context.select<ActiveConversationsCubit, >();
-    // final activeConversationMessagesCubit =
-    //     context.watch<ActiveConversationMessagesCubit>(); xxx does this need to be here?
-
     final remoteConversationRecordKey =
         proto.TypedKeyProto.fromProto(_contact.remoteConversationRecordKey);
     final selected = activeChatCubit.state == remoteConversationRecordKey;

@@ -4,8 +4,8 @@ import 'async_tag_lock.dart';
 
 AsyncTagLock<Object> _keys = AsyncTagLock();
 
-void singleFuture(Object tag, Future<void> Function() closure,
-    {void Function()? onBusy}) {
+void singleFuture<T>(Object tag, Future<T> Function() closure,
+    {void Function()? onBusy, void Function(T)? onDone}) {
   if (!_keys.tryLock(tag)) {
     if (onBusy != null) {
       onBusy();
@@ -13,7 +13,13 @@ void singleFuture(Object tag, Future<void> Function() closure,
     return;
   }
   unawaited(() async {
-    await closure();
-    _keys.unlockTag(tag);
+    try {
+      final out = await closure();
+      if (onDone != null) {
+        onDone(out);
+      }
+    } finally {
+      _keys.unlockTag(tag);
+    }
   }());
 }

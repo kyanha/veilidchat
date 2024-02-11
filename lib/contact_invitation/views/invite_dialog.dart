@@ -242,7 +242,7 @@ class InviteDialogState extends State<InviteDialog> {
       return SizedBox(
               height: 300,
               width: 300,
-              child: buildProgressIndicator(context).toCenter())
+              child: buildProgressIndicator().toCenter())
           .paddingAll(16);
     }
     return ConstrainedBox(
@@ -258,7 +258,7 @@ class InviteDialogState extends State<InviteDialog> {
                 Column(children: [
                   Text(translate('invite_dialog.validating'))
                       .paddingLTRB(0, 0, 0, 16),
-                  buildProgressIndicator(context).paddingAll(16),
+                  buildProgressIndicator().paddingAll(16),
                 ]).toCenter(),
               if (_validInvitation == null &&
                   !_isValidating &&

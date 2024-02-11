@@ -18,55 +18,94 @@ import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import '../chat.dart';
 
-class ChatComponent extends StatefulWidget {
-  const ChatComponent({required this.remoteConversationRecordKey, super.key});
+class ChatComponent extends StatelessWidget {
+  const ChatComponent._(
+      {required TypedKey localUserIdentityKey,
+      required TypedKey remoteConversationRecordKey,
+      required IList<proto.Message> messages,
+      required types.User localUser,
+      required types.User remoteUser,
+      super.key})
+      : _localUserIdentityKey = localUserIdentityKey,
+        _remoteConversationRecordKey = remoteConversationRecordKey,
+        _messages = messages,
+        _localUser = localUser,
+        _remoteUser = remoteUser;
 
-  @override
-  ChatComponentState createState() => ChatComponentState();
+  final TypedKey _localUserIdentityKey;
+  final TypedKey _remoteConversationRecordKey;
+  final IList<proto.Message> _messages;
+  final types.User _localUser;
+  final types.User _remoteUser;
 
-  final TypedKey remoteConversationRecordKey;
+  // Builder wrapper function that takes care of state management requirements
+  static Widget builder(
+          {required TypedKey remoteConversationRecordKey, Key? key}) =>
+      Builder(builder: (context) {
+        // Get all watched dependendies
+        final activeAccountInfo = context.watch<ActiveAccountInfo>();
+        final accountRecordInfo =
+            context.watch<AccountRecordCubit>().state.data?.value;
+        if (accountRecordInfo == null) {
+          return debugPage('should always have an account record here');
+        }
+        final contactList = context.watch<ContactListCubit>().state.data?.value;
+        if (contactList == null) {
+          return debugPage('should always have a contact list here');
+        }
+        final avconversation = context.select<ActiveConversationsCubit,
+                AsyncValue<ActiveConversationState>?>(
+            (x) => x.state[remoteConversationRecordKey]);
+        if (avconversation == null) {
+          return debugPage('should always have an active conversation here');
+        }
+        final conversation = avconversation.data?.value;
+        if (conversation == null) {
+          return avconversation.buildNotData();
+        }
 
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<TypedKey>(
-        'chatRemoteConversationKey', remoteConversationRecordKey));
-  }
-}
+        // Make flutter_chat_ui 'User's
+        final localUserIdentityKey = activeAccountInfo
+            .localAccount.identityMaster
+            .identityPublicTypedKey();
 
-class ChatComponentState extends State<ChatComponent> {
-  final _unfocusNode = FocusNode();
-  late final types.User _localUser;
-  late final types.User _remoteUser;
+        final localUser = types.User(
+          id: localUserIdentityKey.toString(),
+          firstName: accountRecordInfo.profile.name,
+        );
+        final editedName = conversation.contact.editedProfile.name;
+        final remoteUser = types.User(
+            id: proto.TypedKeyProto.fromProto(
+                    conversation.contact.identityPublicKey)
+                .toString(),
+            firstName: editedName);
 
-  @override
-  void initState() {
-    super.initState();
+        // Get the messages to display
+        // and ensure it is safe to operate() on the MessageCubit for this chat
+        final avmessages = context.select<ActiveConversationMessagesCubit,
+                AsyncValue<IList<proto.Message>>?>(
+            (x) => x.state[remoteConversationRecordKey]);
+        if (avmessages == null) {
+          return waitingPage();
+        }
+        final messages = avmessages.data?.value;
+        if (messages == null) {
+          return avmessages.buildNotData();
+        }
 
-    _localUser = types.User(
-      id: widget.activeAccountInfo.localAccount.identityMaster
-          .identityPublicTypedKey()
-          .toString(),
-      firstName: widget.activeAccountInfo.account.profile.name,
-    );
-    _remoteUser = types.User(
-        id: proto.TypedKeyProto.fromProto(
-                widget.activeChatContact.identityPublicKey)
-            .toString(),
-        firstName: widget.activeChatContact.remoteProfile.name);
-  }
+        return ChatComponent._(
+            localUserIdentityKey: localUserIdentityKey,
+            remoteConversationRecordKey: remoteConversationRecordKey,
+            messages: messages,
+            localUser: localUser,
+            remoteUser: remoteUser,
+            key: key);
+      });
 
-  @override
-  void dispose() {
-    _unfocusNode.dispose();
-    super.dispose();
-  }
+  /////////////////////////////////////////////////////////////////////
 
-  types.Message protoMessageToMessage(proto.Message message) {
-    final isLocal = message.author ==
-        widget.activeAccountInfo.localAccount.identityMaster
-            .identityPublicTypedKey()
-            .toProto();
+  types.Message messageToChatMessage(proto.Message message) {
+    final isLocal = message.author == _localUserIdentityKey.toProto();
 
     final textMessage = types.TextMessage(
       author: isLocal ? _localUser : _remoteUser,
@@ -77,142 +116,98 @@ class ChatComponentState extends State<ChatComponent> {
     return textMessage;
   }
 
-  Future<void> _addMessage(proto.Message protoMessage) async {
-    if (protoMessage.text.isEmpty) {
+  Future<void> _addMessage(BuildContext context, proto.Message message) async {
+    if (message.text.isEmpty) {
       return;
     }
-
-    final message = protoMessageToMessage(protoMessage);
-
-    // setState(() {
-    //   _messages.insert(0, message);
-    // });
-
-    // Now add the message to the conversation messages
-    final localConversationRecordKey = proto.TypedKeyProto.fromProto(
-        widget.activeChatContact.localConversationRecordKey);
-    final remoteIdentityPublicKey = proto.TypedKeyProto.fromProto(
-        widget.activeChatContact.identityPublicKey);
-
-    await addLocalConversationMessage(
-        activeAccountInfo: widget.activeAccountInfo,
-        localConversationRecordKey: localConversationRecordKey,
-        remoteIdentityPublicKey: remoteIdentityPublicKey,
-        message: protoMessage);
-
-    ref.invalidate(activeConversationMessagesProvider);
+    await context.read<ActiveConversationMessagesCubit>().operate(
+        _remoteConversationRecordKey,
+        closure: (messagesCubit) => messagesCubit.addMessage(message: message));
   }
 
-  Future<void> _handleSendPressed(types.PartialText message) async {
+  Future<void> _handleSendPressed(
+      BuildContext context, types.PartialText message) async {
     final protoMessage = proto.Message()
-      ..author = widget.activeAccountInfo.localAccount.identityMaster
-          .identityPublicTypedKey()
-          .toProto()
-      ..timestamp = (await eventualVeilid.future).now().toInt64()
+      ..author = _localUserIdentityKey.toProto()
+      ..timestamp = Veilid.instance.now().toInt64()
       ..text = message.text;
     //..signature = signature;
 
-    await _addMessage(protoMessage);
+    await _addMessage(context, protoMessage);
   }
 
-  void _handleAttachmentPressed() {
+  Future<void> _handleAttachmentPressed() async {
     //
   }
 
   @override
-  // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     final textTheme = Theme.of(context).textTheme;
     final chatTheme = makeChatTheme(scale, textTheme);
 
-    final contactListCubit = context.watch<ContactListCubit>();
+    // Convert protobuf messages to chat messages
+    final chatMessages = <types.Message>[];
+    for (final message in _messages) {
+      final chatMessage = messageToChatMessage(message);
+      chatMessages.insert(0, chatMessage);
+    }
 
-    return contactListCubit.state.builder((context, contactList) {
-      // Get active chat contact profile
-      final activeChatContactIdx = contactList.indexWhere((c) =>
-          widget.remoteConversationRecordKey == c.remoteConversationRecordKey);
-      late final proto.Contact activeChatContact;
-      if (activeChatContactIdx == -1) {
-        // xxx: error, no contact for conversation...
-        return const NoConversationWidget();
-      } else {
-        activeChatContact = contactList[activeChatContactIdx];
-      }
-      final contactName = activeChatContact.editedProfile.name;
-
-      final messages = context.select<ActiveConversationMessagesCubit,
-              AsyncValue<IList<proto.Message>>?>(
-          (x) => x.state[widget.remoteConversationRecordKey]);
-      if (messages == null) {
-        // xxx: error, no messages for conversation...
-        return const NoConversationWidget();
-      }
-      return messages.builder((context, protoMessages) {
-        final messages = <types.Message>[];
-        for (final protoMessage in protoMessages) {
-          final message = protoMessageToMessage(protoMessage);
-          messages.insert(0, message);
-        }
-        return DefaultTextStyle(
-            style: textTheme.bodySmall!,
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Stack(
+    return DefaultTextStyle(
+        style: textTheme.bodySmall!,
+        child: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Stack(
+            children: [
+              Column(
                 children: [
-                  Column(
-                    children: [
-                      Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: scale.primaryScale.subtleBorder,
-                        ),
-                        child: Row(children: [
-                          Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Padding(
-                                padding: const EdgeInsetsDirectional.fromSTEB(
-                                    16, 0, 16, 0),
-                                child: Text(contactName,
-                                    textAlign: TextAlign.start,
-                                    style: textTheme.titleMedium),
-                              )),
-                          const Spacer(),
-                          IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () async {
-                                context
-                                    .read<ActiveChatCubit>()
-                                    .setActiveChat(null);
-                              }).paddingLTRB(16, 0, 16, 0)
-                        ]),
+                  Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: scale.primaryScale.subtleBorder,
+                    ),
+                    child: Row(children: [
+                      Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Padding(
+                            padding: const EdgeInsetsDirectional.fromSTEB(
+                                16, 0, 16, 0),
+                            child: Text(_remoteUser.firstName!,
+                                textAlign: TextAlign.start,
+                                style: textTheme.titleMedium),
+                          )),
+                      const Spacer(),
+                      IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () async {
+                            context.read<ActiveChatCubit>().setActiveChat(null);
+                          }).paddingLTRB(16, 0, 16, 0)
+                    ]),
+                  ),
+                  Expanded(
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(),
+                      child: Chat(
+                        theme: chatTheme,
+                        messages: chatMessages,
+                        //onAttachmentPressed: _handleAttachmentPressed,
+                        //onMessageTap: _handleMessageTap,
+                        //onPreviewDataFetched: _handlePreviewDataFetched,
+                        onSendPressed: (message) {
+                          singleFuture(this,
+                              () async => _handleSendPressed(context, message));
+                        },
+                        //showUserAvatars: false,
+                        //showUserNames: true,
+                        user: _localUser,
                       ),
-                      Expanded(
-                        child: DecoratedBox(
-                          decoration: const BoxDecoration(),
-                          child: Chat(
-                            theme: chatTheme,
-                            messages: messages,
-                            //onAttachmentPressed: _handleAttachmentPressed,
-                            //onMessageTap: _handleMessageTap,
-                            //onPreviewDataFetched: _handlePreviewDataFetched,
-
-                            onSendPressed: (message) {
-                              unawaited(_handleSendPressed(message));
-                            },
-                            //showUserAvatars: false,
-                            //showUserNames: true,
-                            user: _localUser,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ));
-      });
-    });
+            ],
+          ),
+        ));
   }
 }

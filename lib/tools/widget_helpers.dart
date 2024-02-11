@@ -24,56 +24,72 @@ extension ModalProgressExt on Widget {
     return BlurryModalProgressHUD(
         inAsyncCall: isLoading,
         blurEffectIntensity: 4,
-        progressIndicator: buildProgressIndicator(context),
+        progressIndicator: buildProgressIndicator(),
         color: scale.tertiaryScale.appBackground.withAlpha(64),
         child: this);
   }
 }
 
-Widget buildProgressIndicator(BuildContext context) {
-  final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  return SpinKitFoldingCube(
-    color: scale.tertiaryScale.background,
-    size: 80,
-  );
-}
+Widget buildProgressIndicator() => Builder(builder: (context) {
+      final theme = Theme.of(context);
+      final scale = theme.extension<ScaleScheme>()!;
+      return SpinKitFoldingCube(
+        color: scale.tertiaryScale.background,
+        size: 80,
+      );
+    });
 
-Widget waitingPage(BuildContext context) => ColoredBox(
-    color: Theme.of(context).scaffoldBackgroundColor,
-    child: Center(child: buildProgressIndicator(context)));
+Widget waitingPage({String? text}) => Builder(
+    builder: (context) => ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Center(
+            child: Column(children: [
+          buildProgressIndicator(),
+          if (text != null) Text(text)
+        ]))));
 
-Widget errorPage(BuildContext context, Object err, StackTrace? st) =>
-    ColoredBox(
+Widget debugPage(String text) => Builder(
+    builder: (context) => ColoredBox(
         color: Theme.of(context).colorScheme.error,
-        child: Center(child: Text(err.toString())));
+        child: Center(child: Text(text))));
+
+Widget errorPage(Object err, StackTrace? st) => Builder(
+    builder: (context) => ColoredBox(
+        color: Theme.of(context).colorScheme.error,
+        child: Center(child: ErrorWidget(err))));
 
 Widget asyncValueBuilder<T>(
         AsyncValue<T> av, Widget Function(BuildContext, T) builder) =>
     av.when(
-        loading: () => const Builder(builder: waitingPage),
-        error: (e, st) =>
-            Builder(builder: (context) => errorPage(context, e, st)),
+        loading: waitingPage,
+        error: errorPage,
         data: (d) => Builder(builder: (context) => builder(context, d)));
 
 extension AsyncValueBuilderExt<T> on AsyncValue<T> {
   Widget builder(Widget Function(BuildContext, T) builder) =>
       asyncValueBuilder<T>(this, builder);
+  Widget buildNotData(
+          {Widget Function()? loading,
+          Widget Function(Object, StackTrace?)? error}) =>
+      when(
+          loading: () => (loading ?? waitingPage)(),
+          error: (e, st) => (error ?? errorPage)(e, st),
+          data: (d) => debugPage('AsyncValue should not be data here'));
 }
 
 class AsyncBlocBuilder<B extends StateStreamable<AsyncValue<S>>, S>
     extends BlocBuilder<B, AsyncValue<S>> {
   AsyncBlocBuilder({
     required BlocWidgetBuilder<S> builder,
-    Widget Function(BuildContext)? loading,
-    Widget Function(BuildContext, Object, StackTrace?)? error,
+    Widget Function()? loading,
+    Widget Function(Object, StackTrace?)? error,
     super.key,
     super.bloc,
     super.buildWhen,
   }) : super(
             builder: (context, state) => state.when(
-                loading: () => (loading ?? waitingPage)(context),
-                error: (e, st) => (error ?? errorPage)(context, e, st),
+                loading: () => (loading ?? waitingPage)(),
+                error: (e, st) => (error ?? errorPage)(e, st),
                 data: (d) => builder(context, d)));
 }
 

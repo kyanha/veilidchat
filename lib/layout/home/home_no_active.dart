@@ -21,5 +21,5 @@ class HomeNoActiveState extends State<HomeNoActive> {
   }
 
   @override
-  Widget build(BuildContext context) => waitingPage(context);
+  Widget build(BuildContext context) => waitingPage();
 }

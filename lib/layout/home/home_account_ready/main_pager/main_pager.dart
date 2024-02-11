@@ -143,7 +143,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
       return _onNewChatBottomSheetBuilder(context);
     } else {
       // Unknown error
-      return waitingPage(context);
+      return debugPage('unknown page');
     }
   }
 

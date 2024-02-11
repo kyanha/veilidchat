@@ -100,6 +100,8 @@ class ActiveConversationMessagesCubit extends BlocMapCubit<TypedKey,
               localMessagesRecordKey: localConversation.messages,
               remoteMessagesRecordKey: remoteConversation.messages)));
 
+  ////
+
   final ActiveAccountInfo _activeAccountInfo;
   ActiveConversationsBlocMapState _lastActiveConversationsState =
       ActiveConversationsBlocMapState();
