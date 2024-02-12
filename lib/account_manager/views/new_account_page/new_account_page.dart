@@ -106,7 +106,7 @@ class NewAccountPageState extends State<NewAccountPage> {
                 icon: const Icon(Icons.settings),
                 tooltip: translate('app_bar.settings_tooltip'),
                 onPressed: () async {
-                  context.go('/new_account/settings');
+                  await GoRouterHelper(context).push('/settings');
                 })
           ]),
       body: _newAccountForm(

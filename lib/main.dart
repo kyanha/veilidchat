@@ -42,7 +42,7 @@ void main() async {
     await initializeWindowControl();
 
     // Make localization delegate
-    final delegate = await LocalizationDelegate.create(
+    final localizationDelegate = await LocalizationDelegate.create(
         fallbackLocale: 'en_US', supportedLocales: ['en_US']);
     await initializeDateFormatting();
 
@@ -51,8 +51,8 @@ void main() async {
 
     // Run the app
     // Hot reloads will only restart this part, not Veilid
-    runApp(LocalizedApp(
-        delegate, VeilidChatApp(initialThemeData: initialThemeData)));
+    runApp(LocalizedApp(localizationDelegate,
+        VeilidChatApp(initialThemeData: initialThemeData)));
   }, (error, stackTrace) {
     log.error('Dart Runtime: {$error}\n{$stackTrace}');
   });

@@ -1,19 +1,27 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stream_transform/stream_transform.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../init.dart';
 import '../../layout/layout.dart';
+import '../../settings/settings.dart';
 import '../../tools/tools.dart';
 import '../../veilid_processor/views/developer.dart';
 
 part 'router_cubit.freezed.dart';
 part 'router_cubit.g.dart';
 part 'router_state.dart';
+
+final _rootNavKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavKey');
+final _homeNavKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavKey');
+final _readyAccountNavKey =
+    GlobalKey<NavigatorState>(debugLabel: 'readyAccountNavKey');
 
 class RouterCubit extends Cubit<RouterState> {
   RouterCubit(AccountRepository accountRepository)
@@ -27,9 +35,9 @@ class RouterCubit extends Cubit<RouterState> {
       await eventualInitialized.future;
       emit(state.copyWith(isInitialized: true));
     });
+
     // Subscribe to repository streams
-    _accountRepositorySubscription =
-        accountRepository.stream().listen((event) {
+    _accountRepositorySubscription = accountRepository.stream.listen((event) {
       switch (event) {
         case AccountRepositoryChange.localAccounts:
           emit(state.copyWith(
@@ -40,7 +48,6 @@ class RouterCubit extends Cubit<RouterState> {
           break;
       }
     });
-    _chatListRepositorySubscription = ...
   }
 
   @override
@@ -50,34 +57,50 @@ class RouterCubit extends Cubit<RouterState> {
   }
 
   /// Our application routes
-  List<GoRoute> get routes => [
+  List<RouteBase> get routes => [
         GoRoute(
           path: '/',
           builder: (context, state) => const IndexPage(),
         ),
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomePage(),
-          routes: [
-            GoRoute(
-              path: 'settings',
-              builder: (context, state) => const SettingsPage(),
-            ),
-            GoRoute(
-              path: 'chat',
-              builder: (context, state) => const ChatOnlyPage(),
-            ),
-          ],
-        ),
+        ShellRoute(
+            navigatorKey: _homeNavKey,
+            builder: (context, state, child) => HomeShell(child: child),
+            routes: [
+              GoRoute(
+                path: '/home/no_active',
+                builder: (context, state) => const HomeNoActive(),
+              ),
+              GoRoute(
+                path: '/home/account_missing',
+                builder: (context, state) => const HomeAccountMissing(),
+              ),
+              GoRoute(
+                path: '/home/account_locked',
+                builder: (context, state) => const HomeAccountLocked(),
+              ),
+              ShellRoute(
+                navigatorKey: _readyAccountNavKey,
+                builder: (context, state, child) =>
+                    HomeAccountReadyShell(child: child),
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (context, state) => const HomeAccountReadyMain(),
+                  ),
+                  GoRoute(
+                    path: '/home/chat',
+                    builder: (context, state) => const HomeAccountReadyChat(),
+                  ),
+                ],
+              ),
+            ]),
         GoRoute(
           path: '/new_account',
           builder: (context, state) => const NewAccountPage(),
-          routes: [
-            GoRoute(
-              path: 'settings',
-              builder: (context, state) => const SettingsPage(),
-            ),
-          ],
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsPage(),
         ),
         GoRoute(
           path: '/developer',
@@ -87,11 +110,8 @@ class RouterCubit extends Cubit<RouterState> {
 
   /// Redirects when our state changes
   String? redirect(BuildContext context, GoRouterState goRouterState) {
-    // if (state.isLoading || state.hasError) {
-    //   return null;
-    // }
-
     // No matter where we are, if there's not
+
     switch (goRouterState.matchedLocation) {
       case '/':
 
@@ -133,8 +153,7 @@ class RouterCubit extends Cubit<RouterState> {
           return '/home';
         }
         return null;
-      case '/home/settings':
-      case '/new_account/settings':
+      case '/settings':
         return null;
       case '/developer':
         return null;
@@ -142,6 +161,18 @@ class RouterCubit extends Cubit<RouterState> {
         return state.hasAnyAccount ? null : '/new_account';
     }
   }
+
+  /// Make a GoRouter instance that uses this cubit
+  GoRouter router() => GoRouter(
+        navigatorKey: _rootNavKey,
+        refreshListenable: StreamListenable(stream.startWith(state).distinct()),
+        debugLogDiagnostics: kDebugMode,
+        initialLocation: '/',
+        routes: routes,
+        redirect: redirect,
+      );
+
+  ////////////////
 
   late final StreamSubscription<AccountRepositoryChange>
       _accountRepositorySubscription;

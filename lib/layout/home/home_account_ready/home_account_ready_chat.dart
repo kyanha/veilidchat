@@ -2,28 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../chat/chat.dart';
-import '../../../tools/tools.dart';
 
-class ChatOnlyPage extends StatefulWidget {
-  const ChatOnlyPage({super.key});
+class HomeAccountReadyChat extends StatefulWidget {
+  const HomeAccountReadyChat({super.key});
 
   @override
-  ChatOnlyPageState createState() => ChatOnlyPageState();
+  HomeAccountReadyChatState createState() => HomeAccountReadyChatState();
 }
 
-class ChatOnlyPageState extends State<ChatOnlyPage>
-    with TickerProviderStateMixin {
+class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
   final _unfocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      setState(() {});
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.normal);
-    });
   }
 
   @override

@@ -40,14 +40,15 @@ class ActiveConversationsCubit extends BlocMapCubit<TypedKey,
   // Add an active conversation to be tracked for changes
   Future<void> addConversation({required proto.Contact contact}) async =>
       add(() => MapEntry(
-          contact.remoteConversationRecordKey,
+          contact.remoteConversationRecordKey.toVeilid(),
           TransformerCubit(
               ConversationCubit(
                 activeAccountInfo: _activeAccountInfo,
-                remoteIdentityPublicKey: contact.identityPublicKey,
-                localConversationRecordKey: contact.localConversationRecordKey,
+                remoteIdentityPublicKey: contact.identityPublicKey.toVeilid(),
+                localConversationRecordKey:
+                    contact.localConversationRecordKey.toVeilid(),
                 remoteConversationRecordKey:
-                    contact.remoteConversationRecordKey,
+                    contact.remoteConversationRecordKey.toVeilid(),
               ),
               // Transformer that only passes through completed conversations
               // along with the contact that corresponds to the completed

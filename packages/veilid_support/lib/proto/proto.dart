@@ -100,15 +100,17 @@ extension NonceProto on veilid.Nonce {
       ..u5 = b.getUint32(5 * 4);
     return out;
   }
+}
 
-  static veilid.Nonce fromProto(proto.Nonce p) {
+extension ProtoNonce on proto.Nonce {
+  veilid.Nonce toVeilid() {
     final b = ByteData(24)
-      ..setUint32(0 * 4, p.u0)
-      ..setUint32(1 * 4, p.u1)
-      ..setUint32(2 * 4, p.u2)
-      ..setUint32(3 * 4, p.u3)
-      ..setUint32(4 * 4, p.u4)
-      ..setUint32(5 * 4, p.u5);
+      ..setUint32(0 * 4, u0)
+      ..setUint32(1 * 4, u1)
+      ..setUint32(2 * 4, u2)
+      ..setUint32(3 * 4, u3)
+      ..setUint32(4 * 4, u4)
+      ..setUint32(5 * 4, u5);
     return veilid.Nonce.fromBytes(Uint8List.view(b.buffer));
   }
 }
@@ -122,9 +124,11 @@ extension TypedKeyProto on veilid.TypedKey {
       ..value = value.toProto();
     return out;
   }
+}
 
-  static veilid.TypedKey fromProto(proto.TypedKey p) =>
-      veilid.TypedKey(kind: p.kind, value: CryptoKeyProto.fromProto(p.value));
+extension ProtoTypedKey on proto.TypedKey {
+  veilid.TypedKey toVeilid() =>
+      veilid.TypedKey(kind: kind, value: CryptoKeyProto.fromProto(value));
 }
 
 /// KeyPair protobuf marshaling
