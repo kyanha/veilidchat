@@ -25,7 +25,7 @@ class ContactItemWidget extends StatelessWidget {
     final scale = theme.extension<ScaleScheme>()!;
 
     final remoteConversationKey =
-        proto.TypedKeyProto.fromProto(contact.remoteConversationRecordKey);
+        contact.remoteConversationRecordKey.toVeilid();
 
     return Container(
         margin: const EdgeInsets.fromLTRB(0, 4, 0, 0),

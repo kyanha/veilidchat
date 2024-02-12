@@ -24,17 +24,19 @@ extension CryptoKeyProto on veilid.CryptoKey {
       ..u7 = b.getUint32(7 * 4);
     return out;
   }
+}
 
-  static veilid.CryptoKey fromProto(proto.CryptoKey p) {
+extension ProtoCryptoKey on proto.CryptoKey {
+  veilid.CryptoKey toVeilid() {
     final b = ByteData(32)
-      ..setUint32(0 * 4, p.u0)
-      ..setUint32(1 * 4, p.u1)
-      ..setUint32(2 * 4, p.u2)
-      ..setUint32(3 * 4, p.u3)
-      ..setUint32(4 * 4, p.u4)
-      ..setUint32(5 * 4, p.u5)
-      ..setUint32(6 * 4, p.u6)
-      ..setUint32(7 * 4, p.u7);
+      ..setUint32(0 * 4, u0)
+      ..setUint32(1 * 4, u1)
+      ..setUint32(2 * 4, u2)
+      ..setUint32(3 * 4, u3)
+      ..setUint32(4 * 4, u4)
+      ..setUint32(5 * 4, u5)
+      ..setUint32(6 * 4, u6)
+      ..setUint32(7 * 4, u7);
     return veilid.CryptoKey.fromBytes(Uint8List.view(b.buffer));
   }
 }
@@ -63,25 +65,27 @@ extension SignatureProto on veilid.Signature {
       ..u15 = b.getUint32(15 * 4);
     return out;
   }
+}
 
-  static veilid.Signature fromProto(proto.Signature p) {
+extension ProtoSignature on proto.Signature {
+  veilid.Signature toVeilid() {
     final b = ByteData(64)
-      ..setUint32(0 * 4, p.u0)
-      ..setUint32(1 * 4, p.u1)
-      ..setUint32(2 * 4, p.u2)
-      ..setUint32(3 * 4, p.u3)
-      ..setUint32(4 * 4, p.u4)
-      ..setUint32(5 * 4, p.u5)
-      ..setUint32(6 * 4, p.u6)
-      ..setUint32(7 * 4, p.u7)
-      ..setUint32(8 * 4, p.u8)
-      ..setUint32(9 * 4, p.u9)
-      ..setUint32(10 * 4, p.u10)
-      ..setUint32(11 * 4, p.u11)
-      ..setUint32(12 * 4, p.u12)
-      ..setUint32(13 * 4, p.u13)
-      ..setUint32(14 * 4, p.u14)
-      ..setUint32(15 * 4, p.u15);
+      ..setUint32(0 * 4, u0)
+      ..setUint32(1 * 4, u1)
+      ..setUint32(2 * 4, u2)
+      ..setUint32(3 * 4, u3)
+      ..setUint32(4 * 4, u4)
+      ..setUint32(5 * 4, u5)
+      ..setUint32(6 * 4, u6)
+      ..setUint32(7 * 4, u7)
+      ..setUint32(8 * 4, u8)
+      ..setUint32(9 * 4, u9)
+      ..setUint32(10 * 4, u10)
+      ..setUint32(11 * 4, u11)
+      ..setUint32(12 * 4, u12)
+      ..setUint32(13 * 4, u13)
+      ..setUint32(14 * 4, u14)
+      ..setUint32(15 * 4, u15);
     return veilid.Signature.fromBytes(Uint8List.view(b.buffer));
   }
 }
@@ -128,7 +132,7 @@ extension TypedKeyProto on veilid.TypedKey {
 
 extension ProtoTypedKey on proto.TypedKey {
   veilid.TypedKey toVeilid() =>
-      veilid.TypedKey(kind: kind, value: CryptoKeyProto.fromProto(value));
+      veilid.TypedKey(kind: kind, value: value.toVeilid());
 }
 
 /// KeyPair protobuf marshaling
@@ -140,8 +144,9 @@ extension KeyPairProto on veilid.KeyPair {
       ..secret = secret.toProto();
     return out;
   }
+}
 
-  static veilid.KeyPair fromProto(proto.KeyPair p) => veilid.KeyPair(
-      key: CryptoKeyProto.fromProto(p.key),
-      secret: CryptoKeyProto.fromProto(p.secret));
+extension ProtoKeyPair on proto.KeyPair {
+  veilid.KeyPair toVeilid() =>
+      veilid.KeyPair(key: key.toVeilid(), secret: secret.toVeilid());
 }

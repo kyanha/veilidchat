@@ -26,7 +26,7 @@ class ChatSingleContactItemWidget extends StatelessWidget {
 
     final activeChatCubit = context.watch<ActiveChatCubit>();
     final remoteConversationRecordKey =
-        proto.TypedKeyProto.fromProto(_contact.remoteConversationRecordKey);
+        _contact.remoteConversationRecordKey.toVeilid();
     final selected = activeChatCubit.state == remoteConversationRecordKey;
 
     return Container(

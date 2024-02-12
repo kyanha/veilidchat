@@ -91,14 +91,17 @@ class ActiveConversationMessagesCubit extends BlocMapCubit<TypedKey,
           required proto.Conversation localConversation,
           required proto.Conversation remoteConversation}) async =>
       add(() => MapEntry(
-          proto.TypedKeyProto.fromProto(contact.remoteConversationRecordKey),
+          contact.remoteConversationRecordKey.toVeilid(),
           MessagesCubit(
               activeAccountInfo: _activeAccountInfo,
-              remoteIdentityPublicKey: contact.identityPublicKey,
-              localConversationRecordKey: contact.localConversationRecordKey,
-              remoteConversationRecordKey: contact.remoteConversationRecordKey,
-              localMessagesRecordKey: localConversation.messages,
-              remoteMessagesRecordKey: remoteConversation.messages)));
+              remoteIdentityPublicKey: contact.identityPublicKey.toVeilid(),
+              localConversationRecordKey:
+                  contact.localConversationRecordKey.toVeilid(),
+              remoteConversationRecordKey:
+                  contact.remoteConversationRecordKey.toVeilid(),
+              localMessagesRecordKey: localConversation.messages.toVeilid(),
+              remoteMessagesRecordKey:
+                  remoteConversation.messages.toVeilid())));
 
   ////
 

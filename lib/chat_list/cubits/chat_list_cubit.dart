@@ -23,8 +23,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-    final chatListRecordKey =
-        proto.OwnedDHTRecordPointerProto.fromProto(account.chatList);
+    final chatListRecordKey = account.chatList.toVeilid();
 
     final dhtRecord = await DHTShortArray.openOwned(chatListRecordKey,
         parent: accountRecordKey);

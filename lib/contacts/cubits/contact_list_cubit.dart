@@ -24,8 +24,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-    final contactListRecordKey =
-        proto.OwnedDHTRecordPointerProto.fromProto(account.contactList);
+    final contactListRecordKey = account.contactList.toVeilid();
 
     final dhtRecord = await DHTShortArray.openOwned(contactListRecordKey,
         parent: accountRecordKey);
@@ -63,10 +62,9 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     final pool = DHTRecordPool.instance;
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-    final localConversationKey =
-        proto.TypedKeyProto.fromProto(contact.localConversationRecordKey);
+    final localConversationKey = contact.localConversationRecordKey.toVeilid();
     final remoteConversationKey =
-        proto.TypedKeyProto.fromProto(contact.remoteConversationRecordKey);
+        contact.remoteConversationRecordKey.toVeilid();
 
     // Remove Contact from account's list
     for (var i = 0; i < shortArray.length; i++) {

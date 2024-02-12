@@ -80,8 +80,8 @@ class ValidContactInvitation {
               return AcceptedContact(
                 remoteProfile: _contactRequestPrivate.profile,
                 remoteIdentity: _contactIdentityMaster,
-                remoteConversationRecordKey: proto.TypedKeyProto.fromProto(
-                    _contactRequestPrivate.chatRecordKey),
+                remoteConversationRecordKey:
+                    _contactRequestPrivate.chatRecordKey.toVeilid(),
                 localConversationRecordKey: localConversation.key,
               );
             });

@@ -241,8 +241,7 @@ class DHTShortArray {
   /// Validate a new head record
   Future<void> _newHead(proto.DHTShortArray head) async {
     // Get the set of new linked keys and validate it
-    final linkedKeys =
-        head.keys.map<TypedKey>(proto.TypedKeyProto.fromProto).toList();
+    final linkedKeys = head.keys.map((p) => p.toVeilid()).toList();
     final index = head.index;
     final free = _validateHeadCacheData(linkedKeys, index);
 

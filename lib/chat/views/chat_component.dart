@@ -74,9 +74,7 @@ class ChatComponent extends StatelessWidget {
         );
         final editedName = conversation.contact.editedProfile.name;
         final remoteUser = types.User(
-            id: proto.TypedKeyProto.fromProto(
-                    conversation.contact.identityPublicKey)
-                .toString(),
+            id: conversation.contact.identityPublicKey.toVeilid().toString(),
             firstName: editedName);
 
         // Get the messages to display

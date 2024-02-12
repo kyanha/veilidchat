@@ -50,8 +50,7 @@ class ContactInvitationListCubit
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     final contactInvitationListRecordKey =
-        proto.OwnedDHTRecordPointerProto.fromProto(
-            account.contactInvitationRecords);
+        account.contactInvitationRecords.toVeilid();
 
     final dhtRecord = await DHTShortArray.openOwned(
         contactInvitationListRecordKey,
@@ -175,8 +174,7 @@ class ContactInvitationListCubit
       }
     }
     await (await pool.openOwned(
-            proto.OwnedDHTRecordPointerProto.fromProto(
-                contactInvitationRecord.contactRequestInbox),
+            contactInvitationRecord.contactRequestInbox.toVeilid(),
             parent: accountRecordKey))
         .scope((contactRequestInbox) async {
       // Wipe out old invitation so it shows up as invalid
@@ -185,8 +183,7 @@ class ContactInvitationListCubit
     });
     if (!accepted) {
       await (await pool.openRead(
-              proto.TypedKeyProto.fromProto(
-                  contactInvitationRecord.localConversationRecordKey),
+              contactInvitationRecord.localConversationRecordKey.toVeilid(),
               parent: accountRecordKey))
           .delete();
     }
@@ -205,7 +202,7 @@ class ContactInvitationListCubit
     final contactInvitation =
         proto.ContactInvitation.fromBuffer(contactInvitationBytes);
     final contactRequestInboxKey =
-        proto.TypedKeyProto.fromProto(contactInvitation.contactRequestInboxKey);
+        contactInvitation.contactRequestInboxKey.toVeilid();
 
     ValidContactInvitation? out;
 
@@ -216,7 +213,7 @@ class ContactInvitationListCubit
     // If we're chatting to ourselves,
     // we are validating an invitation we have created
     final isSelf = state.data!.value.indexWhere((cir) =>
-            proto.TypedKeyProto.fromProto(cir.contactRequestInbox.recordKey) ==
+            cir.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxKey) !=
         -1;
 
@@ -246,21 +243,20 @@ class ContactInvitationListCubit
 
       final contactRequestPrivate =
           proto.ContactRequestPrivate.fromBuffer(contactRequestPrivateBytes);
-      final contactIdentityMasterRecordKey = proto.TypedKeyProto.fromProto(
-          contactRequestPrivate.identityMasterRecordKey);
+      final contactIdentityMasterRecordKey =
+          contactRequestPrivate.identityMasterRecordKey.toVeilid();
 
       // Fetch the account master
       final contactIdentityMaster = await openIdentityMaster(
           identityMasterRecordKey: contactIdentityMasterRecordKey);
 
       // Verify
-      final signature = proto.SignatureProto.fromProto(
-          signedContactInvitation.identitySignature);
+      final signature = signedContactInvitation.identitySignature.toVeilid();
       await cs.verify(contactIdentityMaster.identityPublicKey,
           contactInvitationBytes, signature);
 
       final writer = KeyPair(
-          key: proto.CryptoKeyProto.fromProto(contactRequestPrivate.writerKey),
+          key: contactRequestPrivate.writerKey.toVeilid(),
           secret: writerSecret);
 
       out = ValidContactInvitation(
@@ -282,12 +278,10 @@ class ContactInvitationListCubit
       final pool = DHTRecordPool.instance;
       final accountRecordKey = _activeAccountInfo
           .userLogin.accountRecordInfo.accountRecord.recordKey;
-      final writerKey =
-          proto.CryptoKeyProto.fromProto(contactInvitationRecord.writerKey);
-      final writerSecret =
-          proto.CryptoKeyProto.fromProto(contactInvitationRecord.writerSecret);
-      final recordKey = proto.TypedKeyProto.fromProto(
-          contactInvitationRecord.contactRequestInbox.recordKey);
+      final writerKey = contactInvitationRecord.writerKey.toVeilid();
+      final writerSecret = contactInvitationRecord.writerSecret.toVeilid();
+      final recordKey =
+          contactInvitationRecord.contactRequestInbox.recordKey.toVeilid();
       final writer = TypedKeyPair(
           kind: recordKey.kind, key: writerKey, secret: writerSecret);
       final acceptReject = await (await pool.openRead(recordKey,
@@ -307,8 +301,8 @@ class ContactInvitationListCubit
             Uint8List.fromList(signedContactResponse.contactResponse);
         final contactResponse =
             proto.ContactResponse.fromBuffer(contactResponseBytes);
-        final contactIdentityMasterRecordKey = proto.TypedKeyProto.fromProto(
-            contactResponse.identityMasterRecordKey);
+        final contactIdentityMasterRecordKey =
+            contactResponse.identityMasterRecordKey.toVeilid();
         final cs = await pool.veilid.getCryptoSystem(recordKey.kind);
 
         // Fetch the remote contact's account master
@@ -316,8 +310,7 @@ class ContactInvitationListCubit
             identityMasterRecordKey: contactIdentityMasterRecordKey);
 
         // Verify
-        final signature = proto.SignatureProto.fromProto(
-            signedContactResponse.identitySignature);
+        final signature = signedContactResponse.identitySignature.toVeilid();
         await cs.verify(contactIdentityMaster.identityPublicKey,
             contactResponseBytes, signature);
 
@@ -327,8 +320,8 @@ class ContactInvitationListCubit
         }
 
         // Pull profile from remote conversation key
-        final remoteConversationRecordKey = proto.TypedKeyProto.fromProto(
-            contactResponse.remoteConversationRecordKey);
+        final remoteConversationRecordKey =
+            contactResponse.remoteConversationRecordKey.toVeilid();
 
         final conversation = ConversationCubit(
             activeAccountInfo: _activeAccountInfo,
@@ -345,8 +338,8 @@ class ContactInvitationListCubit
         }
 
         // Complete the local conversation now that we have the remote profile
-        final localConversationRecordKey = proto.TypedKeyProto.fromProto(
-            contactInvitationRecord.localConversationRecordKey);
+        final localConversationRecordKey =
+            contactInvitationRecord.localConversationRecordKey.toVeilid();
         return conversation.initLocalConversation(
             existingConversationRecordKey: localConversationRecordKey,
             profile: _account.profile,

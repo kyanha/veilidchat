@@ -17,9 +17,9 @@ extension OwnedDHTRecordPointerProto on OwnedDHTRecordPointer {
       ..owner = owner.toProto();
     return out;
   }
+}
 
-  static OwnedDHTRecordPointer fromProto(dhtproto.OwnedDHTRecordPointer p) =>
-      OwnedDHTRecordPointer(
-          recordKey: veilidproto.TypedKeyProto.fromProto(p.recordKey),
-          owner: veilidproto.KeyPairProto.fromProto(p.owner));
+extension ProtoOwnedDHTRecordPointer on dhtproto.OwnedDHTRecordPointer {
+  OwnedDHTRecordPointer toVeilid() => OwnedDHTRecordPointer(
+      recordKey: recordKey.toVeilid(), owner: owner.toVeilid());
 }
