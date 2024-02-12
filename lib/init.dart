@@ -19,11 +19,11 @@ Future<void> initializeVeilid() async {
   // Veilid logging
   initVeilidLog(kDebugMode);
 
-  // DHT Record Pool
-  await DHTRecordPool.init();
-
   // Startup Veilid
   await ProcessorRepository.instance.startup();
+
+  // DHT Record Pool
+  await DHTRecordPool.init();
 }
 
 // Initialize repositories

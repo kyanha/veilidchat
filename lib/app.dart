@@ -10,6 +10,7 @@ import 'account_manager/account_manager.dart';
 import 'router/router.dart';
 import 'settings/settings.dart';
 import 'tick.dart';
+import 'veilid_processor/veilid_processor.dart';
 
 class VeilidChatApp extends StatelessWidget {
   const VeilidChatApp({
@@ -31,6 +32,9 @@ class VeilidChatApp extends StatelessWidget {
               state: LocalizationProvider.of(context).state,
               child: MultiBlocProvider(
                   providers: [
+                    BlocProvider<ConnectionStateCubit>(
+                        create: (context) =>
+                            ConnectionStateCubit(ProcessorRepository.instance)),
                     BlocProvider<RouterCubit>(
                       create: (context) =>
                           RouterCubit(AccountRepository.instance),
