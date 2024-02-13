@@ -28,13 +28,13 @@ class LockPreference with _$LockPreference {
 
 // Theme supports multiple translations
 enum LanguagePreference {
-  englishUS;
+  englishUs;
 
   factory LanguagePreference.fromJson(dynamic j) =>
       LanguagePreference.values.byName((j as String).toCamelCase());
   String toJson() => name.toPascalCase();
 
-  static const LanguagePreference defaults = LanguagePreference.englishUS;
+  static const LanguagePreference defaults = LanguagePreference.englishUs;
 }
 
 // Preferences are stored in a table locally and globally affect all

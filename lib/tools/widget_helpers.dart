@@ -44,7 +44,7 @@ Widget waitingPage({String? text}) => Builder(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: Center(
             child: Column(children: [
-          buildProgressIndicator(),
+          buildProgressIndicator().expanded(),
           if (text != null) Text(text)
         ]))));
 

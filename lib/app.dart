@@ -59,8 +59,7 @@ class VeilidChatApp extends StatelessWidget {
                   child: BackgroundTicker(
                     builder: (context) => MaterialApp.router(
                       debugShowCheckedModeBanner: false,
-                      routerConfig:
-                          BlocProvider.of<RouterCubit>(context).router(),
+                      routerConfig: context.watch<RouterCubit>().router(),
                       title: translate('app.title'),
                       theme: theme,
                       localizationsDelegates: [

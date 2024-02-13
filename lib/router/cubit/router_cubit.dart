@@ -127,6 +127,9 @@ class RouterCubit extends Cubit<RouterState> {
         if (!state.hasAnyAccount) {
           return '/new_account';
         }
+        if (!state.hasActiveChat) { xxx stop using hasActiveChat here... we need a pager for the accounts and a way to get the current account state maybe a 'activeAccountCubit' or something, we may have this alraeady but it needs to work even if logged out.``
+          return '/home/no_active';
+        }
         if (responsiveVisibility(
             context: context,
             tablet: false,
@@ -141,6 +144,9 @@ class RouterCubit extends Cubit<RouterState> {
         if (!state.hasAnyAccount) {
           return '/new_account';
         }
+        if (!state.hasActiveChat) {
+          return '/home/no_active';
+        }
         if (responsiveVisibility(
             context: context,
             tablet: false,
@@ -153,6 +159,21 @@ class RouterCubit extends Cubit<RouterState> {
           return '/home';
         }
         return null;
+      case '/home/no_active':
+        if (state.hasActiveChat) {
+          return '/home';
+        }
+        return null;
+      case '/home/account_missing':
+        if (!state.hasActiveChat) {
+          return '/home/no_active';
+        }
+        return null;
+      case '/home/account_locked':
+        if (!state.hasActiveChat) {
+          return '/home/no_active';
+        }
+        return null;
       case '/settings':
         return null;
       case '/developer':
@@ -163,17 +184,24 @@ class RouterCubit extends Cubit<RouterState> {
   }
 
   /// Make a GoRouter instance that uses this cubit
-  GoRouter router() => GoRouter(
-        navigatorKey: _rootNavKey,
-        refreshListenable: StreamListenable(stream.startWith(state).distinct()),
-        debugLogDiagnostics: kDebugMode,
-        initialLocation: '/',
-        routes: routes,
-        redirect: redirect,
-      );
+  GoRouter router() {
+    final r = _router;
+    if (r != null) {
+      return r;
+    }
+    return _router = GoRouter(
+      navigatorKey: _rootNavKey,
+      refreshListenable: StreamListenable(stream.startWith(state).distinct()),
+      debugLogDiagnostics: kDebugMode,
+      initialLocation: '/',
+      routes: routes,
+      redirect: redirect,
+    );
+  }
 
   ////////////////
 
   late final StreamSubscription<AccountRepositoryChange>
       _accountRepositorySubscription;
+  GoRouter? _router;
 }

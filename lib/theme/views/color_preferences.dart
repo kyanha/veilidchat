@@ -49,7 +49,5 @@ Widget buildSettingsPageColorPreferences({required void Function() onChanged}) {
             await preferencesRepository.set(newPrefs);
             switcher.changeTheme(theme: newThemePrefs.themeData());
             onChanged();
-
-            onChanged();
           }));
 }

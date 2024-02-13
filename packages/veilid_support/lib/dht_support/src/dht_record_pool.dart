@@ -230,6 +230,8 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     final dhtctx = routingContext ?? _routingContext;
     final recordDescriptor = await dhtctx.createDHTRecord(schema);
 
+    await _locks.lockTag(recordDescriptor.key);
+
     final rec = DHTRecord(
         routingContext: dhtctx,
         recordDescriptor: recordDescriptor,
