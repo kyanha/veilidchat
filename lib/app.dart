@@ -47,9 +47,9 @@ class VeilidChatApp extends StatelessWidget {
                       create: (context) =>
                           UserLoginsCubit(AccountRepository.instance),
                     ),
-                    BlocProvider<ActiveUserLoginCubit>(
+                    BlocProvider<ActiveLocalAccountCubit>(
                       create: (context) =>
-                          ActiveUserLoginCubit(AccountRepository.instance),
+                          ActiveLocalAccountCubit(AccountRepository.instance),
                     ),
                     BlocProvider<PreferencesCubit>(
                       create: (context) =>

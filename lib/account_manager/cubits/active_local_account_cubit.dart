@@ -1,18 +1,14 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../models/models.dart';
-import '../../repository/account_repository/account_repository.dart';
+import '../repository/account_repository/account_repository.dart';
 
-part 'local_accounts_state.dart';
-
-class LocalAccountsCubit extends Cubit<LocalAccountsState> {
-  LocalAccountsCubit(AccountRepository accountRepository)
+class ActiveLocalAccountCubit extends Cubit<TypedKey?> {
+  ActiveLocalAccountCubit(AccountRepository accountRepository)
       : _accountRepository = accountRepository,
-        super(LocalAccountsState()) {
+        super(null) {
     // Subscribe to streams
     _initAccountRepositorySubscription();
   }
@@ -20,12 +16,12 @@ class LocalAccountsCubit extends Cubit<LocalAccountsState> {
   void _initAccountRepositorySubscription() {
     _accountRepositorySubscription = _accountRepository.stream.listen((change) {
       switch (change) {
-        case AccountRepositoryChange.localAccounts:
-          emit(_accountRepository.getLocalAccounts());
+        case AccountRepositoryChange.activeLocalAccount:
+          emit(_accountRepository.getActiveLocalAccount());
           break;
         // Ignore these
+        case AccountRepositoryChange.localAccounts:
         case AccountRepositoryChange.userLogins:
-        case AccountRepositoryChange.activeUserLogin:
           break;
       }
     });

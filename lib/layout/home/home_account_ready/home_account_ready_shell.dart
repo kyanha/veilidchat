@@ -7,6 +7,7 @@ import '../../../chat/chat.dart';
 import '../../../chat_list/chat_list.dart';
 import '../../../contact_invitation/contact_invitation.dart';
 import '../../../contacts/contacts.dart';
+import '../../../router/router.dart';
 import '../../../tools/tools.dart';
 
 class HomeAccountReadyShell extends StatefulWidget {
@@ -18,58 +19,28 @@ class HomeAccountReadyShell extends StatefulWidget {
   final Widget child;
 }
 
-class HomeAccountReadyShellState extends State<HomeAccountReadyShell>
-    with TickerProviderStateMixin {
+class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
   //
   @override
   void initState() {
     super.initState();
   }
 
-  // xxx figure out how to do this switch
-
-  // Widget buildWithLogin(BuildContext context) {
-  //   final activeUserLogin = context.watch<ActiveUserLoginCubit>().state;
-
-  //   if (activeUserLogin == null) {
-  //     // If no logged in user is active, show the loading panel
-  //     return const HomeNoActive();
-  //   }
-
-  //   final accountInfo = AccountRepository.instance
-  //       .getAccountInfo(accountMasterRecordKey: activeUserLogin)!;
-
-  //   switch (accountInfo.status) {
-  //     case AccountInfoStatus.noAccount:
-  //       return const HomeAccountMissing();
-  //     case AccountInfoStatus.accountInvalid:
-  //       return const HomeAccountInvalid();
-  //     case AccountInfoStatus.accountLocked:
-  //       return const HomeAccountLocked();
-  //     case AccountInfoStatus.accountReady:
-  //       return Provider<ActiveAccountInfo>.value(
-  //           value: accountInfo.activeAccountInfo!,
-  //           child: BlocProvider(
-  //               create: (context) => AccountRecordCubit(
-  //                   record: accountInfo.activeAccountInfo!.accountRecord),
-  //               child: const HomeAccountReady()));
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     // These must be valid already before making this widget,
     // per the ShellRoute above it
-    final activeUserLogin = context.read<ActiveUserLoginCubit>().state!;
-    final accountInfo = AccountRepository.instance
-        .getAccountInfo(accountMasterRecordKey: activeUserLogin)!;
+    final activeLocalAccount = context.read<ActiveLocalAccountCubit>().state!;
+    final accountInfo =
+        AccountRepository.instance.getAccountInfo(activeLocalAccount);
     final activeAccountInfo = accountInfo.activeAccountInfo!;
+    final routerCubit = context.read<RouterCubit>();
 
     return Provider<ActiveAccountInfo>.value(
         value: activeAccountInfo,
         child: BlocProvider(
-            create: (context) => AccountRecordCubit(
-                record: accountInfo.activeAccountInfo!.accountRecord),
+            create: (context) =>
+                AccountRecordCubit(record: activeAccountInfo.accountRecord),
             child: Builder(builder: (context) {
               final account =
                   context.watch<AccountRecordCubit>().state.data?.value;
@@ -92,7 +63,9 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell>
                 BlocProvider(
                     create: (context) => ActiveConversationsCubit(
                         activeAccountInfo: activeAccountInfo)),
-                BlocProvider(create: (context) => ActiveChatCubit(null))
+                BlocProvider(
+                    create: (context) =>
+                        ActiveChatCubit(null, routerCubit.setHasActiveChat))
               ], child: widget.child);
             })));
   }

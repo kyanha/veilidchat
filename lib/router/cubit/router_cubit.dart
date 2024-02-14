@@ -20,8 +20,6 @@ part 'router_state.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavKey');
 final _homeNavKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavKey');
-final _readyAccountNavKey =
-    GlobalKey<NavigatorState>(debugLabel: 'readyAccountNavKey');
 
 class RouterCubit extends Cubit<RouterState> {
   RouterCubit(AccountRepository accountRepository)
@@ -44,10 +42,14 @@ class RouterCubit extends Cubit<RouterState> {
               hasAnyAccount: accountRepository.getLocalAccounts().isNotEmpty));
           break;
         case AccountRepositoryChange.userLogins:
-        case AccountRepositoryChange.activeUserLogin:
+        case AccountRepositoryChange.activeLocalAccount:
           break;
       }
     });
+  }
+
+  void setHasActiveChat(bool active) {
+    emit(state.copyWith(hasActiveChat: active));
   }
 
   @override
@@ -63,37 +65,20 @@ class RouterCubit extends Cubit<RouterState> {
           builder: (context, state) => const IndexPage(),
         ),
         ShellRoute(
-            navigatorKey: _homeNavKey,
-            builder: (context, state, child) => HomeShell(child: child),
-            routes: [
-              GoRoute(
-                path: '/home/no_active',
-                builder: (context, state) => const HomeNoActive(),
-              ),
-              GoRoute(
-                path: '/home/account_missing',
-                builder: (context, state) => const HomeAccountMissing(),
-              ),
-              GoRoute(
-                path: '/home/account_locked',
-                builder: (context, state) => const HomeAccountLocked(),
-              ),
-              ShellRoute(
-                navigatorKey: _readyAccountNavKey,
-                builder: (context, state, child) =>
-                    HomeAccountReadyShell(child: child),
-                routes: [
-                  GoRoute(
-                    path: '/home',
-                    builder: (context, state) => const HomeAccountReadyMain(),
-                  ),
-                  GoRoute(
-                    path: '/home/chat',
-                    builder: (context, state) => const HomeAccountReadyChat(),
-                  ),
-                ],
-              ),
-            ]),
+          navigatorKey: _homeNavKey,
+          builder: (context, state, child) =>
+              HomeShell(child: HomeAccountReadyShell(child: child)),
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const HomeAccountReadyMain(),
+            ),
+            GoRoute(
+              path: '/home/chat',
+              builder: (context, state) => const HomeAccountReadyChat(),
+            ),
+          ],
+        ),
         GoRoute(
           path: '/new_account',
           builder: (context, state) => const NewAccountPage(),
@@ -127,9 +112,6 @@ class RouterCubit extends Cubit<RouterState> {
         if (!state.hasAnyAccount) {
           return '/new_account';
         }
-        if (!state.hasActiveChat) { xxx stop using hasActiveChat here... we need a pager for the accounts and a way to get the current account state maybe a 'activeAccountCubit' or something, we may have this alraeady but it needs to work even if logged out.``
-          return '/home/no_active';
-        }
         if (responsiveVisibility(
             context: context,
             tablet: false,
@@ -144,9 +126,6 @@ class RouterCubit extends Cubit<RouterState> {
         if (!state.hasAnyAccount) {
           return '/new_account';
         }
-        if (!state.hasActiveChat) {
-          return '/home/no_active';
-        }
         if (responsiveVisibility(
             context: context,
             tablet: false,
@@ -157,21 +136,6 @@ class RouterCubit extends Cubit<RouterState> {
           }
         } else {
           return '/home';
-        }
-        return null;
-      case '/home/no_active':
-        if (state.hasActiveChat) {
-          return '/home';
-        }
-        return null;
-      case '/home/account_missing':
-        if (!state.hasActiveChat) {
-          return '/home/no_active';
-        }
-        return null;
-      case '/home/account_locked':
-        if (!state.hasActiveChat) {
-          return '/home/no_active';
         }
         return null;
       case '/settings':
