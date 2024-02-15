@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
@@ -20,12 +19,10 @@ class InvitationGeneratorCubit extends FutureCubit<Uint8List> {
 class ContactInvitationDisplayDialog extends StatefulWidget {
   const ContactInvitationDisplayDialog({
     required this.message,
-    required this.generator,
     super.key,
   });
 
   final String message;
-  final FutureOr<Uint8List> generator;
 
   @override
   ContactInvitationDisplayDialogState createState() =>
@@ -34,9 +31,7 @@ class ContactInvitationDisplayDialog extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties
-      ..add(StringProperty('message', message))
-      ..add(DiagnosticsProperty<FutureOr<Uint8List>?>('generator', generator));
+    properties.add(StringProperty('message', message));
   }
 }
 

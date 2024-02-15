@@ -8,8 +8,9 @@ import 'paste_invite_dialog.dart';
 import 'scan_invite_dialog.dart';
 import 'send_invite_dialog.dart';
 
-Widget newContactInvitationBottomSheetBuilder(BuildContext context) {
-  final theme = Theme.of(context);
+Widget newContactInvitationBottomSheetBuilder(
+    BuildContext sheetContext, BuildContext context) {
+  final theme = Theme.of(sheetContext);
   final textTheme = theme.textTheme;
   final scale = theme.extension<ScaleScheme>()!;
 
@@ -17,7 +18,7 @@ Widget newContactInvitationBottomSheetBuilder(BuildContext context) {
       focusNode: FocusNode(),
       onKeyEvent: (ke) {
         if (ke.logicalKey == LogicalKeyboardKey.escape) {
-          Navigator.pop(context);
+          Navigator.pop(sheetContext);
         }
       },
       child: SizedBox(
@@ -30,7 +31,7 @@ Widget newContactInvitationBottomSheetBuilder(BuildContext context) {
               Column(children: [
                 IconButton(
                     onPressed: () async {
-                      Navigator.pop(context);
+                      Navigator.pop(sheetContext);
                       await SendInviteDialog.show(context);
                     },
                     iconSize: 64,
@@ -41,7 +42,7 @@ Widget newContactInvitationBottomSheetBuilder(BuildContext context) {
               Column(children: [
                 IconButton(
                     onPressed: () async {
-                      Navigator.pop(context);
+                      Navigator.pop(sheetContext);
                       await ScanInviteDialog.show(context);
                     },
                     iconSize: 64,
@@ -52,7 +53,7 @@ Widget newContactInvitationBottomSheetBuilder(BuildContext context) {
               Column(children: [
                 IconButton(
                     onPressed: () async {
-                      Navigator.pop(context);
+                      Navigator.pop(sheetContext);
                       await PasteInviteDialog.show(context);
                     },
                     iconSize: 64,

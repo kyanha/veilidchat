@@ -31,7 +31,9 @@ class RouterCubit extends Cubit<RouterState> {
     // Watch for changes that the router will care about
     Future.delayed(Duration.zero, () async {
       await eventualInitialized.future;
-      emit(state.copyWith(isInitialized: true));
+      emit(state.copyWith(
+          isInitialized: true,
+          hasAnyAccount: accountRepository.getLocalAccounts().isNotEmpty));
     });
 
     // Subscribe to repository streams

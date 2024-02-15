@@ -14,7 +14,7 @@ import '../../tools/tools.dart';
 import '../contact_invitation.dart';
 
 class SendInviteDialog extends StatefulWidget {
-  const SendInviteDialog({super.key});
+  const SendInviteDialog({required this.modalContext, super.key});
 
   @override
   SendInviteDialogState createState() => SendInviteDialogState();
@@ -23,7 +23,16 @@ class SendInviteDialog extends StatefulWidget {
     await showStyledDialog<void>(
         context: context,
         title: translate('send_invite_dialog.title'),
-        child: const SendInviteDialog());
+        child: SendInviteDialog(modalContext: context));
+  }
+
+  final BuildContext modalContext;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+        .add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
   }
 }
 
@@ -132,7 +141,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
 
     // Start generation
     final contactInvitationListCubit =
-        context.read<ContactInvitationListCubit>();
+        widget.modalContext.read<ContactInvitationListCubit>();
 
     final generator = contactInvitationListCubit.createInvitation(
         encryptionKeyType: _encryptionKeyType,
@@ -145,10 +154,11 @@ class SendInviteDialogState extends State<SendInviteDialog> {
     }
     await showDialog<void>(
         context: context,
-        builder: (context) => ContactInvitationDisplayDialog(
+        builder: (context) => BlocProvider(
+            create: (context) => InvitationGeneratorCubit(generator),
+            child: ContactInvitationDisplayDialog(
               message: _messageTextController.text,
-              generator: generator,
-            ));
+            )));
     // if (ret == null) {
     //   return;
     // }

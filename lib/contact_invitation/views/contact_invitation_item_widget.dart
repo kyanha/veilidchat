@@ -102,8 +102,6 @@ class ContactInvitationItemWidget extends StatelessWidget {
                                   contactInvitationRecord.invitation))),
                           child: ContactInvitationDisplayDialog(
                             message: contactInvitationRecord.message,
-                            generator: Uint8List.fromList(
-                                contactInvitationRecord.invitation),
                           )));
                 },
                 title: Text(

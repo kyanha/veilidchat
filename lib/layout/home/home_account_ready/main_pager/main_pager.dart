@@ -110,37 +110,38 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
         context: context,
         // ignore: prefer_expression_function_bodies
         builder: (context) {
-          return const AlertDialog(
-              shape: RoundedRectangleBorder(
+          return AlertDialog(
+              shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(20)),
               ),
-              contentPadding: EdgeInsets.only(
+              contentPadding: const EdgeInsets.only(
                 top: 10,
               ),
-              title: Text(
+              title: const Text(
                 'Scan Contact Invite',
                 style: TextStyle(fontSize: 24),
               ),
-              content: ScanInviteDialog());
+              content: ScanInviteDialog(
+                modalContext: context,
+              ));
         });
   }
 
-  // ignore: prefer_expression_function_bodies
-  Widget _onNewChatBottomSheetBuilder(BuildContext context) {
-    return const SizedBox(
-        height: 200,
-        child: Center(
-            child: Text(
-                'Group and custom chat functionality is not available yet')));
-  }
+  Widget _onNewChatBottomSheetBuilder(
+          BuildContext sheetContext, BuildContext context) =>
+      const SizedBox(
+          height: 200,
+          child: Center(
+              child: Text(
+                  'Group and custom chat functionality is not available yet')));
 
-  Widget _bottomSheetBuilder(BuildContext context) {
+  Widget _bottomSheetBuilder(BuildContext sheetContext, BuildContext context) {
     if (_currentPage == 0) {
       // New contact invitation
-      return newContactInvitationBottomSheetBuilder(context);
+      return newContactInvitationBottomSheetBuilder(sheetContext, context);
     } else if (_currentPage == 1) {
       // New chat
-      return _onNewChatBottomSheetBuilder(context);
+      return _onNewChatBottomSheetBuilder(sheetContext, context);
     } else {
       // Unknown error
       return debugPage('unknown page');
@@ -214,7 +215,8 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
                 _fabIconList[_currentPage],
                 color: scale.secondaryScale.text,
               ),
-          bottomSheetBuilder: _bottomSheetBuilder),
+          bottomSheetBuilder: (sheetContext) =>
+              _bottomSheetBuilder(sheetContext, context)),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }

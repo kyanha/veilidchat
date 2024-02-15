@@ -104,7 +104,7 @@ class ScannerOverlay extends CustomPainter {
 }
 
 class ScanInviteDialog extends StatefulWidget {
-  const ScanInviteDialog({super.key});
+  const ScanInviteDialog({required this.modalContext, super.key});
 
   @override
   ScanInviteDialogState createState() => ScanInviteDialogState();
@@ -113,7 +113,16 @@ class ScanInviteDialog extends StatefulWidget {
     await showStyledDialog<void>(
         context: context,
         title: translate('scan_invite_dialog.title'),
-        child: const ScanInviteDialog());
+        child: ScanInviteDialog(modalContext: context));
+  }
+
+  final BuildContext modalContext;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+        .add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
   }
 }
 
@@ -380,6 +389,7 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     return InviteDialog(
+        modalContext: widget.modalContext,
         onValidationCancelled: onValidationCancelled,
         onValidationSuccess: onValidationSuccess,
         onValidationFailed: onValidationFailed,

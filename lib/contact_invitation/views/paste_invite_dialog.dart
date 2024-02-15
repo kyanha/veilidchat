@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -11,7 +12,7 @@ import '../../tools/tools.dart';
 import 'invite_dialog.dart';
 
 class PasteInviteDialog extends StatefulWidget {
-  const PasteInviteDialog({super.key});
+  const PasteInviteDialog({required this.modalContext, super.key});
 
   @override
   PasteInviteDialogState createState() => PasteInviteDialogState();
@@ -20,7 +21,16 @@ class PasteInviteDialog extends StatefulWidget {
     await showStyledDialog<void>(
         context: context,
         title: translate('paste_invite_dialog.title'),
-        child: const PasteInviteDialog());
+        child: PasteInviteDialog(modalContext: context));
+  }
+
+  final BuildContext modalContext;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+        .add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
   }
 }
 
@@ -122,6 +132,7 @@ class PasteInviteDialogState extends State<PasteInviteDialog> {
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     return InviteDialog(
+        modalContext: widget.modalContext,
         onValidationCancelled: onValidationCancelled,
         onValidationSuccess: onValidationSuccess,
         onValidationFailed: onValidationFailed,

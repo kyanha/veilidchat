@@ -118,7 +118,7 @@ class __$$RouterStateImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$RouterStateImpl implements _RouterState {
+class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
   const _$RouterStateImpl(
       {required this.isInitialized,
       required this.hasAnyAccount,
@@ -135,8 +135,18 @@ class _$RouterStateImpl implements _RouterState {
   final bool hasActiveChat;
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'RouterState(isInitialized: $isInitialized, hasAnyAccount: $hasAnyAccount, hasActiveChat: $hasActiveChat)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'RouterState'))
+      ..add(DiagnosticsProperty('isInitialized', isInitialized))
+      ..add(DiagnosticsProperty('hasAnyAccount', hasAnyAccount))
+      ..add(DiagnosticsProperty('hasActiveChat', hasActiveChat));
   }
 
   @override

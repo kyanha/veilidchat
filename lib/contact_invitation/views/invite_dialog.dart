@@ -13,7 +13,8 @@ import '../contact_invitation.dart';
 
 class InviteDialog extends StatefulWidget {
   const InviteDialog(
-      {required this.onValidationCancelled,
+      {required this.modalContext,
+      required this.onValidationCancelled,
       required this.onValidationSuccess,
       required this.onValidationFailed,
       required this.inviteControlIsValid,
@@ -29,6 +30,7 @@ class InviteDialog extends StatefulWidget {
       InviteDialogState dialogState,
       Future<void> Function({required Uint8List inviteData})
           validateInviteData) buildInviteControl;
+  final BuildContext modalContext;
 
   @override
   InviteDialogState createState() => InviteDialogState();
@@ -50,7 +52,8 @@ class InviteDialog extends StatefulWidget {
                   InviteDialogState dialogState,
                   Future<void> Function({required Uint8List inviteData})
                       validateInviteData)>.has(
-          'buildInviteControl', buildInviteControl));
+          'buildInviteControl', buildInviteControl))
+      ..add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
   }
 }
 
@@ -69,8 +72,8 @@ class InviteDialogState extends State<InviteDialog> {
 
   Future<void> _onAccept() async {
     final navigator = Navigator.of(context);
-    final activeAccountInfo = context.read<ActiveAccountInfo>();
-    final contactList = context.read<ContactListCubit>();
+    final activeAccountInfo = widget.modalContext.read<ActiveAccountInfo>();
+    final contactList = widget.modalContext.read<ContactListCubit>();
 
     setState(() {
       _isAccepting = true;
@@ -133,7 +136,7 @@ class InviteDialogState extends State<InviteDialog> {
   }) async {
     try {
       final contactInvitationListCubit =
-          context.read<ContactInvitationListCubit>();
+          widget.modalContext.read<ContactInvitationListCubit>();
 
       setState(() {
         _isValidating = true;

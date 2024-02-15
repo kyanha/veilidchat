@@ -53,9 +53,9 @@ class AccountRepository {
   static AccountRepository instance = AccountRepository._();
 
   Future<void> init() async {
-    await _localAccounts.load();
-    await _userLogins.load();
-    await _activeLocalAccount.load();
+    await _localAccounts.get();
+    await _userLogins.get();
+    await _activeLocalAccount.get();
     await _openLoggedInDHTRecords();
   }
 

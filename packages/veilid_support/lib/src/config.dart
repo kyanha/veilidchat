@@ -61,6 +61,13 @@ Future<VeilidConfig> getVeilidConfig(bool isWeb, String appName) async {
   }
 
   // ignore: do_not_use_environment
+  const envNetworkKey = String.fromEnvironment('NETWORK_KEY');
+  if (envNetworkKey.isNotEmpty) {
+    config = config.copyWith(
+        network: config.network.copyWith(networkKeyPassword: envNetworkKey));
+  }
+
+  // ignore: do_not_use_environment
   const envBootstrap = String.fromEnvironment('BOOTSTRAP');
   if (envBootstrap.isNotEmpty) {
     final bootstrap = envBootstrap.split(',').map((e) => e.trim()).toList();
