@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../init.dart';
 import '../repository/account_repository/account_repository.dart';
 
 class ActiveLocalAccountCubit extends Cubit<TypedKey?> {
@@ -11,6 +12,12 @@ class ActiveLocalAccountCubit extends Cubit<TypedKey?> {
         super(null) {
     // Subscribe to streams
     _initAccountRepositorySubscription();
+
+    // Initialize when we can
+    Future.delayed(Duration.zero, () async {
+      await eventualInitialized.future;
+      emit(_accountRepository.getActiveLocalAccount());
+    });
   }
 
   void _initAccountRepositorySubscription() {
