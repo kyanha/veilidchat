@@ -1,11 +1,27 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart';
 
 import '../../../veilid_support.dart';
+
+@immutable
+class DHTRecordWatchChange extends Equatable {
+  const DHTRecordWatchChange(
+      {required this.local, required this.data, required this.subkeys});
+
+  final bool local;
+  final Uint8List data;
+  final List<ValueSubkeyRange> subkeys;
+
+  @override
+  List<Object?> get props => [local, data, subkeys];
+}
+
+/////////////////////////////////////////////////
 
 class DHTRecord {
   DHTRecord(
@@ -34,7 +50,7 @@ class DHTRecord {
   bool _open;
   bool _valid;
   @internal
-  StreamController<VeilidUpdateValueChange>? watchController;
+  StreamController<DHTRecordWatchChange>? watchController;
   @internal
   bool needsWatchStateUpdate;
   @internal
@@ -160,76 +176,100 @@ class DHTRecord {
   Future<Uint8List?> tryWriteBytes(Uint8List newValue,
       {int subkey = -1}) async {
     subkey = subkeyOrDefault(subkey);
-    newValue = await _crypto.encrypt(newValue, subkey);
+    final lastSeq = _subkeySeqCache[subkey];
+    final encryptedNewValue = await _crypto.encrypt(newValue, subkey);
 
     // Set the new data if possible
-    var valueData = await _routingContext.setDHTValue(
-        _recordDescriptor.key, subkey, newValue);
-    if (valueData == null) {
-      // Get the data to check its sequence number
-      valueData = await _routingContext.getDHTValue(
+    var newValueData = await _routingContext.setDHTValue(
+        _recordDescriptor.key, subkey, encryptedNewValue);
+    if (newValueData == null) {
+      // A newer value wasn't found on the set, but
+      // we may get a newer value when getting the value for the sequence number
+      newValueData = await _routingContext.getDHTValue(
           _recordDescriptor.key, subkey, false);
-      assert(valueData != null, "can't get value that was just set");
-      _subkeySeqCache[subkey] = valueData!.seq;
+      if (newValueData == null) {
+        assert(newValueData != null, "can't get value that was just set");
+        return null;
+      }
+    }
+
+    // Record new sequence number
+    final isUpdated = newValueData.seq != lastSeq;
+    _subkeySeqCache[subkey] = newValueData.seq;
+
+    // See if the encrypted data returned is exactly the same
+    // if so, shortcut and don't bother decrypting it
+    if (newValueData.data == encryptedNewValue) {
+      if (isUpdated) {
+        addLocalValueChange(newValue, subkey);
+      }
       return null;
     }
-    _subkeySeqCache[subkey] = valueData.seq;
-    return valueData.data;
+
+    // Decrypt value to return it
+    final decryptedNewValue = await _crypto.decrypt(newValueData.data, subkey);
+    if (isUpdated) {
+      addLocalValueChange(decryptedNewValue, subkey);
+    }
+    return decryptedNewValue;
   }
 
   Future<void> eventualWriteBytes(Uint8List newValue, {int subkey = -1}) async {
     subkey = subkeyOrDefault(subkey);
-    newValue = await _crypto.encrypt(newValue, subkey);
+    final lastSeq = _subkeySeqCache[subkey];
+    final encryptedNewValue = await _crypto.encrypt(newValue, subkey);
 
-    ValueData? valueData;
+    ValueData? newValueData;
     do {
-      // Set the new data
-      valueData = await _routingContext.setDHTValue(
-          _recordDescriptor.key, subkey, newValue);
+      do {
+        // Set the new data
+        newValueData = await _routingContext.setDHTValue(
+            _recordDescriptor.key, subkey, encryptedNewValue);
 
-      // Repeat if newer data on the network was found
-    } while (valueData != null);
+        // Repeat if newer data on the network was found
+      } while (newValueData != null);
 
-    // Get the data to check its sequence number
-    valueData =
-        await _routingContext.getDHTValue(_recordDescriptor.key, subkey, false);
-    assert(valueData != null, "can't get value that was just set");
-    _subkeySeqCache[subkey] = valueData!.seq;
+      // Get the data to check its sequence number
+      newValueData = await _routingContext.getDHTValue(
+          _recordDescriptor.key, subkey, false);
+      if (newValueData == null) {
+        assert(newValueData != null, "can't get value that was just set");
+        return;
+      }
+
+      // Record new sequence number
+      _subkeySeqCache[subkey] = newValueData.seq;
+
+      // The encrypted data returned should be exactly the same
+      // as what we are trying to set,
+      // otherwise we still need to keep trying to set the value
+    } while (newValueData.data != encryptedNewValue);
+
+    final isUpdated = newValueData.seq != lastSeq;
+    if (isUpdated) {
+      addLocalValueChange(newValue, subkey);
+    }
   }
 
   Future<void> eventualUpdateBytes(
-      Future<Uint8List> Function(Uint8List oldValue) update,
+      Future<Uint8List> Function(Uint8List? oldValue) update,
       {int subkey = -1}) async {
     subkey = subkeyOrDefault(subkey);
-    // Get existing identity key, do not allow force refresh here
+
+    // Get the existing data, do not allow force refresh here
     // because if we need a refresh the setDHTValue will fail anyway
-    var valueData =
-        await _routingContext.getDHTValue(_recordDescriptor.key, subkey, false);
-    // Ensure it exists already
-    if (valueData == null) {
-      throw const FormatException('value does not exist');
-    }
+    var oldValue =
+        await get(subkey: subkey, forceRefresh: false, onlyUpdates: false);
+
     do {
-      // Update cache
-      _subkeySeqCache[subkey] = valueData!.seq;
-
       // Update the data
-      final oldData = await _crypto.decrypt(valueData.data, subkey);
-      final updatedData = await update(oldData);
-      final newData = await _crypto.encrypt(updatedData, subkey);
+      final updatedValue = await update(oldValue);
 
-      // Set it back
-      valueData = await _routingContext.setDHTValue(
-          _recordDescriptor.key, subkey, newData);
+      // Try to write it back to the network
+      oldValue = await tryWriteBytes(updatedValue, subkey: subkey);
 
-      // Repeat if newer data on the network was found
-    } while (valueData != null);
-
-    // Get the data to check its sequence number
-    valueData =
-        await _routingContext.getDHTValue(_recordDescriptor.key, subkey, false);
-    assert(valueData != null, "can't get value that was just set");
-    _subkeySeqCache[subkey] = valueData!.seq;
+      // Repeat update if newer data on the network was found
+    } while (oldValue != null);
   }
 
   Future<T?> tryWriteJson<T>(T Function(dynamic) fromJson, T newValue,
@@ -259,12 +299,12 @@ class DHTRecord {
       eventualWriteBytes(newValue.writeToBuffer(), subkey: subkey);
 
   Future<void> eventualUpdateJson<T>(
-          T Function(dynamic) fromJson, Future<T> Function(T) update,
+          T Function(dynamic) fromJson, Future<T> Function(T?) update,
           {int subkey = -1}) =>
       eventualUpdateBytes(jsonUpdate(fromJson, update), subkey: subkey);
 
   Future<void> eventualUpdateProtobuf<T extends GeneratedMessage>(
-          T Function(List<int>) fromBuffer, Future<T> Function(T) update,
+          T Function(List<int>) fromBuffer, Future<T> Function(T?) update,
           {int subkey = -1}) =>
       eventualUpdateBytes(protobufUpdate(fromBuffer, update), subkey: subkey);
 
@@ -281,25 +321,34 @@ class DHTRecord {
     }
   }
 
-  Future<StreamSubscription<VeilidUpdateValueChange>> listen(
-    Future<void> Function(
-            DHTRecord record, Uint8List data, List<ValueSubkeyRange> subkeys)
-        onUpdate,
-  ) async {
+  Future<StreamSubscription<DHTRecordWatchChange>> listen(
+      Future<void> Function(
+              DHTRecord record, Uint8List data, List<ValueSubkeyRange> subkeys)
+          onUpdate,
+      {bool localChanges = true}) async {
     // Set up watch requirements
     watchController ??=
-        StreamController<VeilidUpdateValueChange>.broadcast(onCancel: () {
+        StreamController<DHTRecordWatchChange>.broadcast(onCancel: () {
       // If there are no more listeners then we can get rid of the controller
       watchController = null;
     });
 
     return watchController!.stream.listen(
-        (update) {
+        (change) {
+          if (change.local && !localChanges) {
+            return;
+          }
           Future.delayed(Duration.zero, () async {
-            final out = await _crypto.decrypt(
-                update.valueData.data, update.subkeys.first.low);
-
-            await onUpdate(this, out, update.subkeys);
+            final Uint8List data;
+            if (change.local) {
+              // local changes are not encrypted
+              data = change.data;
+            } else {
+              // incoming/remote changes are encrypted
+              data =
+                  await _crypto.decrypt(change.data, change.subkeys.first.low);
+            }
+            await onUpdate(this, data, change.subkeys);
           });
         },
         cancelOnError: true,
@@ -315,5 +364,15 @@ class DHTRecord {
       watchState = null;
       needsWatchStateUpdate = true;
     }
+  }
+
+  void addLocalValueChange(Uint8List data, int subkey) {
+    watchController?.add(DHTRecordWatchChange(
+        local: true, data: data, subkeys: [ValueSubkeyRange.single(subkey)]));
+  }
+
+  void addRemoteValueChange(VeilidUpdateValueChange update) {
+    watchController?.add(DHTRecordWatchChange(
+        local: false, data: update.valueData.data, subkeys: update.subkeys));
   }
 }

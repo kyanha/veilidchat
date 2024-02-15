@@ -63,8 +63,7 @@ class DHTShortArray {
   _DHTShortArrayCache _head;
 
   // Subscription to head and linked record internal changes
-  final Map<TypedKey, StreamSubscription<VeilidUpdateValueChange>>
-      _subscriptions;
+  final Map<TypedKey, StreamSubscription<DHTRecordWatchChange>> _subscriptions;
   // Stream of external changes
   StreamController<void>? _watchController;
   // Watch mutex to ensure we keep the representation valid
@@ -545,10 +544,10 @@ class DHTShortArray {
       }
 
       final result = await record!.get(subkey: recordSubkey);
-      if (result != null) {
-        // A change happened, notify any listeners
-        _watchController?.sink.add(null);
-      }
+
+      // A change happened, notify any listeners
+      _watchController?.sink.add(null);
+
       return result;
     } on Exception catch (_) {
       // Exception on write means state needs to be reverted
@@ -607,8 +606,8 @@ class DHTShortArray {
     final recordSubkey = (index % _stride) + ((recordNumber == 0) ? 1 : 0);
     final result = await record.tryWriteBytes(newValue, subkey: recordSubkey);
 
-    if (result != null) {
-      // A change happened, notify any listeners
+    if (result == null) {
+      // A newer value was not found, so the change took
       _watchController?.sink.add(null);
     }
     return result;
@@ -625,7 +624,7 @@ class DHTShortArray {
   }
 
   Future<void> eventualUpdateItem(
-      int pos, Future<Uint8List> Function(Uint8List oldValue) update) async {
+      int pos, Future<Uint8List> Function(Uint8List? oldValue) update) async {
     var oldData = await getItem(pos);
     // Ensure it exists already
     if (oldData == null) {
@@ -633,7 +632,7 @@ class DHTShortArray {
     }
     do {
       // Update the data
-      final updatedData = await update(oldData!);
+      final updatedData = await update(oldData);
 
       // Set it back
       oldData = await tryWriteItem(pos, updatedData);
@@ -673,14 +672,14 @@ class DHTShortArray {
   Future<void> eventualUpdateItemJson<T>(
     T Function(dynamic) fromJson,
     int pos,
-    Future<T> Function(T) update,
+    Future<T> Function(T?) update,
   ) =>
       eventualUpdateItem(pos, jsonUpdate(fromJson, update));
 
   Future<void> eventualUpdateItemProtobuf<T extends GeneratedMessage>(
     T Function(List<int>) fromBuffer,
     int pos,
-    Future<T> Function(T) update,
+    Future<T> Function(T?) update,
   ) =>
       eventualUpdateItem(pos, protobufUpdate(fromBuffer, update));
 
@@ -692,14 +691,17 @@ class DHTShortArray {
           .wait;
 
       // Update changes to the head record
+      // Don't watch for local changes because this class already handles
+      // notifying listeners and knows when it makes local changes
       if (!_subscriptions.containsKey(_headRecord.key)) {
         _subscriptions[_headRecord.key] =
-            await _headRecord.listen(_onUpdateRecord);
+            await _headRecord.listen(localChanges: false, _onUpdateRecord);
       }
       // Update changes to any linked records
       for (final lr in _head.linkedRecords) {
         if (!_subscriptions.containsKey(lr.key)) {
-          _subscriptions[lr.key] = await lr.listen(_onUpdateRecord);
+          _subscriptions[lr.key] =
+              await lr.listen(localChanges: false, _onUpdateRecord);
         }
       }
     } on Exception {

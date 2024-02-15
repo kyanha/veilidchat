@@ -102,7 +102,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
 
   DHTRecord get record => _record;
 
-  StreamSubscription<VeilidUpdateValueChange>? _subscription;
+  StreamSubscription<DHTRecordWatchChange>? _subscription;
   late DHTRecord _record;
   bool _wantsCloseRecord;
   final StateFunction<T> _stateFunction;

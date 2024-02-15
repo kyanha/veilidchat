@@ -351,7 +351,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       // Change
       for (final kv in _opened.entries) {
         if (kv.key == updateValueChange.key) {
-          kv.value.watchController?.add(updateValueChange);
+          kv.value.addRemoteValueChange(updateValueChange);
           break;
         }
       }
