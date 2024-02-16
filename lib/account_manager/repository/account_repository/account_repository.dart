@@ -299,17 +299,18 @@ class AccountRepository {
 
   Future<bool> _decryptedLogin(
       IdentityMaster identityMaster, SecretKey identitySecret) async {
-    final cs = await Veilid.instance
-        .getCryptoSystem(identityMaster.identityRecordKey.kind);
-    final keyOk = await cs.validateKeyPair(
-        identityMaster.identityPublicKey, identitySecret);
-    if (!keyOk) {
-      throw Exception('Identity is corrupted');
-    }
+    // Verify identity secret works and return the valid cryptosystem
+    final cs = await identityMaster.validateIdentitySecret(identitySecret);
 
     // Read the identity key to get the account keys
-    final accountRecordInfo = await identityMaster.readAccountFromIdentity(
+    final accountRecordInfoList = await identityMaster.readAccountsFromIdentity(
         identitySecret: identitySecret, accountKey: veilidChatAccountKey);
+    if (accountRecordInfoList.length > 1) {
+      throw IdentityException.limitExceeded;
+    } else if (accountRecordInfoList.isEmpty) {
+      throw IdentityException.noAccount;
+    }
+    final accountRecordInfo = accountRecordInfoList.single;
 
     // Add to user logins and select it
     final userLogins = await _userLogins.get();

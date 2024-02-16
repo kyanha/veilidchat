@@ -10,6 +10,20 @@ import '../dht_support/dht_support.dart';
 part 'identity.freezed.dart';
 part 'identity.g.dart';
 
+// Identity errors
+enum IdentityException implements Exception {
+  readError('identity could not be read'),
+  noAccount('no account record info'),
+  limitExceeded('too many items for the limit'),
+  invalid('identity is corrupted or secret is invalid');
+
+  const IdentityException(this.message);
+  final String message;
+
+  @override
+  String toString() => 'IdentityException($name): $message';
+}
+
 // AccountOwnerInfo is the key and owner info for the account dht key that is
 // stored in the identity key
 @freezed
@@ -82,6 +96,12 @@ extension IdentityMasterExtension on IdentityMaster {
     await (await pool.openRead(masterRecordKey)).delete();
   }
 
+  Future<VeilidCryptoSystem> get identityCrypto =>
+      Veilid.instance.getCryptoSystem(identityRecordKey.kind);
+
+  Future<VeilidCryptoSystem> get masterCrypto =>
+      Veilid.instance.getCryptoSystem(masterRecordKey.kind);
+
   KeyPair identityWriter(SecretKey secret) =>
       KeyPair(key: identityPublicKey, secret: secret);
 
@@ -91,7 +111,17 @@ extension IdentityMasterExtension on IdentityMaster {
   TypedKey identityPublicTypedKey() =>
       TypedKey(kind: identityRecordKey.kind, value: identityPublicKey);
 
-  Future<AccountRecordInfo> readAccountFromIdentity(
+  Future<VeilidCryptoSystem> validateIdentitySecret(
+      SecretKey identitySecret) async {
+    final cs = await identityCrypto;
+    final keyOk = await cs.validateKeyPair(identityPublicKey, identitySecret);
+    if (!keyOk) {
+      throw IdentityException.invalid;
+    }
+    return cs;
+  }
+
+  Future<List<AccountRecordInfo>> readAccountsFromIdentity(
       {required SharedSecret identitySecret,
       required String accountKey}) async {
     // Read the identity key to get the account keys
@@ -100,23 +130,19 @@ extension IdentityMasterExtension on IdentityMaster {
     final identityRecordCrypto = await DHTRecordCryptoPrivate.fromSecret(
         identityRecordKey.kind, identitySecret);
 
-    late final AccountRecordInfo accountRecordInfo;
+    late final List<AccountRecordInfo> accountRecordInfo;
     await (await pool.openRead(identityRecordKey,
             parent: masterRecordKey, crypto: identityRecordCrypto))
         .scope((identityRec) async {
       final identity = await identityRec.getJson(Identity.fromJson);
       if (identity == null) {
         // Identity could not be read or decrypted from DHT
-        throw StateError('identity could not be read');
+        throw IdentityException.readError;
       }
       final accountRecords = IMapOfSets.from(identity.accountRecords);
       final vcAccounts = accountRecords.get(accountKey);
-      if (vcAccounts.length != 1) {
-        // No account, or multiple accounts somehow associated with identity
-        throw StateError('no single account record info');
-      }
 
-      accountRecordInfo = vcAccounts.first;
+      accountRecordInfo = vcAccounts.toList();
     });
 
     return accountRecordInfo;
@@ -128,6 +154,7 @@ extension IdentityMasterExtension on IdentityMaster {
     required SharedSecret identitySecret,
     required String accountKey,
     required Future<T> Function(TypedKey parent) createAccountCallback,
+    int maxAccounts = 1,
   }) async {
     final pool = DHTRecordPool.instance;
 
@@ -153,11 +180,14 @@ extension IdentityMasterExtension on IdentityMaster {
 
               await identityRec.eventualUpdateJson(Identity.fromJson,
                   (oldIdentity) async {
+                if (oldIdentity == null) {
+                  throw IdentityException.readError;
+                }
                 final oldAccountRecords =
                     IMapOfSets.from(oldIdentity.accountRecords);
-                // Only allow one account per identity for veilidchat
-                if (oldAccountRecords.get(accountKey).isNotEmpty) {
-                  throw StateError('Only one account per key in identity');
+
+                if (oldAccountRecords.get(accountKey).length >= maxAccounts) {
+                  throw IdentityException.limitExceeded;
                 }
                 final accountRecords = oldAccountRecords
                     .add(accountKey, newAccountRecordInfo)

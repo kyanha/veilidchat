@@ -199,7 +199,7 @@ class DHTRecord {
 
     // See if the encrypted data returned is exactly the same
     // if so, shortcut and don't bother decrypting it
-    if (newValueData.data == encryptedNewValue) {
+    if (newValueData.data.equals(encryptedNewValue)) {
       if (isUpdated) {
         addLocalValueChange(newValue, subkey);
       }
@@ -243,7 +243,7 @@ class DHTRecord {
       // The encrypted data returned should be exactly the same
       // as what we are trying to set,
       // otherwise we still need to keep trying to set the value
-    } while (newValueData.data != encryptedNewValue);
+    } while (!newValueData.data.equals(encryptedNewValue));
 
     final isUpdated = newValueData.seq != lastSeq;
     if (isUpdated) {

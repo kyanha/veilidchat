@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:veilid/veilid.dart';
 
 Future<T> tableScope<T>(
@@ -67,25 +68,26 @@ class TableDBValue<T> extends TableDBBacked<T> {
         _tableKeyName = tableKeyName,
         _streamController = StreamController<T>.broadcast();
 
-  T? get value => _value;
-  T get requireValue => _value!;
+  AsyncData<T>? get value => _value;
+  T get requireValue => _value!.value;
   Stream<T> get stream => _streamController.stream;
 
   Future<T> get() async {
     final val = _value;
     if (val != null) {
-      return val;
+      return val.value;
     }
     final loadedValue = await load();
-    return _value = loadedValue;
+    _value = AsyncData(loadedValue);
+    return loadedValue;
   }
 
   Future<void> set(T newVal) async {
-    _value = await store(newVal);
+    _value = AsyncData(await store(newVal));
     _streamController.add(newVal);
   }
 
-  T? _value;
+  AsyncData<T>? _value;
   final String _tableName;
   final String _tableKeyName;
   final T Function(Object? obj) _valueFromJson;
