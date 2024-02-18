@@ -16,7 +16,6 @@ finish-args:
   - --share=network
   - --talk-name=org.freedesktop.secrets
 modules:
-  # FlutterApp
   - name: VeilidChat
     buildsystem: simple
     only-arches:

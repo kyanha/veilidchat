@@ -7,9 +7,6 @@
   <id>com.veilid.veilidchat</id>
   <name>VeilidChat</name>
   <summary>VeilidChat Private Messaging</summary>
-  <icon>
-      <local>com.veilid.veilidchat.png</local>
-  </icon>
   <developer_name>Veilid Foundation Inc</developer_name>
   <url type="homepage">https://veilid.com/chat</url>
   <metadata_license>MIT</metadata_license>
