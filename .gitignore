@@ -51,8 +51,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/key.properties
 
 # WASM
 /web/wasm/
 
-android/key.properties
+# Flatpak
+flatpak/build-dir/
+flatpak/repo/
+flatpak/.flatpak-builder/
+*.flatpak
