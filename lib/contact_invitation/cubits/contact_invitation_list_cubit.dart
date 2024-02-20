@@ -5,9 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
-import '../../tools/tools.dart';
 import '../models/models.dart';
 
 //////////////////////////////////////////////////
@@ -21,12 +19,6 @@ typedef GetEncryptionKeyCallback = Future<SecretKey?> Function(
     VeilidCryptoSystem cs,
     EncryptionKeyType encryptionKeyType,
     Uint8List encryptedSecret);
-
-@immutable
-class InvitationStatus {
-  const InvitationStatus({required this.acceptedContact});
-  final AcceptedContact? acceptedContact;
-}
 
 //////////////////////////////////////////////////
 
@@ -271,109 +263,109 @@ class ContactInvitationListCubit
     return out;
   }
 
-  Future<InvitationStatus?> checkInvitationStatus(
-      {required proto.ContactInvitationRecord contactInvitationRecord}) async {
-    // Open the contact request inbox
-    try {
-      final pool = DHTRecordPool.instance;
-      final accountRecordKey = _activeAccountInfo
-          .userLogin.accountRecordInfo.accountRecord.recordKey;
-      final writerKey = contactInvitationRecord.writerKey.toVeilid();
-      final writerSecret = contactInvitationRecord.writerSecret.toVeilid();
-      final recordKey =
-          contactInvitationRecord.contactRequestInbox.recordKey.toVeilid();
-      final writer = TypedKeyPair(
-          kind: recordKey.kind, key: writerKey, secret: writerSecret);
-      final acceptReject = await (await pool.openRead(recordKey,
-              crypto: await DHTRecordCryptoPrivate.fromTypedKeyPair(writer),
-              parent: accountRecordKey,
-              defaultSubkey: 1))
-          .scope((contactRequestInbox) async {
-        //
-        final signedContactResponse = await contactRequestInbox.getProtobuf(
-            proto.SignedContactResponse.fromBuffer,
-            forceRefresh: true);
-        if (signedContactResponse == null) {
-          return null;
-        }
+  // Future<InvitationStatus?> checkInvitationStatus(
+  //     {required proto.ContactInvitationRecord contactInvitationRecord}) async {
+  //   // Open the contact request inbox
+  //   try {
+  //     final pool = DHTRecordPool.instance;
+  //     final accountRecordKey = _activeAccountInfo
+  //         .userLogin.accountRecordInfo.accountRecord.recordKey;
+  //     final writerKey = contactInvitationRecord.writerKey.toVeilid();
+  //     final writerSecret = contactInvitationRecord.writerSecret.toVeilid();
+  //     final recordKey =
+  //         contactInvitationRecord.contactRequestInbox.recordKey.toVeilid();
+  //     final writer = TypedKeyPair(
+  //         kind: recordKey.kind, key: writerKey, secret: writerSecret);
+  //     final acceptReject = await (await pool.openRead(recordKey,
+  //             crypto: await DHTRecordCryptoPrivate.fromTypedKeyPair(writer),
+  //             parent: accountRecordKey,
+  //             defaultSubkey: 1))
+  //         .scope((contactRequestInbox) async {
+  //       //
+  //       final signedContactResponse = await contactRequestInbox.getProtobuf(
+  //           proto.SignedContactResponse.fromBuffer,
+  //           forceRefresh: true);
+  //       if (signedContactResponse == null) {
+  //         return null;
+  //       }
 
-        final contactResponseBytes =
-            Uint8List.fromList(signedContactResponse.contactResponse);
-        final contactResponse =
-            proto.ContactResponse.fromBuffer(contactResponseBytes);
-        final contactIdentityMasterRecordKey =
-            contactResponse.identityMasterRecordKey.toVeilid();
-        final cs = await pool.veilid.getCryptoSystem(recordKey.kind);
+  //       final contactResponseBytes =
+  //           Uint8List.fromList(signedContactResponse.contactResponse);
+  //       final contactResponse =
+  //           proto.ContactResponse.fromBuffer(contactResponseBytes);
+  //       final contactIdentityMasterRecordKey =
+  //           contactResponse.identityMasterRecordKey.toVeilid();
+  //       final cs = await pool.veilid.getCryptoSystem(recordKey.kind);
 
-        // Fetch the remote contact's account master
-        final contactIdentityMaster = await openIdentityMaster(
-            identityMasterRecordKey: contactIdentityMasterRecordKey);
+  //       // Fetch the remote contact's account master
+  //       final contactIdentityMaster = await openIdentityMaster(
+  //           identityMasterRecordKey: contactIdentityMasterRecordKey);
 
-        // Verify
-        final signature = signedContactResponse.identitySignature.toVeilid();
-        await cs.verify(contactIdentityMaster.identityPublicKey,
-            contactResponseBytes, signature);
+  //       // Verify
+  //       final signature = signedContactResponse.identitySignature.toVeilid();
+  //       await cs.verify(contactIdentityMaster.identityPublicKey,
+  //           contactResponseBytes, signature);
 
-        // Check for rejection
-        if (!contactResponse.accept) {
-          return const InvitationStatus(acceptedContact: null);
-        }
+  //       // Check for rejection
+  //       if (!contactResponse.accept) {
+  //         return const InvitationStatus(acceptedContact: null);
+  //       }
 
-        // Pull profile from remote conversation key
-        final remoteConversationRecordKey =
-            contactResponse.remoteConversationRecordKey.toVeilid();
+  //       // Pull profile from remote conversation key
+  //       final remoteConversationRecordKey =
+  //           contactResponse.remoteConversationRecordKey.toVeilid();
 
-        final conversation = ConversationCubit(
-            activeAccountInfo: _activeAccountInfo,
-            remoteIdentityPublicKey:
-                contactIdentityMaster.identityPublicTypedKey(),
-            remoteConversationRecordKey: remoteConversationRecordKey);
-        await conversation.refresh();
+  //       final conversation = ConversationCubit(
+  //           activeAccountInfo: _activeAccountInfo,
+  //           remoteIdentityPublicKey:
+  //               contactIdentityMaster.identityPublicTypedKey(),
+  //           remoteConversationRecordKey: remoteConversationRecordKey);
+  //       await conversation.refresh();
 
-        final remoteConversation =
-            conversation.state.data?.value.remoteConversation;
-        if (remoteConversation == null) {
-          log.info('Remote conversation could not be read. Waiting...');
-          return null;
-        }
+  //       final remoteConversation =
+  //           conversation.state.data?.value.remoteConversation;
+  //       if (remoteConversation == null) {
+  //         log.info('Remote conversation could not be read. Waiting...');
+  //         return null;
+  //       }
 
-        // Complete the local conversation now that we have the remote profile
-        final localConversationRecordKey =
-            contactInvitationRecord.localConversationRecordKey.toVeilid();
-        return conversation.initLocalConversation(
-            existingConversationRecordKey: localConversationRecordKey,
-            profile: _account.profile,
-            // ignore: prefer_expression_function_bodies
-            callback: (localConversation) async {
-              return InvitationStatus(
-                  acceptedContact: AcceptedContact(
-                      remoteProfile: remoteConversation.profile,
-                      remoteIdentity: contactIdentityMaster,
-                      remoteConversationRecordKey: remoteConversationRecordKey,
-                      localConversationRecordKey: localConversationRecordKey));
-            });
-      });
+  //       // Complete the local conversation now that we have the remote profile
+  //       final localConversationRecordKey =
+  //           contactInvitationRecord.localConversationRecordKey.toVeilid();
+  //       return conversation.initLocalConversation(
+  //           existingConversationRecordKey: localConversationRecordKey,
+  //           profile: _account.profile,
+  //           // ignore: prefer_expression_function_bodies
+  //           callback: (localConversation) async {
+  //             return InvitationStatus(
+  //                 acceptedContact: AcceptedContact(
+  //                     remoteProfile: remoteConversation.profile,
+  //                     remoteIdentity: contactIdentityMaster,
+  //                     remoteConversationRecordKey: remoteConversationRecordKey,
+  //                     localConversationRecordKey: localConversationRecordKey));
+  //           });
+  //     });
 
-      if (acceptReject == null) {
-        return null;
-      }
+  //     if (acceptReject == null) {
+  //       return null;
+  //     }
 
-      // Delete invitation and return the accepted or rejected contact
-      await deleteInvitation(
-          accepted: acceptReject.acceptedContact != null,
-          contactInvitationRecord: contactInvitationRecord);
+  //     // Delete invitation and return the accepted or rejected contact
+  //     await deleteInvitation(
+  //         accepted: acceptReject.acceptedContact != null,
+  //         contactInvitationRecord: contactInvitationRecord);
 
-      return acceptReject;
-    } on Exception catch (e) {
-      log.error('Exception in checkAcceptRejectContact: $e', e);
+  //     return acceptReject;
+  //   } on Exception catch (e) {
+  //     log.error('Exception in checkInvitationStatus: $e', e);
 
-      // Attempt to clean up. All this needs better lifetime management
-      await deleteInvitation(
-          accepted: false, contactInvitationRecord: contactInvitationRecord);
+  //     // Attempt to clean up. All this needs better lifetime management
+  //     await deleteInvitation(
+  //         accepted: false, contactInvitationRecord: contactInvitationRecord);
 
-      rethrow;
-    }
-  }
+  //     rethrow;
+  //   }
+  // }
 
   //
   final ActiveAccountInfo _activeAccountInfo;

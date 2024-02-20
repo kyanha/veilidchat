@@ -32,9 +32,10 @@ typedef ActiveConversationsBlocMapState
 
 // Map of remoteConversationRecordKey to ActiveConversationCubit
 // Wraps a conversation cubit to only expose completely built conversations
-class ActiveConversationsCubit extends BlocMapCubit<TypedKey,
+class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
     AsyncValue<ActiveConversationState>, ActiveConversationCubit> {
-  ActiveConversationsCubit({required ActiveAccountInfo activeAccountInfo})
+  ActiveConversationsBlocMapCubit(
+      {required ActiveAccountInfo activeAccountInfo})
       : _activeAccountInfo = activeAccountInfo;
 
   // Add an active conversation to be tracked for changes

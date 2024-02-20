@@ -52,7 +52,7 @@ class ChatComponent extends StatelessWidget {
         if (contactList == null) {
           return debugPage('should always have a contact list here');
         }
-        final avconversation = context.select<ActiveConversationsCubit,
+        final avconversation = context.select<ActiveConversationsBlocMapCubit,
                 AsyncValue<ActiveConversationState>?>(
             (x) => x.state[remoteConversationRecordKey]);
         if (avconversation == null) {

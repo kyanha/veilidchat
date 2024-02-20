@@ -69,7 +69,7 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             child: ListTile(
                 onTap: () {
                   final activeConversationsCubit =
-                      context.read<ActiveConversationsCubit>();
+                      context.read<ActiveConversationsBlocMapCubit>();
                   singleFuture(activeChatCubit, () async {
                     await activeConversationsCubit.addConversation(
                         contact: _contact);

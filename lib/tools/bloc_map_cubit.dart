@@ -12,6 +12,14 @@ class _ItemEntry<S, B> {
   final StreamSubscription<S> subscription;
 }
 
+// Streaming container cubit that is a map from some immutable key
+// to a some other cubit's output state. Output state for this container
+// cubit is an immutable map of the key to the output state of the contained
+// cubits.
+//
+// K = Key type for the bloc map, used to look up some mapped cubit
+// S = State type for the value, keys will look up values of this type
+// B = Bloc/cubit type for the value, output states of type S
 abstract class BlocMapCubit<K, S, B extends BlocBase<S>>
     extends Cubit<BlocMapState<K, S>> {
   BlocMapCubit()

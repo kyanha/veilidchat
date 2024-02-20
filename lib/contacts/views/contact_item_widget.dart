@@ -80,20 +80,6 @@ class ContactItemWidget extends StatelessWidget {
                     await MainPager.of(context)?.pageController.animateToPage(1,
                         duration: 250.ms, curve: Curves.easeInOut);
                   }
-
-                  //   // ignore: use_build_context_synchronously
-                  //   if (!context.mounted) {
-                  //     return;
-                  //   }
-                  //   await showDialog<void>(
-                  //       context: context,
-                  //       builder: (context) => ContactInvitationDisplayDialog(
-                  //             name: activeAccountInfo.localAccount.name,
-                  //             message: contactInvitationRecord.message,
-                  //             generator: Uint8List.fromList(
-                  //                 contactInvitationRecord.invitation),
-                  //           ));
-                  // }
                 },
                 title: Text(contact.editedProfile.name),
                 subtitle: (contact.editedProfile.pronouns.isNotEmpty)
@@ -101,7 +87,6 @@ class ContactItemWidget extends StatelessWidget {
                     : null,
                 iconColor: scale.tertiaryScale.background,
                 textColor: scale.tertiaryScale.text,
-                //Text(Timestamp.fromInt64(contactInvitationRecord.expiration) / ),
                 leading: const Icon(Icons.person))));
   }
 

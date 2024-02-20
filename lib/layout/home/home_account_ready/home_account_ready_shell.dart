@@ -61,11 +61,16 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                         activeAccountInfo: activeAccountInfo,
                         account: account)),
                 BlocProvider(
-                    create: (context) => ActiveConversationsCubit(
+                    create: (context) => ActiveConversationsBlocMapCubit(
                         activeAccountInfo: activeAccountInfo)),
                 BlocProvider(
-                    create: (context) =>
-                        ActiveChatCubit(null, routerCubit.setHasActiveChat))
+                    create: (context) => ActiveChatCubit(null)
+                      ..withStateListen((event) {
+                        routerCubit.setHasActiveChat(event != null);
+                      })),
+                BlocProvider(
+                    create: (context) => WaitingInvitationsBlocMapCubit(
+                        activeAccountInfo: activeAccountInfo, account: account))
               ], child: widget.child);
             })));
   }

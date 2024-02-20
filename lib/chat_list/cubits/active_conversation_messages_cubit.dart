@@ -8,7 +8,7 @@ import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
-import 'active_conversations_cubit.dart';
+import 'active_conversations_bloc_map_cubit.dart';
 
 class ActiveConversationMessagesCubit extends BlocMapCubit<TypedKey,
     AsyncValue<IList<proto.Message>>, MessagesCubit> {
