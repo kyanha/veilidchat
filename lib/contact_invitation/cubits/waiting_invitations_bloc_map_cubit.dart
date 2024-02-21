@@ -12,7 +12,7 @@ typedef WaitingInvitationsBlocMapState
 
 // Map of contactInvitationListRecordKey to WaitingInvitationCubit
 // Wraps a contact invitation cubit to watch for accept/reject
-// Automatically follows the state of a ContactInvitiationListCubit.
+// Automatically follows the state of a ContactInvitationListCubit.
 class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<InvitationStatus>, WaitingInvitationCubit>
     with
@@ -33,18 +33,15 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
               account: account,
               contactInvitationRecord: contactInvitationRecord)));
 
-  final ActiveAccountInfo activeAccountInfo;
-  final proto.Account account;
-
   /// StateFollower /////////////////////////
   @override
   IMap<TypedKey, proto.ContactInvitationRecord> getStateMap(
-      AsyncValue<IList<proto.ContactInvitationRecord>> avstate) {
-    final state = avstate.data?.value;
-    if (state == null) {
+      AsyncValue<IList<proto.ContactInvitationRecord>> state) {
+    final stateValue = state.data?.value;
+    if (stateValue == null) {
       return IMap();
     }
-    return IMap.fromIterable(state,
+    return IMap.fromIterable(stateValue,
         keyMapper: (e) => e.contactRequestInbox.recordKey.toVeilid(),
         valueMapper: (e) => e);
   }
@@ -55,4 +52,8 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
   @override
   Future<void> updateState(TypedKey key, proto.ContactInvitationRecord value) =>
       addWaitingInvitation(contactInvitationRecord: value);
+
+  ////
+  final ActiveAccountInfo activeAccountInfo;
+  final proto.Account account;
 }

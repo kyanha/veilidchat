@@ -1,3 +1,5 @@
+import 'package:async_tools/async_tools.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -62,7 +64,19 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                         account: account)),
                 BlocProvider(
                     create: (context) => ActiveConversationsBlocMapCubit(
-                        activeAccountInfo: activeAccountInfo)),
+                        activeAccountInfo: activeAccountInfo,
+                        contactListCubit: context.read<ContactListCubit>())
+                      ..follow(
+                          initialInputState: const AsyncValue.loading(),
+                          stream: context.read<ChatListCubit>().stream)),
+                BlocProvider(
+                    create: (context) => ActiveConversationMessagesBlocMapCubit(
+                          activeAccountInfo: activeAccountInfo,
+                        )..follow(
+                            initialInputState: IMap(),
+                            stream: context
+                                .read<ActiveConversationsBlocMapCubit>()
+                                .stream)),
                 BlocProvider(
                     create: (context) => ActiveChatCubit(null)
                       ..withStateListen((event) {
@@ -70,7 +84,12 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                       })),
                 BlocProvider(
                     create: (context) => WaitingInvitationsBlocMapCubit(
-                        activeAccountInfo: activeAccountInfo, account: account))
+                        activeAccountInfo: activeAccountInfo, account: account)
+                      ..follow(
+                          initialInputState: const AsyncValue.loading(),
+                          stream: context
+                              .read<ContactInvitationListCubit>()
+                              .stream))
               ], child: widget.child);
             })));
   }

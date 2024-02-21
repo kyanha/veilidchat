@@ -79,7 +79,8 @@ class ChatComponent extends StatelessWidget {
 
         // Get the messages to display
         // and ensure it is safe to operate() on the MessageCubit for this chat
-        final avmessages = context.select<ActiveConversationMessagesCubit,
+        final avmessages = context.select<
+                ActiveConversationMessagesBlocMapCubit,
                 AsyncValue<IList<proto.Message>>?>(
             (x) => x.state[remoteConversationRecordKey]);
         if (avmessages == null) {
@@ -117,7 +118,7 @@ class ChatComponent extends StatelessWidget {
     if (message.text.isEmpty) {
       return;
     }
-    await context.read<ActiveConversationMessagesCubit>().operate(
+    await context.read<ActiveConversationMessagesBlocMapCubit>().operate(
         _remoteConversationRecordKey,
         closure: (messagesCubit) => messagesCubit.addMessage(message: message));
   }

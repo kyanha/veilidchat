@@ -68,11 +68,7 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             // component is not dragged.
             child: ListTile(
                 onTap: () {
-                  final activeConversationsCubit =
-                      context.read<ActiveConversationsBlocMapCubit>();
                   singleFuture(activeChatCubit, () async {
-                    await activeConversationsCubit.addConversation(
-                        contact: _contact);
                     activeChatCubit.setActiveChat(remoteConversationRecordKey);
                   });
                 },

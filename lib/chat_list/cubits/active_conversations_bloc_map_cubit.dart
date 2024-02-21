@@ -1,5 +1,6 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:equatable/equatable.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -32,11 +33,15 @@ typedef ActiveConversationsBlocMapState
 
 // Map of remoteConversationRecordKey to ActiveConversationCubit
 // Wraps a conversation cubit to only expose completely built conversations
+// Automatically follows the state of a ChatListCubit.
 class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
-    AsyncValue<ActiveConversationState>, ActiveConversationCubit> {
+        AsyncValue<ActiveConversationState>, ActiveConversationCubit>
+    with StateFollower<AsyncValue<IList<proto.Chat>>, TypedKey, proto.Chat> {
   ActiveConversationsBlocMapCubit(
-      {required ActiveAccountInfo activeAccountInfo})
-      : _activeAccountInfo = activeAccountInfo;
+      {required ActiveAccountInfo activeAccountInfo,
+      required ContactListCubit contactListCubit})
+      : _activeAccountInfo = activeAccountInfo,
+        _contactListCubit = contactListCubit;
 
   // Add an active conversation to be tracked for changes
   Future<void> addConversation({required proto.Contact contact}) async =>
@@ -65,5 +70,41 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
                   loading: AsyncValue.loading,
                   error: AsyncValue.error))));
 
+  /// StateFollower /////////////////////////
+
+  @override
+  IMap<TypedKey, proto.Chat> getStateMap(AsyncValue<IList<proto.Chat>> state) {
+    final stateValue = state.data?.value;
+    if (stateValue == null) {
+      return IMap();
+    }
+    return IMap.fromIterable(stateValue,
+        keyMapper: (e) => e.remoteConversationKey.toVeilid(),
+        valueMapper: (e) => e);
+  }
+
+  @override
+  Future<void> removeFromState(TypedKey key) => remove(key);
+
+  @override
+  Future<void> updateState(TypedKey key, proto.Chat value) async {
+    final contactList = _contactListCubit.state.data?.value;
+    if (contactList == null) {
+      await addState(key, const AsyncValue.loading());
+      return;
+    }
+    final contactIndex = contactList
+        .indexWhere((c) => c.remoteConversationRecordKey.toVeilid() == key);
+    if (contactIndex == -1) {
+      await addState(key, AsyncValue.error('Contact not found for chat'));
+      return;
+    }
+    final contact = contactList[contactIndex];
+    await addConversation(contact: contact);
+  }
+
+  ////
+
   final ActiveAccountInfo _activeAccountInfo;
+  final ContactListCubit _contactListCubit;
 }
