@@ -53,7 +53,9 @@ class ContactInvitationItemWidget extends StatelessWidget {
                           context.read<ContactInvitationListCubit>();
                       await contactInvitationListCubit.deleteInvitation(
                           accepted: false,
-                          contactInvitationRecord: contactInvitationRecord);
+                          contactRequestInboxRecordKey: contactInvitationRecord
+                              .contactRequestInbox.recordKey
+                              .toVeilid());
                     },
                     backgroundColor: scale.tertiaryScale.background,
                     foregroundColor: scale.tertiaryScale.text,

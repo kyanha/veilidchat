@@ -147,7 +147,7 @@ class ContactInvitationListCubit
 
   Future<void> deleteInvitation(
       {required bool accepted,
-      required proto.ContactInvitationRecord contactInvitationRecord}) async {
+      required TypedKey contactRequestInboxRecordKey}) async {
     final pool = DHTRecordPool.instance;
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
@@ -159,25 +159,24 @@ class ContactInvitationListCubit
       if (item == null) {
         throw Exception('Failed to get contact invitation record');
       }
-      if (item.contactRequestInbox.recordKey ==
-          contactInvitationRecord.contactRequestInbox.recordKey) {
+      if (item.contactRequestInbox.recordKey.toVeilid() ==
+          contactRequestInboxRecordKey) {
         await shortArray.tryRemoveItem(i);
-        break;
+
+        await (await pool.openOwned(item.contactRequestInbox.toVeilid(),
+                parent: accountRecordKey))
+            .scope((contactRequestInbox) async {
+          // Wipe out old invitation so it shows up as invalid
+          await contactRequestInbox.tryWriteBytes(Uint8List(0));
+          await contactRequestInbox.delete();
+        });
+        if (!accepted) {
+          await (await pool.openRead(item.localConversationRecordKey.toVeilid(),
+                  parent: accountRecordKey))
+              .delete();
+        }
+        return;
       }
-    }
-    await (await pool.openOwned(
-            contactInvitationRecord.contactRequestInbox.toVeilid(),
-            parent: accountRecordKey))
-        .scope((contactRequestInbox) async {
-      // Wipe out old invitation so it shows up as invalid
-      await contactRequestInbox.tryWriteBytes(Uint8List(0));
-      await contactRequestInbox.delete();
-    });
-    if (!accepted) {
-      await (await pool.openRead(
-              contactInvitationRecord.localConversationRecordKey.toVeilid(),
-              parent: accountRecordKey))
-          .delete();
     }
   }
 

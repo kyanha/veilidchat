@@ -10,7 +10,7 @@ import 'cubits.dart';
 typedef WaitingInvitationsBlocMapState
     = BlocMapState<TypedKey, AsyncValue<InvitationStatus>>;
 
-// Map of contactInvitationListRecordKey to WaitingInvitationCubit
+// Map of contactRequestInboxRecordKey to WaitingInvitationCubit
 // Wraps a contact invitation cubit to watch for accept/reject
 // Automatically follows the state of a ContactInvitationListCubit.
 class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
@@ -20,6 +20,7 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
             TypedKey, proto.ContactInvitationRecord> {
   WaitingInvitationsBlocMapCubit(
       {required this.activeAccountInfo, required this.account});
+
   Future<void> addWaitingInvitation(
           {required proto.ContactInvitationRecord
               contactInvitationRecord}) async =>

@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import '../../../../veilid_support.dart';
 
 abstract class DHTRecordCrypto {
-  FutureOr<Uint8List> encrypt(Uint8List data, int subkey);
-  FutureOr<Uint8List> decrypt(Uint8List data, int subkey);
+  Future<Uint8List> encrypt(Uint8List data, int subkey);
+  Future<Uint8List> decrypt(Uint8List data, int subkey);
 }
 
 ////////////////////////////////////
@@ -32,11 +32,11 @@ class DHTRecordCryptoPrivate implements DHTRecordCrypto {
   }
 
   @override
-  FutureOr<Uint8List> encrypt(Uint8List data, int subkey) =>
+  Future<Uint8List> encrypt(Uint8List data, int subkey) =>
       _cryptoSystem.encryptNoAuthWithNonce(data, _secretKey);
 
   @override
-  FutureOr<Uint8List> decrypt(Uint8List data, int subkey) =>
+  Future<Uint8List> decrypt(Uint8List data, int subkey) =>
       _cryptoSystem.decryptNoAuthWithNonce(data, _secretKey);
 }
 
@@ -46,8 +46,8 @@ class DHTRecordCryptoPublic implements DHTRecordCrypto {
   const DHTRecordCryptoPublic();
 
   @override
-  FutureOr<Uint8List> encrypt(Uint8List data, int subkey) => data;
+  Future<Uint8List> encrypt(Uint8List data, int subkey) async => data;
 
   @override
-  FutureOr<Uint8List> decrypt(Uint8List data, int subkey) => data;
+  Future<Uint8List> decrypt(Uint8List data, int subkey) async => data;
 }

@@ -10,12 +10,12 @@ import 'home_account_missing.dart';
 import 'home_no_active.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({required this.child, super.key});
+  const HomeShell({required this.accountReadyBuilder, super.key});
 
   @override
   HomeShellState createState() => HomeShellState();
 
-  final Widget child;
+  final Builder accountReadyBuilder;
 }
 
 class HomeShellState extends State<HomeShell> {
@@ -32,7 +32,7 @@ class HomeShellState extends State<HomeShell> {
     super.dispose();
   }
 
-  Widget buildWithLogin(BuildContext context, Widget child) {
+  Widget buildWithLogin(BuildContext context) {
     final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
 
     if (activeLocalAccount == null) {
@@ -56,7 +56,7 @@ class HomeShellState extends State<HomeShell> {
             child: BlocProvider(
                 create: (context) => AccountRecordCubit(
                     record: accountInfo.activeAccountInfo!.accountRecord),
-                child: child));
+                child: widget.accountReadyBuilder));
     }
   }
 
@@ -72,6 +72,6 @@ class HomeShellState extends State<HomeShell> {
             child: DecoratedBox(
                 decoration: BoxDecoration(
                     color: scale.primaryScale.activeElementBackground),
-                child: buildWithLogin(context, widget.child))));
+                child: buildWithLogin(context))));
   }
 }

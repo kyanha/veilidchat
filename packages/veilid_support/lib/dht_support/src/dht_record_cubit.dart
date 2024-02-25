@@ -8,7 +8,7 @@ import '../../veilid_support.dart';
 
 typedef InitialStateFunction<T> = Future<T?> Function(DHTRecord);
 typedef StateFunction<T> = Future<T?> Function(
-    DHTRecord, List<ValueSubkeyRange>, Uint8List);
+    DHTRecord, List<ValueSubkeyRange>, Uint8List?);
 
 class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   DHTRecordCubit({
@@ -28,9 +28,8 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
 
   DHTRecordCubit.value({
     required DHTRecord record,
-    required Future<T?> Function(DHTRecord) initialStateFunction,
-    required Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
-        stateFunction,
+    required InitialStateFunction<T> initialStateFunction,
+    required StateFunction<T> stateFunction,
   })  : _record = record,
         _stateFunction = stateFunction,
         _wantsCloseRecord = false,
@@ -41,9 +40,8 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   }
 
   Future<void> _init(
-    Future<T?> Function(DHTRecord) initialStateFunction,
-    Future<T?> Function(DHTRecord, List<ValueSubkeyRange>, Uint8List)
-        stateFunction,
+    InitialStateFunction<T> initialStateFunction,
+    StateFunction<T> stateFunction,
   ) async {
     // Make initial state update
     try {
@@ -142,7 +140,7 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
         if (subkeys.containsSubkey(defaultSubkey)) {
           final Uint8List data;
           final firstSubkey = subkeys.firstOrNull!.low;
-          if (firstSubkey != defaultSubkey) {
+          if (firstSubkey != defaultSubkey || updatedata == null) {
             final maybeData = await record.get(forceRefresh: true);
             if (maybeData == null) {
               return null;

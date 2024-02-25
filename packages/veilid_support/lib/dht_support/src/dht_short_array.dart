@@ -86,16 +86,12 @@ class DHTShortArray {
       final schema = DHTSchema.smpl(
           oCnt: 0,
           members: [DHTSchemaMember(mKey: smplWriter.key, mCnt: stride + 1)]);
-      final dhtCreateRecord = await pool.create(
+      dhtRecord = await pool.create(
           parent: parent,
           routingContext: routingContext,
           schema: schema,
           crypto: crypto,
           writer: smplWriter);
-      // Reopen with SMPL writer
-      await dhtCreateRecord.close();
-      dhtRecord = await pool.openWrite(dhtCreateRecord.key, smplWriter,
-          parent: parent, routingContext: routingContext, crypto: crypto);
     } else {
       final schema = DHTSchema.dflt(oCnt: stride + 1);
       dhtRecord = await pool.create(

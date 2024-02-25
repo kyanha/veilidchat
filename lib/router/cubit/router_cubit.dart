@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -68,8 +69,10 @@ class RouterCubit extends Cubit<RouterState> {
         ),
         ShellRoute(
           navigatorKey: _homeNavKey,
-          builder: (context, state, child) =>
-              HomeShell(child: HomeAccountReadyShell(child: child)),
+          builder: (context, state, child) => HomeShell(
+              accountReadyBuilder: Builder(
+                  builder: (context) =>
+                      HomeAccountReadyShell(context: context, child: child))),
           routes: [
             GoRoute(
               path: '/home',

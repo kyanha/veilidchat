@@ -1,12 +1,4 @@
-import 'dart:async';
-import 'dart:typed_data';
-
-import 'package:equatable/equatable.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:meta/meta.dart';
-import 'package:protobuf/protobuf.dart';
-
-import '../../../veilid_support.dart';
+part of 'dht_record_pool.dart';
 
 @immutable
 class DHTRecordWatchChange extends Equatable {
@@ -14,7 +6,7 @@ class DHTRecordWatchChange extends Equatable {
       {required this.local, required this.data, required this.subkeys});
 
   final bool local;
-  final Uint8List data;
+  final Uint8List? data;
   final List<ValueSubkeyRange> subkeys;
 
   @override
@@ -26,46 +18,41 @@ class DHTRecordWatchChange extends Equatable {
 class DHTRecord {
   DHTRecord(
       {required VeilidRoutingContext routingContext,
-      required DHTRecordDescriptor recordDescriptor,
-      int defaultSubkey = 0,
-      KeyPair? writer,
-      DHTRecordCrypto crypto = const DHTRecordCryptoPublic()})
+      required SharedDHTRecordData sharedDHTRecordData,
+      required int defaultSubkey,
+      required KeyPair? writer,
+      required DHTRecordCrypto crypto})
       : _crypto = crypto,
         _routingContext = routingContext,
-        _recordDescriptor = recordDescriptor,
         _defaultSubkey = defaultSubkey,
         _writer = writer,
         _open = true,
         _valid = true,
-        _subkeySeqCache = {},
-        needsWatchStateUpdate = false,
-        inWatchStateUpdate = false;
+        _sharedDHTRecordData = sharedDHTRecordData;
 
+  final SharedDHTRecordData _sharedDHTRecordData;
   final VeilidRoutingContext _routingContext;
-  final DHTRecordDescriptor _recordDescriptor;
   final int _defaultSubkey;
   final KeyPair? _writer;
-  final Map<int, int> _subkeySeqCache;
   final DHTRecordCrypto _crypto;
+
   bool _open;
   bool _valid;
   @internal
   StreamController<DHTRecordWatchChange>? watchController;
-  @internal
-  bool needsWatchStateUpdate;
-  @internal
-  bool inWatchStateUpdate;
   @internal
   WatchState? watchState;
 
   int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
 
   VeilidRoutingContext get routingContext => _routingContext;
-  TypedKey get key => _recordDescriptor.key;
-  PublicKey get owner => _recordDescriptor.owner;
-  KeyPair? get ownerKeyPair => _recordDescriptor.ownerKeyPair();
-  DHTSchema get schema => _recordDescriptor.schema;
-  int get subkeyCount => _recordDescriptor.schema.subkeyCount();
+  TypedKey get key => _sharedDHTRecordData.recordDescriptor.key;
+  PublicKey get owner => _sharedDHTRecordData.recordDescriptor.owner;
+  KeyPair? get ownerKeyPair =>
+      _sharedDHTRecordData.recordDescriptor.ownerKeyPair();
+  DHTSchema get schema => _sharedDHTRecordData.recordDescriptor.schema;
+  int get subkeyCount =>
+      _sharedDHTRecordData.recordDescriptor.schema.subkeyCount();
   KeyPair? get writer => _writer;
   DHTRecordCrypto get crypto => _crypto;
   OwnedDHTRecordPointer get ownedDHTRecordPointer =>
@@ -79,21 +66,15 @@ class DHTRecord {
       return;
     }
     await watchController?.close();
-    await _routingContext.closeDHTRecord(_recordDescriptor.key);
-    DHTRecordPool.instance.recordClosed(_recordDescriptor.key);
+    await DHTRecordPool.instance._recordClosed(this);
     _open = false;
   }
 
-  Future<void> delete() async {
-    if (!_valid) {
-      throw StateError('already deleted');
-    }
-    if (_open) {
-      await close();
-    }
-    await DHTRecordPool.instance.deleteDeep(key);
+  void _markDeleted() {
     _valid = false;
   }
+
+  Future<void> delete() => DHTRecordPool.instance.delete(key);
 
   Future<T> scope<T>(Future<T> Function(DHTRecord) scopeFunction) async {
     try {
@@ -134,17 +115,17 @@ class DHTRecord {
       bool forceRefresh = false,
       bool onlyUpdates = false}) async {
     subkey = subkeyOrDefault(subkey);
-    final valueData = await _routingContext.getDHTValue(
-        _recordDescriptor.key, subkey, forceRefresh);
+    final valueData = await _routingContext.getDHTValue(key, subkey,
+        forceRefresh: forceRefresh);
     if (valueData == null) {
       return null;
     }
-    final lastSeq = _subkeySeqCache[subkey];
+    final lastSeq = _sharedDHTRecordData.subkeySeqCache[subkey];
     if (onlyUpdates && lastSeq != null && valueData.seq <= lastSeq) {
       return null;
     }
     final out = _crypto.decrypt(valueData.data, subkey);
-    _subkeySeqCache[subkey] = valueData.seq;
+    _sharedDHTRecordData.subkeySeqCache[subkey] = valueData.seq;
     return out;
   }
 
@@ -176,17 +157,16 @@ class DHTRecord {
   Future<Uint8List?> tryWriteBytes(Uint8List newValue,
       {int subkey = -1}) async {
     subkey = subkeyOrDefault(subkey);
-    final lastSeq = _subkeySeqCache[subkey];
+    final lastSeq = _sharedDHTRecordData.subkeySeqCache[subkey];
     final encryptedNewValue = await _crypto.encrypt(newValue, subkey);
 
     // Set the new data if possible
-    var newValueData = await _routingContext.setDHTValue(
-        _recordDescriptor.key, subkey, encryptedNewValue);
+    var newValueData =
+        await _routingContext.setDHTValue(key, subkey, encryptedNewValue);
     if (newValueData == null) {
       // A newer value wasn't found on the set, but
       // we may get a newer value when getting the value for the sequence number
-      newValueData = await _routingContext.getDHTValue(
-          _recordDescriptor.key, subkey, false);
+      newValueData = await _routingContext.getDHTValue(key, subkey);
       if (newValueData == null) {
         assert(newValueData != null, "can't get value that was just set");
         return null;
@@ -195,13 +175,13 @@ class DHTRecord {
 
     // Record new sequence number
     final isUpdated = newValueData.seq != lastSeq;
-    _subkeySeqCache[subkey] = newValueData.seq;
+    _sharedDHTRecordData.subkeySeqCache[subkey] = newValueData.seq;
 
     // See if the encrypted data returned is exactly the same
     // if so, shortcut and don't bother decrypting it
     if (newValueData.data.equals(encryptedNewValue)) {
       if (isUpdated) {
-        addLocalValueChange(newValue, subkey);
+        _addLocalValueChange(newValue, subkey);
       }
       return null;
     }
@@ -209,36 +189,35 @@ class DHTRecord {
     // Decrypt value to return it
     final decryptedNewValue = await _crypto.decrypt(newValueData.data, subkey);
     if (isUpdated) {
-      addLocalValueChange(decryptedNewValue, subkey);
+      _addLocalValueChange(decryptedNewValue, subkey);
     }
     return decryptedNewValue;
   }
 
   Future<void> eventualWriteBytes(Uint8List newValue, {int subkey = -1}) async {
     subkey = subkeyOrDefault(subkey);
-    final lastSeq = _subkeySeqCache[subkey];
+    final lastSeq = _sharedDHTRecordData.subkeySeqCache[subkey];
     final encryptedNewValue = await _crypto.encrypt(newValue, subkey);
 
     ValueData? newValueData;
     do {
       do {
         // Set the new data
-        newValueData = await _routingContext.setDHTValue(
-            _recordDescriptor.key, subkey, encryptedNewValue);
+        newValueData =
+            await _routingContext.setDHTValue(key, subkey, encryptedNewValue);
 
         // Repeat if newer data on the network was found
       } while (newValueData != null);
 
       // Get the data to check its sequence number
-      newValueData = await _routingContext.getDHTValue(
-          _recordDescriptor.key, subkey, false);
+      newValueData = await _routingContext.getDHTValue(key, subkey);
       if (newValueData == null) {
         assert(newValueData != null, "can't get value that was just set");
         return;
       }
 
       // Record new sequence number
-      _subkeySeqCache[subkey] = newValueData.seq;
+      _sharedDHTRecordData.subkeySeqCache[subkey] = newValueData.seq;
 
       // The encrypted data returned should be exactly the same
       // as what we are trying to set,
@@ -247,7 +226,7 @@ class DHTRecord {
 
     final isUpdated = newValueData.seq != lastSeq;
     if (isUpdated) {
-      addLocalValueChange(newValue, subkey);
+      _addLocalValueChange(newValue, subkey);
     }
   }
 
@@ -258,8 +237,7 @@ class DHTRecord {
 
     // Get the existing data, do not allow force refresh here
     // because if we need a refresh the setDHTValue will fail anyway
-    var oldValue =
-        await get(subkey: subkey, forceRefresh: false, onlyUpdates: false);
+    var oldValue = await get(subkey: subkey);
 
     do {
       // Update the data
@@ -314,16 +292,16 @@ class DHTRecord {
       int? count}) async {
     // Set up watch requirements which will get picked up by the next tick
     final oldWatchState = watchState;
-    watchState = WatchState(
-        subkeys: subkeys?.lock, expiration: expiration, count: count);
+    watchState =
+        WatchState(subkeys: subkeys, expiration: expiration, count: count);
     if (oldWatchState != watchState) {
-      needsWatchStateUpdate = true;
+      _sharedDHTRecordData.needsWatchStateUpdate = true;
     }
   }
 
   Future<StreamSubscription<DHTRecordWatchChange>> listen(
       Future<void> Function(
-              DHTRecord record, Uint8List data, List<ValueSubkeyRange> subkeys)
+              DHTRecord record, Uint8List? data, List<ValueSubkeyRange> subkeys)
           onUpdate,
       {bool localChanges = true}) async {
     // Set up watch requirements
@@ -339,14 +317,16 @@ class DHTRecord {
             return;
           }
           Future.delayed(Duration.zero, () async {
-            final Uint8List data;
+            final Uint8List? data;
             if (change.local) {
               // local changes are not encrypted
               data = change.data;
             } else {
               // incoming/remote changes are encrypted
-              data =
-                  await _crypto.decrypt(change.data, change.subkeys.first.low);
+              final changeData = change.data;
+              data = changeData == null
+                  ? null
+                  : await _crypto.decrypt(changeData, change.subkeys.first.low);
             }
             await onUpdate(this, data, change.subkeys);
           });
@@ -362,17 +342,48 @@ class DHTRecord {
     // Tear down watch requirements
     if (watchState != null) {
       watchState = null;
-      needsWatchStateUpdate = true;
+      _sharedDHTRecordData.needsWatchStateUpdate = true;
     }
   }
 
-  void addLocalValueChange(Uint8List data, int subkey) {
-    watchController?.add(DHTRecordWatchChange(
-        local: true, data: data, subkeys: [ValueSubkeyRange.single(subkey)]));
+  void _addValueChange(
+      {required bool local,
+      required Uint8List data,
+      required List<ValueSubkeyRange> subkeys}) {
+    final ws = watchState;
+    if (ws != null) {
+      final watchedSubkeys = ws.subkeys;
+      if (watchedSubkeys == null) {
+        // Report all subkeys
+        watchController?.add(
+            DHTRecordWatchChange(local: false, data: data, subkeys: subkeys));
+      } else {
+        // Only some subkeys are being watched, see if the reported update
+        // overlaps the subkeys being watched
+        final overlappedSubkeys = watchedSubkeys.intersectSubkeys(subkeys);
+        // If the reported data isn't within the
+        // range we care about, don't pass it through
+        final overlappedFirstSubkey = overlappedSubkeys.firstSubkey;
+        final updateFirstSubkey = subkeys.firstSubkey;
+        final updatedData = (overlappedFirstSubkey != null &&
+                updateFirstSubkey != null &&
+                overlappedFirstSubkey == updateFirstSubkey)
+            ? data
+            : null;
+        // Report only wathced subkeys
+        watchController?.add(DHTRecordWatchChange(
+            local: local, data: updatedData, subkeys: overlappedSubkeys));
+      }
+    }
+  }
+
+  void _addLocalValueChange(Uint8List data, int subkey) {
+    _addValueChange(
+        local: true, data: data, subkeys: [ValueSubkeyRange.single(subkey)]);
   }
 
   void addRemoteValueChange(VeilidUpdateValueChange update) {
-    watchController?.add(DHTRecordWatchChange(
-        local: false, data: update.valueData.data, subkeys: update.subkeys));
+    _addValueChange(
+        local: false, data: update.valueData.data, subkeys: update.subkeys);
   }
 }

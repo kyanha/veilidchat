@@ -10,41 +10,20 @@ class AsyncTransformerCubit<T, S> extends Cubit<AsyncValue<T>> {
     _subscription = input.stream.listen(_asyncTransform);
   }
   void _asyncTransform(AsyncValue<S> newInputState) {
-    // Use a singlefuture here to ensure we get dont lose any updates
-    // If the input stream gives us an update while we are
-    // still processing the last update, the most recent input state will
-    // be saved and processed eventually.
-    singleFuture(this, () async {
-      var newState = newInputState;
-      var done = false;
-      while (!done) {
-        // Emit the transformed state
-        try {
-          if (newState is AsyncLoading) {
-            return AsyncValue<T>.loading();
-          }
-          if (newState is AsyncError) {
-            final newStateError = newState as AsyncError<S>;
-            return AsyncValue<T>.error(
-                newStateError.error, newStateError.stackTrace);
-          }
+    _singleStateProcessor.updateState(newInputState, closure: (newState) async {
+      // Emit the transformed state
+      try {
+        if (newState is AsyncLoading<S>) {
+          emit(const AsyncValue.loading());
+        } else if (newState is AsyncError<S>) {
+          emit(AsyncValue.error(newState.error, newState.stackTrace));
+        } else {
           final transformedState = await transform(newState.data!.value);
           emit(transformedState);
-        } on Exception catch (e, st) {
-          emit(AsyncValue.error(e, st));
         }
-        // See if there's another state change to process
-        final next = _nextInputState;
-        _nextInputState = null;
-        if (next != null) {
-          newState = next;
-        } else {
-          done = true;
-        }
+      } on Exception catch (e, st) {
+        emit(AsyncValue.error(e, st));
       }
-    }, onBusy: () {
-      // Keep this state until we process again
-      _nextInputState = newInputState;
     });
   }
 
@@ -56,7 +35,8 @@ class AsyncTransformerCubit<T, S> extends Cubit<AsyncValue<T>> {
   }
 
   Cubit<AsyncValue<S>> input;
-  AsyncValue<S>? _nextInputState;
+  final SingleStateProcessor<AsyncValue<S>> _singleStateProcessor =
+      SingleStateProcessor();
   Future<AsyncValue<T>> Function(S) transform;
   late final StreamSubscription<AsyncValue<S>> _subscription;
 }
