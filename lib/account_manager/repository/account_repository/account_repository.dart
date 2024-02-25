@@ -42,10 +42,14 @@ class AccountRepository {
       valueFromJson: (obj) => obj == null ? null : TypedKey.fromJson(obj),
       valueToJson: (val) => val?.toJson());
 
+  //////////////////////////////////////////////////////////////
+  /// Fields
+
   final TableDBValue<IList<LocalAccount>> _localAccounts;
   final TableDBValue<IList<UserLogin>> _userLogins;
   final TableDBValue<TypedKey?> _activeLocalAccount;
   final StreamController<AccountRepositoryChange> _streamController;
+  final Map<TypedKey, DHTRecord> _openedAccountRecords = {};
 
   //////////////////////////////////////////////////////////////
   /// Singleton initialization
@@ -57,6 +61,10 @@ class AccountRepository {
     await _userLogins.get();
     await _activeLocalAccount.get();
     await _openLoggedInDHTRecords();
+  }
+
+  Future<void> close() async {
+    await _closeLoggedInDHTRecords();
   }
 
   //////////////////////////////////////////////////////////////
@@ -132,9 +140,8 @@ class AccountRepository {
     }
 
     // Pull the account DHT key, decode it and return it
-    final pool = DHTRecordPool.instance;
-    final accountRecord = pool
-        .getOpenedRecord(userLogin.accountRecordInfo.accountRecord.recordKey);
+    final accountRecord =
+        _getAccountRecord(userLogin.accountRecordInfo.accountRecord.recordKey);
     if (accountRecord == null) {
       // Account could not be read or decrypted from DHT
       return AccountInfo(
@@ -367,7 +374,6 @@ class AccountRepository {
 
   Future<void> logout(TypedKey? accountMasterRecordKey) async {
     // Resolve which user to log out
-    //final userLogins = await _userLogins.get();
     final activeLocalAccount = await _activeLocalAccount.get();
     final logoutUser = accountMasterRecordKey ?? activeLocalAccount;
     if (logoutUser == null) {
@@ -382,10 +388,9 @@ class AccountRepository {
     }
 
     // Close DHT records for this account
-    final pool = DHTRecordPool.instance;
     final accountRecordKey =
         logoutUserLogin.accountRecordInfo.accountRecord.recordKey;
-    final accountRecord = pool.getOpenedRecord(accountRecordKey);
+    final accountRecord = _openedAccountRecords.remove(accountRecordKey);
     await accountRecord?.close();
 
     // Remove user from active logins list
@@ -396,39 +401,52 @@ class AccountRepository {
   }
 
   Future<void> _openLoggedInDHTRecords() async {
-    final pool = DHTRecordPool.instance;
-
     // For all user logins if they arent open yet
     final userLogins = await _userLogins.get();
     for (final userLogin in userLogins) {
-      //// Account record key /////////////////////////////
-      final accountRecordKey =
-          userLogin.accountRecordInfo.accountRecord.recordKey;
-      final existingAccountRecord = pool.getOpenedRecord(accountRecordKey);
-      if (existingAccountRecord == null) {
-        final localAccount =
-            fetchLocalAccount(userLogin.accountMasterRecordKey);
-
-        // Record not yet open, do it
-        final record = await pool.openOwned(
-            userLogin.accountRecordInfo.accountRecord,
-            parent: localAccount!.identityMaster.identityRecordKey);
-        // Watch the record's only (default) key
-        await record.watch();
-      }
+      await _openAccountRecord(userLogin);
     }
   }
 
   Future<void> _closeLoggedInDHTRecords() async {
-    final pool = DHTRecordPool.instance;
-
     final userLogins = await _userLogins.get();
     for (final userLogin in userLogins) {
       //// Account record key /////////////////////////////
       final accountRecordKey =
           userLogin.accountRecordInfo.accountRecord.recordKey;
-      final accountRecord = pool.getOpenedRecord(accountRecordKey);
-      await accountRecord?.close();
+      await _closeAccountRecord(accountRecordKey);
     }
+  }
+
+  Future<DHTRecord> _openAccountRecord(UserLogin userLogin) async {
+    final accountRecordKey =
+        userLogin.accountRecordInfo.accountRecord.recordKey;
+
+    final existingAccountRecord = _openedAccountRecords[accountRecordKey];
+    if (existingAccountRecord != null) {
+      return existingAccountRecord;
+    }
+    final localAccount = fetchLocalAccount(userLogin.accountMasterRecordKey)!;
+
+    // Record not yet open, do it
+    final pool = DHTRecordPool.instance;
+    final record = await pool.openOwned(
+        userLogin.accountRecordInfo.accountRecord,
+        parent: localAccount.identityMaster.identityRecordKey);
+
+    _openedAccountRecords[accountRecordKey] = record;
+
+    // Watch the record's only (default) key
+    await record.watch();
+
+    return record;
+  }
+
+  DHTRecord? _getAccountRecord(TypedKey accountRecordKey) =>
+      _openedAccountRecords[accountRecordKey];
+
+  Future<void> _closeAccountRecord(TypedKey accountRecordKey) async {
+    final accountRecord = _openedAccountRecords.remove(accountRecordKey);
+    await accountRecord?.close();
   }
 }
