@@ -70,7 +70,6 @@ class SharedDHTRecordData {
   KeyPair? defaultWriter;
   VeilidRoutingContext defaultRoutingContext;
   Map<int, int> subkeySeqCache = {};
-  bool inWatchStateUpdate = false;
   bool needsWatchStateUpdate = false;
 }
 
@@ -233,42 +232,45 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   }
 
   Future<void> delete(TypedKey recordKey) async {
-    // Collect all dependencies (including the record itself)
-    final allDeps = <TypedKey>[];
-    final currentDeps = [recordKey];
-    while (currentDeps.isNotEmpty) {
-      final nextDep = currentDeps.removeLast();
-
-      // Remove this child from its parent
-      await _removeDependencyInner(nextDep);
-
-      allDeps.add(nextDep);
-      final childDeps =
-          _state.childrenByParent[nextDep.toJson()]?.toList() ?? [];
-      currentDeps.addAll(childDeps);
-    }
-
-    // Delete all dependent records in parallel (including the record itself)
-    final allDeleteFutures = <Future<void>>[];
-    final allCloseFutures = <Future<void>>[];
     final allDeletedRecords = <DHTRecord>{};
-    for (final dep in allDeps) {
-      // If record is opened, close it first
-      final openinfo = _opened[dep];
-      if (openinfo != null) {
-        for (final rec in openinfo.records) {
-          allCloseFutures.add(rec.close());
-          allDeletedRecords.add(rec);
-        }
+    final allDeletedRecordKeys = <TypedKey>[];
+
+    await _mutex.protect(() async {
+      // Collect all dependencies (including the record itself)
+      final allDeps = <TypedKey>[];
+      final currentDeps = [recordKey];
+      while (currentDeps.isNotEmpty) {
+        final nextDep = currentDeps.removeLast();
+
+        // Remove this child from its parent
+        await _removeDependencyInner(nextDep);
+
+        allDeps.add(nextDep);
+        final childDeps =
+            _state.childrenByParent[nextDep.toJson()]?.toList() ?? [];
+        currentDeps.addAll(childDeps);
       }
-      // Then delete
-      allDeleteFutures.add(_routingContext.deleteDHTRecord(dep));
-    }
-    await Future.wait(allCloseFutures);
-    await Future.wait(allDeleteFutures);
+
+      // Delete all dependent records in parallel (including the record itself)
+      for (final dep in allDeps) {
+        // If record is opened, close it first
+        final openinfo = _opened[dep];
+        if (openinfo != null) {
+          for (final rec in openinfo.records) {
+            allDeletedRecords.add(rec);
+          }
+        }
+        // Then delete
+        allDeletedRecordKeys.add(dep);
+      }
+    });
+
+    await Future.wait(allDeletedRecords.map((r) => r.close()));
     for (final deletedRecord in allDeletedRecords) {
       deletedRecord._markDeleted();
     }
+    await Future.wait(
+        allDeletedRecordKeys.map(_routingContext.deleteDHTRecord));
   }
 
   void _validateParent(TypedKey? parent, TypedKey child) {
@@ -454,14 +456,27 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     return _state.parentByChild[childJson];
   }
 
+  /// Handle the DHT record updates coming from internal to this app
+  void processLocalValueChange(TypedKey key, Uint8List data, int subkey) {
+    // Change
+    for (final kv in _opened.entries) {
+      if (kv.key == key) {
+        for (final rec in kv.value.records) {
+          rec._addLocalValueChange(data, subkey);
+        }
+        break;
+      }
+    }
+  }
+
   /// Handle the DHT record updates coming from Veilid
-  void processUpdateValueChange(VeilidUpdateValueChange updateValueChange) {
+  void processRemoteValueChange(VeilidUpdateValueChange updateValueChange) {
     if (updateValueChange.subkeys.isNotEmpty) {
       // Change
       for (final kv in _opened.entries) {
         if (kv.key == updateValueChange.key) {
           for (final rec in kv.value.records) {
-            rec.addRemoteValueChange(updateValueChange);
+            rec._addRemoteValueChange(updateValueChange);
           }
           break;
         }
@@ -569,61 +584,56 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     inTick = true;
     try {
       // See if any opened records need watch state changes
-      final unord = <Future<void>>[];
+      final unord = <Future<void> Function()>[];
 
-      for (final kv in _opened.entries) {
-        final openedRecordKey = kv.key;
-        final openedRecordInfo = kv.value;
-        final dhtctx = openedRecordInfo.shared.defaultRoutingContext;
+      await _mutex.protect(() async {
+        for (final kv in _opened.entries) {
+          final openedRecordKey = kv.key;
+          final openedRecordInfo = kv.value;
+          final dhtctx = openedRecordInfo.shared.defaultRoutingContext;
 
-        // Check if already updating
-        if (openedRecordInfo.shared.inWatchStateUpdate) {
-          continue;
-        }
+          if (openedRecordInfo.shared.needsWatchStateUpdate) {
+            final watchState =
+                _collectUnionWatchState(openedRecordInfo.records);
 
-        if (openedRecordInfo.shared.needsWatchStateUpdate) {
-          openedRecordInfo.shared.inWatchStateUpdate = true;
+            // Apply watch changes for record
+            if (watchState == null) {
+              unord.add(() async {
+                // Record needs watch cancel
+                try {
+                  await dhtctx.cancelDHTWatch(openedRecordKey);
+                  openedRecordInfo.shared.needsWatchStateUpdate = false;
+                } on VeilidAPIException {
+                  // Failed to cancel DHT watch, try again next tick
+                }
+              });
+            } else {
+              unord.add(() async {
+                // Record needs new watch
+                try {
+                  final realExpiration = await dhtctx.watchDHTValues(
+                      openedRecordKey,
+                      subkeys: watchState.subkeys?.toList(),
+                      count: watchState.count,
+                      expiration: watchState.expiration);
 
-          final watchState = _collectUnionWatchState(openedRecordInfo.records);
-
-          // Apply watch changes for record
-          if (watchState == null) {
-            unord.add(() async {
-              // Record needs watch cancel
-              try {
-                final done = await dhtctx.cancelDHTWatch(openedRecordKey);
-                assert(done,
-                    'should always be done when cancelling whole subkey range');
-                openedRecordInfo.shared.needsWatchStateUpdate = false;
-              } on VeilidAPIException {
-                // Failed to cancel DHT watch, try again next tick
-              }
-              openedRecordInfo.shared.inWatchStateUpdate = false;
-            }());
-          } else {
-            unord.add(() async {
-              // Record needs new watch
-              try {
-                final realExpiration = await dhtctx.watchDHTValues(
-                    openedRecordKey,
-                    subkeys: watchState.subkeys?.toList(),
-                    count: watchState.count,
-                    expiration: watchState.expiration);
-                openedRecordInfo.shared.needsWatchStateUpdate = false;
-
-                // Update watch states with real expiration
-                _updateWatchExpirations(
-                    openedRecordInfo.records, realExpiration);
-              } on VeilidAPIException {
-                // Failed to cancel DHT watch, try again next tick
-              }
-              openedRecordInfo.shared.inWatchStateUpdate = false;
-            }());
+                  // Update watch states with real expiration
+                  if (realExpiration.value != BigInt.zero) {
+                    openedRecordInfo.shared.needsWatchStateUpdate = false;
+                    _updateWatchExpirations(
+                        openedRecordInfo.records, realExpiration);
+                  }
+                } on VeilidAPIException {
+                  // Failed to cancel DHT watch, try again next tick
+                }
+              });
+            }
           }
         }
-      }
+      });
 
-      await unord.wait;
+      // Process all watch changes
+      await unord.map((f) => f()).wait;
     } finally {
       inTick = false;
     }

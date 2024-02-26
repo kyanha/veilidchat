@@ -30,7 +30,12 @@ class _DHTShortArrayCache {
   }
 }
 
+///////////////////////////////////////////////////////////////////////
+
 class DHTShortArray {
+  ////////////////////////////////////////////////////////////////
+  // Constructors
+
   DHTShortArray._({required DHTRecord headRecord})
       : _headRecord = headRecord,
         _head = _DHTShortArrayCache(),
@@ -52,22 +57,6 @@ class DHTShortArray {
     assert(stride <= maxElements, 'stride too long');
     _stride = stride;
   }
-
-  static const maxElements = 256;
-
-  // Head DHT record
-  final DHTRecord _headRecord;
-  late final int _stride;
-
-  // Cached representation refreshed from head record
-  _DHTShortArrayCache _head;
-
-  // Subscription to head and linked record internal changes
-  final Map<TypedKey, StreamSubscription<DHTRecordWatchChange>> _subscriptions;
-  // Stream of external changes
-  StreamController<void>? _watchController;
-  // Watch mutex to ensure we keep the representation valid
-  final Mutex _listenMutex;
 
   // Create a DHTShortArray
   // if smplWriter is specified, uses a SMPL schema with a single writer
@@ -163,148 +152,11 @@ class DHTShortArray {
         crypto: crypto,
       );
 
+  ////////////////////////////////////////////////////////////////////////////
+  // Public API
+
   DHTRecord get record => _headRecord;
-
-  ////////////////////////////////////////////////////////////////
-
-  /// Serialize and write out the current head record, possibly updating it
-  /// if a newer copy is available online. Returns true if the write was
-  /// successful
-  Future<bool> _tryWriteHead() async {
-    final head = _head.toProto();
-    final headBuffer = head.writeToBuffer();
-
-    final existingData = await _headRecord.tryWriteBytes(headBuffer);
-    if (existingData != null) {
-      // Head write failed, incorporate update
-      await _newHead(proto.DHTShortArray.fromBuffer(existingData));
-      return false;
-    }
-
-    return true;
-  }
-
-  /// Validate the head from the DHT is properly formatted
-  /// and calculate the free list from it while we're here
-  List<int> _validateHeadCacheData(
-      List<Typed<FixedEncodedString43>> linkedKeys, List<int> index) {
-    // Ensure nothing is duplicated in the linked keys set
-    final newKeys = linkedKeys.toSet();
-    assert(newKeys.length <= (maxElements + (_stride - 1)) ~/ _stride,
-        'too many keys');
-    assert(newKeys.length == linkedKeys.length, 'duplicated linked keys');
-    final newIndex = index.toSet();
-    assert(newIndex.length <= maxElements, 'too many indexes');
-    assert(newIndex.length == index.length, 'duplicated index locations');
-    // Ensure all the index keys fit into the existing records
-    final indexCapacity = (linkedKeys.length + 1) * _stride;
-    int? maxIndex;
-    for (final idx in newIndex) {
-      assert(idx >= 0 || idx < indexCapacity, 'index out of range');
-      if (maxIndex == null || idx > maxIndex) {
-        maxIndex = idx;
-      }
-    }
-    final free = <int>[];
-    if (maxIndex != null) {
-      for (var i = 0; i < maxIndex; i++) {
-        if (!newIndex.contains(i)) {
-          free.add(i);
-        }
-      }
-    }
-    return free;
-  }
-
-  /// Open a linked record for reading or writing, same as the head record
-  Future<DHTRecord> _openLinkedRecord(TypedKey recordKey) async {
-    final writer = _headRecord.writer;
-    return (writer != null)
-        ? await DHTRecordPool.instance.openWrite(
-            recordKey,
-            writer,
-            parent: _headRecord.key,
-            routingContext: _headRecord.routingContext,
-          )
-        : await DHTRecordPool.instance.openRead(
-            recordKey,
-            parent: _headRecord.key,
-            routingContext: _headRecord.routingContext,
-          );
-  }
-
-  /// Validate a new head record
-  Future<void> _newHead(proto.DHTShortArray head) async {
-    // Get the set of new linked keys and validate it
-    final linkedKeys = head.keys.map((p) => p.toVeilid()).toList();
-    final index = head.index;
-    final free = _validateHeadCacheData(linkedKeys, index);
-
-    // See which records are actually new
-    final oldRecords = Map<TypedKey, DHTRecord>.fromEntries(
-        _head.linkedRecords.map((lr) => MapEntry(lr.key, lr)));
-    final newRecords = <TypedKey, DHTRecord>{};
-    final sameRecords = <TypedKey, DHTRecord>{};
-    try {
-      for (var n = 0; n < linkedKeys.length; n++) {
-        final newKey = linkedKeys[n];
-        final oldRecord = oldRecords[newKey];
-        if (oldRecord == null) {
-          // Open the new record
-          final newRecord = await _openLinkedRecord(newKey);
-          newRecords[newKey] = newRecord;
-        } else {
-          sameRecords[newKey] = oldRecord;
-        }
-      }
-    } on Exception catch (_) {
-      // On any exception close the records we have opened
-      await Future.wait(newRecords.entries.map((e) => e.value.close()));
-      rethrow;
-    }
-
-    // From this point forward we should not throw an exception or everything
-    // is possibly invalid. Just pass the exception up it happens and the caller
-    // will have to delete this short array and reopen it if it can
-    await Future.wait(oldRecords.entries
-        .where((e) => !sameRecords.containsKey(e.key))
-        .map((e) => e.value.close()));
-
-    // Figure out which indices are free
-
-    // Make the new head cache
-    _head = _DHTShortArrayCache()
-      ..linkedRecords.addAll(
-          linkedKeys.map((key) => (sameRecords[key] ?? newRecords[key])!))
-      ..index.addAll(index)
-      ..free.addAll(free);
-
-    // Update watch if we have one in case linked records have been added
-    if (_watchController != null) {
-      await _watchAllRecords();
-    }
-  }
-
-  /// Pull the latest or updated copy of the head record from the network
-  Future<bool> _refreshHead(
-      {bool forceRefresh = true, bool onlyUpdates = false}) async {
-    // Get an updated head record copy if one exists
-    final head = await _headRecord.getProtobuf(proto.DHTShortArray.fromBuffer,
-        subkey: 0, forceRefresh: forceRefresh, onlyUpdates: onlyUpdates);
-    if (head == null) {
-      if (onlyUpdates) {
-        // No update
-        return false;
-      }
-      throw StateError('head missing during refresh');
-    }
-
-    await _newHead(head);
-
-    return true;
-  }
-
-  ////////////////////////////////////////////////////////////////
+  int get length => _head.index.length;
 
   Future<void> close() async {
     await _watchController?.close();
@@ -344,71 +196,6 @@ class DHTShortArray {
       rethrow;
     }
   }
-
-  DHTRecord? _getLinkedRecord(int recordNumber) {
-    if (recordNumber == 0) {
-      return _headRecord;
-    }
-    recordNumber--;
-    if (recordNumber >= _head.linkedRecords.length) {
-      return null;
-    }
-    return _head.linkedRecords[recordNumber];
-  }
-
-  Future<DHTRecord> _getOrCreateLinkedRecord(int recordNumber) async {
-    if (recordNumber == 0) {
-      return _headRecord;
-    }
-    final pool = DHTRecordPool.instance;
-    recordNumber--;
-    while (recordNumber >= _head.linkedRecords.length) {
-      // Linked records must use SMPL schema so writer can be specified
-      // Use the same writer as the head record
-      final smplWriter = _headRecord.writer!;
-      final parent = pool.getParentRecordKey(_headRecord.key);
-      final routingContext = _headRecord.routingContext;
-      final crypto = _headRecord.crypto;
-
-      final schema = DHTSchema.smpl(
-          oCnt: 0,
-          members: [DHTSchemaMember(mKey: smplWriter.key, mCnt: _stride)]);
-      final dhtCreateRecord = await pool.create(
-          parent: parent,
-          routingContext: routingContext,
-          schema: schema,
-          crypto: crypto,
-          writer: smplWriter);
-      // Reopen with SMPL writer
-      await dhtCreateRecord.close();
-      final dhtRecord = await pool.openWrite(dhtCreateRecord.key, smplWriter,
-          parent: parent, routingContext: routingContext, crypto: crypto);
-
-      // Add to linked records
-      _head.linkedRecords.add(dhtRecord);
-      if (!await _tryWriteHead()) {
-        await _refreshHead();
-      }
-    }
-    return _head.linkedRecords[recordNumber];
-  }
-
-  int _emptyIndex() {
-    if (_head.free.isNotEmpty) {
-      return _head.free.removeLast();
-    }
-    if (_head.index.length == maxElements) {
-      throw StateError('too many elements');
-    }
-    return _head.index.length;
-  }
-
-  void _freeIndex(int idx) {
-    _head.free.add(idx);
-    // xxx: free list optimization here?
-  }
-
-  int get length => _head.index.length;
 
   Future<Uint8List?> getItem(int pos, {bool forceRefresh = false}) async {
     await _refreshHead(forceRefresh: forceRefresh, onlyUpdates: true);
@@ -679,6 +466,209 @@ class DHTShortArray {
   ) =>
       eventualUpdateItem(pos, protobufUpdate(fromBuffer, update));
 
+  ////////////////////////////////////////////////////////////////
+  // Internal Operations
+
+  DHTRecord? _getLinkedRecord(int recordNumber) {
+    if (recordNumber == 0) {
+      return _headRecord;
+    }
+    recordNumber--;
+    if (recordNumber >= _head.linkedRecords.length) {
+      return null;
+    }
+    return _head.linkedRecords[recordNumber];
+  }
+
+  Future<DHTRecord> _getOrCreateLinkedRecord(int recordNumber) async {
+    if (recordNumber == 0) {
+      return _headRecord;
+    }
+    final pool = DHTRecordPool.instance;
+    recordNumber--;
+    while (recordNumber >= _head.linkedRecords.length) {
+      // Linked records must use SMPL schema so writer can be specified
+      // Use the same writer as the head record
+      final smplWriter = _headRecord.writer!;
+      final parent = pool.getParentRecordKey(_headRecord.key);
+      final routingContext = _headRecord.routingContext;
+      final crypto = _headRecord.crypto;
+
+      final schema = DHTSchema.smpl(
+          oCnt: 0,
+          members: [DHTSchemaMember(mKey: smplWriter.key, mCnt: _stride)]);
+      final dhtCreateRecord = await pool.create(
+          parent: parent,
+          routingContext: routingContext,
+          schema: schema,
+          crypto: crypto,
+          writer: smplWriter);
+      // Reopen with SMPL writer
+      await dhtCreateRecord.close();
+      final dhtRecord = await pool.openWrite(dhtCreateRecord.key, smplWriter,
+          parent: parent, routingContext: routingContext, crypto: crypto);
+
+      // Add to linked records
+      _head.linkedRecords.add(dhtRecord);
+      if (!await _tryWriteHead()) {
+        await _refreshHead();
+      }
+    }
+    return _head.linkedRecords[recordNumber];
+  }
+
+  int _emptyIndex() {
+    if (_head.free.isNotEmpty) {
+      return _head.free.removeLast();
+    }
+    if (_head.index.length == maxElements) {
+      throw StateError('too many elements');
+    }
+    return _head.index.length;
+  }
+
+  void _freeIndex(int idx) {
+    _head.free.add(idx);
+    // xxx: free list optimization here?
+  }
+
+  /// Serialize and write out the current head record, possibly updating it
+  /// if a newer copy is available online. Returns true if the write was
+  /// successful
+  Future<bool> _tryWriteHead() async {
+    final head = _head.toProto();
+    final headBuffer = head.writeToBuffer();
+
+    final existingData = await _headRecord.tryWriteBytes(headBuffer);
+    if (existingData != null) {
+      // Head write failed, incorporate update
+      await _newHead(proto.DHTShortArray.fromBuffer(existingData));
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Validate the head from the DHT is properly formatted
+  /// and calculate the free list from it while we're here
+  List<int> _validateHeadCacheData(
+      List<Typed<FixedEncodedString43>> linkedKeys, List<int> index) {
+    // Ensure nothing is duplicated in the linked keys set
+    final newKeys = linkedKeys.toSet();
+    assert(newKeys.length <= (maxElements + (_stride - 1)) ~/ _stride,
+        'too many keys');
+    assert(newKeys.length == linkedKeys.length, 'duplicated linked keys');
+    final newIndex = index.toSet();
+    assert(newIndex.length <= maxElements, 'too many indexes');
+    assert(newIndex.length == index.length, 'duplicated index locations');
+    // Ensure all the index keys fit into the existing records
+    final indexCapacity = (linkedKeys.length + 1) * _stride;
+    int? maxIndex;
+    for (final idx in newIndex) {
+      assert(idx >= 0 || idx < indexCapacity, 'index out of range');
+      if (maxIndex == null || idx > maxIndex) {
+        maxIndex = idx;
+      }
+    }
+    final free = <int>[];
+    if (maxIndex != null) {
+      for (var i = 0; i < maxIndex; i++) {
+        if (!newIndex.contains(i)) {
+          free.add(i);
+        }
+      }
+    }
+    return free;
+  }
+
+  /// Open a linked record for reading or writing, same as the head record
+  Future<DHTRecord> _openLinkedRecord(TypedKey recordKey) async {
+    final writer = _headRecord.writer;
+    return (writer != null)
+        ? await DHTRecordPool.instance.openWrite(
+            recordKey,
+            writer,
+            parent: _headRecord.key,
+            routingContext: _headRecord.routingContext,
+          )
+        : await DHTRecordPool.instance.openRead(
+            recordKey,
+            parent: _headRecord.key,
+            routingContext: _headRecord.routingContext,
+          );
+  }
+
+  /// Validate a new head record
+  Future<void> _newHead(proto.DHTShortArray head) async {
+    // Get the set of new linked keys and validate it
+    final linkedKeys = head.keys.map((p) => p.toVeilid()).toList();
+    final index = head.index;
+    final free = _validateHeadCacheData(linkedKeys, index);
+
+    // See which records are actually new
+    final oldRecords = Map<TypedKey, DHTRecord>.fromEntries(
+        _head.linkedRecords.map((lr) => MapEntry(lr.key, lr)));
+    final newRecords = <TypedKey, DHTRecord>{};
+    final sameRecords = <TypedKey, DHTRecord>{};
+    try {
+      for (var n = 0; n < linkedKeys.length; n++) {
+        final newKey = linkedKeys[n];
+        final oldRecord = oldRecords[newKey];
+        if (oldRecord == null) {
+          // Open the new record
+          final newRecord = await _openLinkedRecord(newKey);
+          newRecords[newKey] = newRecord;
+        } else {
+          sameRecords[newKey] = oldRecord;
+        }
+      }
+    } on Exception catch (_) {
+      // On any exception close the records we have opened
+      await Future.wait(newRecords.entries.map((e) => e.value.close()));
+      rethrow;
+    }
+
+    // From this point forward we should not throw an exception or everything
+    // is possibly invalid. Just pass the exception up it happens and the caller
+    // will have to delete this short array and reopen it if it can
+    await Future.wait(oldRecords.entries
+        .where((e) => !sameRecords.containsKey(e.key))
+        .map((e) => e.value.close()));
+
+    // Figure out which indices are free
+
+    // Make the new head cache
+    _head = _DHTShortArrayCache()
+      ..linkedRecords.addAll(
+          linkedKeys.map((key) => (sameRecords[key] ?? newRecords[key])!))
+      ..index.addAll(index)
+      ..free.addAll(free);
+
+    // Update watch if we have one in case linked records have been added
+    if (_watchController != null) {
+      await _watchAllRecords();
+    }
+  }
+
+  /// Pull the latest or updated copy of the head record from the network
+  Future<bool> _refreshHead(
+      {bool forceRefresh = true, bool onlyUpdates = false}) async {
+    // Get an updated head record copy if one exists
+    final head = await _headRecord.getProtobuf(proto.DHTShortArray.fromBuffer,
+        subkey: 0, forceRefresh: forceRefresh, onlyUpdates: onlyUpdates);
+    if (head == null) {
+      if (onlyUpdates) {
+        // No update
+        return false;
+      }
+      throw StateError('head missing during refresh');
+    }
+
+    await _newHead(head);
+
+    return true;
+  }
+
   // Watch head and all linked records
   Future<void> _watchAllRecords() async {
     // This will update any existing watches if necessary
@@ -719,7 +709,7 @@ class DHTShortArray {
 
   // Called when a head or linked record changes
   Future<void> _onUpdateRecord(
-      DHTRecord record, Uint8List data, List<ValueSubkeyRange> subkeys) async {
+      DHTRecord record, Uint8List? data, List<ValueSubkeyRange> subkeys) async {
     // If head record subkey zero changes, then the layout
     // of the dhtshortarray has changed
     var updateHead = false;
@@ -772,4 +762,23 @@ class DHTShortArray {
         // Return subscription
         return _watchController!.stream.listen((_) => onChanged());
       });
+
+  ////////////////////////////////////////////////////////////////
+  // Fields
+
+  static const maxElements = 256;
+
+  // Head DHT record
+  final DHTRecord _headRecord;
+  late final int _stride;
+
+  // Cached representation refreshed from head record
+  _DHTShortArrayCache _head;
+
+  // Subscription to head and linked record internal changes
+  final Map<TypedKey, StreamSubscription<DHTRecordWatchChange>> _subscriptions;
+  // Stream of external changes
+  StreamController<void>? _watchController;
+  // Watch mutex to ensure we keep the representation valid
+  final Mutex _listenMutex;
 }

@@ -66,18 +66,20 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
       // Keep updating until we don't want to update any more
       // Because this is async, we could get an update while we're
       // still processing the last one
-      do {
-        _wantsUpdate = false;
-        try {
-          final initialState = await _getElements();
-          emit(AsyncValue.data(initialState));
-        } on Exception catch (e) {
-          emit(AsyncValue.error(e));
-        }
-      } while (_wantsUpdate);
-
-      // Note that this update future has finished
-      _isUpdating = false;
+      try {
+        do {
+          _wantsUpdate = false;
+          try {
+            final initialState = await _getElements();
+            emit(AsyncValue.data(initialState));
+          } on Exception catch (e) {
+            emit(AsyncValue.error(e));
+          }
+        } while (_wantsUpdate);
+      } finally {
+        // Note that this update future has finished
+        _isUpdating = false;
+      }
     });
   }
 

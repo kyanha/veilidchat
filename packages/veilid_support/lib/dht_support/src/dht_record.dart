@@ -161,8 +161,8 @@ class DHTRecord {
     final encryptedNewValue = await _crypto.encrypt(newValue, subkey);
 
     // Set the new data if possible
-    var newValueData =
-        await _routingContext.setDHTValue(key, subkey, encryptedNewValue);
+    var newValueData = await _routingContext
+        .setDHTValue(key, subkey, encryptedNewValue, writer: _writer);
     if (newValueData == null) {
       // A newer value wasn't found on the set, but
       // we may get a newer value when getting the value for the sequence number
@@ -181,7 +181,7 @@ class DHTRecord {
     // if so, shortcut and don't bother decrypting it
     if (newValueData.data.equals(encryptedNewValue)) {
       if (isUpdated) {
-        _addLocalValueChange(newValue, subkey);
+        DHTRecordPool.instance.processLocalValueChange(key, newValue, subkey);
       }
       return null;
     }
@@ -189,7 +189,8 @@ class DHTRecord {
     // Decrypt value to return it
     final decryptedNewValue = await _crypto.decrypt(newValueData.data, subkey);
     if (isUpdated) {
-      _addLocalValueChange(decryptedNewValue, subkey);
+      DHTRecordPool.instance
+          .processLocalValueChange(key, decryptedNewValue, subkey);
     }
     return decryptedNewValue;
   }
@@ -203,8 +204,8 @@ class DHTRecord {
     do {
       do {
         // Set the new data
-        newValueData =
-            await _routingContext.setDHTValue(key, subkey, encryptedNewValue);
+        newValueData = await _routingContext
+            .setDHTValue(key, subkey, encryptedNewValue, writer: _writer);
 
         // Repeat if newer data on the network was found
       } while (newValueData != null);
@@ -226,7 +227,7 @@ class DHTRecord {
 
     final isUpdated = newValueData.seq != lastSeq;
     if (isUpdated) {
-      _addLocalValueChange(newValue, subkey);
+      DHTRecordPool.instance.processLocalValueChange(key, newValue, subkey);
     }
   }
 
@@ -356,7 +357,7 @@ class DHTRecord {
       if (watchedSubkeys == null) {
         // Report all subkeys
         watchController?.add(
-            DHTRecordWatchChange(local: false, data: data, subkeys: subkeys));
+            DHTRecordWatchChange(local: local, data: data, subkeys: subkeys));
       } else {
         // Only some subkeys are being watched, see if the reported update
         // overlaps the subkeys being watched
@@ -382,7 +383,7 @@ class DHTRecord {
         local: true, data: data, subkeys: [ValueSubkeyRange.single(subkey)]);
   }
 
-  void addRemoteValueChange(VeilidUpdateValueChange update) {
+  void _addRemoteValueChange(VeilidUpdateValueChange update) {
     _addValueChange(
         local: false, data: update.valueData.data, subkeys: update.subkeys);
   }

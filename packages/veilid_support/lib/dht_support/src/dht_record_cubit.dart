@@ -9,12 +9,14 @@ import '../../veilid_support.dart';
 typedef InitialStateFunction<T> = Future<T?> Function(DHTRecord);
 typedef StateFunction<T> = Future<T?> Function(
     DHTRecord, List<ValueSubkeyRange>, Uint8List?);
+typedef WatchFunction = Future<void> Function(DHTRecord);
 
 class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   DHTRecordCubit({
     required Future<DHTRecord> Function() open,
     required InitialStateFunction<T> initialStateFunction,
     required StateFunction<T> stateFunction,
+    required WatchFunction watchFunction,
   })  : _wantsCloseRecord = false,
         _stateFunction = stateFunction,
         super(const AsyncValue.loading()) {
@@ -22,7 +24,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       // Do record open/create
       _record = await open();
       _wantsCloseRecord = true;
-      await _init(initialStateFunction, stateFunction);
+      await _init(initialStateFunction, stateFunction, watchFunction);
     });
   }
 
@@ -30,18 +32,20 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
     required DHTRecord record,
     required InitialStateFunction<T> initialStateFunction,
     required StateFunction<T> stateFunction,
+    required WatchFunction watchFunction,
   })  : _record = record,
         _stateFunction = stateFunction,
         _wantsCloseRecord = false,
         super(const AsyncValue.loading()) {
     Future.delayed(Duration.zero, () async {
-      await _init(initialStateFunction, stateFunction);
+      await _init(initialStateFunction, stateFunction, watchFunction);
     });
   }
 
   Future<void> _init(
     InitialStateFunction<T> initialStateFunction,
     StateFunction<T> stateFunction,
+    WatchFunction watchFunction,
   ) async {
     // Make initial state update
     try {
@@ -63,10 +67,13 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
         emit(AsyncValue.error(e));
       }
     });
+
+    await watchFunction(_record);
   }
 
   @override
   Future<void> close() async {
+    await _record.cancelWatch();
     await _subscription?.cancel();
     _subscription = null;
     if (_wantsCloseRecord) {
@@ -113,15 +120,16 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
     required T Function(List<int> data) decodeState,
   }) : super(
             initialStateFunction: _makeInitialStateFunction(decodeState),
-            stateFunction: _makeStateFunction(decodeState));
+            stateFunction: _makeStateFunction(decodeState),
+            watchFunction: _makeWatchFunction());
 
   DefaultDHTRecordCubit.value({
     required super.record,
     required T Function(List<int> data) decodeState,
   }) : super.value(
-          initialStateFunction: _makeInitialStateFunction(decodeState),
-          stateFunction: _makeStateFunction(decodeState),
-        );
+            initialStateFunction: _makeInitialStateFunction(decodeState),
+            stateFunction: _makeStateFunction(decodeState),
+            watchFunction: _makeWatchFunction());
 
   static InitialStateFunction<T> _makeInitialStateFunction<T>(
           T Function(List<int> data) decodeState) =>
@@ -153,6 +161,11 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
           return newState;
         }
         return null;
+      };
+
+  static WatchFunction _makeWatchFunction() => (record) async {
+        final defaultSubkey = record.subkeyOrDefault(-1);
+        await record.watch(subkeys: [ValueSubkeyRange.single(defaultSubkey)]);
       };
 
   Future<void> refreshDefault() async {

@@ -120,7 +120,7 @@ class ProcessorRepository {
 
   void processUpdateValueChange(VeilidUpdateValueChange updateValueChange) {
     // Send value updates to DHTRecordPool
-    DHTRecordPool.instance.processUpdateValueChange(updateValueChange);
+    DHTRecordPool.instance.processRemoteValueChange(updateValueChange);
   }
 
   ////////////////////////////////////////////

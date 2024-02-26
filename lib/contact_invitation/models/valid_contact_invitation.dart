@@ -32,6 +32,7 @@ class ValidContactInvitation {
     final pool = DHTRecordPool.instance;
     try {
       // Ensure we don't delete this if we're trying to chat to self
+      // The initiating side will delete the records in deleteInvitation()
       final isSelf = _contactIdentityMaster.identityPublicKey ==
           _activeAccountInfo.localAccount.identityMaster.identityPublicKey;
       final accountRecordKey = _activeAccountInfo.accountRecordKey;
