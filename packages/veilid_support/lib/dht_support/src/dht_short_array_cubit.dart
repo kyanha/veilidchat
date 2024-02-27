@@ -4,18 +4,19 @@ import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
 import 'package:bloc_tools/bloc_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:mutex/mutex.dart';
 
 import '../../veilid_support.dart';
 
-class DHTShortArrayCubit<T> extends Cubit<BlocBusyState<AsyncValue<IList<T>>>>
-    with BlocBusyWrapper<AsyncValue<IList<T>>> {
+typedef DHTShortArrayState<T> = AsyncValue<IList<T>>;
+typedef DHTShortArrayBusyState<T> = BlocBusyState<DHTShortArrayState<T>>;
+
+class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
+    with BlocBusyWrapper<DHTShortArrayState<T>> {
   DHTShortArrayCubit({
     required Future<DHTShortArray> Function() open,
     required T Function(List<int> data) decodeElement,
   })  : _decodeElement = decodeElement,
-        _wantsUpdate = false,
-        _isUpdating = false,
-        _wantsCloseRecord = false,
         super(const BlocBusyState(AsyncValue.loading())) {
     Future.delayed(Duration.zero, () async {
       // Open DHT record
@@ -33,9 +34,6 @@ class DHTShortArrayCubit<T> extends Cubit<BlocBusyState<AsyncValue<IList<T>>>>
     required T Function(List<int> data) decodeElement,
   })  : _shortArray = shortArray,
         _decodeElement = decodeElement,
-        _wantsUpdate = false,
-        _isUpdating = false,
-        _wantsCloseRecord = false,
         super(const BlocBusyState(AsyncValue.loading())) {
     // Make initial state update
     _update();
@@ -59,37 +57,21 @@ class DHTShortArrayCubit<T> extends Cubit<BlocBusyState<AsyncValue<IList<T>>>>
 
   void _update() {
     // Run at most one background update process
-
-xxx convert to singleFuture with onBusy that sets wantsupdate
-
-    _wantsUpdate = true;
-    if (_isUpdating) {
-      return;
-    }
-    _isUpdating = true;
-    Future.delayed(Duration.zero, () async {
-      // Keep updating until we don't want to update any more
-      // Because this is async, we could get an update while we're
-      // still processing the last one
+    // Because this is async, we could get an update while we're
+    // still processing the last one
+    _sspUpdate.busyUpdate<T, AsyncValue<IList<T>>>(busy, (emit) async {
       try {
-        do {
-          _wantsUpdate = false;
-          try {
-            final initialState = await _getElements();
-            emit(AsyncValue.data(initialState));
-          } on Exception catch (e) {
-            emit(AsyncValue.error(e));
-          }
-        } while (_wantsUpdate);
-      } finally {
-        // Note that this update future has finished
-        _isUpdating = false;
+        final initialState = await _getElementsInner();
+        emit(AsyncValue.data(initialState));
+      } on Exception catch (e) {
+        emit(AsyncValue.error(e));
       }
     });
   }
 
   // Get and decode the entire short array
-  Future<IList<T>> _getElements() async {
+  Future<IList<T>> _getElementsInner() async {
+    assert(isBusy, 'should only be called from a busy state');
     var out = IList<T>();
     for (var i = 0; i < _shortArray.length; i++) {
       // Get the element bytes (throw if fails, array state is invalid)
@@ -112,12 +94,13 @@ xxx convert to singleFuture with onBusy that sets wantsupdate
     await super.close();
   }
 
-  DHTShortArray get shortArray => _shortArray;
+  Future<R> operate<R>(Future<R> Function(DHTShortArray) closure) async =>
+      _operateMutex.protect(() async => closure(_shortArray));
 
+  final _operateMutex = Mutex();
   late final DHTShortArray _shortArray;
   final T Function(List<int> data) _decodeElement;
   StreamSubscription<void>? _subscription;
-  bool _wantsUpdate;
-  bool _isUpdating;
-  bool _wantsCloseRecord;
+  bool _wantsCloseRecord = false;
+  final _sspUpdate = SingleStatelessProcessor();
 }

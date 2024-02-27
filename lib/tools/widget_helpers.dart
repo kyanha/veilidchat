@@ -1,5 +1,6 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
+import 'package:bloc_tools/bloc_tools.dart';
 import 'package:blurry_modal_progress_hud/blurry_modal_progress_hud.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -75,6 +76,17 @@ extension AsyncValueBuilderExt<T> on AsyncValue<T> {
           loading: () => (loading ?? waitingPage)(),
           error: (e, st) => (error ?? errorPage)(e, st),
           data: (d) => debugPage('AsyncValue should not be data here'));
+}
+
+extension BusyAsyncValueBuilderExt<T> on BlocBusyState<AsyncValue<T>> {
+  Widget builder(Widget Function(BuildContext, T) builder) =>
+      AbsorbPointer(absorbing: busy, child: state.builder(builder));
+  Widget buildNotData(
+          {Widget Function()? loading,
+          Widget Function(Object, StackTrace?)? error}) =>
+      AbsorbPointer(
+          absorbing: busy,
+          child: state.buildNotData(loading: loading, error: error));
 }
 
 class AsyncBlocBuilder<B extends StateStreamable<AsyncValue<S>>, S>

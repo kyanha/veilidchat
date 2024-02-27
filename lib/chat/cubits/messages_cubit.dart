@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:async_tools/async_tools.dart';
+import 'package:bloc_tools/bloc_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -61,9 +62,10 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
     await super.close();
   }
 
-  void updateLocalMessagesState(AsyncValue<IList<proto.Message>> avmessages) {
+  void updateLocalMessagesState(
+      BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
     // Updated local messages from online just update the state immediately
-    emit(avmessages);
+    emit(avmessages.state);
   }
 
   Future<void> _updateRemoteMessagesStateAsync(_MessageQueueEntry entry) async {
@@ -97,16 +99,17 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
       // Insert at this position
       if (!skip) {
         // Insert into dht backing array
-        await _localMessagesCubit!.shortArray
-            .tryInsertItem(pos, newMessage.writeToBuffer());
+        await _localMessagesCubit!.operate((shortArray) =>
+            shortArray.tryInsertItem(pos, newMessage.writeToBuffer()));
         // Insert into local copy as well for this operation
         localMessages = localMessages.insert(pos, newMessage);
       }
     }
   }
 
-  void updateRemoteMessagesState(AsyncValue<IList<proto.Message>> avmessages) {
-    final remoteMessages = avmessages.data?.value;
+  void updateRemoteMessagesState(
+      BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
+    final remoteMessages = avmessages.state.data?.value;
     if (remoteMessages == null) {
       return;
     }
@@ -171,7 +174,8 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
   }
 
   Future<void> addMessage({required proto.Message message}) async {
-    await _localMessagesCubit!.shortArray.tryAddItem(message.writeToBuffer());
+    await _localMessagesCubit!.operate(
+        (shortArray) => shortArray.tryAddItem(message.writeToBuffer()));
   }
 
   Future<DHTRecordCrypto> getMessagesCrypto() async {

@@ -10,10 +10,12 @@ import 'contact_invitation_item_widget.dart';
 class ContactInvitationListWidget extends StatefulWidget {
   const ContactInvitationListWidget({
     required this.contactInvitationRecordList,
+    required this.disabled,
     super.key,
   });
 
   final IList<proto.ContactInvitationRecord> contactInvitationRecordList;
+  final bool disabled;
 
   @override
   ContactInvitationListWidgetState createState() =>
@@ -21,8 +23,10 @@ class ContactInvitationListWidget extends StatefulWidget {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<proto.ContactInvitationRecord>(
-        'contactInvitationRecordList', contactInvitationRecordList));
+    properties
+      ..add(IterableProperty<proto.ContactInvitationRecord>(
+          'contactInvitationRecordList', contactInvitationRecordList))
+      ..add(DiagnosticsProperty<bool>('disabled', disabled));
   }
 }
 
@@ -63,6 +67,7 @@ class ContactInvitationListWidgetState
               return ContactInvitationItemWidget(
                       contactInvitationRecord:
                           widget.contactInvitationRecordList[index],
+                      disabled: widget.disabled,
                       key: ObjectKey(widget.contactInvitationRecordList[index]))
                   .paddingLTRB(4, 2, 4, 2);
             },

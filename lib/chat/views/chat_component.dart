@@ -48,7 +48,8 @@ class ChatComponent extends StatelessWidget {
         if (accountRecordInfo == null) {
           return debugPage('should always have an account record here');
         }
-        final contactList = context.watch<ContactListCubit>().state.data?.value;
+        final contactList =
+            context.watch<ContactListCubit>().state.state.data?.value;
         if (contactList == null) {
           return debugPage('should always have a contact list here');
         }

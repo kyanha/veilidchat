@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:bloc/bloc.dart';
-import 'package:bloc_tools/bloc_tools.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -44,7 +42,9 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
 
     // Add Chat to account's list
     // if this fails, don't keep retrying, user can try again later
-    if (await shortArray.tryAddItem(chat.writeToBuffer()) == false) {
+    final added = await operate(
+        (shortArray) => shortArray.tryAddItem(chat.writeToBuffer()));
+    if (!added) {
       throw Exception('Failed to add chat');
     }
   }
@@ -57,17 +57,18 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
 
     // Remove Chat from account's list
     // if this fails, don't keep retrying, user can try again later
-
-    for (var i = 0; i < shortArray.length; i++) {
-      final cbuf = await shortArray.getItem(i);
-      if (cbuf == null) {
-        throw Exception('Failed to get chat');
+    await operate((shortArray) async {
+      for (var i = 0; i < shortArray.length; i++) {
+        final cbuf = await shortArray.getItem(i);
+        if (cbuf == null) {
+          throw Exception('Failed to get chat');
+        }
+        final c = proto.Chat.fromBuffer(cbuf);
+        if (c.remoteConversationKey == remoteConversationKey) {
+          await shortArray.tryRemoveItem(i);
+          return;
+        }
       }
-      final c = proto.Chat.fromBuffer(cbuf);
-      if (c.remoteConversationKey == remoteConversationKey) {
-        await shortArray.tryRemoveItem(i);
-        return;
-      }
-    }
+    });
   }
 }

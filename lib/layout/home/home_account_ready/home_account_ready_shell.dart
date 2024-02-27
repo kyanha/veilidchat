@@ -1,4 +1,5 @@
 import 'package:async_tools/async_tools.dart';
+import 'package:bloc_tools/bloc_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -75,8 +76,7 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
   // Process all accepted or rejected invitations
   void _invitationStatusListener(
       BuildContext context, WaitingInvitationsBlocMapState state) {
-    _singleInvitationStatusProcessor.updateState(state,
-        closure: (newState) async {
+    _singleInvitationStatusProcessor.updateState(state, (newState) async {
       final contactListCubit = context.read<ContactListCubit>();
       final contactInvitationListCubit =
           context.read<ContactInvitationListCubit>();
@@ -146,7 +146,8 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                           activeAccountInfo: widget.activeAccountInfo,
                           contactListCubit: context.read<ContactListCubit>())
                         ..follow(
-                            initialInputState: const AsyncValue.loading(),
+                            initialInputState:
+                                const BlocBusyState(AsyncValue.loading()),
                             stream: context.read<ChatListCubit>().stream)),
                   BlocProvider(
                       create: (context) =>
@@ -167,7 +168,8 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                           activeAccountInfo: widget.activeAccountInfo,
                           account: account)
                         ..follow(
-                            initialInputState: const AsyncValue.loading(),
+                            initialInputState:
+                                const BlocBusyState(AsyncValue.loading()),
                             stream: context
                                 .read<ContactInvitationListCubit>()
                                 .stream))

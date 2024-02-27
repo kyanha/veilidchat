@@ -36,7 +36,9 @@ typedef ActiveConversationsBlocMapState
 // Automatically follows the state of a ChatListCubit.
 class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<ActiveConversationState>, ActiveConversationCubit>
-    with StateFollower<AsyncValue<IList<proto.Chat>>, TypedKey, proto.Chat> {
+    with
+        StateFollower<BlocBusyState<AsyncValue<IList<proto.Chat>>>, TypedKey,
+            proto.Chat> {
   ActiveConversationsBlocMapCubit(
       {required ActiveAccountInfo activeAccountInfo,
       required ContactListCubit contactListCubit})
@@ -73,8 +75,9 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
   /// StateFollower /////////////////////////
 
   @override
-  IMap<TypedKey, proto.Chat> getStateMap(AsyncValue<IList<proto.Chat>> state) {
-    final stateValue = state.data?.value;
+  IMap<TypedKey, proto.Chat> getStateMap(
+      BlocBusyState<AsyncValue<IList<proto.Chat>>> state) {
+    final stateValue = state.state.data?.value;
     if (stateValue == null) {
       return IMap();
     }
@@ -88,7 +91,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   @override
   Future<void> updateState(TypedKey key, proto.Chat value) async {
-    final contactList = _contactListCubit.state.data?.value;
+    final contactList = _contactListCubit.state.state.data?.value;
     if (contactList == null) {
       await addState(key, const AsyncValue.loading());
       return;

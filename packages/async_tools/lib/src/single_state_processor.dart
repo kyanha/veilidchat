@@ -14,8 +14,7 @@ import '../async_tools.dart';
 class SingleStateProcessor<State> {
   SingleStateProcessor();
 
-  void updateState(State newInputState,
-      {required Future<void> Function(State) closure}) {
+  void updateState(State newInputState, Future<void> Function(State) closure) {
     // Use a singlefuture here to ensure we get dont lose any updates
     // If the input stream gives us an update while we are
     // still processing the last update, the most recent input state will

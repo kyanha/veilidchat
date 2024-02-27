@@ -9,15 +9,20 @@ import '../contact_invitation.dart';
 
 class ContactInvitationItemWidget extends StatelessWidget {
   const ContactInvitationItemWidget(
-      {required this.contactInvitationRecord, super.key});
+      {required this.contactInvitationRecord,
+      required this.disabled,
+      super.key});
 
   final proto.ContactInvitationRecord contactInvitationRecord;
+  final bool disabled;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<proto.ContactInvitationRecord>(
-        'contactInvitationRecord', contactInvitationRecord));
+    properties
+      ..add(DiagnosticsProperty<proto.ContactInvitationRecord>(
+          'contactInvitationRecord', contactInvitationRecord))
+      ..add(DiagnosticsProperty<bool>('disabled', disabled));
   }
 
   @override

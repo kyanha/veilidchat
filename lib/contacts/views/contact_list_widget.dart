@@ -12,13 +12,17 @@ import 'contact_item_widget.dart';
 import 'empty_contact_list_widget.dart';
 
 class ContactListWidget extends StatelessWidget {
-  const ContactListWidget({required this.contactList, super.key});
+  const ContactListWidget(
+      {required this.contactList, required this.disabled, super.key});
   final IList<proto.Contact> contactList;
+  final bool disabled;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<proto.Contact>('contactList', contactList));
+    properties
+      ..add(IterableProperty<proto.Contact>('contactList', contactList))
+      ..add(DiagnosticsProperty<bool>('disabled', disabled));
   }
 
   @override
@@ -36,7 +40,8 @@ class ContactListWidget extends StatelessWidget {
                   ? const EmptyContactListWidget()
                   : SearchableList<proto.Contact>(
                       initialList: contactList.toList(),
-                      builder: (l, i, c) => ContactItemWidget(contact: c),
+                      builder: (l, i, c) =>
+                          ContactItemWidget(contact: c, disabled: disabled),
                       filter: (value) {
                         final lowerValue = value.toLowerCase();
                         return contactList

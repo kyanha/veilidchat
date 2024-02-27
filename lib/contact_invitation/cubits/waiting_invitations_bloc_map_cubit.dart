@@ -16,8 +16,10 @@ typedef WaitingInvitationsBlocMapState
 class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<InvitationStatus>, WaitingInvitationCubit>
     with
-        StateFollower<AsyncValue<IList<proto.ContactInvitationRecord>>,
-            TypedKey, proto.ContactInvitationRecord> {
+        StateFollower<
+            BlocBusyState<AsyncValue<IList<proto.ContactInvitationRecord>>>,
+            TypedKey,
+            proto.ContactInvitationRecord> {
   WaitingInvitationsBlocMapCubit(
       {required this.activeAccountInfo, required this.account});
 
@@ -37,8 +39,8 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
   /// StateFollower /////////////////////////
   @override
   IMap<TypedKey, proto.ContactInvitationRecord> getStateMap(
-      AsyncValue<IList<proto.ContactInvitationRecord>> state) {
-    final stateValue = state.data?.value;
+      BlocBusyState<AsyncValue<IList<proto.ContactInvitationRecord>>> state) {
+    final stateValue = state.state.data?.value;
     if (stateValue == null) {
       return IMap();
     }

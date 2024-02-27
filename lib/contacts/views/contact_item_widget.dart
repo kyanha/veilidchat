@@ -11,9 +11,11 @@ import '../../theme/theme.dart';
 import '../contacts.dart';
 
 class ContactItemWidget extends StatelessWidget {
-  const ContactItemWidget({required this.contact, super.key});
+  const ContactItemWidget(
+      {required this.contact, required this.disabled, super.key});
 
   final proto.Contact contact;
+  final bool disabled;
 
   @override
   // ignore: prefer_expression_function_bodies
@@ -41,17 +43,22 @@ class ContactItemWidget extends StatelessWidget {
               motion: const DrawerMotion(),
               children: [
                 SlidableAction(
-                    onPressed: (context) async {
-                      final contactListCubit = context.read<ContactListCubit>();
-                      final chatListCubit = context.read<ChatListCubit>();
+                    onPressed: disabled || context.read<ChatListCubit>().isBusy
+                        ? null
+                        : (context) async {
+                            final contactListCubit =
+                                context.read<ContactListCubit>();
+                            final chatListCubit = context.read<ChatListCubit>();
 
-                      // Remove any chats for this contact
-                      await chatListCubit.deleteChat(
-                          remoteConversationRecordKey: remoteConversationKey);
+                            // Remove any chats for this contact
+                            await chatListCubit.deleteChat(
+                                remoteConversationRecordKey:
+                                    remoteConversationKey);
 
-                      // Delete the contact itself
-                      await contactListCubit.deleteContact(contact: contact);
-                    },
+                            // Delete the contact itself
+                            await contactListCubit.deleteContact(
+                                contact: contact);
+                          },
                     backgroundColor: scale.tertiaryScale.background,
                     foregroundColor: scale.tertiaryScale.text,
                     icon: Icons.delete,
@@ -70,17 +77,21 @@ class ContactItemWidget extends StatelessWidget {
             // The child of the Slidable is what the user sees when the
             // component is not dragged.
             child: ListTile(
-                onTap: () async {
-                  // Start a chat
-                  final chatListCubit = context.read<ChatListCubit>();
-                  await chatListCubit.getOrCreateChatSingleContact(
-                      remoteConversationRecordKey: remoteConversationKey);
-                  // Click over to chats
-                  if (context.mounted) {
-                    await MainPager.of(context)?.pageController.animateToPage(1,
-                        duration: 250.ms, curve: Curves.easeInOut);
-                  }
-                },
+                onTap: disabled || context.read<ChatListCubit>().isBusy
+                    ? null
+                    : () async {
+                        // Start a chat
+                        final chatListCubit = context.read<ChatListCubit>();
+                        await chatListCubit.getOrCreateChatSingleContact(
+                            remoteConversationRecordKey: remoteConversationKey);
+                        // Click over to chats
+                        if (context.mounted) {
+                          await MainPager.of(context)
+                              ?.pageController
+                              .animateToPage(1,
+                                  duration: 250.ms, curve: Curves.easeInOut);
+                        }
+                      },
                 title: Text(contact.editedProfile.name),
                 subtitle: (contact.editedProfile.pronouns.isNotEmpty)
                     ? Text(contact.editedProfile.pronouns)

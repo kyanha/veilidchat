@@ -10,10 +10,15 @@ import '../../theme/theme.dart';
 import '../chat_list.dart';
 
 class ChatSingleContactItemWidget extends StatelessWidget {
-  const ChatSingleContactItemWidget({required proto.Contact contact, super.key})
-      : _contact = contact;
+  const ChatSingleContactItemWidget({
+    required proto.Contact contact,
+    required bool disabled,
+    super.key,
+  })  : _contact = contact,
+        _disabled = disabled;
 
   final proto.Contact _contact;
+  final bool _disabled;
 
   @override
   // ignore: prefer_expression_function_bodies
@@ -43,12 +48,14 @@ class ChatSingleContactItemWidget extends StatelessWidget {
               motion: const DrawerMotion(),
               children: [
                 SlidableAction(
-                    onPressed: (context) async {
-                      final chatListCubit = context.read<ChatListCubit>();
-                      await chatListCubit.deleteChat(
-                          remoteConversationRecordKey:
-                              remoteConversationRecordKey);
-                    },
+                    onPressed: _disabled
+                        ? null
+                        : (context) async {
+                            final chatListCubit = context.read<ChatListCubit>();
+                            await chatListCubit.deleteChat(
+                                remoteConversationRecordKey:
+                                    remoteConversationRecordKey);
+                          },
                     backgroundColor: scale.tertiaryScale.background,
                     foregroundColor: scale.tertiaryScale.text,
                     icon: Icons.delete,
@@ -67,11 +74,14 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             // The child of the Slidable is what the user sees when the
             // component is not dragged.
             child: ListTile(
-                onTap: () {
-                  singleFuture(activeChatCubit, () async {
-                    activeChatCubit.setActiveChat(remoteConversationRecordKey);
-                  });
-                },
+                onTap: _disabled
+                    ? null
+                    : () {
+                        singleFuture(activeChatCubit, () async {
+                          activeChatCubit
+                              .setActiveChat(remoteConversationRecordKey);
+                        });
+                      },
                 title: Text(_contact.editedProfile.name),
 
                 /// xxx show last message here

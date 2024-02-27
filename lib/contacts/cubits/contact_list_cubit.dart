@@ -53,9 +53,11 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
     // Add Contact to account's list
     // if this fails, don't keep retrying, user can try again later
-    if (await shortArray.tryAddItem(contact.writeToBuffer()) == false) {
-      throw Exception('Failed to add contact record');
-    }
+    await operate((shortArray) async {
+      if (await shortArray.tryAddItem(contact.writeToBuffer()) == false) {
+        throw Exception('Failed to add contact record');
+      }
+    });
   }
 
   Future<void> deleteContact({required proto.Contact contact}) async {
@@ -67,34 +69,36 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         contact.remoteConversationRecordKey.toVeilid();
 
     // Remove Contact from account's list
-    for (var i = 0; i < shortArray.length; i++) {
-      final item =
-          await shortArray.getItemProtobuf(proto.Contact.fromBuffer, i);
-      if (item == null) {
-        throw Exception('Failed to get contact');
+    await operate((shortArray) async {
+      for (var i = 0; i < shortArray.length; i++) {
+        final item =
+            await shortArray.getItemProtobuf(proto.Contact.fromBuffer, i);
+        if (item == null) {
+          throw Exception('Failed to get contact');
+        }
+        if (item.remoteConversationRecordKey ==
+            contact.remoteConversationRecordKey) {
+          await shortArray.tryRemoveItem(i);
+          break;
+        }
       }
-      if (item.remoteConversationRecordKey ==
-          contact.remoteConversationRecordKey) {
-        await shortArray.tryRemoveItem(i);
-        break;
-      }
-    }
-    try {
-      await (await pool.openRead(localConversationKey,
-              parent: accountRecordKey))
-          .delete();
-    } on Exception catch (e) {
-      log.debug('error removing local conversation record key: $e', e);
-    }
-    try {
-      if (localConversationKey != remoteConversationKey) {
-        await (await pool.openRead(remoteConversationKey,
+      try {
+        await (await pool.openRead(localConversationKey,
                 parent: accountRecordKey))
             .delete();
+      } on Exception catch (e) {
+        log.debug('error removing local conversation record key: $e', e);
       }
-    } on Exception catch (e) {
-      log.debug('error removing remote conversation record key: $e', e);
-    }
+      try {
+        if (localConversationKey != remoteConversationKey) {
+          await (await pool.openRead(remoteConversationKey,
+                  parent: accountRecordKey))
+              .delete();
+        }
+      } on Exception catch (e) {
+        log.debug('error removing remote conversation record key: $e', e);
+      }
+    });
   }
 
   //

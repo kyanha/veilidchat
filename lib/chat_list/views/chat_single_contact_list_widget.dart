@@ -45,7 +45,8 @@ class ChatSingleContactListWidget extends StatelessWidget {
                                   return const Text('...');
                                 }
                                 return ChatSingleContactItemWidget(
-                                    contact: contact);
+                                    contact: contact,
+                                    disabled: contactListV.busy);
                               },
                               filter: (value) {
                                 final lowerValue = value.toLowerCase();

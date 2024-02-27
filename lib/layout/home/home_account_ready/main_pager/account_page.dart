@@ -38,11 +38,14 @@ class AccountPageState extends State<AccountPage> {
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
 
+    final cilState = context.watch<ContactInvitationListCubit>().state;
+    final cilBusy = cilState.busy;
     final contactInvitationRecordList =
-        context.watch<ContactInvitationListCubit>().state.data?.value ??
-            const IListConst([]);
-    final contactList = context.watch<ContactListCubit>().state.data?.value ??
-        const IListConst([]);
+        cilState.state.data?.value ?? const IListConst([]);
+
+    final ciState = context.watch<ContactListCubit>().state;
+    final ciBusy = ciState.busy;
+    final contactList = ciState.state.data?.value ?? const IListConst([]);
 
     return SizedBox(
         child: Column(children: <Widget>[
@@ -66,10 +69,11 @@ class AccountPageState extends State<AccountPage> {
           initiallyExpanded: true,
           children: [
             ContactInvitationListWidget(
-                contactInvitationRecordList: contactInvitationRecordList)
+                contactInvitationRecordList: contactInvitationRecordList,
+                disabled: cilBusy)
           ],
         ).paddingLTRB(8, 0, 8, 8),
-      ContactListWidget(contactList: contactList).expanded(),
+      ContactListWidget(contactList: contactList, disabled: ciBusy).expanded(),
     ]));
   }
 }

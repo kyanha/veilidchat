@@ -138,9 +138,11 @@ class ContactInvitationListCubit
 
         // Add ContactInvitationRecord to account's list
         // if this fails, don't keep retrying, user can try again later
-        if (await shortArray.tryAddItem(cinvrec.writeToBuffer()) == false) {
-          throw Exception('Failed to add contact invitation record');
-        }
+        await operate((shortArray) async {
+          if (await shortArray.tryAddItem(cinvrec.writeToBuffer()) == false) {
+            throw Exception('Failed to add contact invitation record');
+          }
+        });
       });
     });
 
@@ -155,31 +157,34 @@ class ContactInvitationListCubit
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove ContactInvitationRecord from account's list
-    for (var i = 0; i < shortArray.length; i++) {
-      final item = await shortArray.getItemProtobuf(
-          proto.ContactInvitationRecord.fromBuffer, i);
-      if (item == null) {
-        throw Exception('Failed to get contact invitation record');
-      }
-      if (item.contactRequestInbox.recordKey.toVeilid() ==
-          contactRequestInboxRecordKey) {
-        await shortArray.tryRemoveItem(i);
-
-        await (await pool.openOwned(item.contactRequestInbox.toVeilid(),
-                parent: accountRecordKey))
-            .scope((contactRequestInbox) async {
-          // Wipe out old invitation so it shows up as invalid
-          await contactRequestInbox.tryWriteBytes(Uint8List(0));
-          await contactRequestInbox.delete();
-        });
-        if (!accepted) {
-          await (await pool.openRead(item.localConversationRecordKey.toVeilid(),
-                  parent: accountRecordKey))
-              .delete();
+    await operate((shortArray) async {
+      for (var i = 0; i < shortArray.length; i++) {
+        final item = await shortArray.getItemProtobuf(
+            proto.ContactInvitationRecord.fromBuffer, i);
+        if (item == null) {
+          throw Exception('Failed to get contact invitation record');
         }
-        return;
+        if (item.contactRequestInbox.recordKey.toVeilid() ==
+            contactRequestInboxRecordKey) {
+          await shortArray.tryRemoveItem(i);
+
+          await (await pool.openOwned(item.contactRequestInbox.toVeilid(),
+                  parent: accountRecordKey))
+              .scope((contactRequestInbox) async {
+            // Wipe out old invitation so it shows up as invalid
+            await contactRequestInbox.tryWriteBytes(Uint8List(0));
+            await contactRequestInbox.delete();
+          });
+          if (!accepted) {
+            await (await pool.openRead(
+                    item.localConversationRecordKey.toVeilid(),
+                    parent: accountRecordKey))
+                .delete();
+          }
+          return;
+        }
       }
-    }
+    });
   }
 
   Future<ValidContactInvitation?> validateInvitation(
@@ -205,7 +210,7 @@ class ContactInvitationListCubit
     // inbox with our list of extant invitations
     // If we're chatting to ourselves,
     // we are validating an invitation we have created
-    final isSelf = state.data!.value.indexWhere((cir) =>
+    final isSelf = state.state.data!.value.indexWhere((cir) =>
             cir.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxKey) !=
         -1;

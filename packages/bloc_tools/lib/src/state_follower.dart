@@ -31,7 +31,7 @@ abstract mixin class StateFollower<S extends Object, K, V> {
 
   void _updateFollow(S newInputState) {
     _singleStateProcessor.updateState(getStateMap(newInputState),
-        closure: (newStateMap) async {
+        (newStateMap) async {
       for (final k in _lastInputStateMap.keys) {
         if (!newStateMap.containsKey(k)) {
           // deleted
