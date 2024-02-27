@@ -35,7 +35,6 @@ class ContactListWidget extends StatelessWidget {
               child: (contactList.isEmpty)
                   ? const EmptyContactListWidget()
                   : SearchableList<proto.Contact>(
-                      autoFocusOnSearch: false,
                       initialList: contactList.toList(),
                       builder: (l, i, c) => ContactItemWidget(contact: c),
                       filter: (value) {

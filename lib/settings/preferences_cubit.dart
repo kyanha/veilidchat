@@ -1,4 +1,5 @@
-import '../tools/tools.dart';
+import 'package:bloc_tools/bloc_tools.dart';
+
 import 'settings.dart';
 
 class PreferencesCubit extends StreamWrapperCubit<Preferences> {

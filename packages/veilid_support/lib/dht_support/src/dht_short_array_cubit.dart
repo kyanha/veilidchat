@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
+import 'package:bloc_tools/bloc_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../veilid_support.dart';
 
-class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
+class DHTShortArrayCubit<T> extends Cubit<BlocBusyState<AsyncValue<IList<T>>>>
+    with BlocBusyWrapper<AsyncValue<IList<T>>> {
   DHTShortArrayCubit({
     required Future<DHTShortArray> Function() open,
     required T Function(List<int> data) decodeElement,
@@ -14,7 +16,7 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
         _wantsUpdate = false,
         _isUpdating = false,
         _wantsCloseRecord = false,
-        super(const AsyncValue.loading()) {
+        super(const BlocBusyState(AsyncValue.loading())) {
     Future.delayed(Duration.zero, () async {
       // Open DHT record
       _shortArray = await open();
@@ -34,7 +36,7 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
         _wantsUpdate = false,
         _isUpdating = false,
         _wantsCloseRecord = false,
-        super(const AsyncValue.loading()) {
+        super(const BlocBusyState(AsyncValue.loading())) {
     // Make initial state update
     _update();
     Future.delayed(Duration.zero, () async {
@@ -42,21 +44,24 @@ class DHTShortArrayCubit<T> extends Cubit<AsyncValue<IList<T>>> {
     });
   }
 
-  Future<void> refresh({bool forceRefresh = false}) async {
-    var out = IList<T>();
-    // xxx could be parallelized but we need to watch out for rate limits
-    for (var i = 0; i < _shortArray.length; i++) {
-      final cir = await _shortArray.getItem(i, forceRefresh: forceRefresh);
-      if (cir == null) {
-        throw Exception('Failed to get short array element');
-      }
-      out = out.add(_decodeElement(cir));
-    }
-    emit(AsyncValue.data(out));
-  }
+  Future<void> refresh({bool forceRefresh = false}) async => busy((emit) async {
+        var out = IList<T>();
+        // xxx could be parallelized but we need to watch out for rate limits
+        for (var i = 0; i < _shortArray.length; i++) {
+          final cir = await _shortArray.getItem(i, forceRefresh: forceRefresh);
+          if (cir == null) {
+            throw Exception('Failed to get short array element');
+          }
+          out = out.add(_decodeElement(cir));
+        }
+        emit(AsyncValue.data(out));
+      });
 
   void _update() {
     // Run at most one background update process
+
+xxx convert to singleFuture with onBusy that sets wantsupdate
+
     _wantsUpdate = true;
     if (_isUpdating) {
       return;

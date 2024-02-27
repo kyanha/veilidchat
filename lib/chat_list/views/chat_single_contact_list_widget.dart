@@ -37,7 +37,6 @@ class ChatSingleContactListWidget extends StatelessWidget {
                       child: (chatList.isEmpty)
                           ? const EmptyChatListWidget()
                           : SearchableList<proto.Chat>(
-                              autoFocusOnSearch: false,
                               initialList: chatList.toList(),
                               builder: (l, i, c) {
                                 final contact =

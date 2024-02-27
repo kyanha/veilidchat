@@ -64,7 +64,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         // Open remote record key if it is specified
         final pool = DHTRecordPool.instance;
         final crypto = await getConversationCrypto();
-        final record = await pool.openRead(_remoteConversationRecordKey!,
+        final record = await pool.openRead(_remoteConversationRecordKey,
             parent: accountRecordKey, crypto: crypto);
         await _setRemoteConversation(record);
       });
