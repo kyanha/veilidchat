@@ -46,7 +46,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         _contactListCubit = contactListCubit;
 
   // Add an active conversation to be tracked for changes
-  Future<void> addConversation({required proto.Contact contact}) async =>
+  Future<void> _addConversation({required proto.Contact contact}) async =>
       add(() => MapEntry(
           contact.remoteConversationRecordKey.toVeilid(),
           TransformerCubit(
@@ -103,7 +103,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
       return;
     }
     final contact = contactList[contactIndex];
-    await addConversation(contact: contact);
+    await _addConversation(contact: contact);
   }
 
   ////

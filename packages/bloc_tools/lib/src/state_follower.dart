@@ -18,7 +18,8 @@ abstract mixin class StateFollower<S extends Object, K, V> {
     required Stream<S> stream,
   }) {
     //
-    _lastInputStateMap = getStateMap(initialInputState);
+    _lastInputStateMap = IMap();
+    _updateFollow(initialInputState);
     _subscription = stream.listen(_updateFollow);
   }
 
