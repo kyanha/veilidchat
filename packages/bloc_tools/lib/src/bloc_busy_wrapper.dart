@@ -54,12 +54,13 @@ mixin BlocBusyWrapper<S> on BlocBase<BlocBusyState<S>> {
         await closure(busyemit);
 
         // If the closure did one or more 'busy emits' then
-        // take the most recent one and emit it for real
+        // take the most recent one and emit it for real and
+        // turn off the busy state
         final finalState = changedState;
         if (finalState != null && finalState != state.state) {
-          emit(BlocBusyState._busy(finalState));
+          emit(BlocBusyState(finalState));
         } else {
-          emit(BlocBusyState._busy(state.state));
+          emit(BlocBusyState(state.state));
         }
       });
   void changeState(S state) {

@@ -73,6 +73,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
   @override
   Future<void> close() async {
+    await _localSubscription?.cancel();
+    await _remoteSubscription?.cancel();
     await super.close();
   }
 
@@ -127,7 +129,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     _localConversationCubit = DefaultDHTRecordCubit.value(
         record: localConversationRecord,
         decodeState: proto.Conversation.fromBuffer);
-    _localConversationCubit!.stream.listen(updateLocalConversationState);
+    _localSubscription =
+        _localConversationCubit!.stream.listen(updateLocalConversationState);
   }
 
   // Open remote converation key
@@ -138,7 +141,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     _remoteConversationCubit = DefaultDHTRecordCubit.value(
         record: remoteConversationRecord,
         decodeState: proto.Conversation.fromBuffer);
-    _remoteConversationCubit!.stream.listen(updateRemoteConversationState);
+    _remoteSubscription =
+        _remoteConversationCubit!.stream.listen(updateRemoteConversationState);
   }
 
   // Initialize a local conversation
@@ -265,6 +269,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   final TypedKey? _remoteConversationRecordKey;
   DefaultDHTRecordCubit<proto.Conversation>? _localConversationCubit;
   DefaultDHTRecordCubit<proto.Conversation>? _remoteConversationCubit;
+  StreamSubscription<AsyncValue<proto.Conversation>>? _localSubscription;
+  StreamSubscription<AsyncValue<proto.Conversation>>? _remoteSubscription;
   ConversationState _incrementalState;
   //
   DHTRecordCrypto? _conversationCrypto;

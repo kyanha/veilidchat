@@ -53,15 +53,18 @@ class ContactInvitationItemWidget extends StatelessWidget {
               children: [
                 // A SlidableAction can have an icon and/or a label.
                 SlidableAction(
-                    onPressed: (context) async {
-                      final contactInvitationListCubit =
-                          context.read<ContactInvitationListCubit>();
-                      await contactInvitationListCubit.deleteInvitation(
-                          accepted: false,
-                          contactRequestInboxRecordKey: contactInvitationRecord
-                              .contactRequestInbox.recordKey
-                              .toVeilid());
-                    },
+                    onPressed: disabled
+                        ? null
+                        : (context) async {
+                            final contactInvitationListCubit =
+                                context.read<ContactInvitationListCubit>();
+                            await contactInvitationListCubit.deleteInvitation(
+                                accepted: false,
+                                contactRequestInboxRecordKey:
+                                    contactInvitationRecord
+                                        .contactRequestInbox.recordKey
+                                        .toVeilid());
+                          },
                     backgroundColor: scale.tertiaryScale.background,
                     foregroundColor: scale.tertiaryScale.text,
                     icon: Icons.delete,
@@ -96,21 +99,23 @@ class ContactInvitationItemWidget extends StatelessWidget {
             // component is not dragged.
             child: ListTile(
                 //title: Text(translate('contact_list.invitation')),
-                onTap: () async {
-                  // ignore: use_build_context_synchronously
-                  if (!context.mounted) {
-                    return;
-                  }
-                  await showDialog<void>(
-                      context: context,
-                      builder: (context) => BlocProvider(
-                          create: (context) => InvitationGeneratorCubit(
-                              Future.value(Uint8List.fromList(
-                                  contactInvitationRecord.invitation))),
-                          child: ContactInvitationDisplayDialog(
-                            message: contactInvitationRecord.message,
-                          )));
-                },
+                onTap: disabled
+                    ? null
+                    : () async {
+                        // ignore: use_build_context_synchronously
+                        if (!context.mounted) {
+                          return;
+                        }
+                        await showDialog<void>(
+                            context: context,
+                            builder: (context) => BlocProvider(
+                                create: (context) => InvitationGeneratorCubit(
+                                    Future.value(Uint8List.fromList(
+                                        contactInvitationRecord.invitation))),
+                                child: ContactInvitationDisplayDialog(
+                                  message: contactInvitationRecord.message,
+                                )));
+                      },
                 title: Text(
                   contactInvitationRecord.message.isEmpty
                       ? translate('contact_list.invitation')

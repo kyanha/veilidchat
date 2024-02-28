@@ -1,6 +1,4 @@
 import 'package:async_tools/async_tools.dart';
-import 'package:bloc_tools/bloc_tools.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -145,19 +143,13 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                       create: (context) => ActiveConversationsBlocMapCubit(
                           activeAccountInfo: widget.activeAccountInfo,
                           contactListCubit: context.read<ContactListCubit>())
-                        ..follow(
-                            initialInputState:
-                                const BlocBusyState(AsyncValue.loading()),
-                            stream: context.read<ChatListCubit>().stream)),
+                        ..followBloc(context.read<ChatListCubit>())),
                   BlocProvider(
                       create: (context) =>
                           ActiveConversationMessagesBlocMapCubit(
                             activeAccountInfo: widget.activeAccountInfo,
-                          )..follow(
-                              initialInputState: IMap(),
-                              stream: context
-                                  .read<ActiveConversationsBlocMapCubit>()
-                                  .stream)),
+                          )..followBloc(
+                              context.read<ActiveConversationsBlocMapCubit>())),
                   BlocProvider(
                       create: (context) => ActiveChatCubit(null)
                         ..withStateListen((event) {
@@ -167,12 +159,8 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                       create: (context) => WaitingInvitationsBlocMapCubit(
                           activeAccountInfo: widget.activeAccountInfo,
                           account: account)
-                        ..follow(
-                            initialInputState:
-                                const BlocBusyState(AsyncValue.loading()),
-                            stream: context
-                                .read<ContactInvitationListCubit>()
-                                .stream))
+                        ..followBloc(
+                            context.read<ContactInvitationListCubit>()))
                 ],
                 child: MultiBlocListener(listeners: [
                   BlocListener<WaitingInvitationsBlocMapCubit,

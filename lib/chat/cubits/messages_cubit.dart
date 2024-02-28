@@ -59,6 +59,8 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
 
   @override
   Future<void> close() async {
+    await _localSubscription?.cancel();
+    await _remoteSubscription?.cancel();
     await super.close();
   }
 
@@ -132,7 +134,8 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
     _localMessagesCubit = DHTShortArrayCubit.value(
         shortArray: localMessagesRecord,
         decodeElement: proto.Message.fromBuffer);
-    _localMessagesCubit!.stream.listen(updateLocalMessagesState);
+    _localSubscription =
+        _localMessagesCubit!.stream.listen(updateLocalMessagesState);
   }
 
   // Open remote messages key
@@ -141,7 +144,8 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
     _remoteMessagesCubit = DHTShortArrayCubit.value(
         shortArray: remoteMessagesRecord,
         decodeElement: proto.Message.fromBuffer);
-    _remoteMessagesCubit!.stream.listen(updateRemoteMessagesState);
+    _remoteSubscription =
+        _remoteMessagesCubit!.stream.listen(updateRemoteMessagesState);
   }
 
   // Initialize local messages
@@ -209,6 +213,10 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
   DHTShortArrayCubit<proto.Message>? _localMessagesCubit;
   DHTShortArrayCubit<proto.Message>? _remoteMessagesCubit;
   final StreamController<_MessageQueueEntry> _remoteMessagesQueue;
+  StreamSubscription<BlocBusyState<AsyncValue<IList<proto.Message>>>>?
+      _localSubscription;
+  StreamSubscription<BlocBusyState<AsyncValue<IList<proto.Message>>>>?
+      _remoteSubscription;
   //
   DHTRecordCrypto? _messagesCrypto;
 }

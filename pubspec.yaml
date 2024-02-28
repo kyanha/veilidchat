@@ -52,13 +52,13 @@ dependencies:
   intl: ^0.18.1
   json_annotation: ^4.8.1
   loggy: ^2.0.3
-  meta: ^1.10.0
+  meta: ^1.11.0
   mobile_scanner: ^4.0.0
   motion_toast: ^2.8.0
   mutex:
     path: packages/mutex
   pasteboard: ^0.2.0
-  path: ^1.8.3
+  path: ^1.9.0
   path_provider: ^2.1.2
   pinput: ^4.0.0
   preload_page_view: ^0.2.0
@@ -84,7 +84,7 @@ dependencies:
   veilid_support:
     path: packages/veilid_support
   window_manager: ^0.3.8
-  xterm: ^3.5.0
+  xterm: ^4.0.0
   zxing2: ^0.2.3
 
 dev_dependencies:

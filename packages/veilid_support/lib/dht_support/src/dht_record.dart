@@ -385,6 +385,6 @@ class DHTRecord {
 
   void _addRemoteValueChange(VeilidUpdateValueChange update) {
     _addValueChange(
-        local: false, data: update.valueData.data, subkeys: update.subkeys);
+        local: false, data: update.value.data, subkeys: update.subkeys);
   }
 }

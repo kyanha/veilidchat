@@ -43,7 +43,7 @@ class ContactItemWidget extends StatelessWidget {
               motion: const DrawerMotion(),
               children: [
                 SlidableAction(
-                    onPressed: disabled || context.read<ChatListCubit>().isBusy
+                    onPressed: disabled || context.watch<ChatListCubit>().isBusy
                         ? null
                         : (context) async {
                             final contactListCubit =
@@ -77,7 +77,7 @@ class ContactItemWidget extends StatelessWidget {
             // The child of the Slidable is what the user sees when the
             // component is not dragged.
             child: ListTile(
-                onTap: disabled || context.read<ChatListCubit>().isBusy
+                onTap: disabled || context.watch<ChatListCubit>().isBusy
                     ? null
                     : () async {
                         // Start a chat

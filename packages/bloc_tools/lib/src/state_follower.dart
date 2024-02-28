@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:async_tools/async_tools.dart';
+import 'package:bloc/bloc.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 // Mixin that automatically keeps two blocs/cubits in sync with each other
@@ -20,6 +21,9 @@ abstract mixin class StateFollower<S extends Object, K, V> {
     _lastInputStateMap = getStateMap(initialInputState);
     _subscription = stream.listen(_updateFollow);
   }
+
+  void followBloc<B extends BlocBase<S>>(B bloc) =>
+      follow(initialInputState: bloc.state, stream: bloc.stream);
 
   Future<void> close() async {
     await _subscription.cancel();
