@@ -653,7 +653,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       // Process all watch changes
       // If any watched did not success, back off the attempts to
       // update the watches for a bit
-      final allSuccess =
+      final allSuccess = unord.isEmpty ||
           (await unord.map((f) => f()).wait).reduce((a, b) => a && b);
       if (!allSuccess) {
         _watchBackoffTimer *= watchBackoffMultiplier;
