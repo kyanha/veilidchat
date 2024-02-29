@@ -102,7 +102,6 @@ class ContactInvitationItemWidget extends StatelessWidget {
                 onTap: disabled
                     ? null
                     : () async {
-                        // ignore: use_build_context_synchronously
                         if (!context.mounted) {
                           return;
                         }

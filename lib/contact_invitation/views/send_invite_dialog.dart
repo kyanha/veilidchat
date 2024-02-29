@@ -66,8 +66,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
     if (pin == null) {
       return;
     }
-    // ignore: use_build_context_synchronously
-    if (!context.mounted) {
+    if (!mounted) {
       return;
     }
     final matchpin = await showDialog<String>(
@@ -84,8 +83,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
         _encryptionKey = pin;
       });
     } else {
-      // ignore: use_build_context_synchronously
-      if (!context.mounted) {
+      if (!mounted) {
         return;
       }
       showErrorToast(
@@ -105,8 +103,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
     if (password == null) {
       return;
     }
-    // ignore: use_build_context_synchronously
-    if (!context.mounted) {
+    if (!mounted) {
       return;
     }
     final matchpass = await showDialog<String>(
@@ -123,8 +120,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
         _encryptionKey = password;
       });
     } else {
-      // ignore: use_build_context_synchronously
-      if (!context.mounted) {
+      if (!mounted) {
         return;
       }
       showErrorToast(
@@ -148,10 +144,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
         encryptionKey: _encryptionKey,
         message: _messageTextController.text,
         expiration: _expiration);
-    // ignore: use_build_context_synchronously
-    if (!context.mounted) {
-      return;
-    }
+
     await showDialog<void>(
         context: context,
         builder: (context) => BlocProvider(
@@ -159,9 +152,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
             child: ContactInvitationDisplayDialog(
               message: _messageTextController.text,
             )));
-    // if (ret == null) {
-    //   return;
-    // }
+
     navigator.pop();
   }
 

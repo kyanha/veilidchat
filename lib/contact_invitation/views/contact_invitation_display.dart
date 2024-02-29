@@ -123,8 +123,7 @@ class _ContactInvitationDisplayDialogState
                         },
                       ).paddingAll(16),
                     ])),
-                error: (e, s) =>
-                    Text(translate('send_invite_dialog.failed_to_generate')))));
+                error: errorPage)));
   }
 
   @override
