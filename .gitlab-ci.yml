@@ -40,7 +40,7 @@ build_macos:
 build_linux_amd64_bundle:
   tags:
     - saas-linux-medium-amd64
-  image: ghcr.io/cirruslabs/flutter:3.16.9
+  image: ghcr.io/cirruslabs/flutter:3.19.0
   stage: build
   script:
     - apt-get update
