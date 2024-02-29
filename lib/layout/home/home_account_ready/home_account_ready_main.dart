@@ -10,8 +10,23 @@ import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
 import 'main_pager/main_pager.dart';
 
-class HomeAccountReadyMain extends StatelessWidget {
+class HomeAccountReadyMain extends StatefulWidget {
   const HomeAccountReadyMain({super.key});
+
+  @override
+  State<HomeAccountReadyMain> createState() => _HomeAccountReadyMainState();
+}
+
+class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await changeWindowSetup(
+          TitleBarStyle.normal, OrientationCapability.normal);
+    });
+  }
 
   Widget buildUserPanel() => Builder(builder: (context) {
         final account = context.watch<AccountRecordCubit>().state;

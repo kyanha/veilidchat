@@ -136,8 +136,14 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                           activeAccountInfo: widget.activeAccountInfo,
                           account: account)),
                   BlocProvider(
+                      create: (context) => ActiveChatCubit(null)
+                        ..withStateListen((event) {
+                          widget.routerCubit.setHasActiveChat(event != null);
+                        })),
+                  BlocProvider(
                       create: (context) => ChatListCubit(
                           activeAccountInfo: widget.activeAccountInfo,
+                          activeChatCubit: context.read<ActiveChatCubit>(),
                           account: account)),
                   BlocProvider(
                       create: (context) => ActiveConversationsBlocMapCubit(
@@ -150,11 +156,6 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                             activeAccountInfo: widget.activeAccountInfo,
                           )..followBloc(
                               context.read<ActiveConversationsBlocMapCubit>())),
-                  BlocProvider(
-                      create: (context) => ActiveChatCubit(null)
-                        ..withStateListen((event) {
-                          widget.routerCubit.setHasActiveChat(event != null);
-                        })),
                   BlocProvider(
                       create: (context) => WaitingInvitationsBlocMapCubit(
                           activeAccountInfo: widget.activeAccountInfo,

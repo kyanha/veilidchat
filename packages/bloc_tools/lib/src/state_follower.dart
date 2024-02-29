@@ -57,7 +57,7 @@ abstract mixin class StateFollower<S extends Object, K, V> {
   }
 
   late IMap<K, V> _lastInputStateMap;
+  late final StreamSubscription<S> _subscription;
   final SingleStateProcessor<IMap<K, V>> _singleStateProcessor =
       SingleStateProcessor();
-  late final StreamSubscription<S> _subscription;
 }

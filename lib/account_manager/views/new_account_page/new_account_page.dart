@@ -29,7 +29,6 @@ class NewAccountPageState extends State<NewAccountPage> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      setState(() {});
       await changeWindowSetup(
           TitleBarStyle.normal, OrientationCapability.portraitOnly);
     });

@@ -25,6 +25,11 @@ class SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await changeWindowSetup(
+          TitleBarStyle.normal, OrientationCapability.normal);
+    });
   }
 
   @override

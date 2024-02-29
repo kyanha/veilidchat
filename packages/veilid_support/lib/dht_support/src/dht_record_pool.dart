@@ -15,6 +15,9 @@ part 'dht_record_pool.g.dart';
 
 part 'dht_record.dart';
 
+const int watchBackoffMultiplier = 2;
+const int watchBackoffMax = 30;
+
 /// Record pool that managed DHTRecords and allows for tagged deletion
 @freezed
 class DHTRecordPoolAllocations with _$DHTRecordPoolAllocations {
@@ -109,7 +112,11 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   // Convenience accessor
   final Veilid _veilid;
   // If tick is already running or not
-  bool inTick = false;
+  bool _inTick = false;
+  // Tick counter for backoff
+  int _tickCount = 0;
+  // Backoff timer
+  int _watchBackoffTimer = 1;
 
   static DHTRecordPool? _singleton;
 
@@ -578,13 +585,19 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
 
   /// Ticker to check watch state change requests
   Future<void> tick() async {
-    if (inTick) {
+    if (_tickCount < _watchBackoffTimer) {
+      _tickCount++;
       return;
     }
-    inTick = true;
+    if (_inTick) {
+      return;
+    }
+    _inTick = true;
+    _tickCount = 0;
+
     try {
       // See if any opened records need watch state changes
-      final unord = <Future<void> Function()>[];
+      final unord = <Future<bool> Function()>[];
 
       await _mutex.protect(() async {
         for (final kv in _opened.entries) {
@@ -600,16 +613,19 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
             if (watchState == null) {
               unord.add(() async {
                 // Record needs watch cancel
+                var success = false;
                 try {
-                  await dhtctx.cancelDHTWatch(openedRecordKey);
+                  success = await dhtctx.cancelDHTWatch(openedRecordKey);
                   openedRecordInfo.shared.needsWatchStateUpdate = false;
                 } on VeilidAPIException {
                   // Failed to cancel DHT watch, try again next tick
                 }
+                return success;
               });
             } else {
               unord.add(() async {
                 // Record needs new watch
+                var success = false;
                 try {
                   final realExpiration = await dhtctx.watchDHTValues(
                       openedRecordKey,
@@ -622,10 +638,12 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
                     openedRecordInfo.shared.needsWatchStateUpdate = false;
                     _updateWatchExpirations(
                         openedRecordInfo.records, realExpiration);
+                    success = true;
                   }
                 } on VeilidAPIException {
                   // Failed to cancel DHT watch, try again next tick
                 }
+                return success;
               });
             }
           }
@@ -633,9 +651,18 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       });
 
       // Process all watch changes
-      await unord.map((f) => f()).wait;
+      // If any watched did not success, back off the attempts to
+      // update the watches for a bit
+      final allSuccess =
+          (await unord.map((f) => f()).wait).reduce((a, b) => a && b);
+      if (!allSuccess) {
+        _watchBackoffTimer *= watchBackoffMultiplier;
+        _watchBackoffTimer = min(_watchBackoffTimer, watchBackoffMax);
+      } else {
+        _watchBackoffTimer = 1;
+      }
     } finally {
-      inTick = false;
+      _inTick = false;
     }
   }
 }

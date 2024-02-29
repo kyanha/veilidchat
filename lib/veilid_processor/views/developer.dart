@@ -29,10 +29,10 @@ class DeveloperPage extends StatefulWidget {
   const DeveloperPage({super.key});
 
   @override
-  DeveloperPageState createState() => DeveloperPageState();
+  State<DeveloperPage> createState() => _DeveloperPageState();
 }
 
-class DeveloperPageState extends State<DeveloperPage> {
+class _DeveloperPageState extends State<DeveloperPage> {
   final _terminalController = TerminalController();
   final _debugCommandController = TextEditingController();
   final _logLevelController = DropdownController(duration: 250.ms);
@@ -43,6 +43,12 @@ class DeveloperPageState extends State<DeveloperPage> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await changeWindowSetup(
+          TitleBarStyle.normal, OrientationCapability.normal);
+    });
+
     _terminalController.addListener(() {
       setState(() {});
     });

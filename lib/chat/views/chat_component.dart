@@ -57,7 +57,7 @@ class ChatComponent extends StatelessWidget {
                 AsyncValue<ActiveConversationState>?>(
             (x) => x.state[remoteConversationRecordKey]);
         if (avconversation == null) {
-          return debugPage('should always have an active conversation here');
+          return waitingPage();
         }
         final conversation = avconversation.data?.value;
         if (conversation == null) {

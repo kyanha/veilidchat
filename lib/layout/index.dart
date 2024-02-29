@@ -2,8 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:radix_colors/radix_colors.dart';
 
-class IndexPage extends StatelessWidget {
+import '../tools/tools.dart';
+
+class IndexPage extends StatefulWidget {
   const IndexPage({super.key});
+
+  @override
+  State<IndexPage> createState() => _IndexPageState();
+}
+
+class _IndexPageState extends State<IndexPage> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await changeWindowSetup(
+          TitleBarStyle.hidden, OrientationCapability.normal);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
