@@ -212,16 +212,53 @@ class DHTShortArray {
     return record!.get(subkey: recordSubkey, forceRefresh: forceRefresh);
   }
 
+  Future<List<Uint8List>?> getAllItems({bool forceRefresh = false}) async {
+    await _refreshHead(forceRefresh: forceRefresh, onlyUpdates: true);
+
+    final out = <Uint8List>[];
+
+    for (var pos = 0; pos < _head.index.length; pos++) {
+      final index = _head.index[pos];
+      final recordNumber = index ~/ _stride;
+      final record = _getLinkedRecord(recordNumber);
+      if (record == null) {
+        assert(record != null, 'Record does not exist');
+        return null;
+      }
+
+      final recordSubkey = (index % _stride) + ((recordNumber == 0) ? 1 : 0);
+      final elem =
+          await record.get(subkey: recordSubkey, forceRefresh: forceRefresh);
+      if (elem == null) {
+        return null;
+      }
+      out.add(elem);
+    }
+
+    return out;
+  }
+
   Future<T?> getItemJson<T>(T Function(dynamic) fromJson, int pos,
           {bool forceRefresh = false}) =>
       getItem(pos, forceRefresh: forceRefresh)
           .then((out) => jsonDecodeOptBytes(fromJson, out));
+
+  Future<List<T>?> getAllItemsJson<T>(T Function(dynamic) fromJson,
+          {bool forceRefresh = false}) =>
+      getAllItems(forceRefresh: forceRefresh)
+          .then((out) => out?.map(fromJson).toList());
 
   Future<T?> getItemProtobuf<T extends GeneratedMessage>(
           T Function(List<int>) fromBuffer, int pos,
           {bool forceRefresh = false}) =>
       getItem(pos, forceRefresh: forceRefresh)
           .then((out) => (out == null) ? null : fromBuffer(out));
+
+  Future<List<T>?> getAllItemsProtobuf<T extends GeneratedMessage>(
+          T Function(List<int>) fromBuffer,
+          {bool forceRefresh = false}) =>
+      getAllItems(forceRefresh: forceRefresh)
+          .then((out) => out?.map(fromBuffer).toList());
 
   Future<bool> tryAddItem(Uint8List value) async {
     await _refreshHead(onlyUpdates: true);

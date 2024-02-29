@@ -18,13 +18,13 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     required T Function(List<int> data) decodeElement,
   })  : _decodeElement = decodeElement,
         super(const BlocBusyState(AsyncValue.loading())) {
-    Future.delayed(Duration.zero, () async {
+    _initFuture = Future(() async {
       // Open DHT record
       _shortArray = await open();
       _wantsCloseRecord = true;
 
       // Make initial state update
-      _update();
+      await _refreshNoWait();
       _subscription = await _shortArray.listen(_update);
     });
   }
@@ -35,57 +35,53 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
   })  : _shortArray = shortArray,
         _decodeElement = decodeElement,
         super(const BlocBusyState(AsyncValue.loading())) {
-    // Make initial state update
-    _update();
-    Future.delayed(Duration.zero, () async {
+    _initFuture = Future(() async {
+      // Make initial state update
+      await _refreshNoWait();
       _subscription = await shortArray.listen(_update);
     });
   }
 
-  Future<void> refresh({bool forceRefresh = false}) async => busy((emit) async {
-        var out = IList<T>();
-        // xxx could be parallelized but we need to watch out for rate limits
-        for (var i = 0; i < _shortArray.length; i++) {
-          final cir = await _shortArray.getItem(i, forceRefresh: forceRefresh);
-          if (cir == null) {
-            throw Exception('Failed to get short array element');
-          }
-          out = out.add(_decodeElement(cir));
-        }
-        emit(AsyncValue.data(out));
+  Future<void> refresh({bool forceRefresh = false}) async {
+    await _initFuture;
+    await _refreshNoWait(forceRefresh: forceRefresh);
+  }
+
+  Future<void> _refreshNoWait({bool forceRefresh = false}) async =>
+      busy((emit) async {
+        await _refreshInner(emit, forceRefresh: forceRefresh);
       });
+
+  Future<void> _refreshInner(void Function(AsyncValue<IList<T>>) emit,
+      {bool forceRefresh = false}) async {
+    try {
+      final newState =
+          (await _shortArray.getAllItems(forceRefresh: forceRefresh))
+              ?.map(_decodeElement)
+              .toIList();
+      if (newState == null) {
+        emit(const AsyncValue.loading());
+      } else {
+        emit(AsyncValue.data(newState));
+      }
+    } on Exception catch (e) {
+      emit(AsyncValue.error(e));
+    }
+  }
 
   void _update() {
     // Run at most one background update process
     // Because this is async, we could get an update while we're
-    // still processing the last one
+    // still processing the last one. Only called after init future has run
+    // so we dont have to wait for that here.
     _sspUpdate.busyUpdate<T, AsyncValue<IList<T>>>(busy, (emit) async {
-      try {
-        final initialState = await _getElementsInner();
-        emit(AsyncValue.data(initialState));
-      } on Exception catch (e) {
-        emit(AsyncValue.error(e));
-      }
+      await _refreshInner(emit);
     });
-  }
-
-  // Get and decode the entire short array
-  Future<IList<T>> _getElementsInner() async {
-    assert(isBusy, 'should only be called from a busy state');
-    var out = IList<T>();
-    for (var i = 0; i < _shortArray.length; i++) {
-      // Get the element bytes (throw if fails, array state is invalid)
-      final bytes = (await _shortArray.getItem(i))!;
-      // Decode the element
-      final elem = _decodeElement(bytes);
-      // Append to the output list
-      out = out.add(elem);
-    }
-    return out;
   }
 
   @override
   Future<void> close() async {
+    await _initFuture;
     await _subscription?.cancel();
     _subscription = null;
     if (_wantsCloseRecord) {
@@ -94,10 +90,13 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     await super.close();
   }
 
-  Future<R> operate<R>(Future<R> Function(DHTShortArray) closure) async =>
-      _operateMutex.protect(() async => closure(_shortArray));
+  Future<R> operate<R>(Future<R> Function(DHTShortArray) closure) async {
+    await _initFuture;
+    return _operateMutex.protect(() async => closure(_shortArray));
+  }
 
   final _operateMutex = Mutex();
+  late final Future<void> _initFuture;
   late final DHTShortArray _shortArray;
   final T Function(List<int> data) _decodeElement;
   StreamSubscription<void>? _subscription;

@@ -26,8 +26,8 @@ class ContactInvitationDisplayDialog extends StatefulWidget {
   final String message;
 
   @override
-  ContactInvitationDisplayDialogState createState() =>
-      ContactInvitationDisplayDialogState();
+  State<ContactInvitationDisplayDialog> createState() =>
+      _ContactInvitationDisplayDialogState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -36,7 +36,7 @@ class ContactInvitationDisplayDialog extends StatefulWidget {
   }
 }
 
-class ContactInvitationDisplayDialogState
+class _ContactInvitationDisplayDialogState
     extends State<ContactInvitationDisplayDialog> {
   final focusNode = FocusNode();
   final formKey = GlobalKey<FormState>();
@@ -123,12 +123,8 @@ class ContactInvitationDisplayDialogState
                         },
                       ).paddingAll(16),
                     ])),
-                error: (e, s) {
-                  Navigator.of(context).pop();
-                  showErrorToast(context,
-                      translate('send_invite_dialog.failed_to_generate'));
-                  return const Text('');
-                })));
+                error: (e, s) =>
+                    Text(translate('send_invite_dialog.failed_to_generate')))));
   }
 
   @override
