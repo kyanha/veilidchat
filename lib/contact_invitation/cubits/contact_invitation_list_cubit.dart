@@ -41,11 +41,11 @@ class ContactInvitationListCubit
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-    final contactInvitationListRecordKey =
+    final contactInvitationListRecordPointer =
         account.contactInvitationRecords.toVeilid();
 
     final dhtRecord = await DHTShortArray.openOwned(
-        contactInvitationListRecordKey,
+        contactInvitationListRecordPointer,
         parent: accountRecordKey);
 
     return dhtRecord;

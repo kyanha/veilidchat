@@ -24,7 +24,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
       _wantsCloseRecord = true;
 
       // Make initial state update
-      await _refreshNoWait();
+      unawaited(_refreshNoWait());
       _subscription = await _shortArray.listen(_update);
     });
   }
@@ -37,7 +37,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
         super(const BlocBusyState(AsyncValue.loading())) {
     _initFuture = Future(() async {
       // Make initial state update
-      await _refreshNoWait();
+      unawaited(_refreshNoWait());
       _subscription = await shortArray.listen(_update);
     });
   }
