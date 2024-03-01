@@ -25,29 +25,20 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
       required TypedKey remoteConversationRecordKey,
       required TypedKey remoteMessagesRecordKey})
       : _activeAccountInfo = activeAccountInfo,
-        _localMessagesRecordKey = localMessagesRecordKey,
         _remoteIdentityPublicKey = remoteIdentityPublicKey,
-        _remoteMessagesRecordKey = remoteMessagesRecordKey,
         _remoteMessagesQueue = StreamController(),
         super(const AsyncValue.loading()) {
     // Local messages key
-    Future.delayed(Duration.zero, () async {
-      final crypto = await getMessagesCrypto();
-      final writer = _activeAccountInfo.conversationWriter;
-      final record = await DHTShortArray.openWrite(
-          _localMessagesRecordKey, writer,
-          parent: localConversationRecordKey, crypto: crypto);
-      await _setLocalMessages(record);
-    });
+    Future.delayed(
+        Duration.zero,
+        () async => _initLocalMessages(
+            localConversationRecordKey, localMessagesRecordKey));
 
     // Remote messages key
-    Future.delayed(Duration.zero, () async {
-      // Open remote record key if it is specified
-      final crypto = await getMessagesCrypto();
-      final record = await DHTShortArray.openRead(_remoteMessagesRecordKey,
-          parent: remoteConversationRecordKey, crypto: crypto);
-      await _setRemoteMessages(record);
-    });
+    Future.delayed(
+        Duration.zero,
+        () async => _initRemoteMessages(
+            remoteConversationRecordKey, remoteMessagesRecordKey));
 
     // Remote messages listener
     Future.delayed(Duration.zero, () async {
@@ -59,8 +50,11 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
 
   @override
   Future<void> close() async {
+    await _remoteMessagesQueue.close();
     await _localSubscription?.cancel();
     await _remoteSubscription?.cancel();
+    await _localMessagesCubit?.close();
+    await _remoteMessagesCubit?.close();
     await super.close();
   }
 
@@ -129,20 +123,29 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
   }
 
   // Open local messages key
-  Future<void> _setLocalMessages(DHTShortArray localMessagesRecord) async {
-    assert(_localMessagesCubit == null, 'shoud not set local messages twice');
-    _localMessagesCubit = DHTShortArrayCubit.value(
-        shortArray: localMessagesRecord,
+  Future<void> _initLocalMessages(TypedKey localConversationRecordKey,
+      TypedKey localMessagesRecordKey) async {
+    final crypto = await getMessagesCrypto();
+    final writer = _activeAccountInfo.conversationWriter;
+
+    _localMessagesCubit = DHTShortArrayCubit(
+        open: () async => DHTShortArray.openWrite(
+            localMessagesRecordKey, writer,
+            parent: localConversationRecordKey, crypto: crypto),
         decodeElement: proto.Message.fromBuffer);
     _localSubscription =
         _localMessagesCubit!.stream.listen(updateLocalMessagesState);
   }
 
   // Open remote messages key
-  Future<void> _setRemoteMessages(DHTShortArray remoteMessagesRecord) async {
-    assert(_remoteMessagesCubit == null, 'shoud not set remote messages twice');
-    _remoteMessagesCubit = DHTShortArrayCubit.value(
-        shortArray: remoteMessagesRecord,
+  Future<void> _initRemoteMessages(TypedKey remoteConversationRecordKey,
+      TypedKey remoteMessagesRecordKey) async {
+    // Open remote record key if it is specified
+    final crypto = await getMessagesCrypto();
+
+    _remoteMessagesCubit = DHTShortArrayCubit(
+        open: () async => DHTShortArray.openRead(remoteMessagesRecordKey,
+            parent: remoteConversationRecordKey, crypto: crypto),
         decodeElement: proto.Message.fromBuffer);
     _remoteSubscription =
         _remoteMessagesCubit!.stream.listen(updateRemoteMessagesState);
@@ -208,8 +211,6 @@ class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
 
   final ActiveAccountInfo _activeAccountInfo;
   final TypedKey _remoteIdentityPublicKey;
-  final TypedKey _localMessagesRecordKey;
-  final TypedKey _remoteMessagesRecordKey;
   DHTShortArrayCubit<proto.Message>? _localMessagesCubit;
   DHTShortArrayCubit<proto.Message>? _remoteMessagesCubit;
   final StreamController<_MessageQueueEntry> _remoteMessagesQueue;

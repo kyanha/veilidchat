@@ -1,4 +1,5 @@
 import 'package:loggy/loggy.dart';
+import 'package:meta/meta.dart';
 import 'package:veilid/veilid.dart';
 
 // Loggy tools
@@ -37,7 +38,8 @@ class VeilidLoggy implements LoggyType {
   Loggy<VeilidLoggy> get loggy => Loggy<VeilidLoggy>('Veilid');
 }
 
-Loggy get _veilidLoggy => Loggy<VeilidLoggy>('Veilid');
+@internal
+Loggy get veilidLoggy => Loggy<VeilidLoggy>('Veilid');
 
 void processLog(VeilidLog log) {
   StackTrace? stackTrace;
@@ -50,19 +52,19 @@ void processLog(VeilidLog log) {
 
   switch (log.logLevel) {
     case VeilidLogLevel.error:
-      _veilidLoggy.error(log.message, error, stackTrace);
+      veilidLoggy.error(log.message, error, stackTrace);
       break;
     case VeilidLogLevel.warn:
-      _veilidLoggy.warning(log.message, error, stackTrace);
+      veilidLoggy.warning(log.message, error, stackTrace);
       break;
     case VeilidLogLevel.info:
-      _veilidLoggy.info(log.message, error, stackTrace);
+      veilidLoggy.info(log.message, error, stackTrace);
       break;
     case VeilidLogLevel.debug:
-      _veilidLoggy.debug(log.message, error, stackTrace);
+      veilidLoggy.debug(log.message, error, stackTrace);
       break;
     case VeilidLogLevel.trace:
-      _veilidLoggy.trace(log.message, error, stackTrace);
+      veilidLoggy.trace(log.message, error, stackTrace);
       break;
   }
 }

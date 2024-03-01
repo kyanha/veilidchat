@@ -178,7 +178,9 @@ class AccountRepository {
   /// Creates a new master identity, an account associated with the master
   /// identity, stores the account in the identity key and then logs into
   /// that account with no password set at this time
-  Future<void> createMasterIdentity(NewProfileSpec newProfileSpec) async {
+  Future<void> createWithNewMasterIdentity(
+      NewProfileSpec newProfileSpec) async {
+    log.debug('Creating master identity');
     final imws = await IdentityMasterWithSecrets.create();
     try {
       final localAccount = await _newLocalAccount(
@@ -204,6 +206,8 @@ class AccountRepository {
       required NewProfileSpec newProfileSpec,
       EncryptionKeyType encryptionKeyType = EncryptionKeyType.none,
       String encryptionKey = ''}) async {
+    log.debug('Creating new local account');
+
     final localAccounts = await _localAccounts.get();
 
     // Add account with profile to DHT
@@ -212,15 +216,18 @@ class AccountRepository {
         accountKey: veilidChatAccountKey,
         createAccountCallback: (parent) async {
           // Make empty contact list
+          log.debug('Creating contacts list');
           final contactList = await (await DHTShortArray.create(parent: parent))
               .scope((r) async => r.record.ownedDHTRecordPointer);
 
           // Make empty contact invitation record list
+          log.debug('Creating contact invitation records list');
           final contactInvitationRecords =
               await (await DHTShortArray.create(parent: parent))
                   .scope((r) async => r.record.ownedDHTRecordPointer);
 
           // Make empty chat record list
+          log.debug('Creating chat records list');
           final chatRecords = await (await DHTShortArray.create(parent: parent))
               .scope((r) async => r.record.ownedDHTRecordPointer);
 

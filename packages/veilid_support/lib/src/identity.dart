@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:protobuf/protobuf.dart';
-import 'package:veilid/veilid.dart';
 
-import '../dht_support/dht_support.dart';
+import '../veilid_support.dart';
+import 'veilid_log.dart';
 
 part 'identity.freezed.dart';
 part 'identity.g.dart';
@@ -161,42 +161,44 @@ extension IdentityMasterExtension on IdentityMaster {
     /////// Add account with profile to DHT
 
     // Open identity key for writing
+    veilidLoggy.debug('Opening master identity');
     return (await pool.openWrite(
             identityRecordKey, identityWriter(identitySecret),
             parent: masterRecordKey))
-        .scope((identityRec) async =>
-            // Create new account to insert into identity
-            (await pool.create(parent: identityRec.key))
-                .deleteScope((accountRec) async {
-              final account = await createAccountCallback(accountRec.key);
-              // Write account key
-              await accountRec.eventualWriteProtobuf(account);
+        .scope((identityRec) async {
+      // Create new account to insert into identity
+      veilidLoggy.debug('Creating new account');
+      return (await pool.create(parent: identityRec.key))
+          .deleteScope((accountRec) async {
+        final account = await createAccountCallback(accountRec.key);
+        // Write account key
+        veilidLoggy.debug('Writing account record');
+        await accountRec.eventualWriteProtobuf(account);
 
-              // Update identity key to include account
-              final newAccountRecordInfo = AccountRecordInfo(
-                  accountRecord: OwnedDHTRecordPointer(
-                      recordKey: accountRec.key,
-                      owner: accountRec.ownerKeyPair!));
+        // Update identity key to include account
+        final newAccountRecordInfo = AccountRecordInfo(
+            accountRecord: OwnedDHTRecordPointer(
+                recordKey: accountRec.key, owner: accountRec.ownerKeyPair!));
 
-              await identityRec.eventualUpdateJson(Identity.fromJson,
-                  (oldIdentity) async {
-                if (oldIdentity == null) {
-                  throw IdentityException.readError;
-                }
-                final oldAccountRecords =
-                    IMapOfSets.from(oldIdentity.accountRecords);
+        veilidLoggy.debug('Updating identity with new account');
+        await identityRec.eventualUpdateJson(Identity.fromJson,
+            (oldIdentity) async {
+          if (oldIdentity == null) {
+            throw IdentityException.readError;
+          }
+          final oldAccountRecords = IMapOfSets.from(oldIdentity.accountRecords);
 
-                if (oldAccountRecords.get(accountKey).length >= maxAccounts) {
-                  throw IdentityException.limitExceeded;
-                }
-                final accountRecords = oldAccountRecords
-                    .add(accountKey, newAccountRecordInfo)
-                    .asIMap();
-                return oldIdentity.copyWith(accountRecords: accountRecords);
-              });
+          if (oldAccountRecords.get(accountKey).length >= maxAccounts) {
+            throw IdentityException.limitExceeded;
+          }
+          final accountRecords =
+              oldAccountRecords.add(accountKey, newAccountRecordInfo).asIMap();
+          return oldIdentity.copyWith(accountRecords: accountRecords);
+        });
 
-              return newAccountRecordInfo;
-            }));
+        return newAccountRecordInfo;
+      });
+    });
   }
 }
 
@@ -219,56 +221,58 @@ class IdentityMasterWithSecrets {
     final pool = DHTRecordPool.instance;
 
     // IdentityMaster DHT record is public/unencrypted
+    veilidLoggy.debug('Creating master identity record');
     return (await pool.create(crypto: const DHTRecordCryptoPublic()))
-        .deleteScope((masterRec) async =>
-            // Identity record is private
-            (await pool.create(parent: masterRec.key))
-                .scope((identityRec) async {
-              // Make IdentityMaster
-              final masterRecordKey = masterRec.key;
-              final masterOwner = masterRec.ownerKeyPair!;
-              final masterSigBuf = BytesBuilder()
-                ..add(masterRecordKey.decode())
-                ..add(masterOwner.key.decode());
+        .deleteScope((masterRec) async {
+      veilidLoggy.debug('Creating identity record');
+      // Identity record is private
+      return (await pool.create(parent: masterRec.key))
+          .scope((identityRec) async {
+        // Make IdentityMaster
+        final masterRecordKey = masterRec.key;
+        final masterOwner = masterRec.ownerKeyPair!;
+        final masterSigBuf = BytesBuilder()
+          ..add(masterRecordKey.decode())
+          ..add(masterOwner.key.decode());
 
-              final identityRecordKey = identityRec.key;
-              final identityOwner = identityRec.ownerKeyPair!;
-              final identitySigBuf = BytesBuilder()
-                ..add(identityRecordKey.decode())
-                ..add(identityOwner.key.decode());
+        final identityRecordKey = identityRec.key;
+        final identityOwner = identityRec.ownerKeyPair!;
+        final identitySigBuf = BytesBuilder()
+          ..add(identityRecordKey.decode())
+          ..add(identityOwner.key.decode());
 
-              assert(masterRecordKey.kind == identityRecordKey.kind,
-                  'new master and identity should have same cryptosystem');
-              final crypto =
-                  await pool.veilid.getCryptoSystem(masterRecordKey.kind);
+        assert(masterRecordKey.kind == identityRecordKey.kind,
+            'new master and identity should have same cryptosystem');
+        final crypto = await pool.veilid.getCryptoSystem(masterRecordKey.kind);
 
-              final identitySignature = await crypto.signWithKeyPair(
-                  masterOwner, identitySigBuf.toBytes());
-              final masterSignature = await crypto.signWithKeyPair(
-                  identityOwner, masterSigBuf.toBytes());
+        final identitySignature =
+            await crypto.signWithKeyPair(masterOwner, identitySigBuf.toBytes());
+        final masterSignature =
+            await crypto.signWithKeyPair(identityOwner, masterSigBuf.toBytes());
 
-              final identityMaster = IdentityMaster(
-                  identityRecordKey: identityRecordKey,
-                  identityPublicKey: identityOwner.key,
-                  masterRecordKey: masterRecordKey,
-                  masterPublicKey: masterOwner.key,
-                  identitySignature: identitySignature,
-                  masterSignature: masterSignature);
+        final identityMaster = IdentityMaster(
+            identityRecordKey: identityRecordKey,
+            identityPublicKey: identityOwner.key,
+            masterRecordKey: masterRecordKey,
+            masterPublicKey: masterOwner.key,
+            identitySignature: identitySignature,
+            masterSignature: masterSignature);
 
-              // Write identity master to master dht key
-              await masterRec.eventualWriteJson(identityMaster);
+        // Write identity master to master dht key
+        await masterRec.eventualWriteJson(identityMaster);
 
-              // Make empty identity
-              const identity = Identity(accountRecords: IMapConst({}));
+        // Make empty identity
+        const identity = Identity(accountRecords: IMapConst({}));
 
-              // Write empty identity to identity dht key
-              await identityRec.eventualWriteJson(identity);
+        // Write empty identity to identity dht key
+        await identityRec.eventualWriteJson(identity);
 
-              return IdentityMasterWithSecrets._(
-                  identityMaster: identityMaster,
-                  masterSecret: masterOwner.secret,
-                  identitySecret: identityOwner.secret);
-            }));
+        return IdentityMasterWithSecrets._(
+            identityMaster: identityMaster,
+            masterSecret: masterOwner.secret,
+            identitySecret: identityOwner.secret);
+      });
+    });
   }
 }
 

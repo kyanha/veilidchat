@@ -2,31 +2,44 @@ import 'package:veilid/veilid.dart';
 
 Map<String, dynamic> getDefaultVeilidPlatformConfig(
     bool isWeb, String appName) {
+  final ignoreLogTargetsStr =
+      // ignore: do_not_use_environment
+      const String.fromEnvironment('IGNORE_LOG_TARGETS').trim();
+  final ignoreLogTargets = ignoreLogTargetsStr.isEmpty
+      ? <String>[]
+      : ignoreLogTargetsStr.split(',').map((e) => e.trim()).toList();
+
   if (isWeb) {
-    return const VeilidWASMConfig(
+    return VeilidWASMConfig(
             logging: VeilidWASMConfigLogging(
                 performance: VeilidWASMConfigLoggingPerformance(
                     enabled: true,
                     level: VeilidConfigLogLevel.debug,
                     logsInTimings: true,
-                    logsInConsole: false),
+                    logsInConsole: false,
+                    ignoreLogTargets: ignoreLogTargets),
                 api: VeilidWASMConfigLoggingApi(
-                    enabled: true, level: VeilidConfigLogLevel.info)))
+                    enabled: true,
+                    level: VeilidConfigLogLevel.info,
+                    ignoreLogTargets: ignoreLogTargets)))
         .toJson();
   }
   return VeilidFFIConfig(
           logging: VeilidFFIConfigLogging(
-              terminal: const VeilidFFIConfigLoggingTerminal(
-                enabled: false,
-                level: VeilidConfigLogLevel.debug,
-              ),
+              terminal: VeilidFFIConfigLoggingTerminal(
+                  enabled: false,
+                  level: VeilidConfigLogLevel.debug,
+                  ignoreLogTargets: ignoreLogTargets),
               otlp: VeilidFFIConfigLoggingOtlp(
                   enabled: false,
                   level: VeilidConfigLogLevel.trace,
                   grpcEndpoint: '127.0.0.1:4317',
-                  serviceName: appName),
-              api: const VeilidFFIConfigLoggingApi(
-                  enabled: true, level: VeilidConfigLogLevel.info)))
+                  serviceName: appName,
+                  ignoreLogTargets: ignoreLogTargets),
+              api: VeilidFFIConfigLoggingApi(
+                  enabled: true,
+                  level: VeilidConfigLogLevel.info,
+                  ignoreLogTargets: ignoreLogTargets)))
       .toJson();
 }
 

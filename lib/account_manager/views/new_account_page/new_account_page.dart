@@ -122,7 +122,7 @@ class NewAccountPageState extends State<NewAccountPage> {
                 NewProfileSpec(name: name, pronouns: pronouns);
 
             await AccountRepository.instance
-                .createMasterIdentity(newProfileSpec);
+                .createWithNewMasterIdentity(newProfileSpec);
           } on Exception catch (e) {
             if (context.mounted) {
               await showErrorModal(context, translate('new_account_page.error'),

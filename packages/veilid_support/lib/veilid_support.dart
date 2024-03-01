@@ -12,4 +12,4 @@ export 'src/json_tools.dart';
 export 'src/memory_tools.dart';
 export 'src/protobuf_tools.dart';
 export 'src/table_db.dart';
-export 'src/veilid_log.dart';
+export 'src/veilid_log.dart' hide veilidLoggy;
