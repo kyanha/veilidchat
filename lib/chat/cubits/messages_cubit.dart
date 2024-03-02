@@ -16,7 +16,9 @@ class _MessageQueueEntry {
   IList<proto.Message> remoteMessages;
 }
 
-class MessagesCubit extends Cubit<AsyncValue<IList<proto.Message>>> {
+typedef MessagesState = AsyncValue<IList<proto.Message>>;
+
+class MessagesCubit extends Cubit<MessagesState> {
   MessagesCubit(
       {required ActiveAccountInfo activeAccountInfo,
       required TypedKey remoteIdentityPublicKey,

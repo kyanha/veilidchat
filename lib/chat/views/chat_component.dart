@@ -19,20 +19,20 @@ import '../chat.dart';
 class ChatComponent extends StatelessWidget {
   const ChatComponent._(
       {required TypedKey localUserIdentityKey,
-      required TypedKey remoteConversationRecordKey,
       required MessagesCubit messagesCubit,
+      required MessagesState messagesState,
       required types.User localUser,
       required types.User remoteUser,
       super.key})
       : _localUserIdentityKey = localUserIdentityKey,
-        _remoteConversationRecordKey = remoteConversationRecordKey,
         _messagesCubit = messagesCubit,
+        _messagesState = messagesState,
         _localUser = localUser,
         _remoteUser = remoteUser;
 
   final TypedKey _localUserIdentityKey;
-  final TypedKey _remoteConversationRecordKey;
   final MessagesCubit _messagesCubit;
+  final MessagesState _messagesState;
   final types.User _localUser;
   final types.User _remoteUser;
 
@@ -78,21 +78,21 @@ class ChatComponent extends StatelessWidget {
             firstName: editedName);
 
         // Get the messages cubit
-        final messagesCubit = context
-            .select<ActiveConversationMessagesBlocMapCubit, MessagesCubit?>(
-                (x) => x.tryOperate(remoteConversationRecordKey,
-                    closure: (cubit) => cubit));
+        final messages = context.select<ActiveConversationMessagesBlocMapCubit,
+                (MessagesCubit, MessagesState)?>(
+            (x) => x.tryOperate(remoteConversationRecordKey,
+                closure: (cubit) => (cubit, cubit.state)));
 
         // Get the messages to display
         // and ensure it is safe to operate() on the MessageCubit for this chat
-        if (messagesCubit == null) {
+        if (messages == null) {
           return waitingPage();
         }
 
         return ChatComponent._(
             localUserIdentityKey: localUserIdentityKey,
-            remoteConversationRecordKey: remoteConversationRecordKey,
-            messagesCubit: messagesCubit,
+            messagesCubit: messages.$1,
+            messagesState: messages.$2,
             localUser: localUser,
             remoteUser: remoteUser,
             key: key);
@@ -140,10 +140,9 @@ class ChatComponent extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final chatTheme = makeChatTheme(scale, textTheme);
 
-    final avmessages = _messagesCubit.state;
-    final messages = avmessages.data?.value;
+    final messages = _messagesState.data?.value;
     if (messages == null) {
-      return avmessages.buildNotData();
+      return _messagesState.buildNotData();
     }
 
     // Convert protobuf messages to chat messages
