@@ -759,7 +759,7 @@ class DHTShortArray {
     for (final skr in subkeys) {
       for (var subkey = skr.low; subkey <= skr.high; subkey++) {
         // Skip head subkey
-        if (subkey == 0) {
+        if (updateHead && subkey == 0) {
           continue;
         }
         // Get the subkey, which caches the result in the local record store

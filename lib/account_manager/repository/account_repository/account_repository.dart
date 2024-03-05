@@ -343,12 +343,13 @@ class AccountRepository {
 
     await _userLogins.set(newUserLogins);
     await _activeLocalAccount.set(identityMaster.masterRecordKey);
-    _streamController
-      ..add(AccountRepositoryChange.userLogins)
-      ..add(AccountRepositoryChange.activeLocalAccount);
 
     // Ensure all logins are opened
     await _openLoggedInDHTRecords();
+
+    _streamController
+      ..add(AccountRepositoryChange.userLogins)
+      ..add(AccountRepositoryChange.activeLocalAccount);
 
     return true;
   }

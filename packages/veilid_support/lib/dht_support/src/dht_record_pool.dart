@@ -569,7 +569,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
         subkeys: allSubkeys, expiration: maxExpiration, count: totalCount);
   }
 
-  void _updateWatchExpirations(
+  void _updateWatchRealExpirations(
       Iterable<DHTRecord> records, Timestamp realExpiration) {
     for (final rec in records) {
       final ws = rec.watchState;
@@ -636,7 +636,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
                   // Update watch states with real expiration
                   if (realExpiration.value != BigInt.zero) {
                     openedRecordInfo.shared.needsWatchStateUpdate = false;
-                    _updateWatchExpirations(
+                    _updateWatchRealExpirations(
                         openedRecordInfo.records, realExpiration);
                     success = true;
                   }

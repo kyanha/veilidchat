@@ -1,4 +1,5 @@
 import 'package:veilid/veilid.dart';
+import 'dart:io' show Platform;
 
 Map<String, dynamic> getDefaultVeilidPlatformConfig(
     bool isWeb, String appName) {
@@ -43,8 +44,18 @@ Map<String, dynamic> getDefaultVeilidPlatformConfig(
       .toJson();
 }
 
-Future<VeilidConfig> getVeilidConfig(bool isWeb, String appName) async {
-  var config = await getDefaultVeilidConfig(appName);
+Future<VeilidConfig> getVeilidConfig(bool isWeb, String programName) async {
+  var config = await getDefaultVeilidConfig(
+    isWeb: isWeb,
+    programName: programName,
+    // ignore: avoid_redundant_argument_values, do_not_use_environment
+    namespace: const String.fromEnvironment('NAMESPACE'),
+    // ignore: avoid_redundant_argument_values, do_not_use_environment
+    bootstrap: const String.fromEnvironment('BOOTSTRAP'),
+    // ignore: avoid_redundant_argument_values, do_not_use_environment
+    networkKeyPassword: const String.fromEnvironment('NETWORK_KEY'),
+  );
+
   // ignore: do_not_use_environment
   if (const String.fromEnvironment('DELETE_TABLE_STORE') == '1') {
     config =
@@ -73,35 +84,12 @@ Future<VeilidConfig> getVeilidConfig(bool isWeb, String appName) async {
                 config.network.routingTable.copyWith(bootstrap: bootstrap)));
   }
 
-  // ignore: do_not_use_environment
-  const envNetworkKey = String.fromEnvironment('NETWORK_KEY');
-  if (envNetworkKey.isNotEmpty) {
-    config = config.copyWith(
-        network: config.network.copyWith(networkKeyPassword: envNetworkKey));
-  }
-
-  // ignore: do_not_use_environment
-  const envBootstrap = String.fromEnvironment('BOOTSTRAP');
-  if (envBootstrap.isNotEmpty) {
-    final bootstrap = envBootstrap.split(',').map((e) => e.trim()).toList();
-    config = config.copyWith(
-        network: config.network.copyWith(
-            routingTable:
-                config.network.routingTable.copyWith(bootstrap: bootstrap)));
-  }
-
   return config.copyWith(
     capabilities:
         // XXX: Remove DHTV and DHTW when we get background sync implemented
         const VeilidConfigCapabilities(disable: ['DHTV', 'DHTW', 'TUNL']),
-    protectedStore: config.protectedStore.copyWith(allowInsecureFallback: true),
-    // network: config.network.copyWith(
-    //         dht: config.network.dht.copyWith(
-    //             getValueCount: 3,
-    //             getValueFanout: 8,
-    //             getValueTimeoutMs: 5000,
-    //             setValueCount: 4,
-    //             setValueFanout: 10,
-    //             setValueTimeoutMs: 5000))
+    protectedStore:
+        // XXX: Linux often does not have a secret storage mechanism installed
+        config.protectedStore.copyWith(allowInsecureFallback: Platform.isLinux),
   );
 }
