@@ -48,9 +48,8 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
   }
 
   Future<void> _refreshNoWait({bool forceRefresh = false}) async =>
-      busy((emit) async {
-        await _refreshInner(emit, forceRefresh: forceRefresh);
-      });
+      busy((emit) async => _operateMutex.protect(
+          () async => _refreshInner(emit, forceRefresh: forceRefresh)));
 
   Future<void> _refreshInner(void Function(AsyncValue<IList<T>>) emit,
       {bool forceRefresh = false}) async {
@@ -59,9 +58,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
           (await _shortArray.getAllItems(forceRefresh: forceRefresh))
               ?.map(_decodeElement)
               .toIList();
-      if (newState == null) {
-        emit(const AsyncValue.loading());
-      } else {
+      if (newState != null) {
         emit(AsyncValue.data(newState));
       }
     } on Exception catch (e) {
@@ -74,9 +71,8 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     // Because this is async, we could get an update while we're
     // still processing the last one. Only called after init future has run
     // so we dont have to wait for that here.
-    _sspUpdate.busyUpdate<T, AsyncValue<IList<T>>>(busy, (emit) async {
-      await _refreshInner(emit);
-    });
+    _sspUpdate.busyUpdate<T, AsyncValue<IList<T>>>(busy,
+        (emit) async => _operateMutex.protect(() async => _refreshInner(emit)));
   }
 
   @override
@@ -90,7 +86,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     await super.close();
   }
 
-  Future<R> operate<R>(Future<R> Function(DHTShortArray) closure) async {
+  Future<R?> operate<R>(Future<R?> Function(DHTShortArray) closure) async {
     await _initFuture;
     return _operateMutex.protect(() async => closure(_shortArray));
   }

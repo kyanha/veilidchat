@@ -20,9 +20,11 @@ class PreferencesRepository {
 
   Future<void> init() async {
     final sharedPreferences = await SharedPreferences.getInstance();
+    // ignore: do_not_use_environment
+    const namespace = String.fromEnvironment('NAMESPACE');
     _data = SharedPreferencesValue<Preferences>(
         sharedPreferences: sharedPreferences,
-        keyName: 'preferences',
+        keyName: namespace.isEmpty ? 'preferences' : 'preferences_$namespace',
         valueFromJson: (obj) =>
             obj != null ? Preferences.fromJson(obj) : Preferences.defaults,
         valueToJson: (val) => val.toJson());

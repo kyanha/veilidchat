@@ -119,6 +119,8 @@ class ProcessorRepository {
   }
 
   void processUpdateValueChange(VeilidUpdateValueChange updateValueChange) {
+    log.debug('UpdateValueChange: ${updateValueChange.toJson()}');
+
     // Send value updates to DHTRecordPool
     DHTRecordPool.instance.processRemoteValueChange(updateValueChange);
   }

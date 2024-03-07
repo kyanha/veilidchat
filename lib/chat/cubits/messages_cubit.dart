@@ -10,9 +10,7 @@ import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 
 class _MessageQueueEntry {
-  _MessageQueueEntry(
-      {required this.localMessages, required this.remoteMessages});
-  IList<proto.Message> localMessages;
+  _MessageQueueEntry({required this.remoteMessages});
   IList<proto.Message> remoteMessages;
 }
 
@@ -60,74 +58,10 @@ class MessagesCubit extends Cubit<MessagesState> {
     await super.close();
   }
 
-  void updateLocalMessagesState(
-      BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
-    // Updated local messages from online just update the state immediately
-    emit(avmessages.state);
-  }
-
-  Future<void> _updateRemoteMessagesStateAsync(_MessageQueueEntry entry) async {
-    // Updated remote messages need to be merged with the local messages state
-
-    // Ensure remoteMessages is sorted by timestamp
-    final remoteMessages =
-        entry.remoteMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-    // Existing messages will always be sorted by timestamp so merging is easy
-    var localMessages = entry.localMessages;
-    var pos = 0;
-    for (final newMessage in remoteMessages) {
-      var skip = false;
-      while (pos < localMessages.length) {
-        final m = localMessages[pos];
-
-        // If timestamp to insert is less than
-        // the current position, insert it here
-        final newTs = Timestamp.fromInt64(newMessage.timestamp);
-        final curTs = Timestamp.fromInt64(m.timestamp);
-        final cmp = newTs.compareTo(curTs);
-        if (cmp < 0) {
-          break;
-        } else if (cmp == 0) {
-          skip = true;
-          break;
-        }
-        pos++;
-      }
-      // Insert at this position
-      if (!skip) {
-        // Insert into dht backing array
-        await _localMessagesCubit!.operate((shortArray) =>
-            shortArray.tryInsertItem(pos, newMessage.writeToBuffer()));
-        // Insert into local copy as well for this operation
-        localMessages = localMessages.insert(pos, newMessage);
-      }
-    }
-  }
-
-  void updateRemoteMessagesState(
-      BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
-    final remoteMessages = avmessages.state.data?.value;
-    if (remoteMessages == null) {
-      return;
-    }
-
-    final localMessages = state.data?.value;
-    if (localMessages == null) {
-      // No local messages means remote messages
-      // are all we have so merging is easy
-      emit(AsyncValue.data(remoteMessages));
-      return;
-    }
-
-    _remoteMessagesQueue.add(_MessageQueueEntry(
-        localMessages: localMessages, remoteMessages: remoteMessages));
-  }
-
   // Open local messages key
   Future<void> _initLocalMessages(TypedKey localConversationRecordKey,
       TypedKey localMessagesRecordKey) async {
-    final crypto = await getMessagesCrypto();
+    final crypto = await _getMessagesCrypto();
     final writer = _activeAccountInfo.conversationWriter;
 
     _localMessagesCubit = DHTShortArrayCubit(
@@ -136,21 +70,87 @@ class MessagesCubit extends Cubit<MessagesState> {
             parent: localConversationRecordKey, crypto: crypto),
         decodeElement: proto.Message.fromBuffer);
     _localSubscription =
-        _localMessagesCubit!.stream.listen(updateLocalMessagesState);
+        _localMessagesCubit!.stream.listen(_updateLocalMessagesState);
+    _updateLocalMessagesState(_localMessagesCubit!.state);
   }
 
   // Open remote messages key
   Future<void> _initRemoteMessages(TypedKey remoteConversationRecordKey,
       TypedKey remoteMessagesRecordKey) async {
     // Open remote record key if it is specified
-    final crypto = await getMessagesCrypto();
+    final crypto = await _getMessagesCrypto();
 
     _remoteMessagesCubit = DHTShortArrayCubit(
         open: () async => DHTShortArray.openRead(remoteMessagesRecordKey,
             parent: remoteConversationRecordKey, crypto: crypto),
         decodeElement: proto.Message.fromBuffer);
     _remoteSubscription =
-        _remoteMessagesCubit!.stream.listen(updateRemoteMessagesState);
+        _remoteMessagesCubit!.stream.listen(_updateRemoteMessagesState);
+    _updateRemoteMessagesState(_remoteMessagesCubit!.state);
+  }
+
+  // Called when the local messages list gets a change
+  void _updateLocalMessagesState(
+      BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
+    // When local messages are updated, pass this
+    // directly to the messages cubit state
+    emit(avmessages.state);
+  }
+
+  // Called when the remote messages list gets a change
+  void _updateRemoteMessagesState(
+      BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
+    final remoteMessages = avmessages.state.data?.value;
+    if (remoteMessages == null) {
+      return;
+    }
+    // Add remote messages updates to queue to process asynchronously
+    _remoteMessagesQueue
+        .add(_MessageQueueEntry(remoteMessages: remoteMessages));
+  }
+
+  Future<void> _updateRemoteMessagesStateAsync(_MessageQueueEntry entry) async {
+    final localMessagesCubit = _localMessagesCubit!;
+
+    // Updated remote messages need to be merged with the local messages state
+    await localMessagesCubit.operate((shortArray) async {
+      // Ensure remoteMessages is sorted by timestamp
+      final remoteMessages = entry.remoteMessages
+          .sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      // dedup? build local timestamp set?
+
+      // Existing messages will always be sorted by timestamp so merging is easy
+      var localMessages = localMessagesCubit.state.state.data!.value;
+
+      var pos = 0;
+      for (final newMessage in remoteMessages) {
+        var skip = false;
+        while (pos < localMessages.length) {
+          final m = localMessages[pos];
+          pos++;
+
+          // If timestamp to insert is less than
+          // the current position, insert it here
+          final newTs = Timestamp.fromInt64(newMessage.timestamp);
+          final curTs = Timestamp.fromInt64(m.timestamp);
+          final cmp = newTs.compareTo(curTs);
+          if (cmp < 0) {
+            break;
+          } else if (cmp == 0) {
+            skip = true;
+            break;
+          }
+        }
+        // Insert at this position
+        if (!skip) {
+          // Insert into dht backing array
+          await shortArray.tryInsertItem(pos, newMessage.writeToBuffer());
+          // Insert into local copy as well for this operation
+          localMessages = localMessages.insert(pos, newMessage);
+        }
+      }
+    });
   }
 
   // Initialize local messages
@@ -187,7 +187,7 @@ class MessagesCubit extends Cubit<MessagesState> {
         (shortArray) => shortArray.tryAddItem(message.writeToBuffer()));
   }
 
-  Future<DHTRecordCrypto> getMessagesCrypto() async {
+  Future<DHTRecordCrypto> _getMessagesCrypto() async {
     var messagesCrypto = _messagesCrypto;
     if (messagesCrypto != null) {
       return messagesCrypto;
