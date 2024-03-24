@@ -34,6 +34,9 @@ typedef ActiveConversationsBlocMapState
 // Map of remoteConversationRecordKey to ActiveConversationCubit
 // Wraps a conversation cubit to only expose completely built conversations
 // Automatically follows the state of a ChatListCubit.
+// Even though 'conversations' are per-contact and not per-chat
+// We currently only build the cubits for the chats that are active, not
+// archived chats or contacts that are not actively in a chat.
 class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<ActiveConversationState>, ActiveConversationCubit>
     with
@@ -82,7 +85,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
       return IMap();
     }
     return IMap.fromIterable(stateValue,
-        keyMapper: (e) => e.remoteConversationKey.toVeilid(),
+        keyMapper: (e) => e.remoteConversationRecordKey.toVeilid(),
         valueMapper: (e) => e);
   }
 
@@ -99,7 +102,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
     final contactIndex = contactList
         .indexWhere((c) => c.remoteConversationRecordKey.toVeilid() == key);
     if (contactIndex == -1) {
-      await addState(key, AsyncValue.error('Contact not found for chat'));
+      await addState(key, AsyncValue.error('Contact not found'));
       return;
     }
     final contact = contactList[contactIndex];

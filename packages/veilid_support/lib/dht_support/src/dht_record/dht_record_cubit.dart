@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
 
-import '../../veilid_support.dart';
+import '../../../veilid_support.dart';
 
 typedef InitialStateFunction<T> = Future<T?> Function(DHTRecord);
 typedef StateFunction<T> = Future<T?> Function(

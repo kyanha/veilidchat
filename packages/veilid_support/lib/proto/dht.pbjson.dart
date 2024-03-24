@@ -36,13 +36,14 @@ const DHTShortArray$json = {
   '2': [
     {'1': 'keys', '3': 1, '4': 3, '5': 11, '6': '.veilid.TypedKey', '10': 'keys'},
     {'1': 'index', '3': 2, '4': 1, '5': 12, '10': 'index'},
+    {'1': 'seqs', '3': 3, '4': 3, '5': 13, '10': 'seqs'},
   ],
 };
 
 /// Descriptor for `DHTShortArray`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List dHTShortArrayDescriptor = $convert.base64Decode(
     'Cg1ESFRTaG9ydEFycmF5EiQKBGtleXMYASADKAsyEC52ZWlsaWQuVHlwZWRLZXlSBGtleXMSFA'
-    'oFaW5kZXgYAiABKAxSBWluZGV4');
+    'oFaW5kZXgYAiABKAxSBWluZGV4EhIKBHNlcXMYAyADKA1SBHNlcXM=');
 
 @$core.Deprecated('Use dHTLogDescriptor instead')
 const DHTLog$json = {

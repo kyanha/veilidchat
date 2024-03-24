@@ -12,7 +12,6 @@ import '../../../../veilid_support.dart';
 
 part 'dht_record_pool.freezed.dart';
 part 'dht_record_pool.g.dart';
-
 part 'dht_record.dart';
 
 const int watchBackoffMultiplier = 2;

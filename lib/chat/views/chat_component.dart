@@ -19,8 +19,8 @@ import '../chat.dart';
 class ChatComponent extends StatelessWidget {
   const ChatComponent._(
       {required TypedKey localUserIdentityKey,
-      required MessagesCubit messagesCubit,
-      required MessagesState messagesState,
+      required SingleContactMessagesCubit messagesCubit,
+      required SingleContactMessagesState messagesState,
       required types.User localUser,
       required types.User remoteUser,
       super.key})
@@ -31,8 +31,8 @@ class ChatComponent extends StatelessWidget {
         _remoteUser = remoteUser;
 
   final TypedKey _localUserIdentityKey;
-  final MessagesCubit _messagesCubit;
-  final MessagesState _messagesState;
+  final SingleContactMessagesCubit _messagesCubit;
+  final SingleContactMessagesState _messagesState;
   final types.User _localUser;
   final types.User _remoteUser;
 
@@ -78,8 +78,8 @@ class ChatComponent extends StatelessWidget {
             firstName: editedName);
 
         // Get the messages cubit
-        final messages = context.select<ActiveConversationMessagesBlocMapCubit,
-                (MessagesCubit, MessagesState)?>(
+        final messages = context.select<ActiveSingleContactChatBlocMapCubit,
+                (SingleContactMessagesCubit, SingleContactMessagesState)?>(
             (x) => x.tryOperate(remoteConversationRecordKey,
                 closure: (cubit) => (cubit, cubit.state)));
 

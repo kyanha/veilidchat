@@ -12,7 +12,6 @@ import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../chat/chat.dart';
 import '../../proto/proto.dart' as proto;
 
 @immutable
@@ -47,7 +46,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
         // Open local record key if it is specified
         final pool = DHTRecordPool.instance;
-        final crypto = await getConversationCrypto();
+        final crypto = await _cachedConversationCrypto();
         final writer = _activeAccountInfo.conversationWriter;
         final record = await pool.openWrite(
             _localConversationRecordKey!, writer,
@@ -63,7 +62,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
         // Open remote record key if it is specified
         final pool = DHTRecordPool.instance;
-        final crypto = await getConversationCrypto();
+        final crypto = await _cachedConversationCrypto();
         final record = await pool.openRead(_remoteConversationRecordKey,
             parent: accountRecordKey, crypto: crypto);
         await _setRemoteConversation(record);
@@ -163,7 +162,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-    final crypto = await getConversationCrypto();
+    final crypto = await _cachedConversationCrypto();
     final writer = _activeAccountInfo.conversationWriter;
 
     // Open with SMPL scheme for identity writer
@@ -187,7 +186,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         // ignore: prefer_expression_function_bodies
         .deleteScope((localConversation) async {
       // Make messages log
-      return MessagesCubit.initLocalMessages(
+      return initLocalMessages(
           activeAccountInfo: _activeAccountInfo,
           remoteIdentityPublicKey: _remoteIdentityPublicKey,
           localConversationKey: localConversation.key,
@@ -197,7 +196,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
               ..profile = profile
               ..identityMasterJson = jsonEncode(
                   _activeAccountInfo.localAccount.identityMaster.toJson())
-              ..messages = messages.record.key.toProto();
+              ..messages = messages.recordKey.toProto();
 
             // Write initial conversation to record
             final update = await localConversation.tryWriteProtobuf(
@@ -219,6 +218,22 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     await _setLocalConversation(localConversationRecord);
 
     return out;
+  }
+
+  // Initialize local messages
+  Future<T> initLocalMessages<T>({
+    required ActiveAccountInfo activeAccountInfo,
+    required TypedKey remoteIdentityPublicKey,
+    required TypedKey localConversationKey,
+    required FutureOr<T> Function(DHTShortArray) callback,
+  }) async {
+    final crypto =
+        await activeAccountInfo.makeConversationCrypto(remoteIdentityPublicKey);
+    final writer = activeAccountInfo.conversationWriter;
+
+    return (await DHTShortArray.create(
+            parent: localConversationKey, crypto: crypto, smplWriter: writer))
+        .deleteScope((messages) async => await callback(messages));
   }
 
   // Force refresh of conversation keys
@@ -247,18 +262,14 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     return update;
   }
 
-  Future<DHTRecordCrypto> getConversationCrypto() async {
+  Future<DHTRecordCrypto> _cachedConversationCrypto() async {
     var conversationCrypto = _conversationCrypto;
     if (conversationCrypto != null) {
       return conversationCrypto;
     }
-    final identitySecret = _activeAccountInfo.userLogin.identitySecret;
-    final cs = await Veilid.instance.getCryptoSystem(identitySecret.kind);
-    final sharedSecret =
-        await cs.cachedDH(_remoteIdentityPublicKey.value, identitySecret.value);
+    conversationCrypto = await _activeAccountInfo
+        .makeConversationCrypto(_remoteIdentityPublicKey);
 
-    conversationCrypto = await DHTRecordCryptoPrivate.fromSecret(
-        identitySecret.kind, sharedSecret);
     _conversationCrypto = conversationCrypto;
     return conversationCrypto;
   }

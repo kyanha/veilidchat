@@ -347,6 +347,11 @@ class DHTRecord {
     }
   }
 
+  Future<DHTRecordReport> inspect(
+          {List<ValueSubkeyRange>? subkeys,
+          DHTReportScope scope = DHTReportScope.local}) =>
+      _routingContext.inspectDHTRecord(key, subkeys: subkeys, scope: scope);
+
   void _addValueChange(
       {required bool local,
       required Uint8List data,

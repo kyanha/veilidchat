@@ -33,6 +33,10 @@ void setVeilidLogLevel(LogLevel? level) {
   Veilid.instance.changeLogLevel('all', convertToVeilidConfigLogLevel(level));
 }
 
+void changeVeilidLogIgnore(String change) {
+  Veilid.instance.changeLogIgnore('all', change.split(','));
+}
+
 class VeilidLoggy implements LoggyType {
   @override
   Loggy<VeilidLoggy> get loggy => Loggy<VeilidLoggy>('Veilid');

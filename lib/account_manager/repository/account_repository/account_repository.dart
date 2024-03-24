@@ -218,18 +218,18 @@ class AccountRepository {
           // Make empty contact list
           log.debug('Creating contacts list');
           final contactList = await (await DHTShortArray.create(parent: parent))
-              .scope((r) async => r.record.ownedDHTRecordPointer);
+              .scope((r) async => r.recordPointer);
 
           // Make empty contact invitation record list
           log.debug('Creating contact invitation records list');
           final contactInvitationRecords =
               await (await DHTShortArray.create(parent: parent))
-                  .scope((r) async => r.record.ownedDHTRecordPointer);
+                  .scope((r) async => r.recordPointer);
 
           // Make empty chat record list
           log.debug('Creating chat records list');
           final chatRecords = await (await DHTShortArray.create(parent: parent))
-              .scope((r) async => r.record.ownedDHTRecordPointer);
+              .scope((r) async => r.recordPointer);
 
           // Make account object
           final account = proto.Account()

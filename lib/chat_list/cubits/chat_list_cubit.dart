@@ -5,6 +5,7 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
 import '../../proto/proto.dart' as proto;
+import '../../tools/tools.dart';
 
 //////////////////////////////////////////////////
 
@@ -16,7 +17,8 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
     required ActiveAccountInfo activeAccountInfo,
     required proto.Account account,
     required this.activeChatCubit,
-  }) : super(
+  })  : _activeAccountInfo = activeAccountInfo,
+        super(
             open: () => _open(activeAccountInfo, account),
             decodeElement: proto.Chat.fromBuffer);
 
@@ -50,15 +52,24 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
           throw Exception('Failed to get chat');
         }
         final c = proto.Chat.fromBuffer(cbuf);
-        if (c.remoteConversationKey == remoteConversationRecordKeyProto) {
+        if (c.remoteConversationRecordKey == remoteConversationRecordKeyProto) {
           // Nothing to do here
           return;
         }
       }
+      final accountRecordKey = _activeAccountInfo
+          .userLogin.accountRecordInfo.accountRecord.recordKey;
+
+      // Make a record that can store the reconciled version of the chat
+      final reconciledChatRecord =
+          await (await DHTShortArray.create(parent: accountRecordKey))
+              .scope((r) async => r.recordPointer);
+
       // Create conversation type Chat
       final chat = proto.Chat()
         ..type = proto.ChatType.SINGLE_CONTACT
-        ..remoteConversationKey = remoteConversationRecordKeyProto;
+        ..remoteConversationRecordKey = remoteConversationRecordKeyProto
+        ..reconciledChatRecord = reconciledChatRecord.toProto();
 
       // Add chat
       final added = await shortArray.tryAddItem(chat.writeToBuffer());
@@ -71,8 +82,9 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
   /// Delete a chat
   Future<void> deleteChat(
       {required TypedKey remoteConversationRecordKey}) async {
-    // Create conversation type Chat
     final remoteConversationKey = remoteConversationRecordKey.toProto();
+    final accountRecordKey =
+        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove Chat from account's list
     // if this fails, don't keep retrying, user can try again later
@@ -86,8 +98,18 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
           throw Exception('Failed to get chat');
         }
         final c = proto.Chat.fromBuffer(cbuf);
-        if (c.remoteConversationKey == remoteConversationKey) {
-          await shortArray.tryRemoveItem(i);
+        if (c.remoteConversationRecordKey == remoteConversationKey) {
+          // Found the right chat
+          if (await shortArray.tryRemoveItem(i) != null) {
+            try {
+              await (await DHTShortArray.openOwned(
+                      c.reconciledChatRecord.toVeilid(),
+                      parent: accountRecordKey))
+                  .delete();
+            } on Exception catch (e) {
+              log.debug('error removing reconciled chat record: $e', e);
+            }
+          }
           return;
         }
       }
@@ -95,4 +117,5 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
   }
 
   final ActiveChatCubit activeChatCubit;
+  final ActiveAccountInfo _activeAccountInfo;
 }

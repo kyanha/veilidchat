@@ -151,11 +151,12 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
                           contactListCubit: context.read<ContactListCubit>())
                         ..followBloc(context.read<ChatListCubit>())),
                   BlocProvider(
-                      create: (context) =>
-                          ActiveConversationMessagesBlocMapCubit(
-                            activeAccountInfo: widget.activeAccountInfo,
-                          )..followBloc(
-                              context.read<ActiveConversationsBlocMapCubit>())),
+                      create: (context) => ActiveSingleContactChatBlocMapCubit(
+                          activeAccountInfo: widget.activeAccountInfo,
+                          contactListCubit: context.read<ContactListCubit>(),
+                          chatListCubit: context.read<ChatListCubit>())
+                        ..followBloc(
+                            context.read<ActiveConversationsBlocMapCubit>())),
                   BlocProvider(
                       create: (context) => WaitingInvitationsBlocMapCubit(
                           activeAccountInfo: widget.activeAccountInfo,

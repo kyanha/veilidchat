@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:basic_utils/basic_utils.dart';
-import 'package:bloc_tools/bloc_tools.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,10 +11,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../tools/tools.dart';
-
-class InvitationGeneratorCubit extends FutureCubit<Uint8List> {
-  InvitationGeneratorCubit(super.fut);
-}
+import '../contact_invitation.dart';
 
 class ContactInvitationDisplayDialog extends StatefulWidget {
   const ContactInvitationDisplayDialog({

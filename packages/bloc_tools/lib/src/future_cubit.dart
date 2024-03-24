@@ -12,4 +12,5 @@ abstract class FutureCubit<State> extends Cubit<AsyncValue<State>> {
       emit(AsyncValue.error(e, stackTrace));
     }));
   }
+  FutureCubit.value(State state) : super(AsyncValue.data(state));
 }

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
-import '../../../../veilid_support.dart';
+import '../../../../../veilid_support.dart';
 
 abstract class DHTRecordCrypto {
   Future<Uint8List> encrypt(Uint8List data, int subkey);

@@ -6,7 +6,7 @@ import 'package:bloc_tools/bloc_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:mutex/mutex.dart';
 
-import '../../veilid_support.dart';
+import '../../../veilid_support.dart';
 
 typedef DHTShortArrayState<T> = AsyncValue<IList<T>>;
 typedef DHTShortArrayBusyState<T> = BlocBusyState<DHTShortArrayState<T>>;
@@ -29,7 +29,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     });
   }
 
-  DHTShortArrayCubit.value({
+  DHTShortArrayCubit.value({ 
     required DHTShortArray shortArray,
     required T Function(List<int> data) decodeElement,
   })  : _shortArray = shortArray,

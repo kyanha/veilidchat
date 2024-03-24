@@ -40,7 +40,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                               initialList: chatList.toList(),
                               builder: (l, i, c) {
                                 final contact =
-                                    contactMap[c.remoteConversationKey];
+                                    contactMap[c.remoteConversationRecordKey];
                                 if (contact == null) {
                                   return const Text('...');
                                 }
@@ -52,7 +52,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                                 final lowerValue = value.toLowerCase();
                                 return chatList.where((c) {
                                   final contact =
-                                      contactMap[c.remoteConversationKey];
+                                      contactMap[c.remoteConversationRecordKey];
                                   if (contact == null) {
                                     return false;
                                   }

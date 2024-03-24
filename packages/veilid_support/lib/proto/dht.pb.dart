@@ -92,6 +92,7 @@ class DHTShortArray extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DHTShortArray', package: const $pb.PackageName(_omitMessageNames ? '' : 'dht'), createEmptyInstance: create)
     ..pc<$0.TypedKey>(1, _omitFieldNames ? '' : 'keys', $pb.PbFieldType.PM, subBuilder: $0.TypedKey.create)
     ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'index', $pb.PbFieldType.OY)
+    ..p<$core.int>(3, _omitFieldNames ? '' : 'seqs', $pb.PbFieldType.KU3)
     ..hasRequiredFields = false
   ;
 
@@ -127,6 +128,9 @@ class DHTShortArray extends $pb.GeneratedMessage {
   $core.bool hasIndex() => $_has(1);
   @$pb.TagNumber(2)
   void clearIndex() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.List<$core.int> get seqs => $_getList(2);
 }
 
 class DHTLog extends $pb.GeneratedMessage {

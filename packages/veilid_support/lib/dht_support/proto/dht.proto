@@ -42,6 +42,10 @@ message DHTShortArray {
     //   key = idx / stride
     //   subkey = idx % stride
     bytes index = 2;
+    
+    // Most recent sequence numbers for elements
+    repeated uint32 seqs = 3;
+    
     // Free items are not represented in the list but can be
     // calculated through iteration
 }
