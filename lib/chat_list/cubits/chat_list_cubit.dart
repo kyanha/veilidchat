@@ -83,12 +83,10 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
   Future<void> deleteChat(
       {required TypedKey remoteConversationRecordKey}) async {
     final remoteConversationKey = remoteConversationRecordKey.toProto();
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove Chat from account's list
     // if this fails, don't keep retrying, user can try again later
-    await operate((shortArray) async {
+    final deletedItem = await operate((shortArray) async {
       if (activeChatCubit.state == remoteConversationRecordKey) {
         activeChatCubit.setActiveChat(null);
       }
@@ -101,19 +99,21 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
         if (c.remoteConversationRecordKey == remoteConversationKey) {
           // Found the right chat
           if (await shortArray.tryRemoveItem(i) != null) {
-            try {
-              await (await DHTShortArray.openOwned(
-                      c.reconciledChatRecord.toVeilid(),
-                      parent: accountRecordKey))
-                  .delete();
-            } on Exception catch (e) {
-              log.debug('error removing reconciled chat record: $e', e);
-            }
+            return c;
           }
-          return;
+          return null;
         }
       }
+      return null;
     });
+    if (deletedItem != null) {
+      try {
+        await DHTRecordPool.instance
+            .delete(deletedItem.reconciledChatRecord.toVeilid().recordKey);
+      } on Exception catch (e) {
+        log.debug('error removing reconciled chat record: $e', e);
+      }
+    }
   }
 
   final ActiveChatCubit activeChatCubit;

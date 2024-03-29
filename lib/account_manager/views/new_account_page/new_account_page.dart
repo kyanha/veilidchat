@@ -54,12 +54,14 @@ class NewAccountPageState extends State<NewAccountPage> {
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(),
               ]),
+              textInputAction: TextInputAction.next,
             ),
             FormBuilderTextField(
               name: formFieldPronouns,
               maxLength: 64,
               decoration: InputDecoration(
                   labelText: translate('account.form_pronouns')),
+              textInputAction: TextInputAction.next,
             ),
             Row(children: [
               const Spacer(),

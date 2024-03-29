@@ -6,6 +6,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
+import '../../tools/tools.dart';
 import '../models/models.dart';
 
 //////////////////////////////////////////////////
@@ -157,7 +158,7 @@ class ContactInvitationListCubit
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove ContactInvitationRecord from account's list
-    await operate((shortArray) async {
+    final deletedItem = await operate((shortArray) async {
       for (var i = 0; i < shortArray.length; i++) {
         final item = await shortArray.getItemProtobuf(
             proto.ContactInvitationRecord.fromBuffer, i);
@@ -166,25 +167,37 @@ class ContactInvitationListCubit
         }
         if (item.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxRecordKey) {
-          await shortArray.tryRemoveItem(i);
-
-          await (await pool.openOwned(item.contactRequestInbox.toVeilid(),
-                  parent: accountRecordKey))
-              .scope((contactRequestInbox) async {
-            // Wipe out old invitation so it shows up as invalid
-            await contactRequestInbox.tryWriteBytes(Uint8List(0));
-            await contactRequestInbox.delete();
-          });
-          if (!accepted) {
-            await (await pool.openRead(
-                    item.localConversationRecordKey.toVeilid(),
-                    parent: accountRecordKey))
-                .delete();
+          if (await shortArray.tryRemoveItem(i) != null) {
+            return item;
           }
-          return;
+          return null;
         }
       }
+      return null;
     });
+
+    if (deletedItem != null) {
+      // Delete the contact request inbox
+      final contactRequestInbox = deletedItem.contactRequestInbox.toVeilid();
+      await (await pool.openOwned(contactRequestInbox,
+              parent: accountRecordKey))
+          .scope((contactRequestInbox) async {
+        // Wipe out old invitation so it shows up as invalid
+        await contactRequestInbox.tryWriteBytes(Uint8List(0));
+      });
+      try {
+        await pool.delete(contactRequestInbox.recordKey);
+      } on Exception catch (e) {
+        log.debug('error removing contact request inbox: $e', e);
+      }
+      if (!accepted) {
+        try {
+          await pool.delete(deletedItem.localConversationRecordKey.toVeilid());
+        } on Exception catch (e) {
+          log.debug('error removing local conversation record: $e', e);
+        }
+      }
+    }
   }
 
   Future<ValidContactInvitation?> validateInvitation(

@@ -16,7 +16,11 @@ class DHTShortArray {
   // Constructors
 
   DHTShortArray._({required DHTRecord headRecord})
-      : _head = _DHTShortArrayHead(headRecord: headRecord) {}
+      : _head = _DHTShortArrayHead(headRecord: headRecord) {
+    _head.onUpdatedHead = () {
+      _watchController?.sink.add(null);
+    };
+  }
 
   // Create a DHTShortArray
   // if smplWriter is specified, uses a SMPL schema with a single writer
@@ -52,12 +56,15 @@ class DHTShortArray {
 
     try {
       final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
-      if (!await dhtShortArray._head._tryWriteHead()) {
-        throw StateError('Failed to write head at this time');
-      }
+      await dhtShortArray._head.operate((head) async {
+        if (!await head._writeHead()) {
+          throw StateError('Failed to write head at this time');
+        }
+      });
       return dhtShortArray;
     } on Exception catch (_) {
-      await dhtRecord.delete();
+      await dhtRecord.close();
+      await pool.delete(dhtRecord.key);
       rethrow;
     }
   }
@@ -70,7 +77,7 @@ class DHTShortArray {
         parent: parent, routingContext: routingContext, crypto: crypto);
     try {
       final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
-      await dhtShortArray._head._refreshInner();
+      await dhtShortArray._head.operate((head) => head._loadHead());
       return dhtShortArray;
     } on Exception catch (_) {
       await dhtRecord.close();
@@ -90,7 +97,7 @@ class DHTShortArray {
         parent: parent, routingContext: routingContext, crypto: crypto);
     try {
       final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
-      await dhtShortArray._head._refreshInner();
+      await dhtShortArray._head.operate((head) => head._loadHead());
       return dhtShortArray;
     } on Exception catch (_) {
       await dhtRecord.close();
@@ -115,13 +122,14 @@ class DHTShortArray {
   ////////////////////////////////////////////////////////////////////////////
   // Public API
 
-  // External references for the shortarray
-  TypedKey get recordKey => _head.headRecord.key;
-  OwnedDHTRecordPointer get recordPointer =>
-      _head.headRecord.ownedDHTRecordPointer;
+  /// Get the record key for this shortarray
+  TypedKey get recordKey => _head.recordKey;
+
+  /// Get the record pointer foir this shortarray
+  OwnedDHTRecordPointer get recordPointer => _head.recordPointer;
 
   /// Returns the number of elements in the DHTShortArray
-  int get length => _head.index.length;
+  int get length => _head.length;
 
   /// Free all resources for the DHTShortArray
   Future<void> close() async {
@@ -131,8 +139,8 @@ class DHTShortArray {
 
   /// Free all resources for the DHTShortArray and delete it from the DHT
   Future<void> delete() async {
-    await _watchController?.close();
-    await _head.delete();
+    await close();
+    await DHTRecordPool.instance.delete(recordKey);
   }
 
   /// Runs a closure that guarantees the DHTShortArray
@@ -169,23 +177,15 @@ class DHTShortArray {
 
   Future<Uint8List?> _getItemInner(_DHTShortArrayHead head, int pos,
       {bool forceRefresh = false}) async {
-    if (pos < 0 || pos >= head.index.length) {
-      throw IndexError.withLength(pos, head.index.length);
+    if (pos < 0 || pos >= length) {
+      throw IndexError.withLength(pos, length);
     }
 
-    final index = head.index[pos];
-    final recordNumber = index ~/ head.stride;
-    final record = head.getLinkedRecord(recordNumber);
-    if (record == null) {
-      throw StateError('Record does not exist');
-    }
-    final recordSubkey = (index % head.stride) + ((recordNumber == 0) ? 1 : 0);
+    final (record, recordSubkey) = await head.lookupPosition(pos);
 
-    final refresh = forceRefresh || head.indexNeedsRefresh(index);
-
+    final refresh = forceRefresh || head.positionNeedsRefresh(pos);
     final out = record.get(subkey: recordSubkey, forceRefresh: refresh);
-
-    await head.updateIndexSeq(index, false);
+    await head.updatePositionSeq(pos, false);
 
     return out;
   }
@@ -197,7 +197,7 @@ class DHTShortArray {
       _head.operate((head) async {
         final out = <Uint8List>[];
 
-        for (var pos = 0; pos < head.index.length; pos++) {
+        for (var pos = 0; pos < head.length; pos++) {
           final elem =
               await _getItemInner(head, pos, forceRefresh: forceRefresh);
           if (elem == null) {
@@ -248,21 +248,14 @@ class DHTShortArray {
     final out = await _head
             .operateWrite((head) async => _tryAddItemInner(head, value)) ??
         false;
-
-    // Send update
-    _watchController?.sink.add(null);
-
     return out;
   }
 
   Future<bool> _tryAddItemInner(
       _DHTShortArrayHead head, Uint8List value) async {
-    // Allocate empty index
-    final index = head.emptyIndex();
-
-    // Add new index
-    final pos = head.index.length;
-    head.index.add(index);
+    // Allocate empty index at the end of the list
+    final pos = head.length;
+    head.allocateIndex(pos);
 
     // Write item
     final (_, wasSet) = await _tryWriteItemInner(head, pos, value);
@@ -271,7 +264,7 @@ class DHTShortArray {
     }
 
     // Get sequence number written
-    await head.updateIndexSeq(index, true);
+    await head.updatePositionSeq(pos, true);
 
     return true;
   }
@@ -287,19 +280,13 @@ class DHTShortArray {
             (head) async => _tryInsertItemInner(head, pos, value)) ??
         false;
 
-    // Send update
-    _watchController?.sink.add(null);
-
     return out;
   }
 
   Future<bool> _tryInsertItemInner(
       _DHTShortArrayHead head, int pos, Uint8List value) async {
-    // Allocate empty index
-    final index = head.emptyIndex();
-
-    // Add new index
-    _head.index.insert(pos, index);
+    // Allocate empty index at position
+    head.allocateIndex(pos);
 
     // Write item
     final (_, wasSet) = await _tryWriteItemInner(head, pos, value);
@@ -308,7 +295,7 @@ class DHTShortArray {
     }
 
     // Get sequence number written
-    await head.updateIndexSeq(index, true);
+    await head.updatePositionSeq(pos, true);
 
     return true;
   }
@@ -325,24 +312,13 @@ class DHTShortArray {
             (head) async => _trySwapItemInner(head, aPos, bPos)) ??
         false;
 
-    // Send update
-    _watchController?.sink.add(null);
-
     return out;
   }
 
   Future<bool> _trySwapItemInner(
       _DHTShortArrayHead head, int aPos, int bPos) async {
-    // No-op case
-    if (aPos == bPos) {
-      return true;
-    }
-
     // Swap indices
-    final aIdx = _head.index[aPos];
-    final bIdx = _head.index[bPos];
-    _head.index[aPos] = bIdx;
-    _head.index[bPos] = aIdx;
+    head.swapIndex(aPos, bPos);
 
     return true;
   }
@@ -358,28 +334,17 @@ class DHTShortArray {
     final out =
         _head.operateWrite((head) async => _tryRemoveItemInner(head, pos));
 
-    // Send update
-    _watchController?.sink.add(null);
-
     return out;
   }
 
   Future<Uint8List> _tryRemoveItemInner(
       _DHTShortArrayHead head, int pos) async {
-    final index = _head.index.removeAt(pos);
-    final recordNumber = index ~/ head.stride;
-    final record = head.getLinkedRecord(recordNumber);
-    if (record == null) {
-      throw StateError('Record does not exist');
-    }
-    final recordSubkey = (index % head.stride) + ((recordNumber == 0) ? 1 : 0);
-
+    final (record, recordSubkey) = await head.lookupPosition(pos);
     final result = await record.get(subkey: recordSubkey);
     if (result == null) {
       throw StateError('Element does not exist');
     }
-
-    head.freeIndex(index);
+    head.freeIndex(pos);
     return result;
   }
 
@@ -405,15 +370,11 @@ class DHTShortArray {
     final out =
         await _head.operateWrite((head) async => _tryClearInner(head)) ?? false;
 
-    // Send update
-    _watchController?.sink.add(null);
-
     return out;
   }
 
   Future<bool> _tryClearInner(_DHTShortArrayHead head) async {
-    head.index.clear();
-    head.free.clear();
+    head.clearIndex();
     return true;
   }
 
@@ -434,23 +395,15 @@ class DHTShortArray {
       return (null, false);
     }
 
-    // Send update
-    _watchController?.sink.add(null);
-
     return out;
   }
 
   Future<(Uint8List?, bool)> _tryWriteItemInner(
       _DHTShortArrayHead head, int pos, Uint8List newValue) async {
-    if (pos < 0 || pos >= head.index.length) {
-      throw IndexError.withLength(pos, _head.index.length);
+    if (pos < 0 || pos >= head.length) {
+      throw IndexError.withLength(pos, head.length);
     }
-
-    final index = head.index[pos];
-    final recordNumber = index ~/ head.stride;
-    final record = await head.getOrCreateLinkedRecord(recordNumber);
-    final recordSubkey = (index % head.stride) + ((recordNumber == 0) ? 1 : 0);
-
+    final (record, recordSubkey) = await head.lookupPosition(pos);
     final oldValue = await record.get(subkey: recordSubkey);
     final result = await record.tryWriteBytes(newValue, subkey: recordSubkey);
     if (result != null) {
@@ -471,9 +424,6 @@ class DHTShortArray {
       (_, wasSet) = await _tryWriteItemInner(head, pos, newValue);
       return wasSet;
     }, timeout: timeout);
-
-    // Send update
-    _watchController?.sink.add(null);
   }
 
   /// Change an item at position 'pos' of the DHTShortArray.
@@ -497,9 +447,6 @@ class DHTShortArray {
       (_, wasSet) = await _tryWriteItemInner(head, pos, updatedData);
       return wasSet;
     }, timeout: timeout);
-
-    // Send update
-    _watchController?.sink.add(null);
   }
 
   /// Convenience function:
@@ -569,13 +516,13 @@ class DHTShortArray {
             // rid of the controller and drop our subscriptions
             unawaited(_listenMutex.protect(() async {
               // Cancel watches of head record
-              await _head._cancelWatch();
+              await _head.cancelWatch();
               _watchController = null;
             }));
           });
 
           // Start watching head record
-          await _head._watch();
+          await _head.watch();
         }
         // Return subscription
         return _watchController!.stream.listen((_) => onChanged());

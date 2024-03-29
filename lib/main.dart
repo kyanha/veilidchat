@@ -27,8 +27,7 @@ void main() async {
   // Ansi colors
   ansiColorDisabled = false;
 
-  // Catch errors
-  await runZonedGuarded(() async {
+  Future<void> mainFunc() async {
     // Logs
     initLoggy();
 
@@ -53,7 +52,15 @@ void main() async {
     // Hot reloads will only restart this part, not Veilid
     runApp(LocalizedApp(localizationDelegate,
         VeilidChatApp(initialThemeData: initialThemeData)));
-  }, (error, stackTrace) {
-    log.error('Dart Runtime: {$error}\n{$stackTrace}');
-  });
+  }
+
+  if (kDebugMode) {
+    // In debug mode, run the app without catching exceptions for debugging
+    await mainFunc();
+  } else {
+    // Catch errors in production without killing the app
+    await runZonedGuarded(mainFunc, (error, stackTrace) {
+      log.error('Dart Runtime: {$error}\n{$stackTrace}');
+    });
+  }
 }
