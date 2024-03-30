@@ -57,7 +57,7 @@ class _DHTShortArrayHead {
         return closure(this);
       });
 
-  Future<T?> operateWrite<T>(
+  Future<(T?, bool)> operateWrite<T>(
           Future<T> Function(_DHTShortArrayHead) closure) async =>
       _headMutex.protect(() async {
         final oldLinkedRecords = List.of(_linkedRecords);
@@ -70,11 +70,11 @@ class _DHTShortArrayHead {
           if (!await _writeHead()) {
             // Failed to write head means head got overwritten so write should
             // be considered failed
-            return null;
+            return (null, false);
           }
 
           onUpdatedHead?.call();
-          return out;
+          return (out, true);
         } on Exception {
           // Exception means state needs to be reverted
           _linkedRecords = oldLinkedRecords;
