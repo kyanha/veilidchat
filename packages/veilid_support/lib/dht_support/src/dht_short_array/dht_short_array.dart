@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:async_tools/async_tools.dart';
 import 'package:mutex/mutex.dart';
 import 'package:protobuf/protobuf.dart';
 
@@ -169,90 +168,36 @@ class DHTShortArray {
   }
 
   /// Runs a closure allowing read-only access to the shortarray
-  Future<T> operate<T>(Future<T> Function(DHTShortArrayRead) closure) async =>
+  Future<T?> operate<T>(Future<T?> Function(DHTShortArrayRead) closure) async =>
       _head.operate((head) async {
         final reader = _DHTShortArrayRead._(head);
         return closure(reader);
       });
 
   /// Runs a closure allowing read-write access to the shortarray
+  /// Makes only one attempt to consistently write the changes to the DHT
   /// Returns (result, true) of the closure if the write could be performed
   /// Returns (null, false) if the write could not be performed at this time
   Future<(T?, bool)> operateWrite<T>(
-          Future<T> Function(DHTShortArrayWrite) closure) async =>
+          Future<T?> Function(DHTShortArrayWrite) closure) async =>
       _head.operateWrite((head) async {
         final writer = _DHTShortArrayWrite._(head);
         return closure(writer);
       });
 
-  /// Set an item at position 'pos' of the DHTShortArray. Retries until the
-  /// value being written is successfully made the newest value of the element.
-  /// This may throw an exception if the position elements the built-in limit of
-  /// 'maxElements = 256' entries.
-  Future<void> eventualWriteItem(int pos, Uint8List newValue,
-      {Duration? timeout}) async {
-    await _head.operateWriteEventual((head) async {
-      bool wasSet;
-      (_, wasSet) = await _tryWriteItemInner(head, pos, newValue);
-      return wasSet;
-    }, timeout: timeout);
-  }
-
-  /// Change an item at position 'pos' of the DHTShortArray.
-  /// Runs with the value of the old element at that position such that it can
-  /// be changed to the returned value from tha closure. Retries until the
-  /// value being written is successfully made the newest value of the element.
-  /// This may throw an exception if the position elements the built-in limit of
-  /// 'maxElements = 256' entries.
-
-  Future<void> eventualUpdateItem(
-      int pos, Future<Uint8List> Function(Uint8List? oldValue) update,
-      {Duration? timeout}) async {
-    await _head.operateWriteEventual((head) async {
-      final oldData = await getItem(pos);
-
-      // Update the data
-      final updatedData = await update(oldData);
-
-      // Set it back
-      bool wasSet;
-      (_, wasSet) = await _tryWriteItemInner(head, pos, updatedData);
-      return wasSet;
-    }, timeout: timeout);
-  }
-
-  /// Convenience function:
-  /// Like eventualWriteItem but also encodes the input value as JSON and parses
-  /// the returned element as JSON
-  Future<void> eventualWriteItemJson<T>(int pos, T newValue,
-          {Duration? timeout}) =>
-      eventualWriteItem(pos, jsonEncodeBytes(newValue), timeout: timeout);
-
-  /// Convenience function:
-  /// Like eventualWriteItem but also encodes the input value as a protobuf
-  /// object and parses the returned element as a protobuf object
-  Future<void> eventualWriteItemProtobuf<T extends GeneratedMessage>(
-          int pos, T newValue,
-          {int subkey = -1, Duration? timeout}) =>
-      eventualWriteItem(pos, newValue.writeToBuffer(), timeout: timeout);
-
-  /// Convenience function:
-  /// Like eventualUpdateItem but also encodes the input value as JSON
-  Future<void> eventualUpdateItemJson<T>(
-          T Function(dynamic) fromJson, int pos, Future<T> Function(T?) update,
-          {Duration? timeout}) =>
-      eventualUpdateItem(pos, jsonUpdate(fromJson, update), timeout: timeout);
-
-  /// Convenience function:
-  /// Like eventualUpdateItem but also encodes the input value as a protobuf
-  /// object
-  Future<void> eventualUpdateItemProtobuf<T extends GeneratedMessage>(
-          T Function(List<int>) fromBuffer,
-          int pos,
-          Future<T> Function(T?) update,
-          {Duration? timeout}) =>
-      eventualUpdateItem(pos, protobufUpdate(fromBuffer, update),
-          timeout: timeout);
+  /// Runs a closure allowing read-write access to the shortarray
+  /// Will execute the closure multiple times if a consistent write to the DHT
+  /// is not achieved. Timeout if specified will be thrown as a
+  /// TimeoutException. The closure should return true if its changes also
+  /// succeeded, returning false will trigger another eventual consistency
+  /// attempt.
+  Future<void> operateWriteEventual(
+          Future<bool> Function(DHTShortArrayWrite) closure,
+          {Duration? timeout}) async =>
+      _head.operateWriteEventual((head) async {
+        final writer = _DHTShortArrayWrite._(head);
+        return closure(writer);
+      }, timeout: timeout);
 
   Future<StreamSubscription<void>> listen(
     void Function() onChanged,

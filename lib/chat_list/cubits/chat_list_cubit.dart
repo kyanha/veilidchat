@@ -41,13 +41,13 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
   }) async {
     // Add Chat to account's list
     // if this fails, don't keep retrying, user can try again later
-    await operate((shortArray) async {
+    await operateWrite((writer) async {
       final remoteConversationRecordKeyProto =
           remoteConversationRecordKey.toProto();
 
       // See if we have added this chat already
-      for (var i = 0; i < shortArray.length; i++) {
-        final cbuf = await shortArray.getItem(i);
+      for (var i = 0; i < writer.length; i++) {
+        final cbuf = await writer.getItem(i);
         if (cbuf == null) {
           throw Exception('Failed to get chat');
         }
@@ -72,7 +72,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
         ..reconciledChatRecord = reconciledChatRecord.toProto();
 
       // Add chat
-      final added = await shortArray.tryAddItem(chat.writeToBuffer());
+      final added = await writer.tryAddItem(chat.writeToBuffer());
       if (!added) {
         throw Exception('Failed to add chat');
       }
@@ -86,19 +86,19 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
 
     // Remove Chat from account's list
     // if this fails, don't keep retrying, user can try again later
-    final deletedItem = await operate((shortArray) async {
+    final (deletedItem, success) = await operateWrite((writer) async {
       if (activeChatCubit.state == remoteConversationRecordKey) {
         activeChatCubit.setActiveChat(null);
       }
-      for (var i = 0; i < shortArray.length; i++) {
-        final cbuf = await shortArray.getItem(i);
+      for (var i = 0; i < writer.length; i++) {
+        final cbuf = await writer.getItem(i);
         if (cbuf == null) {
           throw Exception('Failed to get chat');
         }
         final c = proto.Chat.fromBuffer(cbuf);
         if (c.remoteConversationRecordKey == remoteConversationKey) {
           // Found the right chat
-          if (await shortArray.tryRemoveItem(i) != null) {
+          if (await writer.tryRemoveItem(i) != null) {
             return c;
           }
           return null;
@@ -106,7 +106,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
       }
       return null;
     });
-    if (deletedItem != null) {
+    if (success && deletedItem != null) {
       try {
         await DHTRecordPool.instance
             .delete(deletedItem.reconciledChatRecord.toVeilid().recordKey);

@@ -49,7 +49,6 @@ class AccountRepository {
   final TableDBValue<IList<UserLogin>> _userLogins;
   final TableDBValue<TypedKey?> _activeLocalAccount;
   final StreamController<AccountRepositoryChange> _streamController;
-  final Map<TypedKey, DHTRecord> _openedAccountRecords = {};
 
   //////////////////////////////////////////////////////////////
   /// Singleton initialization
@@ -60,11 +59,10 @@ class AccountRepository {
     await _localAccounts.get();
     await _userLogins.get();
     await _activeLocalAccount.get();
-    await _openLoggedInDHTRecords();
   }
 
   Future<void> close() async {
-    await _closeLoggedInDHTRecords();
+    // ???
   }
 
   //////////////////////////////////////////////////////////////
@@ -139,25 +137,12 @@ class AccountRepository {
           activeAccountInfo: null);
     }
 
-    // Pull the account DHT key, decode it and return it
-    final accountRecord =
-        _getAccountRecord(userLogin.accountRecordInfo.accountRecord.recordKey);
-    if (accountRecord == null) {
-      // Account could not be read or decrypted from DHT
-      return AccountInfo(
-          status: AccountInfoStatus.accountInvalid,
-          active: active,
-          activeAccountInfo: null);
-    }
-
     // Got account, decrypted and decoded
     return AccountInfo(
       status: AccountInfoStatus.accountReady,
       active: active,
-      activeAccountInfo: ActiveAccountInfo(
-          localAccount: localAccount,
-          userLogin: userLogin,
-          accountRecord: accountRecord),
+      activeAccountInfo:
+          ActiveAccountInfo(localAccount: localAccount, userLogin: userLogin),
     );
   }
 
@@ -344,9 +329,6 @@ class AccountRepository {
     await _userLogins.set(newUserLogins);
     await _activeLocalAccount.set(identityMaster.masterRecordKey);
 
-    // Ensure all logins are opened
-    await _openLoggedInDHTRecords();
-
     _streamController
       ..add(AccountRepositoryChange.userLogins)
       ..add(AccountRepositoryChange.activeLocalAccount);
@@ -395,12 +377,6 @@ class AccountRepository {
       return;
     }
 
-    // Close DHT records for this account
-    final accountRecordKey =
-        logoutUserLogin.accountRecordInfo.accountRecord.recordKey;
-    final accountRecord = _openedAccountRecords.remove(accountRecordKey);
-    await accountRecord?.close();
-
     // Remove user from active logins list
     final newUserLogins = (await _userLogins.get())
         .removeWhere((ul) => ul.accountMasterRecordKey == logoutUser);
@@ -408,32 +384,7 @@ class AccountRepository {
     _streamController.add(AccountRepositoryChange.userLogins);
   }
 
-  Future<void> _openLoggedInDHTRecords() async {
-    // For all user logins if they arent open yet
-    final userLogins = await _userLogins.get();
-    for (final userLogin in userLogins) {
-      await _openAccountRecord(userLogin);
-    }
-  }
-
-  Future<void> _closeLoggedInDHTRecords() async {
-    final userLogins = await _userLogins.get();
-    for (final userLogin in userLogins) {
-      //// Account record key /////////////////////////////
-      final accountRecordKey =
-          userLogin.accountRecordInfo.accountRecord.recordKey;
-      await _closeAccountRecord(accountRecordKey);
-    }
-  }
-
-  Future<DHTRecord> _openAccountRecord(UserLogin userLogin) async {
-    final accountRecordKey =
-        userLogin.accountRecordInfo.accountRecord.recordKey;
-
-    final existingAccountRecord = _openedAccountRecords[accountRecordKey];
-    if (existingAccountRecord != null) {
-      return existingAccountRecord;
-    }
+  Future<DHTRecord> openAccountRecord(UserLogin userLogin) async {
     final localAccount = fetchLocalAccount(userLogin.accountMasterRecordKey)!;
 
     // Record not yet open, do it
@@ -442,19 +393,6 @@ class AccountRepository {
         userLogin.accountRecordInfo.accountRecord,
         parent: localAccount.identityMaster.identityRecordKey);
 
-    _openedAccountRecords[accountRecordKey] = record;
-
-    // Watch the record's only (default) key
-    await record.watch();
-
     return record;
-  }
-
-  DHTRecord? _getAccountRecord(TypedKey accountRecordKey) =>
-      _openedAccountRecords[accountRecordKey];
-
-  Future<void> _closeAccountRecord(TypedKey accountRecordKey) async {
-    final accountRecord = _openedAccountRecords.remove(accountRecordKey);
-    await accountRecord?.close();
   }
 }

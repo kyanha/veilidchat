@@ -41,31 +41,35 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         super(const AsyncValue.loading()) {
     if (_localConversationRecordKey != null) {
       Future.delayed(Duration.zero, () async {
-        final accountRecordKey = _activeAccountInfo
-            .userLogin.accountRecordInfo.accountRecord.recordKey;
+        await _setLocalConversation(() async {
+          final accountRecordKey = _activeAccountInfo
+              .userLogin.accountRecordInfo.accountRecord.recordKey;
 
-        // Open local record key if it is specified
-        final pool = DHTRecordPool.instance;
-        final crypto = await _cachedConversationCrypto();
-        final writer = _activeAccountInfo.conversationWriter;
-        final record = await pool.openWrite(
-            _localConversationRecordKey!, writer,
-            parent: accountRecordKey, crypto: crypto);
-        await _setLocalConversation(record);
+          // Open local record key if it is specified
+          final pool = DHTRecordPool.instance;
+          final crypto = await _cachedConversationCrypto();
+          final writer = _activeAccountInfo.conversationWriter;
+          final record = await pool.openWrite(
+              _localConversationRecordKey!, writer,
+              parent: accountRecordKey, crypto: crypto);
+          return record;
+        });
       });
     }
 
     if (_remoteConversationRecordKey != null) {
       Future.delayed(Duration.zero, () async {
-        final accountRecordKey = _activeAccountInfo
-            .userLogin.accountRecordInfo.accountRecord.recordKey;
+        await _setRemoteConversation(() async {
+          final accountRecordKey = _activeAccountInfo
+              .userLogin.accountRecordInfo.accountRecord.recordKey;
 
-        // Open remote record key if it is specified
-        final pool = DHTRecordPool.instance;
-        final crypto = await _cachedConversationCrypto();
-        final record = await pool.openRead(_remoteConversationRecordKey,
-            parent: accountRecordKey, crypto: crypto);
-        await _setRemoteConversation(record);
+          // Open remote record key if it is specified
+          final pool = DHTRecordPool.instance;
+          final crypto = await _cachedConversationCrypto();
+          final record = await pool.openRead(_remoteConversationRecordKey,
+              parent: accountRecordKey, crypto: crypto);
+          return record;
+        });
       });
     }
   }
@@ -74,6 +78,9 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   Future<void> close() async {
     await _localSubscription?.cancel();
     await _remoteSubscription?.cancel();
+    await _localConversationCubit?.close();
+    await _remoteConversationCubit?.close();
+
     await super.close();
   }
 
@@ -122,24 +129,21 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   }
 
   // Open local converation key
-  Future<void> _setLocalConversation(DHTRecord localConversationRecord) async {
+  Future<void> _setLocalConversation(Future<DHTRecord> Function() open) async {
     assert(_localConversationCubit == null,
         'shoud not set local conversation twice');
-    _localConversationCubit = DefaultDHTRecordCubit.value(
-        record: localConversationRecord,
-        decodeState: proto.Conversation.fromBuffer);
+    _localConversationCubit = DefaultDHTRecordCubit(
+        open: open, decodeState: proto.Conversation.fromBuffer);
     _localSubscription =
         _localConversationCubit!.stream.listen(updateLocalConversationState);
   }
 
   // Open remote converation key
-  Future<void> _setRemoteConversation(
-      DHTRecord remoteConversationRecord) async {
+  Future<void> _setRemoteConversation(Future<DHTRecord> Function() open) async {
     assert(_remoteConversationCubit == null,
         'shoud not set remote conversation twice');
-    _remoteConversationCubit = DefaultDHTRecordCubit.value(
-        record: remoteConversationRecord,
-        decodeState: proto.Conversation.fromBuffer);
+    _remoteConversationCubit = DefaultDHTRecordCubit(
+        open: open, decodeState: proto.Conversation.fromBuffer);
     _remoteSubscription =
         _remoteConversationCubit!.stream.listen(updateRemoteConversationState);
   }
@@ -215,7 +219,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
     // If success, save the new local conversation record key in this object
     _localConversationRecordKey = localConversationRecord.key;
-    await _setLocalConversation(localConversationRecord);
+    await _setLocalConversation(() async => localConversationRecord);
 
     return out;
   }

@@ -154,7 +154,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   Future<void> _mergeMessagesInner(
-      {required DHTShortArray reconciledMessages,
+      {required DHTShortArrayWrite reconciledMessagesWriter,
       required IList<proto.Message> messages}) async {
     // Ensure remoteMessages is sorted by timestamp
     final newMessages = messages
@@ -162,8 +162,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         .removeDuplicates();
 
     // Existing messages will always be sorted by timestamp so merging is easy
-    final existingMessages =
-        _reconciledChatMessagesCubit!.state.state.data!.value.toList();
+    final existingMessages = await reconciledMessagesWriter
+        .getAllItemsProtobuf(proto.Message.fromBuffer);
+    if (existingMessages == null) {
+      throw Exception(
+          'Could not load existing reconciled messages at this time');
+    }
 
     var ePos = 0;
     var nPos = 0;
@@ -180,7 +184,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         // New message belongs here
 
         // Insert into dht backing array
-        await reconciledMessages.tryInsertItem(
+        await reconciledMessagesWriter.tryInsertItem(
             ePos, newMessage.writeToBuffer());
         // Insert into local copy as well for this operation
         existingMessages.insert(ePos, newMessage);
@@ -202,7 +206,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       final newMessage = newMessages[nPos];
 
       // Append to dht backing array
-      await reconciledMessages.tryAddItem(newMessage.writeToBuffer());
+      await reconciledMessagesWriter.tryAddItem(newMessage.writeToBuffer());
       // Insert into local copy as well for this operation
       existingMessages.add(newMessage);
 
@@ -215,16 +219,17 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     final reconciledChatMessagesCubit = _reconciledChatMessagesCubit!;
 
     // Merge remote and local messages into the reconciled chat log
-    await reconciledChatMessagesCubit.operate((reconciledMessages) async {
+    await reconciledChatMessagesCubit
+        .operateWrite((reconciledMessagesWriter) async {
       // xxx for now, keep two lists, but can probable simplify this out soon
       if (entry.localMessages != null) {
         await _mergeMessagesInner(
-            reconciledMessages: reconciledMessages,
+            reconciledMessagesWriter: reconciledMessagesWriter,
             messages: entry.localMessages!);
       }
       if (entry.remoteMessages != null) {
         await _mergeMessagesInner(
-            reconciledMessages: reconciledMessages,
+            reconciledMessagesWriter: reconciledMessagesWriter,
             messages: entry.remoteMessages!);
       }
     });
@@ -244,8 +249,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   Future<void> addMessage({required proto.Message message}) async {
-    await _localMessagesCubit!.operate(
-        (shortArray) => shortArray.tryAddItem(message.writeToBuffer()));
+    await _localMessagesCubit!
+        .operateWrite((writer) => writer.tryAddItem(message.writeToBuffer()));
   }
 
   final ActiveAccountInfo _activeAccountInfo;

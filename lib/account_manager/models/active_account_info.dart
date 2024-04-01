@@ -11,7 +11,7 @@ class ActiveAccountInfo {
   const ActiveAccountInfo({
     required this.localAccount,
     required this.userLogin,
-    required this.accountRecord,
+    //required this.accountRecord,
   });
   //
 
@@ -41,5 +41,5 @@ class ActiveAccountInfo {
   //
   final LocalAccount localAccount;
   final UserLogin userLogin;
-  final DHTRecord accountRecord;
+  //final DHTRecord accountRecord;
 }

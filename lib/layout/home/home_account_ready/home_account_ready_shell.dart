@@ -19,14 +19,11 @@ class HomeAccountReadyShell extends StatefulWidget {
     // These must exist in order for the account to
     // be considered 'ready' for this widget subtree
     final activeLocalAccount = context.read<ActiveLocalAccountCubit>().state!;
-    final accountInfo =
-        AccountRepository.instance.getAccountInfo(activeLocalAccount);
-    final activeAccountInfo = accountInfo.activeAccountInfo!;
+    final activeAccountInfo = context.read<ActiveAccountInfo>();
     final routerCubit = context.read<RouterCubit>();
 
     return HomeAccountReadyShell._(
         activeLocalAccount: activeLocalAccount,
-        accountInfo: accountInfo,
         activeAccountInfo: activeAccountInfo,
         routerCubit: routerCubit,
         key: key,
@@ -34,7 +31,6 @@ class HomeAccountReadyShell extends StatefulWidget {
   }
   const HomeAccountReadyShell._(
       {required this.activeLocalAccount,
-      required this.accountInfo,
       required this.activeAccountInfo,
       required this.routerCubit,
       required this.child,
@@ -45,7 +41,6 @@ class HomeAccountReadyShell extends StatefulWidget {
 
   final Widget child;
   final TypedKey activeLocalAccount;
-  final AccountInfo accountInfo;
   final ActiveAccountInfo activeAccountInfo;
   final RouterCubit routerCubit;
 
@@ -55,7 +50,6 @@ class HomeAccountReadyShell extends StatefulWidget {
     properties
       ..add(DiagnosticsProperty<TypedKey>(
           'activeLocalAccount', activeLocalAccount))
-      ..add(DiagnosticsProperty<AccountInfo>('accountInfo', accountInfo))
       ..add(DiagnosticsProperty<ActiveAccountInfo>(
           'activeAccountInfo', activeAccountInfo))
       ..add(DiagnosticsProperty<RouterCubit>('routerCubit', routerCubit));
@@ -114,61 +108,52 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
   }
 
   @override
-  Widget build(BuildContext context) => Provider<ActiveAccountInfo>.value(
-      value: widget.activeAccountInfo,
-      child: BlocProvider(
-          create: (context) => AccountRecordCubit(
-              record: widget.activeAccountInfo.accountRecord),
-          child: Builder(builder: (context) {
-            final account =
-                context.watch<AccountRecordCubit>().state.data?.value;
-            if (account == null) {
-              return waitingPage();
-            }
-            return MultiBlocProvider(
-                providers: [
-                  BlocProvider(
-                      create: (context) => ContactInvitationListCubit(
-                          activeAccountInfo: widget.activeAccountInfo,
-                          account: account)),
-                  BlocProvider(
-                      create: (context) => ContactListCubit(
-                          activeAccountInfo: widget.activeAccountInfo,
-                          account: account)),
-                  BlocProvider(
-                      create: (context) => ActiveChatCubit(null)
-                        ..withStateListen((event) {
-                          widget.routerCubit.setHasActiveChat(event != null);
-                        })),
-                  BlocProvider(
-                      create: (context) => ChatListCubit(
-                          activeAccountInfo: widget.activeAccountInfo,
-                          activeChatCubit: context.read<ActiveChatCubit>(),
-                          account: account)),
-                  BlocProvider(
-                      create: (context) => ActiveConversationsBlocMapCubit(
-                          activeAccountInfo: widget.activeAccountInfo,
-                          contactListCubit: context.read<ContactListCubit>())
-                        ..followBloc(context.read<ChatListCubit>())),
-                  BlocProvider(
-                      create: (context) => ActiveSingleContactChatBlocMapCubit(
-                          activeAccountInfo: widget.activeAccountInfo,
-                          contactListCubit: context.read<ContactListCubit>(),
-                          chatListCubit: context.read<ChatListCubit>())
-                        ..followBloc(
-                            context.read<ActiveConversationsBlocMapCubit>())),
-                  BlocProvider(
-                      create: (context) => WaitingInvitationsBlocMapCubit(
-                          activeAccountInfo: widget.activeAccountInfo,
-                          account: account)
-                        ..followBloc(
-                            context.read<ContactInvitationListCubit>()))
-                ],
-                child: MultiBlocListener(listeners: [
-                  BlocListener<WaitingInvitationsBlocMapCubit,
-                      WaitingInvitationsBlocMapState>(
-                    listener: _invitationStatusListener,
-                  )
-                ], child: widget.child));
-          })));
+  Widget build(BuildContext context) {
+    final account = context.watch<AccountRecordCubit>().state.data?.value;
+    if (account == null) {
+      return waitingPage();
+    }
+    return MultiBlocProvider(
+        providers: [
+          BlocProvider(
+              create: (context) => ContactInvitationListCubit(
+                  activeAccountInfo: widget.activeAccountInfo,
+                  account: account)),
+          BlocProvider(
+              create: (context) => ContactListCubit(
+                  activeAccountInfo: widget.activeAccountInfo,
+                  account: account)),
+          BlocProvider(
+              create: (context) => ActiveChatCubit(null)
+                ..withStateListen((event) {
+                  widget.routerCubit.setHasActiveChat(event != null);
+                })),
+          BlocProvider(
+              create: (context) => ChatListCubit(
+                  activeAccountInfo: widget.activeAccountInfo,
+                  activeChatCubit: context.read<ActiveChatCubit>(),
+                  account: account)),
+          BlocProvider(
+              create: (context) => ActiveConversationsBlocMapCubit(
+                  activeAccountInfo: widget.activeAccountInfo,
+                  contactListCubit: context.read<ContactListCubit>())
+                ..followBloc(context.read<ChatListCubit>())),
+          BlocProvider(
+              create: (context) => ActiveSingleContactChatBlocMapCubit(
+                  activeAccountInfo: widget.activeAccountInfo,
+                  contactListCubit: context.read<ContactListCubit>(),
+                  chatListCubit: context.read<ChatListCubit>())
+                ..followBloc(context.read<ActiveConversationsBlocMapCubit>())),
+          BlocProvider(
+              create: (context) => WaitingInvitationsBlocMapCubit(
+                  activeAccountInfo: widget.activeAccountInfo, account: account)
+                ..followBloc(context.read<ContactInvitationListCubit>()))
+        ],
+        child: MultiBlocListener(listeners: [
+          BlocListener<WaitingInvitationsBlocMapCubit,
+              WaitingInvitationsBlocMapState>(
+            listener: _invitationStatusListener,
+          )
+        ], child: widget.child));
+  }
 }

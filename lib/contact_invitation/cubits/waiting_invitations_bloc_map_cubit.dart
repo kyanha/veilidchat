@@ -23,7 +23,7 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
   WaitingInvitationsBlocMapCubit(
       {required this.activeAccountInfo, required this.account});
 
-  Future<void> addWaitingInvitation(
+  Future<void> _addWaitingInvitation(
           {required proto.ContactInvitationRecord
               contactInvitationRecord}) async =>
       add(() => MapEntry(
@@ -54,7 +54,7 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   @override
   Future<void> updateState(TypedKey key, proto.ContactInvitationRecord value) =>
-      addWaitingInvitation(contactInvitationRecord: value);
+      _addWaitingInvitation(contactInvitationRecord: value);
 
   ////
   final ActiveAccountInfo activeAccountInfo;

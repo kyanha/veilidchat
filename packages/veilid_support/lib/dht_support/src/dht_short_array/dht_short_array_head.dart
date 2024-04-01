@@ -32,7 +32,7 @@ class _DHTShortArrayHead {
 
     final head = proto.DHTShortArray();
     head.keys.addAll(_linkedRecords.map((lr) => lr.key.toProto()));
-    head.index.addAll(_index);
+    head.index = List.of(_index);
     head.seqs.addAll(_seqs);
     // Do not serialize free list, it gets recreated
     // Do not serialize local seqs, they are only locally relevant
@@ -58,7 +58,7 @@ class _DHTShortArrayHead {
       });
 
   Future<(T?, bool)> operateWrite<T>(
-          Future<T> Function(_DHTShortArrayHead) closure) async =>
+          Future<T?> Function(_DHTShortArrayHead) closure) async =>
       _headMutex.protect(() async {
         final oldLinkedRecords = List.of(_linkedRecords);
         final oldIndex = List.of(_index);
@@ -111,14 +111,22 @@ class _DHTShortArrayHead {
           oldSeqs = List.of(_seqs);
 
           // Try to do the element write
-          do {
+          while (true) {
             if (timeoutTs != null) {
               final now = Veilid.instance.now();
               if (now >= timeoutTs) {
                 throw TimeoutException('timeout reached');
               }
             }
-          } while (!await closure(this));
+            if (await closure(this)) {
+              break;
+            }
+            // Failed to write in closure resets state
+            _linkedRecords = List.of(oldLinkedRecords);
+            _index = List.of(oldIndex);
+            _free = List.of(oldFree);
+            _seqs = List.of(oldSeqs);
+          }
 
           // Try to do the head write
         } while (!await _writeHead());

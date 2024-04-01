@@ -14,11 +14,11 @@ class ContactRequestInboxCubit
                 contactInvitationRecord: contactInvitationRecord),
             decodeState: proto.SignedContactResponse.fromBuffer);
 
-  ContactRequestInboxCubit.value(
-      {required super.record,
-      required this.activeAccountInfo,
-      required this.contactInvitationRecord})
-      : super.value(decodeState: proto.SignedContactResponse.fromBuffer);
+  // ContactRequestInboxCubit.value(
+  //     {required super.record,
+  //     required this.activeAccountInfo,
+  //     required this.contactInvitationRecord})
+  //     : super.value(decodeState: proto.SignedContactResponse.fromBuffer);
 
   static Future<DHTRecord> _open(
       {required ActiveAccountInfo activeAccountInfo,

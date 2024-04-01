@@ -342,7 +342,7 @@ class DHTRecord {
 
   void _addValueChange(
       {required bool local,
-      required Uint8List data,
+      required Uint8List? data,
       required List<ValueSubkeyRange> subkeys}) {
     final ws = watchState;
     if (ws != null) {
@@ -378,6 +378,6 @@ class DHTRecord {
 
   void _addRemoteValueChange(VeilidUpdateValueChange update) {
     _addValueChange(
-        local: false, data: update.value.data, subkeys: update.subkeys);
+        local: false, data: update.value?.data, subkeys: update.subkeys);
   }
 }

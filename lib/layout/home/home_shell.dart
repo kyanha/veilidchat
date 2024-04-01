@@ -55,7 +55,9 @@ class HomeShellState extends State<HomeShell> {
             value: accountInfo.activeAccountInfo!,
             child: BlocProvider(
                 create: (context) => AccountRecordCubit(
-                    record: accountInfo.activeAccountInfo!.accountRecord),
+                    open: () async => AccountRepository.instance
+                        .openAccountRecord(
+                            accountInfo.activeAccountInfo!.userLogin)),
                 child: widget.accountReadyBuilder));
     }
   }

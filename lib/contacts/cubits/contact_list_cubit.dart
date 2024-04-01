@@ -52,8 +52,8 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
     // Add Contact to account's list
     // if this fails, don't keep retrying, user can try again later
-    await operate((shortArray) async {
-      if (await shortArray.tryAddItem(contact.writeToBuffer()) == false) {
+    await operateWrite((writer) async {
+      if (!await writer.tryAddItem(contact.writeToBuffer())) {
         throw Exception('Failed to add contact record');
       }
     });
@@ -66,16 +66,15 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         contact.remoteConversationRecordKey.toVeilid();
 
     // Remove Contact from account's list
-    final deletedItem = await operate((shortArray) async {
-      for (var i = 0; i < shortArray.length; i++) {
-        final item =
-            await shortArray.getItemProtobuf(proto.Contact.fromBuffer, i);
+    final (deletedItem, success) = await operateWrite((writer) async {
+      for (var i = 0; i < writer.length; i++) {
+        final item = await writer.getItemProtobuf(proto.Contact.fromBuffer, i);
         if (item == null) {
           throw Exception('Failed to get contact');
         }
         if (item.remoteConversationRecordKey ==
             contact.remoteConversationRecordKey) {
-          if (await shortArray.tryRemoveItem(i) != null) {
+          if (await writer.tryRemoveItem(i) != null) {
             return item;
           }
           return null;
@@ -84,7 +83,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
       return null;
     });
 
-    if (deletedItem != null) {
+    if (success && deletedItem != null) {
       try {
         await pool.delete(localConversationKey);
       } on Exception catch (e) {
