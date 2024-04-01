@@ -1,0 +1,36 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
+
+import '../../theme/theme.dart';
+
+class EmptyContactListWidget extends StatelessWidget {
+  const EmptyContactListWidget({super.key});
+
+  @override
+  // ignore: prefer_expression_function_bodies
+  Widget build(
+    BuildContext context,
+  ) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final scale = theme.extension<ScaleScheme>()!;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.person_add_sharp,
+          color: scale.primaryScale.subtleBorder,
+          size: 48,
+        ),
+        Text(
+          translate('contact_list.invite_people'),
+          style: textTheme.bodyMedium?.copyWith(
+            color: scale.primaryScale.subtleBorder,
+          ),
+        ),
+      ],
+    );
+  }
+}

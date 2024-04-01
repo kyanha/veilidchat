@@ -4,14 +4,14 @@ import 'dart:io';
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
-import 'providers/window_control.dart';
+import 'init.dart';
+import 'settings/preferences_repository.dart';
+import 'theme/theme.dart';
 import 'tools/tools.dart';
-import 'veilid_init.dart';
 
 void main() async {
   // Disable all debugprints in release mode
@@ -27,33 +27,40 @@ void main() async {
   // Ansi colors
   ansiColorDisabled = false;
 
-  // Catch errors
-  await runZonedGuarded(() async {
+  Future<void> mainFunc() async {
     // Logs
     initLoggy();
 
-    // Prepare theme
+    // Prepare preferences from SharedPreferences and theme
     WidgetsFlutterBinding.ensureInitialized();
-    final themeService = await ThemeService.instance;
-    final initTheme = themeService.initial;
+    await PreferencesRepository.instance.init();
+    final initialThemeData =
+        PreferencesRepository.instance.value.themePreferences.themeData();
 
     // Manage window on desktop platforms
-    await WindowControl.initialize();
+    await initializeWindowControl();
 
     // Make localization delegate
-    final delegate = await LocalizationDelegate.create(
+    final localizationDelegate = await LocalizationDelegate.create(
         fallbackLocale: 'en_US', supportedLocales: ['en_US']);
     await initializeDateFormatting();
 
     // Start up Veilid and Veilid processor in the background
-    unawaited(initializeVeilid());
+    unawaited(initializeVeilidChat());
 
     // Run the app
     // Hot reloads will only restart this part, not Veilid
-    runApp(ProviderScope(
-        observers: const [StateLogger()],
-        child: LocalizedApp(delegate, VeilidChatApp(theme: initTheme))));
-  }, (error, stackTrace) {
-    log.error('Dart Runtime: {$error}\n{$stackTrace}');
-  });
+    runApp(LocalizedApp(localizationDelegate,
+        VeilidChatApp(initialThemeData: initialThemeData)));
+  }
+
+  if (kDebugMode) {
+    // In debug mode, run the app without catching exceptions for debugging
+    await mainFunc();
+  } else {
+    // Catch errors in production without killing the app
+    await runZonedGuarded(mainFunc, (error, stackTrace) {
+      log.error('Dart Runtime: {$error}\n{$stackTrace}');
+    });
+  }
 }
