@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    Generator for metainfo & .desktop files: 
+    https://www.freedesktop.org/software/appstream/metainfocreator/#/
+-->
+<component type="desktop-application">
+  <id>com.veilid.veilidchat</id>
+  <name>VeilidChat</name>
+  <summary>VeilidChat Private Messaging</summary>
+  <developer_name>Veilid Foundation Inc</developer_name>
+  <url type="homepage">https://veilid.com/chat</url>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MPL-2.0</project_license>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </supports>
+  <description>
+    <p>TODO</p>
+  </description>
+  <launchable type="desktop-id">com.veilid.veilidchat.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>TODO</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.1.2+4" date="2023-11-19" />
+  </releases>
+</component>
