@@ -131,10 +131,10 @@ packages:
     dependency: transitive
     description:
       name: change_case
-      sha256: f4e08feaa845e75e4f5ad2b0e15f24813d7ea6c27e7b78252f0c17f752cf1157
+      sha256: "47c48c36f95f20c6d0ba03efabceff261d05026cca322cc2c4c01c343371b5bb"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "2.0.1"
   characters:
     dependency: transitive
     description:
@@ -239,14 +239,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.0"
-  file_utils:
-    dependency: transitive
-    description:
-      name: file_utils
-      sha256: d1e64389a22649095c8405c9e177272caf05139255931c9ff30d53b5c9bcaa34
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   fixnum:
     dependency: transitive
     description:
@@ -657,10 +649,10 @@ packages:
     dependency: transitive
     description:
       name: system_info2
-      sha256: af2f948e3f31a3367a049932a8ad59faf0063ecf836a020d975b9f41566d8bc9
+      sha256: "65206bbef475217008b5827374767550a5420ce70a04d2d7e94d1d2253f3efc9"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.2"
+    version: "4.0.0"
   system_info_plus:
     dependency: transitive
     description:
@@ -731,7 +723,7 @@ packages:
       path: "../../../veilid/veilid-flutter"
       relative: true
     source: path
-    version: "0.2.5"
+    version: "0.3.0"
   vm_service:
     dependency: transitive
     description:
@@ -798,4 +790,4 @@ packages:
     version: "3.1.2"
 sdks:
   dart: ">=3.3.0 <4.0.0"
-  flutter: ">=3.10.6"
+  flutter: ">=3.19.1"

@@ -27,7 +27,7 @@ dependencies:
   cool_dropdown: ^2.1.0
   cupertino_icons: ^1.0.6
   equatable: ^2.0.5
-  fast_immutable_collections: ^10.2.1
+  fast_immutable_collections: ^10.2.2
   fixnum: ^1.1.0
   flutter:
     sdk: flutter
@@ -54,7 +54,7 @@ dependencies:
   loggy: ^2.0.3
   meta: ^1.11.0
   mobile_scanner: ^4.0.1
-  motion_toast: ^2.8.0
+  motion_toast: ^2.9.0
   mutex:
     path: packages/mutex
   pasteboard: ^0.2.0

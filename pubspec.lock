@@ -403,10 +403,10 @@ packages:
     dependency: "direct main"
     description:
       name: fast_immutable_collections
-      sha256: "49154d1da38a34519b907b0e94a06705a59b7127728131dc4a54fe62fd95a83e"
+      sha256: "38fbc50df5b219dcfb83ebbc3275ec09872530ca1153858fc56fceadb310d037"
       url: "https://pub.dev"
     source: hosted
-    version: "10.2.1"
+    version: "10.2.2"
   ffi:
     dependency: transitive
     description:
@@ -826,10 +826,10 @@ packages:
     dependency: "direct main"
     description:
       name: motion_toast
-      sha256: e423584213b459d021fbdfcd8e02b22e3480ff0b3cef05dc4cde040595ebf084
+      sha256: f3fe9f92d9956814a1aa040c22c8a6c432cfb0c9f783163d9ec64915838e4837
       url: "https://pub.dev"
     source: hosted
-    version: "2.8.0"
+    version: "2.9.0"
   mutex:
     dependency: "direct main"
     description:
@@ -1548,10 +1548,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "8cb58b45c47dcb42ab3651533626161d6b67a2921917d8d429791f76972b3480"
+      sha256: "0a989dc7ca2bb51eac91e8fd00851297cfffd641aa7538b165c62637ca0eaa4a"
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.0"
+    version: "5.4.0"
   window_manager:
     dependency: "direct main"
     description:
