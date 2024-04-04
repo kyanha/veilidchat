@@ -33,6 +33,8 @@ class ContactRequestInboxCubit
     final writer = TypedKeyPair(
         kind: recordKey.kind, key: writerKey, secret: writerSecret);
     return pool.openRead(recordKey,
+        debugName: 'ContactRequestInboxCubit::_open::'
+            'ContactRequestInbox',
         crypto: await DHTRecordCryptoPrivate.fromTypedKeyPair(writer),
         parent: accountRecordKey,
         defaultSubkey: 1);

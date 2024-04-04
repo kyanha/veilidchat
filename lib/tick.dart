@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import 'init.dart';
 import 'veilid_processor/veilid_processor.dart';
 
 class BackgroundTicker extends StatefulWidget {
@@ -53,10 +52,6 @@ class BackgroundTickerState extends State<BackgroundTicker> {
   }
 
   Future<void> _onTick() async {
-    // Don't tick until we are initialized
-    if (!eventualInitialized.isCompleted) {
-      return;
-    }
     if (!ProcessorRepository
         .instance.processorConnectionState.isPublicInternetReady) {
       return;

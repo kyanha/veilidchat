@@ -3,25 +3,14 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
-import '../../init.dart';
 import '../models/models.dart';
 import '../repository/account_repository/account_repository.dart';
 
 class UserLoginsCubit extends Cubit<IList<UserLogin>> {
   UserLoginsCubit(AccountRepository accountRepository)
       : _accountRepository = accountRepository,
-        super(IList<UserLogin>()) {
+        super(accountRepository.getUserLogins()) {
     // Subscribe to streams
-    _initAccountRepositorySubscription();
-
-    // Initialize when we can
-    Future.delayed(Duration.zero, () async {
-      await eventualInitialized.future;
-      emit(_accountRepository.getUserLogins());
-    });
-  }
-
-  void _initAccountRepositorySubscription() {
     _accountRepositorySubscription = _accountRepository.stream.listen((change) {
       switch (change) {
         case AccountRepositoryChange.userLogins:

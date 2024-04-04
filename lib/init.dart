@@ -8,34 +8,38 @@ import 'app.dart';
 import 'tools/tools.dart';
 import 'veilid_processor/veilid_processor.dart';
 
-final Completer<void> eventualInitialized = Completer<void>();
+class VeilidChatGlobalInit {
+  VeilidChatGlobalInit._();
 
-// Initialize Veilid
-Future<void> initializeVeilid() async {
-  // Init Veilid
-  Veilid.instance.initializeVeilidCore(
-      getDefaultVeilidPlatformConfig(kIsWeb, VeilidChatApp.name));
+  // Initialize Veilid
+  Future<void> _initializeVeilid() async {
+    // Init Veilid
+    Veilid.instance.initializeVeilidCore(
+        getDefaultVeilidPlatformConfig(kIsWeb, VeilidChatApp.name));
 
-  // Veilid logging
-  initVeilidLog(kDebugMode);
+    // Veilid logging
+    initVeilidLog(kDebugMode);
 
-  // Startup Veilid
-  await ProcessorRepository.instance.startup();
+    // Startup Veilid
+    await ProcessorRepository.instance.startup();
 
-  // DHT Record Pool
-  await DHTRecordPool.init();
-}
+    // DHT Record Pool
+    await DHTRecordPool.init();
+  }
 
 // Initialize repositories
-Future<void> initializeRepositories() async {
-  await AccountRepository.instance.init();
-}
+  Future<void> _initializeRepositories() async {
+    await AccountRepository.instance.init();
+  }
 
-Future<void> initializeVeilidChat() async {
-  log.info('Initializing Veilid');
-  await initializeVeilid();
-  log.info('Initializing Repositories');
-  await initializeRepositories();
+  static Future<VeilidChatGlobalInit> initialize() async {
+    final veilidChatGlobalInit = VeilidChatGlobalInit._();
 
-  eventualInitialized.complete();
+    log.info('Initializing Veilid');
+    await veilidChatGlobalInit._initializeVeilid();
+    log.info('Initializing Repositories');
+    await veilidChatGlobalInit._initializeRepositories();
+
+    return veilidChatGlobalInit;
+  }
 }

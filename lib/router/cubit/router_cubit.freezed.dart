@@ -20,7 +20,6 @@ RouterState _$RouterStateFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$RouterState {
-  bool get isInitialized => throw _privateConstructorUsedError;
   bool get hasAnyAccount => throw _privateConstructorUsedError;
   bool get hasActiveChat => throw _privateConstructorUsedError;
 
@@ -36,7 +35,7 @@ abstract class $RouterStateCopyWith<$Res> {
           RouterState value, $Res Function(RouterState) then) =
       _$RouterStateCopyWithImpl<$Res, RouterState>;
   @useResult
-  $Res call({bool isInitialized, bool hasAnyAccount, bool hasActiveChat});
+  $Res call({bool hasAnyAccount, bool hasActiveChat});
 }
 
 /// @nodoc
@@ -52,15 +51,10 @@ class _$RouterStateCopyWithImpl<$Res, $Val extends RouterState>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? isInitialized = null,
     Object? hasAnyAccount = null,
     Object? hasActiveChat = null,
   }) {
     return _then(_value.copyWith(
-      isInitialized: null == isInitialized
-          ? _value.isInitialized
-          : isInitialized // ignore: cast_nullable_to_non_nullable
-              as bool,
       hasAnyAccount: null == hasAnyAccount
           ? _value.hasAnyAccount
           : hasAnyAccount // ignore: cast_nullable_to_non_nullable
@@ -81,7 +75,7 @@ abstract class _$$RouterStateImplCopyWith<$Res>
       __$$RouterStateImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({bool isInitialized, bool hasAnyAccount, bool hasActiveChat});
+  $Res call({bool hasAnyAccount, bool hasActiveChat});
 }
 
 /// @nodoc
@@ -95,15 +89,10 @@ class __$$RouterStateImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? isInitialized = null,
     Object? hasAnyAccount = null,
     Object? hasActiveChat = null,
   }) {
     return _then(_$RouterStateImpl(
-      isInitialized: null == isInitialized
-          ? _value.isInitialized
-          : isInitialized // ignore: cast_nullable_to_non_nullable
-              as bool,
       hasAnyAccount: null == hasAnyAccount
           ? _value.hasAnyAccount
           : hasAnyAccount // ignore: cast_nullable_to_non_nullable
@@ -120,15 +109,11 @@ class __$$RouterStateImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
   const _$RouterStateImpl(
-      {required this.isInitialized,
-      required this.hasAnyAccount,
-      required this.hasActiveChat});
+      {required this.hasAnyAccount, required this.hasActiveChat});
 
   factory _$RouterStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$RouterStateImplFromJson(json);
 
-  @override
-  final bool isInitialized;
   @override
   final bool hasAnyAccount;
   @override
@@ -136,7 +121,7 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'RouterState(isInitialized: $isInitialized, hasAnyAccount: $hasAnyAccount, hasActiveChat: $hasActiveChat)';
+    return 'RouterState(hasAnyAccount: $hasAnyAccount, hasActiveChat: $hasActiveChat)';
   }
 
   @override
@@ -144,7 +129,6 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'RouterState'))
-      ..add(DiagnosticsProperty('isInitialized', isInitialized))
       ..add(DiagnosticsProperty('hasAnyAccount', hasAnyAccount))
       ..add(DiagnosticsProperty('hasActiveChat', hasActiveChat));
   }
@@ -154,8 +138,6 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$RouterStateImpl &&
-            (identical(other.isInitialized, isInitialized) ||
-                other.isInitialized == isInitialized) &&
             (identical(other.hasAnyAccount, hasAnyAccount) ||
                 other.hasAnyAccount == hasAnyAccount) &&
             (identical(other.hasActiveChat, hasActiveChat) ||
@@ -164,8 +146,7 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, isInitialized, hasAnyAccount, hasActiveChat);
+  int get hashCode => Object.hash(runtimeType, hasAnyAccount, hasActiveChat);
 
   @JsonKey(ignore: true)
   @override
@@ -183,15 +164,12 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
 
 abstract class _RouterState implements RouterState {
   const factory _RouterState(
-      {required final bool isInitialized,
-      required final bool hasAnyAccount,
+      {required final bool hasAnyAccount,
       required final bool hasActiveChat}) = _$RouterStateImpl;
 
   factory _RouterState.fromJson(Map<String, dynamic> json) =
       _$RouterStateImpl.fromJson;
 
-  @override
-  bool get isInitialized;
   @override
   bool get hasAnyAccount;
   @override

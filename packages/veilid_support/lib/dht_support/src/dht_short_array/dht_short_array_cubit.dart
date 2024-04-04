@@ -17,13 +17,13 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     required T Function(List<int> data) decodeElement,
   })  : _decodeElement = decodeElement,
         super(const BlocBusyState(AsyncValue.loading())) {
-    _initFuture = Future(() async {
+    _initWait.add(() async {
       // Open DHT record
       _shortArray = await open();
       _wantsCloseRecord = true;
 
       // Make initial state update
-      unawaited(_refreshNoWait());
+      await _refreshNoWait();
       _subscription = await _shortArray.listen(_update);
     });
   }
@@ -42,7 +42,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
   // }
 
   Future<void> refresh({bool forceRefresh = false}) async {
-    await _initFuture;
+    await _initWait();
     await _refreshNoWait(forceRefresh: forceRefresh);
   }
 
@@ -75,7 +75,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
 
   @override
   Future<void> close() async {
-    await _initFuture;
+    await _initWait();
     await _subscription?.cancel();
     _subscription = null;
     if (_wantsCloseRecord) {
@@ -85,24 +85,24 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
   }
 
   Future<R?> operate<R>(Future<R?> Function(DHTShortArrayRead) closure) async {
-    await _initFuture;
+    await _initWait();
     return _shortArray.operate(closure);
   }
 
   Future<(R?, bool)> operateWrite<R>(
       Future<R?> Function(DHTShortArrayWrite) closure) async {
-    await _initFuture;
+    await _initWait();
     return _shortArray.operateWrite(closure);
   }
 
   Future<void> operateWriteEventual(
       Future<bool> Function(DHTShortArrayWrite) closure,
       {Duration? timeout}) async {
-    await _initFuture;
+    await _initWait();
     return _shortArray.operateWriteEventual(closure, timeout: timeout);
   }
 
-  late final Future<void> _initFuture;
+  final WaitSet _initWait = WaitSet();
   late final DHTShortArray _shortArray;
   final T Function(List<int> data) _decodeElement;
   StreamSubscription<void>? _subscription;

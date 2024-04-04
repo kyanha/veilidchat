@@ -14,6 +14,7 @@ class AsyncTransformerCubit<T, S> extends Cubit<AsyncValue<T>> {
     _asyncTransform(input.state);
     _subscription = input.stream.listen(_asyncTransform);
   }
+
   void _asyncTransform(AsyncValue<S> newInputState) {
     _singleStateProcessor.updateState(newInputState, (newState) async {
       // Emit the transformed state

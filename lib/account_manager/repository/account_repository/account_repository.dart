@@ -202,18 +202,24 @@ class AccountRepository {
         createAccountCallback: (parent) async {
           // Make empty contact list
           log.debug('Creating contacts list');
-          final contactList = await (await DHTShortArray.create(parent: parent))
+          final contactList = await (await DHTShortArray.create(
+                  debugName: 'AccountRepository::_newLocalAccount::Contacts',
+                  parent: parent))
               .scope((r) async => r.recordPointer);
 
           // Make empty contact invitation record list
           log.debug('Creating contact invitation records list');
-          final contactInvitationRecords =
-              await (await DHTShortArray.create(parent: parent))
-                  .scope((r) async => r.recordPointer);
+          final contactInvitationRecords = await (await DHTShortArray.create(
+                  debugName:
+                      'AccountRepository::_newLocalAccount::ContactInvitations',
+                  parent: parent))
+              .scope((r) async => r.recordPointer);
 
           // Make empty chat record list
           log.debug('Creating chat records list');
-          final chatRecords = await (await DHTShortArray.create(parent: parent))
+          final chatRecords = await (await DHTShortArray.create(
+                  debugName: 'AccountRepository::_newLocalAccount::Chats',
+                  parent: parent))
               .scope((r) async => r.recordPointer);
 
           // Make account object
@@ -391,6 +397,7 @@ class AccountRepository {
     final pool = DHTRecordPool.instance;
     final record = await pool.openOwned(
         userLogin.accountRecordInfo.accountRecord,
+        debugName: 'AccountRepository::openAccountRecord::AccountRecord',
         parent: localAccount.identityMaster.identityRecordKey);
 
     return record;

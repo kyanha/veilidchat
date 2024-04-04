@@ -38,6 +38,8 @@ class ValidContactInvitation {
       final accountRecordKey = _activeAccountInfo.accountRecordKey;
 
       return (await pool.openWrite(_contactRequestInboxKey, _writer,
+              debugName: 'ValidContactInvitation::accept::'
+                  'ContactRequestInbox',
               parent: accountRecordKey))
           // ignore: prefer_expression_function_bodies
           .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
@@ -103,6 +105,8 @@ class ValidContactInvitation {
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     return (await pool.openWrite(_contactRequestInboxKey, _writer,
+            debugName: 'ValidContactInvitation::reject::'
+                'ContactRequestInbox',
             parent: accountRecordKey))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
       final cs =

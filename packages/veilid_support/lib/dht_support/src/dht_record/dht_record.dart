@@ -16,12 +16,13 @@ class DHTRecordWatchChange extends Equatable {
 /////////////////////////////////////////////////
 
 class DHTRecord {
-  DHTRecord(
+  DHTRecord._(
       {required VeilidRoutingContext routingContext,
       required SharedDHTRecordData sharedDHTRecordData,
       required int defaultSubkey,
       required KeyPair? writer,
-      required DHTRecordCrypto crypto})
+      required DHTRecordCrypto crypto,
+      required this.debugName})
       : _crypto = crypto,
         _routingContext = routingContext,
         _defaultSubkey = defaultSubkey,
@@ -34,6 +35,7 @@ class DHTRecord {
   final int _defaultSubkey;
   final KeyPair? _writer;
   final DHTRecordCrypto _crypto;
+  final String debugName;
 
   bool _open;
   @internal

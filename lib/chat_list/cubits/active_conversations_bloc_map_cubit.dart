@@ -1,13 +1,13 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc_tools/bloc_tools.dart';
 import 'package:equatable/equatable.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
+import 'cubits.dart';
 
 @immutable
 class ActiveConversationState extends Equatable {
@@ -39,9 +39,7 @@ typedef ActiveConversationsBlocMapState
 // archived chats or contacts that are not actively in a chat.
 class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<ActiveConversationState>, ActiveConversationCubit>
-    with
-        StateFollower<BlocBusyState<AsyncValue<IList<proto.Chat>>>, TypedKey,
-            proto.Chat> {
+    with StateMapFollower<ChatListCubitState, TypedKey, proto.Chat> {
   ActiveConversationsBlocMapCubit(
       {required ActiveAccountInfo activeAccountInfo,
       required ContactListCubit contactListCubit})
@@ -76,18 +74,6 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
                   error: AsyncValue.error))));
 
   /// StateFollower /////////////////////////
-
-  @override
-  IMap<TypedKey, proto.Chat> getStateMap(
-      BlocBusyState<AsyncValue<IList<proto.Chat>>> state) {
-    final stateValue = state.state.data?.value;
-    if (stateValue == null) {
-      return IMap();
-    }
-    return IMap.fromIterable(stateValue,
-        keyMapper: (e) => e.remoteConversationRecordKey.toVeilid(),
-        valueMapper: (e) => e);
-  }
 
   @override
   Future<void> removeFromState(TypedKey key) => remove(key);

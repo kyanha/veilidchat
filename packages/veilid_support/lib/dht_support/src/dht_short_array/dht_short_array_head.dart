@@ -184,7 +184,7 @@ class _DHTShortArrayHead {
         final oldRecord = oldRecords[newKey];
         if (oldRecord == null) {
           // Open the new record
-          final newRecord = await _openLinkedRecord(newKey);
+          final newRecord = await _openLinkedRecord(newKey, n);
           newRecords[newKey] = newRecord;
           updatedLinkedRecords.add(newRecord);
         } else {
@@ -263,6 +263,7 @@ class _DHTShortArrayHead {
           oCnt: 0,
           members: [DHTSchemaMember(mKey: smplWriter.key, mCnt: _stride)]);
       final dhtRecord = await pool.create(
+          debugName: '${_headRecord.debugName}_linked_$recordNumber',
           parent: parent,
           routingContext: routingContext,
           schema: schema,
@@ -279,17 +280,20 @@ class _DHTShortArrayHead {
   }
 
   /// Open a linked record for reading or writing, same as the head record
-  Future<DHTRecord> _openLinkedRecord(TypedKey recordKey) async {
+  Future<DHTRecord> _openLinkedRecord(
+      TypedKey recordKey, int recordNumber) async {
     final writer = _headRecord.writer;
     return (writer != null)
         ? await DHTRecordPool.instance.openWrite(
             recordKey,
             writer,
+            debugName: '${_headRecord.debugName}_linked_$recordNumber',
             parent: _headRecord.key,
             routingContext: _headRecord.routingContext,
           )
         : await DHTRecordPool.instance.openRead(
             recordKey,
+            debugName: '${_headRecord.debugName}_linked_$recordNumber',
             parent: _headRecord.key,
             routingContext: _headRecord.routingContext,
           );

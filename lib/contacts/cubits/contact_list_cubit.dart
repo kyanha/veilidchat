@@ -6,6 +6,7 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
+import 'conversation_cubit.dart';
 
 //////////////////////////////////////////////////
 // Mutable state for per-account contacts
@@ -14,7 +15,8 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   ContactListCubit({
     required ActiveAccountInfo activeAccountInfo,
     required proto.Account account,
-  }) : super(
+  })  : _activeAccountInfo = activeAccountInfo,
+        super(
             open: () => _open(activeAccountInfo, account),
             decodeElement: proto.Contact.fromBuffer);
 
@@ -26,6 +28,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     final contactListRecordKey = account.contactList.toVeilid();
 
     final dhtRecord = await DHTShortArray.openOwned(contactListRecordKey,
+        debugName: 'ContactListCubit::_open::ContactList',
         parent: accountRecordKey);
 
     return dhtRecord;
@@ -60,9 +63,10 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   }
 
   Future<void> deleteContact({required proto.Contact contact}) async {
-    final pool = DHTRecordPool.instance;
-    final localConversationKey = contact.localConversationRecordKey.toVeilid();
-    final remoteConversationKey =
+    final remoteIdentityPublicKey = contact.identityPublicKey.toVeilid();
+    final localConversationRecordKey =
+        contact.localConversationRecordKey.toVeilid();
+    final remoteConversationRecordKey =
         contact.remoteConversationRecordKey.toVeilid();
 
     // Remove Contact from account's list
@@ -85,17 +89,21 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
     if (success && deletedItem != null) {
       try {
-        await pool.delete(localConversationKey);
+        // Make a conversation cubit to manipulate the conversation
+        final conversationCubit = ConversationCubit(
+          activeAccountInfo: _activeAccountInfo,
+          remoteIdentityPublicKey: remoteIdentityPublicKey,
+          localConversationRecordKey: localConversationRecordKey,
+          remoteConversationRecordKey: remoteConversationRecordKey,
+        );
+
+        // Delete the local and remote conversation records
+        await conversationCubit.delete();
       } on Exception catch (e) {
-        log.debug('error removing local conversation record key: $e', e);
-      }
-      try {
-        if (localConversationKey != remoteConversationKey) {
-          await pool.delete(remoteConversationKey);
-        }
-      } on Exception catch (e) {
-        log.debug('error removing remote conversation record key: $e', e);
+        log.debug('error deleting conversation records: $e', e);
       }
     }
   }
+
+  final ActiveAccountInfo _activeAccountInfo;
 }

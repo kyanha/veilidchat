@@ -16,7 +16,7 @@ typedef WaitingInvitationsBlocMapState
 class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<InvitationStatus>, WaitingInvitationCubit>
     with
-        StateFollower<
+        StateMapFollower<
             BlocBusyState<AsyncValue<IList<proto.ContactInvitationRecord>>>,
             TypedKey,
             proto.ContactInvitationRecord> {
@@ -37,17 +37,6 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
               contactInvitationRecord: contactInvitationRecord)));
 
   /// StateFollower /////////////////////////
-  @override
-  IMap<TypedKey, proto.ContactInvitationRecord> getStateMap(
-      BlocBusyState<AsyncValue<IList<proto.ContactInvitationRecord>>> state) {
-    final stateValue = state.state.data?.value;
-    if (stateValue == null) {
-      return IMap();
-    }
-    return IMap.fromIterable(stateValue,
-        keyMapper: (e) => e.contactRequestInbox.recordKey.toVeilid(),
-        valueMapper: (e) => e);
-  }
 
   @override
   Future<void> removeFromState(TypedKey key) => remove(key);

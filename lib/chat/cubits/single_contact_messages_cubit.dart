@@ -38,11 +38,13 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         _messagesUpdateQueue = StreamController(),
         super(const AsyncValue.loading()) {
     // Async Init
-    Future.delayed(Duration.zero, _init);
+    _initWait.add(_init);
   }
 
   @override
   Future<void> close() async {
+    await _initWait();
+
     await _messagesUpdateQueue.close();
     await _localSubscription?.cancel();
     await _remoteSubscription?.cancel();
@@ -89,7 +91,10 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _localMessagesCubit = DHTShortArrayCubit(
         open: () async => DHTShortArray.openWrite(
             _localMessagesRecordKey, writer,
-            parent: _localConversationRecordKey, crypto: _messagesCrypto),
+            debugName:
+                'SingleContactMessagesCubit::_initLocalMessages::LocalMessages',
+            parent: _localConversationRecordKey,
+            crypto: _messagesCrypto),
         decodeElement: proto.Message.fromBuffer);
     _localSubscription =
         _localMessagesCubit!.stream.listen(_updateLocalMessagesState);
@@ -100,7 +105,10 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   Future<void> _initRemoteMessages() async {
     _remoteMessagesCubit = DHTShortArrayCubit(
         open: () async => DHTShortArray.openRead(_remoteMessagesRecordKey,
-            parent: _remoteConversationRecordKey, crypto: _messagesCrypto),
+            debugName: 'SingleContactMessagesCubit::_initRemoteMessages::'
+                'RemoteMessages',
+            parent: _remoteConversationRecordKey,
+            crypto: _messagesCrypto),
         decodeElement: proto.Message.fromBuffer);
     _remoteSubscription =
         _remoteMessagesCubit!.stream.listen(_updateRemoteMessagesState);
@@ -114,6 +122,9 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     _reconciledChatMessagesCubit = DHTShortArrayCubit(
         open: () async => DHTShortArray.openOwned(_reconciledChatRecord,
+            debugName:
+                'SingleContactMessagesCubit::_initReconciledChatMessages::'
+                'ReconciledChat',
             parent: accountRecordKey),
         decodeElement: proto.Message.fromBuffer);
     _reconciledChatSubscription =
@@ -237,6 +248,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Force refresh of messages
   Future<void> refresh() async {
+    await _initWait();
+
     final lcc = _localMessagesCubit;
     final rcc = _remoteMessagesCubit;
 
@@ -249,10 +262,13 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   Future<void> addMessage({required proto.Message message}) async {
+    await _initWait();
+
     await _localMessagesCubit!
         .operateWrite((writer) => writer.tryAddItem(message.writeToBuffer()));
   }
 
+  final WaitSet _initWait = WaitSet();
   final ActiveAccountInfo _activeAccountInfo;
   final TypedKey _remoteIdentityPublicKey;
   final TypedKey _localConversationRecordKey;

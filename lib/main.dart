@@ -8,7 +8,6 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
-import 'init.dart';
 import 'settings/preferences_repository.dart';
 import 'theme/theme.dart';
 import 'tools/tools.dart';
@@ -44,9 +43,6 @@ void main() async {
     final localizationDelegate = await LocalizationDelegate.create(
         fallbackLocale: 'en_US', supportedLocales: ['en_US']);
     await initializeDateFormatting();
-
-    // Start up Veilid and Veilid processor in the background
-    unawaited(initializeVeilidChat());
 
     // Run the app
     // Hot reloads will only restart this part, not Veilid

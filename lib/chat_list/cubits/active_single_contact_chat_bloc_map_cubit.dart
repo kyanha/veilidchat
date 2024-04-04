@@ -18,7 +18,7 @@ import 'chat_list_cubit.dart';
 class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<IList<proto.Message>>, SingleContactMessagesCubit>
     with
-        StateFollower<ActiveConversationsBlocMapState, TypedKey,
+        StateMapFollower<ActiveConversationsBlocMapState, TypedKey,
             AsyncValue<ActiveConversationState>> {
   ActiveSingleContactChatBlocMapCubit(
       {required ActiveAccountInfo activeAccountInfo,
@@ -48,11 +48,6 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
           )));
 
   /// StateFollower /////////////////////////
-
-  @override
-  IMap<TypedKey, AsyncValue<ActiveConversationState>> getStateMap(
-          ActiveConversationsBlocMapState state) =>
-      state;
 
   @override
   Future<void> removeFromState(TypedKey key) => remove(key);

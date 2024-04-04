@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
+import 'package:bloc_tools/bloc_tools.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -23,11 +26,16 @@ typedef GetEncryptionKeyCallback = Future<SecretKey?> Function(
 
 //////////////////////////////////////////////////
 
+typedef ContactInvitiationListState
+    = BlocBusyState<AsyncValue<IList<proto.ContactInvitationRecord>>>;
 //////////////////////////////////////////////////
 // Mutable state for per-account contact invitations
 
 class ContactInvitationListCubit
-    extends DHTShortArrayCubit<proto.ContactInvitationRecord> {
+    extends DHTShortArrayCubit<proto.ContactInvitationRecord>
+    with
+        StateMapFollowable<ContactInvitiationListState, TypedKey,
+            proto.ContactInvitationRecord> {
   ContactInvitationListCubit({
     required ActiveAccountInfo activeAccountInfo,
     required proto.Account account,
@@ -47,6 +55,7 @@ class ContactInvitationListCubit
 
     final dhtRecord = await DHTShortArray.openOwned(
         contactInvitationListRecordPointer,
+        debugName: 'ContactInvitationListCubit::_open::ContactInvitationList',
         parent: accountRecordKey);
 
     return dhtRecord;
@@ -78,6 +87,8 @@ class ContactInvitationListCubit
     // identity key
     late final Uint8List signedContactInvitationBytes;
     await (await pool.create(
+            debugName: 'ContactInvitationListCubit::createInvitation::'
+                'LocalConversation',
             parent: _activeAccountInfo.accountRecordKey,
             schema: DHTSchema.smpl(oCnt: 0, members: [
               DHTSchemaMember(mKey: conversationWriter.key, mCnt: 1)
@@ -105,6 +116,8 @@ class ContactInvitationListCubit
       // Subkey 0 is the ContactRequest from the initiator
       // Subkey 1 will contain the invitation response accept/reject eventually
       await (await pool.create(
+              debugName: 'ContactInvitationListCubit::createInvitation::'
+                  'ContactRequestInbox',
               parent: _activeAccountInfo.accountRecordKey,
               schema: DHTSchema.smpl(oCnt: 1, members: [
                 DHTSchemaMember(mCnt: 1, mKey: contactRequestWriter.key)
@@ -180,6 +193,8 @@ class ContactInvitationListCubit
       // Delete the contact request inbox
       final contactRequestInbox = deletedItem.contactRequestInbox.toVeilid();
       await (await pool.openOwned(contactRequestInbox,
+              debugName: 'ContactInvitationListCubit::deleteInvitation::'
+                  'ContactRequestInbox',
               parent: accountRecordKey))
           .scope((contactRequestInbox) async {
         // Wipe out old invitation so it shows up as invalid
@@ -229,6 +244,8 @@ class ContactInvitationListCubit
         -1;
 
     await (await pool.openRead(contactRequestInboxKey,
+            debugName: 'ContactInvitationListCubit::validateInvitation::'
+                'ContactRequestInbox',
             parent: _activeAccountInfo.accountRecordKey))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
       //
@@ -280,6 +297,19 @@ class ContactInvitationListCubit
     });
 
     return out;
+  }
+
+  /// StateMapFollowable /////////////////////////
+  @override
+  IMap<TypedKey, proto.ContactInvitationRecord> getStateMap(
+      ContactInvitiationListState state) {
+    final stateValue = state.state.data?.value;
+    if (stateValue == null) {
+      return IMap();
+    }
+    return IMap.fromIterable(stateValue,
+        keyMapper: (e) => e.contactRequestInbox.recordKey.toVeilid(),
+        valueMapper: (e) => e);
   }
 
   //

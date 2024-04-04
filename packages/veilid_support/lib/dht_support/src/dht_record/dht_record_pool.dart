@@ -18,14 +18,16 @@ const int watchBackoffMultiplier = 2;
 const int watchBackoffMax = 30;
 
 /// Record pool that managed DHTRecords and allows for tagged deletion
+/// String versions of keys due to IMap<> json unsupported in key
 @freezed
 class DHTRecordPoolAllocations with _$DHTRecordPoolAllocations {
   const factory DHTRecordPoolAllocations({
-    required IMap<String, ISet<TypedKey>>
-        childrenByParent, // String key due to IMap<> json unsupported in key
-    required IMap<String, TypedKey>
-        parentByChild, // String key due to IMap<> json unsupported in key
-    required ISet<TypedKey> rootRecords,
+    @Default(IMapConst<String, ISet<TypedKey>>({}))
+    IMap<String, ISet<TypedKey>> childrenByParent,
+    @Default(IMapConst<String, TypedKey>({}))
+    IMap<String, TypedKey> parentByChild,
+    @Default(ISetConst<TypedKey>({})) ISet<TypedKey> rootRecords,
+    @Default(IMapConst<String, String>({})) IMap<String, String> debugNames,
   }) = _DHTRecordPoolAllocations;
 
   factory DHTRecordPoolAllocations.fromJson(dynamic json) =>
@@ -92,10 +94,7 @@ class OpenedRecordInfo {
 
 class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   DHTRecordPool._(Veilid veilid, VeilidRoutingContext routingContext)
-      : _state = DHTRecordPoolAllocations(
-            childrenByParent: IMap(),
-            parentByChild: IMap(),
-            rootRecords: ISet()),
+      : _state = const DHTRecordPoolAllocations(),
         _mutex = Mutex(),
         _opened = <TypedKey, OpenedRecordInfo>{},
         _routingContext = routingContext,
@@ -129,8 +128,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   @override
   DHTRecordPoolAllocations valueFromJson(Object? obj) => obj != null
       ? DHTRecordPoolAllocations.fromJson(obj)
-      : DHTRecordPoolAllocations(
-          childrenByParent: IMap(), parentByChild: IMap(), rootRecords: ISet());
+      : const DHTRecordPoolAllocations();
   @override
   Object? valueToJson(DHTRecordPoolAllocations val) => val.toJson();
 
@@ -148,7 +146,8 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   Veilid get veilid => _veilid;
 
   Future<OpenedRecordInfo> _recordCreateInner(
-      {required VeilidRoutingContext dhtctx,
+      {required String debugName,
+      required VeilidRoutingContext dhtctx,
       required DHTSchema schema,
       KeyPair? writer,
       TypedKey? parent}) async {
@@ -169,13 +168,18 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     _opened[recordDescriptor.key] = openedRecordInfo;
 
     // Register the dependency
-    await _addDependencyInner(parent, recordDescriptor.key);
+    await _addDependencyInner(
+      parent,
+      recordDescriptor.key,
+      debugName: debugName,
+    );
 
     return openedRecordInfo;
   }
 
   Future<OpenedRecordInfo> _recordOpenInner(
-      {required VeilidRoutingContext dhtctx,
+      {required String debugName,
+      required VeilidRoutingContext dhtctx,
       required TypedKey recordKey,
       KeyPair? writer,
       TypedKey? parent}) async {
@@ -198,7 +202,11 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       _opened[recordDescriptor.key] = newOpenedRecordInfo;
 
       // Register the dependency
-      await _addDependencyInner(parent, recordKey);
+      await _addDependencyInner(
+        parent,
+        recordKey,
+        debugName: debugName,
+      );
 
       return newOpenedRecordInfo;
     }
@@ -218,7 +226,11 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     }
 
     // Register the dependency
-    await _addDependencyInner(parent, recordKey);
+    await _addDependencyInner(
+      parent,
+      recordKey,
+      debugName: debugName,
+    );
 
     return openedRecordInfo;
   }
@@ -259,6 +271,18 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     return allDeps.reversedView;
   }
 
+  void _debugPrintChildren(TypedKey recordKey, {List<TypedKey>? allDeps}) {
+    allDeps ??= _collectChildrenInner(recordKey);
+    // ignore: avoid_print
+    print('Parent: $recordKey (${_state.debugNames[recordKey.toString()]})');
+    for (final dep in allDeps) {
+      if (dep != recordKey) {
+        // ignore: avoid_print
+        print('  Child: $dep (${_state.debugNames[dep.toString()]})');
+      }
+    }
+  }
+
   Future<void> _deleteInner(TypedKey recordKey) async {
     // Remove this child from parents
     await _removeDependenciesInner([recordKey]);
@@ -269,7 +293,10 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     await _mutex.protect(() async {
       final allDeps = _collectChildrenInner(recordKey);
 
-      assert(allDeps.singleOrNull == recordKey, 'must delete children first');
+      if (allDeps.singleOrNull != recordKey) {
+        _debugPrintChildren(recordKey, allDeps: allDeps);
+        assert(false, 'must delete children first');
+      }
 
       final ori = _opened[recordKey];
       if (ori != null) {
@@ -301,15 +328,17 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     }
   }
 
-  Future<void> _addDependencyInner(TypedKey? parent, TypedKey child) async {
+  Future<void> _addDependencyInner(TypedKey? parent, TypedKey child,
+      {required String debugName}) async {
     assert(_mutex.isLocked, 'should be locked here');
     if (parent == null) {
       if (_state.rootRecords.contains(child)) {
         // Dependency already added
         return;
       }
-      _state = await store(
-          _state.copyWith(rootRecords: _state.rootRecords.add(child)));
+      _state = await store(_state.copyWith(
+          rootRecords: _state.rootRecords.add(child),
+          debugNames: _state.debugNames.add(child.toJson(), debugName)));
     } else {
       final childrenOfParent =
           _state.childrenByParent[parent.toJson()] ?? ISet<TypedKey>();
@@ -320,7 +349,8 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       _state = await store(_state.copyWith(
           childrenByParent: _state.childrenByParent
               .add(parent.toJson(), childrenOfParent.add(child)),
-          parentByChild: _state.parentByChild.add(child.toJson(), parent)));
+          parentByChild: _state.parentByChild.add(child.toJson(), parent),
+          debugNames: _state.debugNames.add(child.toJson(), debugName)));
     }
   }
 
@@ -331,7 +361,9 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
 
     for (final child in childList) {
       if (_state.rootRecords.contains(child)) {
-        state = state.copyWith(rootRecords: state.rootRecords.remove(child));
+        state = state.copyWith(
+            rootRecords: state.rootRecords.remove(child),
+            debugNames: state.debugNames.remove(child.toJson()));
       } else {
         final parent = state.parentByChild[child.toJson()];
         if (parent == null) {
@@ -341,12 +373,14 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
         if (children.isEmpty) {
           state = state.copyWith(
               childrenByParent: state.childrenByParent.remove(parent.toJson()),
-              parentByChild: state.parentByChild.remove(child.toJson()));
+              parentByChild: state.parentByChild.remove(child.toJson()),
+              debugNames: state.debugNames.remove(child.toJson()));
         } else {
           state = state.copyWith(
               childrenByParent:
                   state.childrenByParent.add(parent.toJson(), children),
-              parentByChild: state.parentByChild.remove(child.toJson()));
+              parentByChild: state.parentByChild.remove(child.toJson()),
+              debugNames: state.debugNames.remove(child.toJson()));
         }
       }
     }
@@ -360,6 +394,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
 
   /// Create a root DHTRecord that has no dependent records
   Future<DHTRecord> create({
+    required String debugName,
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
     DHTSchema schema = const DHTSchema.dflt(oCnt: 1),
@@ -371,9 +406,14 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
         final dhtctx = routingContext ?? _routingContext;
 
         final openedRecordInfo = await _recordCreateInner(
-            dhtctx: dhtctx, schema: schema, writer: writer, parent: parent);
+            debugName: debugName,
+            dhtctx: dhtctx,
+            schema: schema,
+            writer: writer,
+            parent: parent);
 
-        final rec = DHTRecord(
+        final rec = DHTRecord._(
+            debugName: debugName,
             routingContext: dhtctx,
             defaultSubkey: defaultSubkey,
             sharedDHTRecordData: openedRecordInfo.shared,
@@ -391,7 +431,8 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
 
   /// Open a DHTRecord readonly
   Future<DHTRecord> openRead(TypedKey recordKey,
-          {VeilidRoutingContext? routingContext,
+          {required String debugName,
+          VeilidRoutingContext? routingContext,
           TypedKey? parent,
           int defaultSubkey = 0,
           DHTRecordCrypto? crypto}) async =>
@@ -399,9 +440,13 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
         final dhtctx = routingContext ?? _routingContext;
 
         final openedRecordInfo = await _recordOpenInner(
-            dhtctx: dhtctx, recordKey: recordKey, parent: parent);
+            debugName: debugName,
+            dhtctx: dhtctx,
+            recordKey: recordKey,
+            parent: parent);
 
-        final rec = DHTRecord(
+        final rec = DHTRecord._(
+            debugName: debugName,
             routingContext: dhtctx,
             defaultSubkey: defaultSubkey,
             sharedDHTRecordData: openedRecordInfo.shared,
@@ -417,6 +462,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   Future<DHTRecord> openWrite(
     TypedKey recordKey,
     KeyPair writer, {
+    required String debugName,
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
     int defaultSubkey = 0,
@@ -426,12 +472,14 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
         final dhtctx = routingContext ?? _routingContext;
 
         final openedRecordInfo = await _recordOpenInner(
+            debugName: debugName,
             dhtctx: dhtctx,
             recordKey: recordKey,
             parent: parent,
             writer: writer);
 
-        final rec = DHTRecord(
+        final rec = DHTRecord._(
+            debugName: debugName,
             routingContext: dhtctx,
             defaultSubkey: defaultSubkey,
             writer: writer,
@@ -453,6 +501,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
   /// parent must be specified.
   Future<DHTRecord> openOwned(
     OwnedDHTRecordPointer ownedDHTRecordPointer, {
+    required String debugName,
     required TypedKey parent,
     VeilidRoutingContext? routingContext,
     int defaultSubkey = 0,
@@ -461,6 +510,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       openWrite(
         ownedDHTRecordPointer.recordKey,
         ownedDHTRecordPointer.owner,
+        debugName: debugName,
         routingContext: routingContext,
         parent: parent,
         defaultSubkey: defaultSubkey,

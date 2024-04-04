@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
+import 'package:bloc_tools/bloc_tools.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -11,8 +14,10 @@ import '../../tools/tools.dart';
 
 //////////////////////////////////////////////////
 // Mutable state for per-account chat list
+typedef ChatListCubitState = BlocBusyState<AsyncValue<IList<proto.Chat>>>;
 
-class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
+class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
+    with StateMapFollowable<ChatListCubitState, TypedKey, proto.Chat> {
   ChatListCubit({
     required ActiveAccountInfo activeAccountInfo,
     required proto.Account account,
@@ -30,7 +35,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
     final chatListRecordKey = account.chatList.toVeilid();
 
     final dhtRecord = await DHTShortArray.openOwned(chatListRecordKey,
-        parent: accountRecordKey);
+        debugName: 'ChatListCubit::_open::ChatList', parent: accountRecordKey);
 
     return dhtRecord;
   }
@@ -61,9 +66,11 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
           .userLogin.accountRecordInfo.accountRecord.recordKey;
 
       // Make a record that can store the reconciled version of the chat
-      final reconciledChatRecord =
-          await (await DHTShortArray.create(parent: accountRecordKey))
-              .scope((r) async => r.recordPointer);
+      final reconciledChatRecord = await (await DHTShortArray.create(
+              debugName:
+                  'ChatListCubit::getOrCreateChatSingleContact::ReconciledChat',
+              parent: accountRecordKey))
+          .scope((r) async => r.recordPointer);
 
       // Create conversation type Chat
       final chat = proto.Chat()
@@ -86,26 +93,30 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
 
     // Remove Chat from account's list
     // if this fails, don't keep retrying, user can try again later
-    final (deletedItem, success) = await operateWrite((writer) async {
-      if (activeChatCubit.state == remoteConversationRecordKey) {
-        activeChatCubit.setActiveChat(null);
-      }
-      for (var i = 0; i < writer.length; i++) {
-        final cbuf = await writer.getItem(i);
-        if (cbuf == null) {
-          throw Exception('Failed to get chat');
-        }
-        final c = proto.Chat.fromBuffer(cbuf);
-        if (c.remoteConversationRecordKey == remoteConversationKey) {
-          // Found the right chat
-          if (await writer.tryRemoveItem(i) != null) {
-            return c;
-          }
-          return null;
-        }
-      }
-      return null;
-    });
+    final (deletedItem, success) =
+        // Ensure followers get their changes before we return
+        await syncFollowers(() => operateWrite((writer) async {
+              if (activeChatCubit.state == remoteConversationRecordKey) {
+                activeChatCubit.setActiveChat(null);
+              }
+              for (var i = 0; i < writer.length; i++) {
+                final cbuf = await writer.getItem(i);
+                if (cbuf == null) {
+                  throw Exception('Failed to get chat');
+                }
+                final c = proto.Chat.fromBuffer(cbuf);
+                if (c.remoteConversationRecordKey == remoteConversationKey) {
+                  // Found the right chat
+                  if (await writer.tryRemoveItem(i) != null) {
+                    return c;
+                  }
+                  return null;
+                }
+              }
+              return null;
+            }));
+    // Since followers are synced, we can safetly remove the reconciled
+    // chat record now
     if (success && deletedItem != null) {
       try {
         await DHTRecordPool.instance
@@ -114,6 +125,18 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat> {
         log.debug('error removing reconciled chat record: $e', e);
       }
     }
+  }
+
+  /// StateMapFollowable /////////////////////////
+  @override
+  IMap<TypedKey, proto.Chat> getStateMap(ChatListCubitState state) {
+    final stateValue = state.state.data?.value;
+    if (stateValue == null) {
+      return IMap();
+    }
+    return IMap.fromIterable(stateValue,
+        keyMapper: (e) => e.remoteConversationRecordKey.toVeilid(),
+        valueMapper: (e) => e);
   }
 
   final ActiveChatCubit activeChatCubit;
