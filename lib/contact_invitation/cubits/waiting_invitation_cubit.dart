@@ -23,7 +23,7 @@ class InvitationStatus extends Equatable {
 }
 
 class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
-    proto.SignedContactResponse> {
+    proto.SignedContactResponse?> {
   WaitingInvitationCubit(ContactRequestInboxCubit super.input,
       {required ActiveAccountInfo activeAccountInfo,
       required proto.Account account,
@@ -36,10 +36,13 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
                 contactInvitationRecord: contactInvitationRecord));
 
   static Future<AsyncValue<InvitationStatus>> _transform(
-      proto.SignedContactResponse signedContactResponse,
+      proto.SignedContactResponse? signedContactResponse,
       {required ActiveAccountInfo activeAccountInfo,
       required proto.Account account,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
+    if (signedContactResponse == null) {
+      return const AsyncValue.loading();
+    }
     final pool = DHTRecordPool.instance;
     final contactResponseBytes =
         Uint8List.fromList(signedContactResponse.contactResponse);

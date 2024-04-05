@@ -126,6 +126,13 @@ class ContactInvitationListCubit
           .deleteScope((contactRequestInbox) async {
         // Store ContactRequest in owner subkey
         await contactRequestInbox.eventualWriteProtobuf(creq);
+        // Store an empty invitation response
+        await contactRequestInbox.eventualWriteBytes(Uint8List(0),
+            subkey: 1,
+            writer: contactRequestWriter,
+            crypto: await DHTRecordCryptoPrivate.fromTypedKeyPair(
+                TypedKeyPair.fromKeyPair(
+                    contactRequestInbox.key.kind, contactRequestWriter)));
 
         // Create ContactInvitation and SignedContactInvitation
         final cinv = proto.ContactInvitation()

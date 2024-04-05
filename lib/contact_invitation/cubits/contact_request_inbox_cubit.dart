@@ -5,14 +5,16 @@ import '../../proto/proto.dart' as proto;
 
 // Watch subkey #1 of the ContactRequest record for accept/reject
 class ContactRequestInboxCubit
-    extends DefaultDHTRecordCubit<proto.SignedContactResponse> {
+    extends DefaultDHTRecordCubit<proto.SignedContactResponse?> {
   ContactRequestInboxCubit(
       {required this.activeAccountInfo, required this.contactInvitationRecord})
       : super(
             open: () => _open(
                 activeAccountInfo: activeAccountInfo,
                 contactInvitationRecord: contactInvitationRecord),
-            decodeState: proto.SignedContactResponse.fromBuffer);
+            decodeState: (buf) => buf.isEmpty
+                ? null
+                : proto.SignedContactResponse.fromBuffer(buf));
 
   // ContactRequestInboxCubit.value(
   //     {required super.record,
