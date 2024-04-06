@@ -4,9 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../theme/theme.dart';
-import 'paste_invite_dialog.dart';
-import 'scan_invite_dialog.dart';
-import 'send_invite_dialog.dart';
+import 'paste_invitation_dialog.dart';
+import 'scan_invitation_dialog.dart';
+import 'create_invitation_dialog.dart';
 
 Widget newContactInvitationBottomSheetBuilder(
     BuildContext sheetContext, BuildContext context) {
@@ -32,7 +32,7 @@ Widget newContactInvitationBottomSheetBuilder(
                 IconButton(
                     onPressed: () async {
                       Navigator.pop(sheetContext);
-                      await SendInviteDialog.show(context);
+                      await CreateInvitationDialog.show(context);
                     },
                     iconSize: 64,
                     icon: const Icon(Icons.contact_page),
@@ -43,7 +43,7 @@ Widget newContactInvitationBottomSheetBuilder(
                 IconButton(
                     onPressed: () async {
                       Navigator.pop(sheetContext);
-                      await ScanInviteDialog.show(context);
+                      await ScanInvitationDialog.show(context);
                     },
                     iconSize: 64,
                     icon: const Icon(Icons.qr_code_scanner),
@@ -54,7 +54,7 @@ Widget newContactInvitationBottomSheetBuilder(
                 IconButton(
                     onPressed: () async {
                       Navigator.pop(sheetContext);
-                      await PasteInviteDialog.show(context);
+                      await PasteInvitationDialog.show(context);
                     },
                     iconSize: 64,
                     icon: const Icon(Icons.paste),

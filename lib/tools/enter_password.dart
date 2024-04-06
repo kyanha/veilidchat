@@ -17,7 +17,7 @@ class EnterPasswordDialog extends StatefulWidget {
   final String? description;
 
   @override
-  EnterPasswordDialogState createState() => EnterPasswordDialogState();
+  State<EnterPasswordDialog> createState() => _EnterPasswordDialogState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -28,7 +28,7 @@ class EnterPasswordDialog extends StatefulWidget {
   }
 }
 
-class EnterPasswordDialogState extends State<EnterPasswordDialog> {
+class _EnterPasswordDialogState extends State<EnterPasswordDialog> {
   final passwordController = TextEditingController();
   final focusNode = FocusNode();
   final formKey = GlobalKey<FormState>();

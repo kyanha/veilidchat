@@ -60,16 +60,16 @@
     },
     "accounts_menu": {
         "invite_contact": "Invite Contact",
-        "create_invite": "Create Invite",
-        "scan_invite": "Scan Invite",
-        "paste_invite": "Paste Invite"
+        "create_invite": "Create Invitation",
+        "scan_invite": "Scan Invitation",
+        "paste_invite": "Paste Invitation"
     },
-    "send_invite_dialog": {
-        "title": "Send Contact Invite",
+    "create_invitation_dialog": {
+        "title": "Create Contact Invitation",
         "connect_with_me": "Connect with me on VeilidChat!",
-        "enter_message_hint": "enter message for contact (optional)",
+        "enter_message_hint": "Enter message for contact (optional)",
         "message_to_contact": "Message to send with invitation (not encrypted)",
-        "generate": "Generate Invite",
+        "generate": "Generate Invitation",
         "message": "Message",
         "unlocked": "Unlocked",
         "pin": "PIN",
@@ -85,23 +85,23 @@
         "copy_invitation": "Copy Invitation",
         "invitation_copied": "Invitation Copied"
     },
-    "invite_dialog": {
+    "invitation_dialog": {
         "message_from_contact": "Message from contact",
         "validating": "Validating...",
-        "failed_to_accept": "Failed to accept contact invite",
-        "failed_to_reject": "Failed to reject contact invite",
+        "failed_to_accept": "Failed to accept contact invitation",
+        "failed_to_reject": "Failed to reject contact invitation",
         "invalid_invitation": "Invalid invitation",
-        "protected_with_pin": "Contact invite is protected with a PIN",
-        "protected_with_password": "Contact invite is protected with a password",
+        "protected_with_pin": "Contact invitation is protected with a PIN",
+        "protected_with_password": "Contact invitation is protected with a password",
         "invalid_pin": "Invalid PIN",
         "invalid_password": "Invalid password"
     },
-    "paste_invite_dialog": {
+    "paste_invitation_dialog": {
         "title": "Paste Contact Invite",
         "paste_invite_here": "Paste your contact invite here:",
         "paste": "Paste"
     },
-    "scan_invite_dialog": {
+    "scan_invitation_dialog": {
         "title": "Scan Contact Invite",
         "instructions": "Position the contact invite QR code in the frame",
         "scan_qr_here": "Click here to scan a contact invite QR code:",

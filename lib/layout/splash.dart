@@ -23,7 +23,9 @@ class _SplashState extends State<Splash> {
   }
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
+  Widget build(BuildContext context) => PopScope(
+      canPop: false,
+      child: DecoratedBox(
         decoration: BoxDecoration(
             gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -49,5 +51,5 @@ class _SplashState extends State<Splash> {
                         'assets/images/title.svg',
                       ))
                     ]))),
-      );
+      ));
 }

@@ -5,47 +5,29 @@ import 'package:basic_utils/basic_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../tools/tools.dart';
 import '../contact_invitation.dart';
 
-class ContactInvitationDisplayDialog extends StatefulWidget {
-  const ContactInvitationDisplayDialog({
+class ContactInvitationDisplayDialog extends StatelessWidget {
+  const ContactInvitationDisplayDialog._({
+    required this.modalContext,
     required this.message,
-    super.key,
   });
 
+  final BuildContext modalContext;
   final String message;
-
-  @override
-  State<ContactInvitationDisplayDialog> createState() =>
-      _ContactInvitationDisplayDialogState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(StringProperty('message', message));
-  }
-}
-
-class _ContactInvitationDisplayDialogState
-    extends State<ContactInvitationDisplayDialog> {
-  final focusNode = FocusNode();
-  final formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    focusNode.dispose();
-    super.dispose();
+    properties
+      ..add(StringProperty('message', message))
+      ..add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
   }
 
   String makeTextInvite(String message, Uint8List data) {
@@ -72,61 +54,67 @@ class _ContactInvitationDisplayDialogState
     final cardsize =
         min<double>(MediaQuery.of(context).size.shortestSide - 48.0, 400);
 
-    return Dialog(
-        backgroundColor: Colors.white,
-        child: ConstrainedBox(
-            constraints: BoxConstraints(
-                minWidth: cardsize,
-                maxWidth: cardsize,
-                minHeight: cardsize,
-                maxHeight: cardsize),
-            child: signedContactInvitationBytesV.when(
-                loading: buildProgressIndicator,
-                data: (data) => Form(
-                    key: formKey,
-                    child: Column(children: [
-                      FittedBox(
-                              child: Text(
+    return PopControl(
+        dismissible: !signedContactInvitationBytesV.isLoading,
+        child: Dialog(
+            backgroundColor: Colors.white,
+            child: ConstrainedBox(
+                constraints: BoxConstraints(
+                    minWidth: cardsize,
+                    maxWidth: cardsize,
+                    minHeight: cardsize,
+                    maxHeight: cardsize),
+                child: signedContactInvitationBytesV.when(
+                    loading: buildProgressIndicator,
+                    data: (data) => Column(children: [
+                          FittedBox(
+                                  child: Text(
+                                      translate(
+                                          'create_invitation_dialog.contact_invitation'),
+                                      style: textTheme.headlineSmall!
+                                          .copyWith(color: Colors.black)))
+                              .paddingAll(8),
+                          FittedBox(
+                                  child: QrImageView.withQr(
+                                      size: 300,
+                                      qr: QrCode.fromUint8List(
+                                          data: data,
+                                          errorCorrectLevel:
+                                              QrErrorCorrectLevel.L)))
+                              .expanded(),
+                          Text(message,
+                                  softWrap: true,
+                                  style: textTheme.labelLarge!
+                                      .copyWith(color: Colors.black))
+                              .paddingAll(8),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.copy),
+                            label: Text(translate(
+                                'create_invitation_dialog.copy_invitation')),
+                            onPressed: () async {
+                              showInfoToast(
+                                  context,
                                   translate(
-                                      'send_invite_dialog.contact_invitation'),
-                                  style: textTheme.headlineSmall!
-                                      .copyWith(color: Colors.black)))
-                          .paddingAll(8),
-                      FittedBox(
-                              child: QrImageView.withQr(
-                                  size: 300,
-                                  qr: QrCode.fromUint8List(
-                                      data: data,
-                                      errorCorrectLevel:
-                                          QrErrorCorrectLevel.L)))
-                          .expanded(),
-                      Text(widget.message,
-                              softWrap: true,
-                              style: textTheme.labelLarge!
-                                  .copyWith(color: Colors.black))
-                          .paddingAll(8),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.copy),
-                        label: Text(
-                            translate('send_invite_dialog.copy_invitation')),
-                        onPressed: () async {
-                          showInfoToast(
-                              context,
-                              translate(
-                                  'send_invite_dialog.invitation_copied'));
-                          await Clipboard.setData(ClipboardData(
-                              text: makeTextInvite(widget.message, data)));
-                        },
-                      ).paddingAll(16),
-                    ])),
-                error: errorPage)));
+                                      'create_invitation_dialog.invitation_copied'));
+                              await Clipboard.setData(ClipboardData(
+                                  text: makeTextInvite(message, data)));
+                            },
+                          ).paddingAll(16),
+                        ]),
+                    error: errorPage))));
   }
 
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty<FocusNode>('focusNode', focusNode))
-      ..add(DiagnosticsProperty<GlobalKey<FormState>>('formKey', formKey));
+  static Future<void> show(
+      {required BuildContext context,
+      required InvitationGeneratorCubit Function(BuildContext) create,
+      required String message}) async {
+    await showPopControlDialog<void>(
+        context: context,
+        builder: (context) => BlocProvider(
+            create: create,
+            child: ContactInvitationDisplayDialog._(
+              modalContext: context,
+              message: message,
+            )));
   }
 }

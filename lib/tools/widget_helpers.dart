@@ -164,42 +164,6 @@ Widget styledTitleContainer(
       ]));
 }
 
-Future<T?> showStyledDialog<T>(
-    {required BuildContext context,
-    required String title,
-    required Widget child}) async {
-  final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  final textTheme = theme.textTheme;
-
-  return showDialog<T>(
-      context: context,
-      builder: (context) => AlertDialog(
-          elevation: 0,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
-          contentPadding: const EdgeInsets.all(4),
-          backgroundColor: scale.primaryScale.border,
-          title: Text(
-            title,
-            style: textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          titlePadding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-          content: DecoratedBox(
-              decoration: ShapeDecoration(
-                  color: scale.primaryScale.border,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16))),
-              child: DecoratedBox(
-                  decoration: ShapeDecoration(
-                      color: scale.primaryScale.appBackground,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  child: child.paddingAll(0)))));
-}
-
 bool get isPlatformDark =>
     WidgetsBinding.instance.platformDispatcher.platformBrightness ==
     Brightness.dark;

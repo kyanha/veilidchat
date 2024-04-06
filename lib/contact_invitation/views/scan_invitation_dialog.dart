@@ -14,7 +14,7 @@ import 'package:zxing2/qrcode.dart';
 
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
-import 'invite_dialog.dart';
+import 'invitation_dialog.dart';
 
 class BarcodeOverlay extends CustomPainter {
   BarcodeOverlay({
@@ -103,17 +103,17 @@ class ScannerOverlay extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class ScanInviteDialog extends StatefulWidget {
-  const ScanInviteDialog({required this.modalContext, super.key});
+class ScanInvitationDialog extends StatefulWidget {
+  const ScanInvitationDialog({required this.modalContext, super.key});
 
   @override
-  ScanInviteDialogState createState() => ScanInviteDialogState();
+  ScanInvitationDialogState createState() => ScanInvitationDialogState();
 
   static Future<void> show(BuildContext context) async {
-    await showStyledDialog<void>(
+    await StyledDialog.show<void>(
         context: context,
-        title: translate('scan_invite_dialog.title'),
-        child: ScanInviteDialog(modalContext: context));
+        title: translate('scan_invitation_dialog.title'),
+        child: ScanInvitationDialog(modalContext: context));
   }
 
   final BuildContext modalContext;
@@ -126,7 +126,7 @@ class ScanInviteDialog extends StatefulWidget {
   }
 }
 
-class ScanInviteDialogState extends State<ScanInviteDialog> {
+class ScanInvitationDialogState extends State<ScanInvitationDialog> {
   bool scanned = false;
 
   @override
@@ -221,7 +221,8 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
                             height: 50,
                             child: FittedBox(
                               child: Text(
-                                translate('scan_invite_dialog.instructions'),
+                                translate(
+                                    'scan_invitation_dialog.instructions'),
                                 overflow: TextOverflow.fade,
                                 style: Theme.of(context)
                                     .textTheme
@@ -270,12 +271,12 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
     } on MobileScannerException catch (e) {
       if (e.errorCode == MobileScannerErrorCode.permissionDenied) {
         showErrorToast(
-            context, translate('scan_invite_dialog.permission_error'));
+            context, translate('scan_invitation_dialog.permission_error'));
       } else {
-        showErrorToast(context, translate('scan_invite_dialog.error'));
+        showErrorToast(context, translate('scan_invitation_dialog.error'));
       }
     } on Exception catch (_) {
-      showErrorToast(context, translate('scan_invite_dialog.error'));
+      showErrorToast(context, translate('scan_invitation_dialog.error'));
     }
 
     return null;
@@ -285,7 +286,8 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
     final imageBytes = await Pasteboard.image;
     if (imageBytes == null) {
       if (context.mounted) {
-        showErrorToast(context, translate('scan_invite_dialog.not_an_image'));
+        showErrorToast(
+            context, translate('scan_invitation_dialog.not_an_image'));
       }
       return null;
     }
@@ -293,8 +295,8 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
     final image = img.decodeImage(imageBytes);
     if (image == null) {
       if (context.mounted) {
-        showErrorToast(
-            context, translate('scan_invite_dialog.could_not_decode_image'));
+        showErrorToast(context,
+            translate('scan_invitation_dialog.could_not_decode_image'));
       }
       return null;
     }
@@ -319,7 +321,7 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
     } on Exception catch (_) {
       if (context.mounted) {
         showErrorToast(
-            context, translate('scan_invite_dialog.not_a_valid_qr_code'));
+            context, translate('scan_invitation_dialog.not_a_valid_qr_code'));
       }
       return null;
     }
@@ -327,7 +329,7 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
 
   Widget buildInviteControl(
       BuildContext context,
-      InviteDialogState dialogState,
+      InvitationDialogState dialogState,
       Future<void> Function({required Uint8List inviteData})
           validateInviteData) {
     //final theme = Theme.of(context);
@@ -339,7 +341,7 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
       return Column(mainAxisSize: MainAxisSize.min, children: [
         if (!scanned)
           Text(
-            translate('scan_invite_dialog.scan_qr_here'),
+            translate('scan_invitation_dialog.scan_qr_here'),
           ).paddingLTRB(0, 0, 0, 8),
         if (!scanned)
           Container(
@@ -356,14 +358,14 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
                           await validateInviteData(inviteData: inviteData);
                         }
                       },
-                child: Text(translate('scan_invite_dialog.scan'))),
+                child: Text(translate('scan_invitation_dialog.scan'))),
           ).paddingLTRB(0, 0, 0, 8)
       ]);
     }
     return Column(mainAxisSize: MainAxisSize.min, children: [
       if (!scanned)
         Text(
-          translate('scan_invite_dialog.paste_qr_here'),
+          translate('scan_invitation_dialog.paste_qr_here'),
         ).paddingLTRB(0, 0, 0, 8),
       if (!scanned)
         Container(
@@ -380,7 +382,7 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
                         });
                       }
                     },
-              child: Text(translate('scan_invite_dialog.paste'))),
+              child: Text(translate('scan_invitation_dialog.paste'))),
         ).paddingLTRB(0, 0, 0, 8)
     ]);
   }
@@ -388,7 +390,7 @@ class ScanInviteDialogState extends State<ScanInviteDialog> {
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
-    return InviteDialog(
+    return InvitationDialog(
         modalContext: widget.modalContext,
         onValidationCancelled: onValidationCancelled,
         onValidationSuccess: onValidationSuccess,

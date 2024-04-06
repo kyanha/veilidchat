@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
@@ -9,19 +8,19 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
-import 'invite_dialog.dart';
+import 'invitation_dialog.dart';
 
-class PasteInviteDialog extends StatefulWidget {
-  const PasteInviteDialog({required this.modalContext, super.key});
+class PasteInvitationDialog extends StatefulWidget {
+  const PasteInvitationDialog({required this.modalContext, super.key});
 
   @override
-  PasteInviteDialogState createState() => PasteInviteDialogState();
+  PasteInvitationDialogState createState() => PasteInvitationDialogState();
 
   static Future<void> show(BuildContext context) async {
-    await showStyledDialog<void>(
+    await StyledDialog.show<void>(
         context: context,
-        title: translate('paste_invite_dialog.title'),
-        child: PasteInviteDialog(modalContext: context));
+        title: translate('paste_invitation_dialog.title'),
+        child: PasteInvitationDialog(modalContext: context));
   }
 
   final BuildContext modalContext;
@@ -34,7 +33,7 @@ class PasteInviteDialog extends StatefulWidget {
   }
 }
 
-class PasteInviteDialogState extends State<PasteInviteDialog> {
+class PasteInvitationDialogState extends State<PasteInvitationDialog> {
   final _pasteTextController = TextEditingController();
 
   @override
@@ -89,7 +88,7 @@ class PasteInviteDialogState extends State<PasteInviteDialog> {
 
   Widget buildInviteControl(
       BuildContext context,
-      InviteDialogState dialogState,
+      InvitationDialogState dialogState,
       Future<void> Function({required Uint8List inviteData})
           validateInviteData) {
     final theme = Theme.of(context);
@@ -105,7 +104,7 @@ class PasteInviteDialogState extends State<PasteInviteDialog> {
 
     return Column(mainAxisSize: MainAxisSize.min, children: [
       Text(
-        translate('paste_invite_dialog.paste_invite_here'),
+        translate('paste_invitation_dialog.paste_invite_here'),
       ).paddingLTRB(0, 0, 0, 8),
       Container(
           constraints: const BoxConstraints(maxHeight: 200),
@@ -122,7 +121,7 @@ class PasteInviteDialogState extends State<PasteInviteDialog> {
               hintText: '--- BEGIN VEILIDCHAT CONTACT INVITE ----\n'
                   'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n'
                   '---- END VEILIDCHAT CONTACT INVITE -----\n',
-              //labelText: translate('paste_invite_dialog.paste')
+              //labelText: translate('paste_invitation_dialog.paste')
             ),
           )).paddingLTRB(0, 0, 0, 8)
     ]);
@@ -131,7 +130,7 @@ class PasteInviteDialogState extends State<PasteInviteDialog> {
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
-    return InviteDialog(
+    return InvitationDialog(
         modalContext: widget.modalContext,
         onValidationCancelled: onValidationCancelled,
         onValidationSuccess: onValidationSuccess,

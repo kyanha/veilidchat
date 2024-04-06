@@ -245,7 +245,7 @@ class ContactInvitationListCubit
     // inbox with our list of extant invitations
     // If we're chatting to ourselves,
     // we are validating an invitation we have created
-    final isSelf = state.state.data!.value.indexWhere((cir) =>
+    final isSelf = state.state.asData!.value.indexWhere((cir) =>
             cir.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxKey) !=
         -1;
@@ -310,7 +310,7 @@ class ContactInvitationListCubit
   @override
   IMap<TypedKey, proto.ContactInvitationRecord> getStateMap(
       ContactInvitiationListState state) {
-    final stateValue = state.state.data?.value;
+    final stateValue = state.state.asData?.value;
     if (stateValue == null) {
       return IMap();
     }

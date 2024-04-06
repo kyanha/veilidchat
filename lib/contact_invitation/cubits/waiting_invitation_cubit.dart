@@ -82,7 +82,7 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     var retryCount = 20;
     do {
       await conversation.refresh();
-      remoteConversation = conversation.state.data?.value.remoteConversation;
+      remoteConversation = conversation.state.asData?.value.remoteConversation;
       if (remoteConversation != null) {
         break;
       }

@@ -75,7 +75,7 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
 
       for (final entry in newState.entries) {
         final contactRequestInboxRecordKey = entry.key;
-        final invStatus = entry.value.data?.value;
+        final invStatus = entry.value.asData?.value;
         // Skip invitations that have not yet been accepted or rejected
         if (invStatus == null) {
           continue;
@@ -109,7 +109,7 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
 
   @override
   Widget build(BuildContext context) {
-    final account = context.watch<AccountRecordCubit>().state.data?.value;
+    final account = context.watch<AccountRecordCubit>().state.asData?.value;
     if (account == null) {
       return waitingPage();
     }

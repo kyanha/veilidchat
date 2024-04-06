@@ -11,8 +11,8 @@ import '../../contacts/contacts.dart';
 import '../../tools/tools.dart';
 import '../contact_invitation.dart';
 
-class InviteDialog extends StatefulWidget {
-  const InviteDialog(
+class InvitationDialog extends StatefulWidget {
+  const InvitationDialog(
       {required this.modalContext,
       required this.onValidationCancelled,
       required this.onValidationSuccess,
@@ -27,13 +27,13 @@ class InviteDialog extends StatefulWidget {
   final bool Function() inviteControlIsValid;
   final Widget Function(
       BuildContext context,
-      InviteDialogState dialogState,
+      InvitationDialogState dialogState,
       Future<void> Function({required Uint8List inviteData})
           validateInviteData) buildInviteControl;
   final BuildContext modalContext;
 
   @override
-  InviteDialogState createState() => InviteDialogState();
+  InvitationDialogState createState() => InvitationDialogState();
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -49,7 +49,7 @@ class InviteDialog extends StatefulWidget {
       ..add(ObjectFlagProperty<
               Widget Function(
                   BuildContext context,
-                  InviteDialogState dialogState,
+                  InvitationDialogState dialogState,
                   Future<void> Function({required Uint8List inviteData})
                       validateInviteData)>.has(
           'buildInviteControl', buildInviteControl))
@@ -57,7 +57,7 @@ class InviteDialog extends StatefulWidget {
   }
 }
 
-class InviteDialogState extends State<InviteDialog> {
+class InvitationDialogState extends State<InvitationDialog> {
   ValidContactInvitation? _validInvitation;
   bool _isValidating = false;
   bool _isAccepting = false;
@@ -98,8 +98,8 @@ class InviteDialogState extends State<InviteDialog> {
           );
         }
       } else {
-        if (context.mounted) {
-          showErrorToast(context, 'invite_dialog.failed_to_accept');
+        if (mounted) {
+          showErrorToast(context, 'invitation_dialog.failed_to_accept');
         }
       }
     }
@@ -120,8 +120,8 @@ class InviteDialogState extends State<InviteDialog> {
       if (await validInvitation.reject()) {
         // do nothing right now
       } else {
-        if (context.mounted) {
-          showErrorToast(context, 'invite_dialog.failed_to_reject');
+        if (mounted) {
+          showErrorToast(context, 'invitation_dialog.failed_to_reject');
         }
       }
     }
@@ -153,8 +153,8 @@ class InviteDialogState extends State<InviteDialog> {
                     encryptionKey = '';
                   case EncryptionKeyType.pin:
                     final description =
-                        translate('invite_dialog.protected_with_pin');
-                    if (!context.mounted) {
+                        translate('invitation_dialog.protected_with_pin');
+                    if (!mounted) {
                       return null;
                     }
                     final pin = await showDialog<String>(
@@ -167,8 +167,8 @@ class InviteDialogState extends State<InviteDialog> {
                     encryptionKey = pin;
                   case EncryptionKeyType.password:
                     final description =
-                        translate('invite_dialog.protected_with_password');
-                    if (!context.mounted) {
+                        translate('invitation_dialog.protected_with_password');
+                    if (!mounted) {
                       return null;
                     }
                     final password = await showDialog<String>(
@@ -208,13 +208,13 @@ class InviteDialogState extends State<InviteDialog> {
       String errorText;
       switch (e.type) {
         case EncryptionKeyType.none:
-          errorText = translate('invite_dialog.invalid_invitation');
+          errorText = translate('invitation_dialog.invalid_invitation');
         case EncryptionKeyType.pin:
-          errorText = translate('invite_dialog.invalid_pin');
+          errorText = translate('invitation_dialog.invalid_pin');
         case EncryptionKeyType.password:
-          errorText = translate('invite_dialog.invalid_password');
+          errorText = translate('invitation_dialog.invalid_password');
       }
-      if (context.mounted) {
+      if (mounted) {
         showErrorToast(context, errorText);
       }
       setState(() {
@@ -259,7 +259,7 @@ class InviteDialogState extends State<InviteDialog> {
               widget.buildInviteControl(context, this, _validateInviteData),
               if (_isValidating)
                 Column(children: [
-                  Text(translate('invite_dialog.validating'))
+                  Text(translate('invitation_dialog.validating'))
                       .paddingLTRB(0, 0, 0, 16),
                   buildProgressIndicator().paddingAll(16),
                 ]).toCenter(),
@@ -267,7 +267,7 @@ class InviteDialogState extends State<InviteDialog> {
                   !_isValidating &&
                   widget.inviteControlIsValid())
                 Column(children: [
-                  Text(translate('invite_dialog.invalid_invitation')),
+                  Text(translate('invitation_dialog.invalid_invitation')),
                   const Icon(Icons.error)
                 ]).paddingAll(16).toCenter(),
               if (_validInvitation != null && !_isValidating)

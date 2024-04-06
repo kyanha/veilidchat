@@ -41,11 +41,11 @@ class AccountPageState extends State<AccountPage> {
     final cilState = context.watch<ContactInvitationListCubit>().state;
     final cilBusy = cilState.busy;
     final contactInvitationRecordList =
-        cilState.state.data?.value ?? const IListConst([]);
+        cilState.state.asData?.value ?? const IListConst([]);
 
     final ciState = context.watch<ContactListCubit>().state;
     final ciBusy = ciState.busy;
-    final contactList = ciState.state.data?.value ?? const IListConst([]);
+    final contactList = ciState.state.asData?.value ?? const IListConst([]);
 
     return SizedBox(
         child: Column(children: <Widget>[

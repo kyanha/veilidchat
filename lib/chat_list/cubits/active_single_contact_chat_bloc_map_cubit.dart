@@ -56,7 +56,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
   Future<void> updateState(
       TypedKey key, AsyncValue<ActiveConversationState> value) async {
     // Get the contact object for this single contact chat
-    final contactList = _contactListCubit.state.state.data?.value;
+    final contactList = _contactListCubit.state.state.asData?.value;
     if (contactList == null) {
       await addState(key, const AsyncValue.loading());
       return;
@@ -71,7 +71,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
     final contact = contactList[contactIndex];
 
     // Get the chat object for this single contact chat
-    final chatList = _chatListCubit.state.state.data?.value;
+    final chatList = _chatListCubit.state.state.asData?.value;
     if (chatList == null) {
       await addState(key, const AsyncValue.loading());
       return;

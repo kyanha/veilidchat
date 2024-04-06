@@ -18,7 +18,7 @@ class EnterPinDialog extends StatefulWidget {
   final String? description;
 
   @override
-  EnterPinDialogState createState() => EnterPinDialogState();
+  State<EnterPinDialog> createState() => _EnterPinDialogState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -29,7 +29,7 @@ class EnterPinDialog extends StatefulWidget {
   }
 }
 
-class EnterPinDialogState extends State<EnterPinDialog> {
+class _EnterPinDialogState extends State<EnterPinDialog> {
   final pinController = TextEditingController();
   final focusNode = FocusNode();
   final formKey = GlobalKey<FormState>();

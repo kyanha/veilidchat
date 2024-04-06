@@ -105,15 +105,12 @@ class ContactInvitationItemWidget extends StatelessWidget {
                         if (!context.mounted) {
                           return;
                         }
-                        await showDialog<void>(
+                        await ContactInvitationDisplayDialog.show(
                             context: context,
-                            builder: (context) => BlocProvider(
-                                create: (context) => InvitationGeneratorCubit
-                                    .value(Uint8List.fromList(
-                                        contactInvitationRecord.invitation)),
-                                child: ContactInvitationDisplayDialog(
-                                  message: contactInvitationRecord.message,
-                                )));
+                            message: contactInvitationRecord.message,
+                            create: (context) => InvitationGeneratorCubit.value(
+                                Uint8List.fromList(
+                                    contactInvitationRecord.invitation)));
                       },
                 title: Text(
                   contactInvitationRecord.message.isEmpty

@@ -135,7 +135,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   // Called when the local messages list gets a change
   void _updateLocalMessagesState(
       BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
-    final localMessages = avmessages.state.data?.value;
+    final localMessages = avmessages.state.asData?.value;
     if (localMessages == null) {
       return;
     }
@@ -147,7 +147,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   // Called when the remote messages list gets a change
   void _updateRemoteMessagesState(
       BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
-    final remoteMessages = avmessages.state.data?.value;
+    final remoteMessages = avmessages.state.asData?.value;
     if (remoteMessages == null) {
       return;
     }

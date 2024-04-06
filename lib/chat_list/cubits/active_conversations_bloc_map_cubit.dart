@@ -80,7 +80,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   @override
   Future<void> updateState(TypedKey key, proto.Chat value) async {
-    final contactList = _contactListCubit.state.state.data?.value;
+    final contactList = _contactListCubit.state.state.asData?.value;
     if (contactList == null) {
       await addState(key, const AsyncValue.loading());
       return;

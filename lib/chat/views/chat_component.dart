@@ -43,12 +43,12 @@ class ChatComponent extends StatelessWidget {
         // Get all watched dependendies
         final activeAccountInfo = context.watch<ActiveAccountInfo>();
         final accountRecordInfo =
-            context.watch<AccountRecordCubit>().state.data?.value;
+            context.watch<AccountRecordCubit>().state.asData?.value;
         if (accountRecordInfo == null) {
           return debugPage('should always have an account record here');
         }
         final contactList =
-            context.watch<ContactListCubit>().state.state.data?.value;
+            context.watch<ContactListCubit>().state.state.asData?.value;
         if (contactList == null) {
           return debugPage('should always have a contact list here');
         }
@@ -58,7 +58,7 @@ class ChatComponent extends StatelessWidget {
         if (avconversation == null) {
           return waitingPage();
         }
-        final conversation = avconversation.data?.value;
+        final conversation = avconversation.asData?.value;
         if (conversation == null) {
           return avconversation.buildNotData();
         }
@@ -140,7 +140,7 @@ class ChatComponent extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final chatTheme = makeChatTheme(scale, textTheme);
 
-    final messages = _messagesState.data?.value;
+    final messages = _messagesState.asData?.value;
     if (messages == null) {
       return _messagesState.buildNotData();
     }

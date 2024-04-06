@@ -38,37 +38,37 @@ class VeilidChatApp extends StatelessWidget {
         // Once init is done, we proceed with the app
         final localizationDelegate = LocalizedApp.of(context).delegate;
         return ThemeProvider(
-            initTheme: initialThemeData,
-            builder: (_, theme) => LocalizationProvider(
-                  state: LocalizationProvider.of(context).state,
-                  child: MultiBlocProvider(
-                      providers: [
-                        BlocProvider<ConnectionStateCubit>(
-                            create: (context) => ConnectionStateCubit(
-                                ProcessorRepository.instance)),
-                        BlocProvider<RouterCubit>(
-                          create: (context) =>
-                              RouterCubit(AccountRepository.instance),
-                        ),
-                        BlocProvider<LocalAccountsCubit>(
-                          create: (context) =>
-                              LocalAccountsCubit(AccountRepository.instance),
-                        ),
-                        BlocProvider<UserLoginsCubit>(
-                          create: (context) =>
-                              UserLoginsCubit(AccountRepository.instance),
-                        ),
-                        BlocProvider<ActiveLocalAccountCubit>(
-                          create: (context) => ActiveLocalAccountCubit(
-                              AccountRepository.instance),
-                        ),
-                        BlocProvider<PreferencesCubit>(
-                          create: (context) =>
-                              PreferencesCubit(PreferencesRepository.instance),
-                        )
-                      ],
-                      child: BackgroundTicker(
-                        builder: (context) => MaterialApp.router(
+          initTheme: initialThemeData,
+          builder: (_, theme) => LocalizationProvider(
+              state: LocalizationProvider.of(context).state,
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<ConnectionStateCubit>(
+                      create: (context) =>
+                          ConnectionStateCubit(ProcessorRepository.instance)),
+                  BlocProvider<RouterCubit>(
+                    create: (context) =>
+                        RouterCubit(AccountRepository.instance),
+                  ),
+                  BlocProvider<LocalAccountsCubit>(
+                    create: (context) =>
+                        LocalAccountsCubit(AccountRepository.instance),
+                  ),
+                  BlocProvider<UserLoginsCubit>(
+                    create: (context) =>
+                        UserLoginsCubit(AccountRepository.instance),
+                  ),
+                  BlocProvider<ActiveLocalAccountCubit>(
+                    create: (context) =>
+                        ActiveLocalAccountCubit(AccountRepository.instance),
+                  ),
+                  BlocProvider<PreferencesCubit>(
+                    create: (context) =>
+                        PreferencesCubit(PreferencesRepository.instance),
+                  )
+                ],
+                child: BackgroundTicker(
+                    builder: (context) => MaterialApp.router(
                           debugShowCheckedModeBanner: false,
                           routerConfig: context.watch<RouterCubit>().router(),
                           title: translate('app.title'),
@@ -82,9 +82,9 @@ class VeilidChatApp extends StatelessWidget {
                           supportedLocales:
                               localizationDelegate.supportedLocales,
                           locale: localizationDelegate.currentLocale,
-                        ),
-                      )),
-                ));
+                        )),
+              )),
+        );
       });
 
   @override

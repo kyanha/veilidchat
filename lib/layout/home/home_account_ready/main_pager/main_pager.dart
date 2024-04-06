@@ -121,7 +121,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
                 'Scan Contact Invite',
                 style: TextStyle(fontSize: 24),
               ),
-              content: ScanInviteDialog(
+              content: ScanInvitationDialog(
                 modalContext: context,
               ));
         });

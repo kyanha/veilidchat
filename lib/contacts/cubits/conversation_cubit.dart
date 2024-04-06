@@ -162,7 +162,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     final deleteSet = DelayedWaitSet();
 
     if (localConversationCubit != null) {
-      final data = localConversationCubit.state.data;
+      final data = localConversationCubit.state.asData;
       if (data == null) {
         log.warning('could not delete local conversation');
         return false;
@@ -180,7 +180,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     }
 
     if (remoteConversationCubit != null) {
-      final data = remoteConversationCubit.state.data;
+      final data = remoteConversationCubit.state.asData;
       if (data == null) {
         log.warning('could not delete remote conversation');
         return false;

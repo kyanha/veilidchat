@@ -13,17 +13,17 @@ import '../../account_manager/account_manager.dart';
 import '../../tools/tools.dart';
 import '../contact_invitation.dart';
 
-class SendInviteDialog extends StatefulWidget {
-  const SendInviteDialog({required this.modalContext, super.key});
+class CreateInvitationDialog extends StatefulWidget {
+  const CreateInvitationDialog._({required this.modalContext});
 
   @override
-  SendInviteDialogState createState() => SendInviteDialogState();
+  CreateInvitationDialogState createState() => CreateInvitationDialogState();
 
   static Future<void> show(BuildContext context) async {
-    await showStyledDialog<void>(
+    await StyledDialog.show<void>(
         context: context,
-        title: translate('send_invite_dialog.title'),
-        child: SendInviteDialog(modalContext: context));
+        title: translate('create_invitation_dialog.title'),
+        child: CreateInvitationDialog._(modalContext: context));
   }
 
   final BuildContext modalContext;
@@ -36,9 +36,9 @@ class SendInviteDialog extends StatefulWidget {
   }
 }
 
-class SendInviteDialogState extends State<SendInviteDialog> {
+class CreateInvitationDialogState extends State<CreateInvitationDialog> {
   final _messageTextController = TextEditingController(
-      text: translate('send_invite_dialog.connect_with_me'));
+      text: translate('create_invitation_dialog.connect_with_me'));
 
   EncryptionKeyType _encryptionKeyType = EncryptionKeyType.none;
   String _encryptionKey = '';
@@ -58,7 +58,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
   }
 
   Future<void> _onPinEncryptionSelected(bool selected) async {
-    final description = translate('send_invite_dialog.pin_description');
+    final description = translate('create_invitation_dialog.pin_description');
     final pin = await showDialog<String>(
         context: context,
         builder: (context) =>
@@ -87,7 +87,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
         return;
       }
       showErrorToast(
-          context, translate('send_invite_dialog.pin_does_not_match'));
+          context, translate('create_invitation_dialog.pin_does_not_match'));
       setState(() {
         _encryptionKeyType = EncryptionKeyType.none;
         _encryptionKey = '';
@@ -96,7 +96,8 @@ class SendInviteDialogState extends State<SendInviteDialog> {
   }
 
   Future<void> _onPasswordEncryptionSelected(bool selected) async {
-    final description = translate('send_invite_dialog.password_description');
+    final description =
+        translate('create_invitation_dialog.password_description');
     final password = await showDialog<String>(
         context: context,
         builder: (context) => EnterPasswordDialog(description: description));
@@ -123,8 +124,8 @@ class SendInviteDialogState extends State<SendInviteDialog> {
       if (!mounted) {
         return;
       }
-      showErrorToast(
-          context, translate('send_invite_dialog.password_does_not_match'));
+      showErrorToast(context,
+          translate('create_invitation_dialog.password_does_not_match'));
       setState(() {
         _encryptionKeyType = EncryptionKeyType.none;
         _encryptionKey = '';
@@ -145,13 +146,10 @@ class SendInviteDialogState extends State<SendInviteDialog> {
         message: _messageTextController.text,
         expiration: _expiration);
 
-    await showDialog<void>(
+    await ContactInvitationDisplayDialog.show(
         context: context,
-        builder: (context) => BlocProvider(
-            create: (context) => InvitationGeneratorCubit(generator),
-            child: ContactInvitationDisplayDialog(
-              message: _messageTextController.text,
-            )));
+        message: _messageTextController.text,
+        create: (context) => InvitationGeneratorCubit(generator));
 
     navigator.pop();
   }
@@ -176,7 +174,7 @@ class SendInviteDialogState extends State<SendInviteDialog> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              translate('send_invite_dialog.message_to_contact'),
+              translate('create_invitation_dialog.message_to_contact'),
             ).paddingAll(8),
             TextField(
               controller: _messageTextController,
@@ -185,26 +183,27 @@ class SendInviteDialogState extends State<SendInviteDialog> {
               ],
               decoration: InputDecoration(
                   border: const OutlineInputBorder(),
-                  hintText: translate('send_invite_dialog.enter_message_hint'),
-                  labelText: translate('send_invite_dialog.message')),
+                  hintText:
+                      translate('create_invitation_dialog.enter_message_hint'),
+                  labelText: translate('create_invitation_dialog.message')),
             ).paddingAll(8),
             const SizedBox(height: 10),
-            Text(translate('send_invite_dialog.protect_this_invitation'),
+            Text(translate('create_invitation_dialog.protect_this_invitation'),
                     style: textTheme.labelLarge)
                 .paddingAll(8),
             Wrap(spacing: 5, children: [
               ChoiceChip(
-                label: Text(translate('send_invite_dialog.unlocked')),
+                label: Text(translate('create_invitation_dialog.unlocked')),
                 selected: _encryptionKeyType == EncryptionKeyType.none,
                 onSelected: _onNoneEncryptionSelected,
               ),
               ChoiceChip(
-                label: Text(translate('send_invite_dialog.pin')),
+                label: Text(translate('create_invitation_dialog.pin')),
                 selected: _encryptionKeyType == EncryptionKeyType.pin,
                 onSelected: _onPinEncryptionSelected,
               ),
               ChoiceChip(
-                label: Text(translate('send_invite_dialog.password')),
+                label: Text(translate('create_invitation_dialog.password')),
                 selected: _encryptionKeyType == EncryptionKeyType.password,
                 onSelected: _onPasswordEncryptionSelected,
               )
@@ -216,13 +215,13 @@ class SendInviteDialogState extends State<SendInviteDialog> {
               child: ElevatedButton(
                 onPressed: _onGenerateButtonPressed,
                 child: Text(
-                  translate('send_invite_dialog.generate'),
+                  translate('create_invitation_dialog.generate'),
                 ),
               ),
             ),
-            Text(translate('send_invite_dialog.note')).paddingAll(8),
+            Text(translate('create_invitation_dialog.note')).paddingAll(8),
             Text(
-              translate('send_invite_dialog.note_text'),
+              translate('create_invitation_dialog.note_text'),
               style: Theme.of(context).textTheme.bodySmall,
             ).paddingAll(8),
           ],

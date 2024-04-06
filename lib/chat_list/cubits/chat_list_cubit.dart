@@ -130,7 +130,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
   /// StateMapFollowable /////////////////////////
   @override
   IMap<TypedKey, proto.Chat> getStateMap(ChatListCubitState state) {
-    final stateValue = state.state.data?.value;
+    final stateValue = state.state.asData?.value;
     if (stateValue == null) {
       return IMap();
     }
