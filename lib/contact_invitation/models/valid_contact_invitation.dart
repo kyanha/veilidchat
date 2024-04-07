@@ -73,13 +73,9 @@ class ValidContactInvitation {
                 ..identitySignature = identitySignature.toProto();
 
               // Write the acceptance to the inbox
-              if (await contactRequestInbox.tryWriteProtobuf(
-                      proto.SignedContactResponse.fromBuffer,
-                      signedContactResponse,
-                      subkey: 1) !=
-                  null) {
-                throw Exception('failed to accept contact invitation');
-              }
+              await contactRequestInbox
+                  .eventualWriteProtobuf(signedContactResponse, subkey: 1);
+
               return AcceptedContact(
                 remoteProfile: _contactRequestPrivate.profile,
                 remoteIdentity: _contactIdentityMaster,
@@ -129,13 +125,8 @@ class ValidContactInvitation {
         ..identitySignature = identitySignature.toProto();
 
       // Write the rejection to the inbox
-      if (await contactRequestInbox.tryWriteProtobuf(
-              proto.SignedContactResponse.fromBuffer, signedContactResponse,
-              subkey: 1) !=
-          null) {
-        log.error('failed to reject contact invitation');
-        return false;
-      }
+      await contactRequestInbox.eventualWriteProtobuf(signedContactResponse,
+          subkey: 1);
       return true;
     });
   }

@@ -17,10 +17,13 @@ class PasteInvitationDialog extends StatefulWidget {
   PasteInvitationDialogState createState() => PasteInvitationDialogState();
 
   static Future<void> show(BuildContext context) async {
-    await StyledDialog.show<void>(
+    final modalContext = context;
+
+    await showPopControlDialog<void>(
         context: context,
-        title: translate('paste_invitation_dialog.title'),
-        child: PasteInvitationDialog(modalContext: context));
+        builder: (context) => StyledDialog(
+            title: translate('paste_invitation_dialog.title'),
+            child: PasteInvitationDialog(modalContext: modalContext)));
   }
 
   final BuildContext modalContext;
@@ -67,8 +70,13 @@ class PasteInvitationDialogState extends State<PasteInvitationDialog> {
         .sublist(firstline, lastline)
         .join()
         .replaceAll(RegExp(r'[^A-Za-z0-9\-_]'), '');
-    final inviteData = base64UrlNoPadDecode(inviteDataBase64);
 
+    var inviteData = Uint8List(0);
+    try {
+      inviteData = base64UrlNoPadDecode(inviteDataBase64);
+    } on Exception {
+      //
+    }
     await validateInviteData(inviteData: inviteData);
   }
 
@@ -105,7 +113,7 @@ class PasteInvitationDialogState extends State<PasteInvitationDialog> {
     return Column(mainAxisSize: MainAxisSize.min, children: [
       Text(
         translate('paste_invitation_dialog.paste_invite_here'),
-      ).paddingLTRB(0, 0, 0, 8),
+      ).paddingLTRB(0, 0, 0, 16),
       Container(
           constraints: const BoxConstraints(maxHeight: 200),
           child: TextField(

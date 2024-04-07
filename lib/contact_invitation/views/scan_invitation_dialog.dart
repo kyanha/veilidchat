@@ -110,10 +110,12 @@ class ScanInvitationDialog extends StatefulWidget {
   ScanInvitationDialogState createState() => ScanInvitationDialogState();
 
   static Future<void> show(BuildContext context) async {
-    await StyledDialog.show<void>(
+    final modalContext = context;
+    await showPopControlDialog<void>(
         context: context,
-        title: translate('scan_invitation_dialog.title'),
-        child: ScanInvitationDialog(modalContext: context));
+        builder: (context) => StyledDialog(
+            title: translate('scan_invitation_dialog.title'),
+            child: ScanInvitationDialog(modalContext: modalContext)));
   }
 
   final BuildContext modalContext;

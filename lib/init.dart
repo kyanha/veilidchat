@@ -24,7 +24,8 @@ class VeilidChatGlobalInit {
     await ProcessorRepository.instance.startup();
 
     // DHT Record Pool
-    await DHTRecordPool.init();
+    await DHTRecordPool.init(
+        logger: (message) => log.debug('DHTRecordPool: $message'));
   }
 
 // Initialize repositories

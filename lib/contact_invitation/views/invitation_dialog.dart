@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../contacts/contacts.dart';
@@ -222,6 +223,16 @@ class InvitationDialogState extends State<InvitationDialog> {
         _validInvitation = null;
         widget.onValidationFailed();
       });
+    } on VeilidAPIException {
+      final errorText = translate('invitation_dialog.invalid_invitation');
+      if (mounted) {
+        showErrorToast(context, errorText);
+      }
+      setState(() {
+        _isValidating = false;
+        _validInvitation = null;
+        widget.onValidationFailed();
+      });
     } on Exception catch (e) {
       log.debug('exception: $e', e);
       setState(() {
@@ -233,6 +244,48 @@ class InvitationDialogState extends State<InvitationDialog> {
     }
   }
 
+  List<Widget> _buildPreAccept() => <Widget>[
+        if (!_isValidating && _validInvitation == null)
+          widget.buildInviteControl(context, this, _validateInviteData),
+        if (_isValidating)
+          Column(children: [
+            Text(translate('invitation_dialog.validating'))
+                .paddingLTRB(0, 0, 0, 16),
+            buildProgressIndicator().paddingAll(16),
+          ]).toCenter(),
+        if (_validInvitation == null &&
+            !_isValidating &&
+            widget.inviteControlIsValid())
+          Column(children: [
+            Text(translate('invitation_dialog.invalid_invitation')),
+            const Icon(Icons.error).paddingAll(16)
+          ]).toCenter(),
+        if (_validInvitation != null && !_isValidating)
+          Column(children: [
+            Container(
+                    constraints: const BoxConstraints(maxHeight: 64),
+                    width: double.infinity,
+                    child:
+                        ProfileWidget(profile: _validInvitation!.remoteProfile))
+                .paddingLTRB(0, 0, 0, 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.check_circle),
+                  label: Text(translate('button.accept')),
+                  onPressed: _onAccept,
+                ).paddingLTRB(0, 0, 8, 0),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.cancel),
+                  label: Text(translate('button.reject')),
+                  onPressed: _onReject,
+                ).paddingLTRB(8, 0, 0, 0)
+              ],
+            ),
+          ])
+      ];
+
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
@@ -240,63 +293,20 @@ class InvitationDialogState extends State<InvitationDialog> {
     // final scale = theme.extension<ScaleScheme>()!;
     // final textTheme = theme.textTheme;
     // final height = MediaQuery.of(context).size.height;
+    final dismissible = !_isAccepting && !_isValidating;
 
-    if (_isAccepting) {
-      return SizedBox(
-              height: 300,
-              width: 300,
-              child: buildProgressIndicator().toCenter())
-          .paddingAll(16);
-    }
-    return ConstrainedBox(
+    final dialog = ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 400, maxWidth: 400),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              widget.buildInviteControl(context, this, _validateInviteData),
-              if (_isValidating)
-                Column(children: [
-                  Text(translate('invitation_dialog.validating'))
-                      .paddingLTRB(0, 0, 0, 16),
-                  buildProgressIndicator().paddingAll(16),
-                ]).toCenter(),
-              if (_validInvitation == null &&
-                  !_isValidating &&
-                  widget.inviteControlIsValid())
-                Column(children: [
-                  Text(translate('invitation_dialog.invalid_invitation')),
-                  const Icon(Icons.error)
-                ]).paddingAll(16).toCenter(),
-              if (_validInvitation != null && !_isValidating)
-                Column(children: [
-                  Container(
-                          constraints: const BoxConstraints(maxHeight: 64),
-                          width: double.infinity,
-                          child: ProfileWidget(
-                              profile: _validInvitation!.remoteProfile))
-                      .paddingLTRB(0, 0, 0, 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.check_circle),
-                        label: Text(translate('button.accept')),
-                        onPressed: _onAccept,
-                      ),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.cancel),
-                        label: Text(translate('button.reject')),
-                        onPressed: _onReject,
-                      )
-                    ],
-                  ),
-                ])
-            ]),
+            children: _isAccepting
+                ? [buildProgressIndicator().paddingAll(16)]
+                : _buildPreAccept()),
       ),
     );
+    return PopControl(dismissible: dismissible, child: dialog);
   }
 
   @override

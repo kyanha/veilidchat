@@ -22,7 +22,9 @@ class PopControl extends StatelessWidget {
 
     final route = ModalRoute.of(context);
     if (route != null && route is PopControlDialogRoute) {
-      route.barrierDismissible = dismissible;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        route.barrierDismissible = dismissible;
+      });
     }
 
     return PopScope(
@@ -65,6 +67,7 @@ class PopControlDialogRoute<T> extends DialogRoute<T> {
 
   set barrierDismissible(bool d) {
     _barrierDismissible = d;
+    changedInternalState();
   }
 
   bool _barrierDismissible;
