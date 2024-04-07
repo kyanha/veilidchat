@@ -10,8 +10,7 @@ import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 
 class _SingleContactMessageQueueEntry {
-  _SingleContactMessageQueueEntry({this.localMessages, this.remoteMessages});
-  IList<proto.Message>? localMessages;
+  _SingleContactMessageQueueEntry({this.remoteMessages});
   IList<proto.Message>? remoteMessages;
 }
 
@@ -96,9 +95,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
             parent: _localConversationRecordKey,
             crypto: _messagesCrypto),
         decodeElement: proto.Message.fromBuffer);
-    _localSubscription =
-        _localMessagesCubit!.stream.listen(_updateLocalMessagesState);
-    _updateLocalMessagesState(_localMessagesCubit!.state);
   }
 
   // Open remote messages key
@@ -130,18 +126,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _reconciledChatSubscription =
         _reconciledChatMessagesCubit!.stream.listen(_updateReconciledChatState);
     _updateReconciledChatState(_reconciledChatMessagesCubit!.state);
-  }
-
-  // Called when the local messages list gets a change
-  void _updateLocalMessagesState(
-      BlocBusyState<AsyncValue<IList<proto.Message>>> avmessages) {
-    final localMessages = avmessages.state.asData?.value;
-    if (localMessages == null) {
-      return;
-    }
-    // Add local messages updates to queue to process asynchronously
-    _messagesUpdateQueue
-        .add(_SingleContactMessageQueueEntry(localMessages: localMessages));
   }
 
   // Called when the remote messages list gets a change
@@ -232,12 +216,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // Merge remote and local messages into the reconciled chat log
     await reconciledChatMessagesCubit
         .operateWrite((reconciledMessagesWriter) async {
-      // xxx for now, keep two lists, but can probable simplify this out soon
-      if (entry.localMessages != null) {
-        await _mergeMessagesInner(
-            reconciledMessagesWriter: reconciledMessagesWriter,
-            messages: entry.localMessages!);
-      }
       if (entry.remoteMessages != null) {
         await _mergeMessagesInner(
             reconciledMessagesWriter: reconciledMessagesWriter,
@@ -246,24 +224,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     });
   }
 
-  // Force refresh of messages
-  Future<void> refresh() async {
-    await _initWait();
-
-    final lcc = _localMessagesCubit;
-    final rcc = _remoteMessagesCubit;
-
-    if (lcc != null) {
-      await lcc.refresh();
-    }
-    if (rcc != null) {
-      await rcc.refresh();
-    }
-  }
-
   Future<void> addMessage({required proto.Message message}) async {
     await _initWait();
 
+    await _reconciledChatMessagesCubit!.operateWrite((writer) =>
+        _mergeMessagesInner(
+            reconciledMessagesWriter: writer, messages: [message].toIList()));
     await _localMessagesCubit!
         .operateWrite((writer) => writer.tryAddItem(message.writeToBuffer()));
   }

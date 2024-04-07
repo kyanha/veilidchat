@@ -69,12 +69,23 @@ class _DeveloperPageState extends State<DeveloperPage> {
   }
 
   Future<void> _sendDebugCommand(String debugCommand) async {
+    if (debugCommand == 'pool allocations') {
+      DHTRecordPool.instance.debugPrintAllocations();
+      return;
+    }
+
+    if (debugCommand == 'pool opened') {
+      DHTRecordPool.instance.debugPrintOpened();
+      return;
+    }
+
     if (debugCommand == 'ellet') {
       setState(() {
         _showEllet = !_showEllet;
       });
       return;
     }
+
     _debugOut('DEBUG >>>\n$debugCommand\n');
     try {
       final out = await Veilid.instance.debug(debugCommand);

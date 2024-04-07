@@ -1,5 +1,13 @@
 part of 'dht_short_array.dart';
 
+class DHTShortArrayHeadLookup {
+  DHTShortArrayHeadLookup(
+      {required this.record, required this.recordSubkey, required this.seq});
+  final DHTRecord record;
+  final int recordSubkey;
+  final int seq;
+}
+
 class _DHTShortArrayHead {
   _DHTShortArrayHead({required DHTRecord headRecord})
       : _headRecord = headRecord,
@@ -299,16 +307,18 @@ class _DHTShortArrayHead {
           );
   }
 
-  Future<(DHTRecord, int)> lookupPosition(int pos) async {
+  Future<DHTShortArrayHeadLookup> lookupPosition(int pos) async {
     final idx = _index[pos];
     return lookupIndex(idx);
   }
 
-  Future<(DHTRecord, int)> lookupIndex(int idx) async {
+  Future<DHTShortArrayHeadLookup> lookupIndex(int idx) async {
+    final seq = idx < _seqs.length ? _seqs[idx] : 0xFFFFFFFF;
     final recordNumber = idx ~/ _stride;
     final record = await _getOrCreateLinkedRecord(recordNumber);
     final recordSubkey = (idx % _stride) + ((recordNumber == 0) ? 1 : 0);
-    return (record, recordSubkey);
+    return DHTShortArrayHeadLookup(
+        record: record, recordSubkey: recordSubkey, seq: seq);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -416,9 +426,9 @@ class _DHTShortArrayHead {
   /// If a write is happening, update the network copy as well.
   Future<void> updatePositionSeq(int pos, bool write) async {
     final idx = _index[pos];
-    final (record, recordSubkey) = await lookupIndex(idx);
-    final report =
-        await record.inspect(subkeys: [ValueSubkeyRange.single(recordSubkey)]);
+    final lookup = await lookupIndex(idx);
+    final report = await lookup.record
+        .inspect(subkeys: [ValueSubkeyRange.single(lookup.recordSubkey)]);
 
     while (_localSeqs.length <= idx) {
       _localSeqs.add(0xFFFFFFFF);

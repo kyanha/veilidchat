@@ -528,6 +528,12 @@ ChatTheme makeChatTheme(ScaleScheme scale, TextTheme textTheme) =>
       inputPadding: const EdgeInsets.all(9),
       inputTextColor: scale.primaryScale.text,
       attachmentButtonIcon: const Icon(Icons.attach_file),
+      receivedMessageBodyTextStyle: const TextStyle(
+        color: neutral0,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        height: 1.5,
+      ),
     );
 
 ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {

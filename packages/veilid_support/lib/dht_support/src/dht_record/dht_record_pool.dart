@@ -98,6 +98,15 @@ class OpenedRecordInfo {
       ..sort((a, b) => a.key.toString().compareTo(b.key.toString()));
     return '[${r.map((x) => x.debugName).join(',')}]';
   }
+
+  String get details {
+    final r = records.toList()
+      ..sort((a, b) => a.key.toString().compareTo(b.key.toString()));
+    return '[${r.map((x) => "writer=${x._writer} "
+        "defaultSubkey=${x._defaultSubkey}").join(',')}]';
+  }
+
+  String get sharedDetails => shared.toString();
 }
 
 class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
@@ -766,6 +775,31 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       }
     } finally {
       _inTick = false;
+    }
+  }
+
+  void debugPrintAllocations() {
+    final sortedAllocations = _state.debugNames.entries.asList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    log('DHTRecordPool Allocations: (count=${sortedAllocations.length})');
+
+    for (final entry in sortedAllocations) {
+      log('  ${entry.key}: ${entry.value}');
+    }
+  }
+
+  void debugPrintOpened() {
+    final sortedOpened = _opened.entries.asList()
+      ..sort((a, b) => a.key.toString().compareTo(b.key.toString()));
+
+    log('DHTRecordPool Opened Records: (count=${sortedOpened.length})');
+
+    for (final entry in sortedOpened) {
+      log('  ${entry.key}: \n'
+          '     debugNames=${entry.value.debugNames}\n'
+          '     details=${entry.value.details}\n'
+          '     sharedDetails=${entry.value.sharedDetails}\n');
     }
   }
 }
