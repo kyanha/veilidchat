@@ -125,13 +125,13 @@
         "password_does_not_match": "Password does not match"
     },
     "contact_list": {
-        "title": "Contact List",
+        "title": "Contacts",
         "invite_people": "Invite people to VeilidChat",
         "search": "Search contacts",
         "invitation": "Invitation"
     },
     "chat_list": {
-        "search": "Search",
+        "search": "Search chats",
         "start_a_conversation": "Start a conversation",
         "chats": "Chats",
         "groups": "Groups"

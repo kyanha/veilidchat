@@ -94,7 +94,7 @@ class _EnterPasswordDialogState extends State<EnterPasswordDialog> {
                         _passwordVisible
                             ? Icons.visibility
                             : Icons.visibility_off,
-                        color: scale.primaryScale.text,
+                        color: scale.primaryScale.appText,
                       ),
                       onPressed: () {
                         setState(() {

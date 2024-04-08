@@ -33,27 +33,27 @@ class SignalStrengthMeterWidget extends StatelessWidget {
             switch (connectionState.attachment.state) {
               case AttachmentState.detached:
                 iconWidget = Icon(Icons.signal_cellular_nodata,
-                    size: iconSize, color: scale.grayScale.text);
+                    size: iconSize, color: scale.grayScale.appText);
                 return;
               case AttachmentState.detaching:
                 iconWidget = Icon(Icons.signal_cellular_off,
-                    size: iconSize, color: scale.grayScale.text);
+                    size: iconSize, color: scale.grayScale.appText);
                 return;
               case AttachmentState.attaching:
                 value = 0;
-                color = scale.primaryScale.text;
+                color = scale.primaryScale.appText;
               case AttachmentState.attachedWeak:
                 value = 1;
-                color = scale.primaryScale.text;
+                color = scale.primaryScale.appText;
               case AttachmentState.attachedStrong:
                 value = 2;
-                color = scale.primaryScale.text;
+                color = scale.primaryScale.appText;
               case AttachmentState.attachedGood:
                 value = 3;
-                color = scale.primaryScale.text;
+                color = scale.primaryScale.appText;
               case AttachmentState.fullyAttached:
                 value = 4;
-                color = scale.primaryScale.text;
+                color = scale.primaryScale.appText;
               case AttachmentState.overAttached:
                 value = 4;
                 color = scale.secondaryScale.subtleText;

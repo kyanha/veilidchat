@@ -68,7 +68,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                               inputDecoration: InputDecoration(
                                 labelText: translate('chat_list.search'),
                                 contentPadding: const EdgeInsets.all(2),
-                                fillColor: scale.primaryScale.text,
+                                fillColor: scale.primaryScale.elementBackground,
                                 focusedBorder: OutlineInputBorder(
                                   borderSide: BorderSide(
                                     color: scale.primaryScale.hoverBorder,
@@ -77,7 +77,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                                 ),
                               ),
                             ).paddingAll(8))))
-          .paddingLTRB(8, 8, 8, 65));
+          .paddingLTRB(8, 0, 8, 8));
     });
   }
 }

@@ -132,17 +132,20 @@ void showInfoToast(BuildContext context, String message) {
   ).show(context);
 }
 
-Widget styledTitleContainer(
-    {required BuildContext context,
-    required String title,
-    required Widget child}) {
+Widget styledTitleContainer({
+  required BuildContext context,
+  required String title,
+  required Widget child,
+  Color? borderColor,
+  Color? backgroundColor,
+}) {
   final theme = Theme.of(context);
   final scale = theme.extension<ScaleScheme>()!;
   final textTheme = theme.textTheme;
 
   return DecoratedBox(
       decoration: ShapeDecoration(
-          color: scale.primaryScale.border,
+          color: borderColor ?? scale.primaryScale.border,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           )),
@@ -154,7 +157,8 @@ Widget styledTitleContainer(
         ).paddingLTRB(8, 8, 8, 8),
         DecoratedBox(
                 decoration: ShapeDecoration(
-                    color: scale.primaryScale.subtleBackground,
+                    color:
+                        backgroundColor ?? scale.primaryScale.subtleBackground,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     )),

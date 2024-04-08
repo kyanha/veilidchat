@@ -66,7 +66,7 @@ class ContactInvitationItemWidget extends StatelessWidget {
                                         .toVeilid());
                           },
                     backgroundColor: scale.tertiaryScale.background,
-                    foregroundColor: scale.tertiaryScale.text,
+                    foregroundColor: scale.tertiaryScale.appText,
                     icon: Icons.delete,
                     label: translate('button.delete'),
                     padding: const EdgeInsets.all(2)),
@@ -119,7 +119,7 @@ class ContactInvitationItemWidget extends StatelessWidget {
                   softWrap: true,
                 ),
                 iconColor: scale.tertiaryScale.background,
-                textColor: scale.tertiaryScale.text,
+                textColor: scale.tertiaryScale.appText,
                 //Text(Timestamp.fromInt64(contactInvitationRecord.expiration) / ),
                 leading: const Icon(Icons.person_add))));
   }

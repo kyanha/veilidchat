@@ -38,7 +38,9 @@ class ChatSingleContactItemWidget extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(0, 4, 0, 0),
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-            color: scale.tertiaryScale.subtleBorder,
+            color: selected
+                ? scale.primaryScale.activeElementBackground
+                : scale.primaryScale.hoverElementBackground,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             )),
@@ -57,7 +59,7 @@ class ChatSingleContactItemWidget extends StatelessWidget {
                                     remoteConversationRecordKey);
                           },
                     backgroundColor: scale.tertiaryScale.background,
-                    foregroundColor: scale.tertiaryScale.text,
+                    foregroundColor: scale.tertiaryScale.foregroundText,
                     icon: Icons.delete,
                     label: translate('button.delete'),
                     padding: const EdgeInsets.all(2)),
@@ -88,9 +90,13 @@ class ChatSingleContactItemWidget extends StatelessWidget {
                 subtitle: (_contact.editedProfile.pronouns.isNotEmpty)
                     ? Text(_contact.editedProfile.pronouns)
                     : null,
-                iconColor: scale.tertiaryScale.background,
-                textColor: scale.tertiaryScale.text,
-                selected: selected,
+                iconColor: selected
+                    ? scale.primaryScale.appText
+                    : scale.primaryScale.subtleText,
+                textColor: selected
+                    ? scale.primaryScale.appText
+                    : scale.primaryScale.subtleText,
+                selectedColor: scale.primaryScale.appText,
                 //Text(Timestamp.fromInt64(contactInvitationRecord.expiration) / ),
                 leading: const Icon(Icons.chat))));
   }

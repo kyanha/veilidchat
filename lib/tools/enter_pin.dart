@@ -58,7 +58,7 @@ class _EnterPinDialogState extends State<EnterPinDialog> {
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 60,
-      textStyle: TextStyle(fontSize: 22, color: scale.primaryScale.text),
+      textStyle: TextStyle(fontSize: 22, color: scale.primaryScale.appText),
       decoration: BoxDecoration(
         color: fillColor,
         borderRadius: BorderRadius.circular(8),

@@ -3,6 +3,7 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../layout/default_app_bar.dart';
 import '../theme/theme.dart';
@@ -37,18 +38,16 @@ class SettingsPageState extends State<SettingsPage> {
       AsyncBlocBuilder<PreferencesCubit, Preferences>(
           builder: (context, state) => ThemeSwitchingArea(
                   child: Scaffold(
-                // resizeToAvoidBottomInset: false,
                 appBar: DefaultAppBar(
                     title: Text(translate('settings_page.titlebar')),
                     leading: IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      onPressed: () => context.pop<void>(),
+                      onPressed: () => GoRouterHelper(context).pop(),
                     ),
                     actions: <Widget>[
                       const SignalStrengthMeterWidget()
                           .paddingLTRB(16, 0, 16, 0),
                     ]),
-
                 body: FormBuilder(
                   key: _formKey,
                   child: ListView(

@@ -85,10 +85,10 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
     final scale = theme.extension<ScaleScheme>()!;
     return BottomBarItem(
       title: Text(_bottomLabelList[index]),
-      icon: Icon(_selectedIconList[index], color: scale.primaryScale.text),
+      icon: Icon(_selectedIconList[index], color: scale.primaryScale.appText),
       selectedIcon:
-          Icon(_selectedIconList[index], color: scale.primaryScale.text),
-      backgroundColor: scale.primaryScale.text,
+          Icon(_selectedIconList[index], color: scale.primaryScale.appText),
+      backgroundColor: scale.primaryScale.appText,
       //unSelectedColor: theme.colorScheme.primaryContainer,
       //selectedColor: theme.colorScheme.primary,
       //badge: const Text('9+'),
@@ -209,11 +209,11 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
       floatingActionButton: BottomSheetActionButton(
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(14))),
-          foregroundColor: scale.secondaryScale.text,
+          foregroundColor: scale.secondaryScale.appText,
           backgroundColor: scale.secondaryScale.hoverBorder,
           builder: (context) => Icon(
                 _fabIconList[_currentPage],
-                color: scale.secondaryScale.text,
+                color: scale.secondaryScale.appText,
               ),
           bottomSheetBuilder: (sheetContext) =>
               _bottomSheetBuilder(sheetContext, context)),

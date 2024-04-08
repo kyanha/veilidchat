@@ -107,7 +107,7 @@ class PasteInvitationDialogState extends State<PasteInvitationDialog> {
     final monoStyle = TextStyle(
       fontFamily: 'Source Code Pro',
       fontSize: 11,
-      color: scale.primaryScale.text,
+      color: scale.primaryScale.appText,
     );
 
     return Column(mainAxisSize: MainAxisSize.min, children: [

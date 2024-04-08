@@ -58,7 +58,7 @@ class ContactListWidget extends StatelessWidget {
                       inputDecoration: InputDecoration(
                         labelText: translate('contact_list.search'),
                         contentPadding: const EdgeInsets.all(2),
-                        fillColor: scale.primaryScale.text,
+                        fillColor: scale.primaryScale.appText,
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(
                             color: scale.primaryScale.hoverBorder,

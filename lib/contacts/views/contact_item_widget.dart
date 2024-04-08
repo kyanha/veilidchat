@@ -29,11 +29,16 @@ class ContactItemWidget extends StatelessWidget {
     final remoteConversationKey =
         contact.remoteConversationRecordKey.toVeilid();
 
+    const selected =
+        false; // xxx: eventually when we have selectable contacts: activeContactCubit.state == remoteConversationRecordKey;
+
     return Container(
         margin: const EdgeInsets.fromLTRB(0, 4, 0, 0),
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-            color: scale.tertiaryScale.subtleBorder,
+            color: selected
+                ? scale.primaryScale.activeElementBackground
+                : scale.primaryScale.hoverElementBackground,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             )),
@@ -60,7 +65,7 @@ class ContactItemWidget extends StatelessWidget {
                                 contact: contact);
                           },
                     backgroundColor: scale.tertiaryScale.background,
-                    foregroundColor: scale.tertiaryScale.text,
+                    foregroundColor: scale.tertiaryScale.appText,
                     icon: Icons.delete,
                     label: translate('button.delete'),
                     padding: const EdgeInsets.all(2)),
@@ -96,8 +101,13 @@ class ContactItemWidget extends StatelessWidget {
                 subtitle: (contact.editedProfile.pronouns.isNotEmpty)
                     ? Text(contact.editedProfile.pronouns)
                     : null,
-                iconColor: scale.tertiaryScale.background,
-                textColor: scale.tertiaryScale.text,
+                iconColor: selected
+                    ? scale.primaryScale.appText
+                    : scale.primaryScale.subtleText,
+                textColor: selected
+                    ? scale.primaryScale.appText
+                    : scale.primaryScale.subtleText,
+                selectedColor: scale.primaryScale.appText,
                 leading: const Icon(Icons.person))));
   }
 

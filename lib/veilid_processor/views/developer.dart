@@ -13,6 +13,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:veilid_support/veilid_support.dart';
 import 'package:xterm/xterm.dart';
 
+import '../../layout/layout.dart';
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 
@@ -127,15 +128,16 @@ class _DeveloperPageState extends State<DeveloperPage> {
     // });
 
     return Scaffold(
-        appBar: AppBar(
+        appBar: DefaultAppBar(
+          title: Text(translate('developer.title')),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: scale.primaryScale.text),
+            icon: Icon(Icons.arrow_back, color: scale.primaryScale.appText),
             onPressed: () => GoRouterHelper(context).pop(),
           ),
           actions: [
             IconButton(
                 icon: const Icon(Icons.copy),
-                color: scale.primaryScale.text,
+                color: scale.primaryScale.appText,
                 disabledColor: scale.grayScale.subtleText,
                 onPressed: _terminalController.selection == null
                     ? null
@@ -144,14 +146,14 @@ class _DeveloperPageState extends State<DeveloperPage> {
                       }),
             IconButton(
                 icon: const Icon(Icons.clear_all),
-                color: scale.primaryScale.text,
+                color: scale.primaryScale.appText,
                 disabledColor: scale.grayScale.subtleText,
                 onPressed: () async {
                   await QuickAlert.show(
                       context: context,
                       type: QuickAlertType.confirm,
                       title: translate('developer.are_you_sure_clear'),
-                      textColor: scale.primaryScale.text,
+                      textColor: scale.primaryScale.appText,
                       confirmBtnColor: scale.primaryScale.elementBackground,
                       backgroundColor: scale.primaryScale.subtleBackground,
                       headerBackgroundColor: scale.primaryScale.background,
@@ -181,7 +183,7 @@ class _DeveloperPageState extends State<DeveloperPage> {
                 height: 40,
                 render: ResultRender.icon,
                 textStyle: textTheme.labelMedium!
-                    .copyWith(color: scale.primaryScale.text),
+                    .copyWith(color: scale.primaryScale.appText),
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                 openBoxDecoration: BoxDecoration(
                     color: scale.primaryScale.activeElementBackground),
@@ -201,9 +203,9 @@ class _DeveloperPageState extends State<DeveloperPage> {
                   align: DropdownTriangleAlign.right),
               dropdownItemOptions: DropdownItemOptions(
                   selectedTextStyle: textTheme.labelMedium!
-                      .copyWith(color: scale.primaryScale.text),
+                      .copyWith(color: scale.primaryScale.appText),
                   textStyle: textTheme.labelMedium!
-                      .copyWith(color: scale.primaryScale.text),
+                      .copyWith(color: scale.primaryScale.appText),
                   selectedBoxDecoration: BoxDecoration(
                       color: scale.primaryScale.activeElementBackground),
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -212,10 +214,6 @@ class _DeveloperPageState extends State<DeveloperPage> {
               dropdownList: _logLevelDropdownItems,
             )
           ],
-          title: Text(translate('developer.title'),
-              style:
-                  textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold)),
-          centerTitle: true,
         ),
         body: SafeArea(
             child: Column(children: [

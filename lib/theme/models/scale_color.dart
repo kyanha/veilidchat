@@ -13,7 +13,8 @@ class ScaleColor {
     required this.background,
     required this.hoverBackground,
     required this.subtleText,
-    required this.text,
+    required this.appText,
+    required this.foregroundText,
   });
 
   Color appBackground;
@@ -27,21 +28,24 @@ class ScaleColor {
   Color background;
   Color hoverBackground;
   Color subtleText;
-  Color text;
+  Color appText;
+  Color foregroundText;
 
-  ScaleColor copyWith(
-          {Color? appBackground,
-          Color? subtleBackground,
-          Color? elementBackground,
-          Color? hoverElementBackground,
-          Color? activeElementBackground,
-          Color? subtleBorder,
-          Color? border,
-          Color? hoverBorder,
-          Color? background,
-          Color? hoverBackground,
-          Color? subtleText,
-          Color? text}) =>
+  ScaleColor copyWith({
+    Color? appBackground,
+    Color? subtleBackground,
+    Color? elementBackground,
+    Color? hoverElementBackground,
+    Color? activeElementBackground,
+    Color? subtleBorder,
+    Color? border,
+    Color? hoverBorder,
+    Color? background,
+    Color? hoverBackground,
+    Color? subtleText,
+    Color? appText,
+    Color? foregroundText,
+  }) =>
       ScaleColor(
         appBackground: appBackground ?? this.appBackground,
         subtleBackground: subtleBackground ?? this.subtleBackground,
@@ -56,7 +60,8 @@ class ScaleColor {
         background: background ?? this.background,
         hoverBackground: hoverBackground ?? this.hoverBackground,
         subtleText: subtleText ?? this.subtleText,
-        text: text ?? this.text,
+        appText: appText ?? this.appText,
+        foregroundText: foregroundText ?? this.foregroundText,
       );
 
   // ignore: prefer_constructors_over_static_methods
@@ -86,6 +91,8 @@ class ScaleColor {
             const Color(0x00000000),
         subtleText: Color.lerp(a.subtleText, b.subtleText, t) ??
             const Color(0x00000000),
-        text: Color.lerp(a.text, b.text, t) ?? const Color(0x00000000),
+        appText: Color.lerp(a.appText, b.appText, t) ?? const Color(0x00000000),
+        foregroundText: Color.lerp(a.foregroundText, b.foregroundText, t) ??
+            const Color(0x00000000),
       );
 }

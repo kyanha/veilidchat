@@ -188,6 +188,8 @@ class ChatComponent extends StatelessWidget {
                       decoration: const BoxDecoration(),
                       child: Chat(
                         theme: chatTheme,
+                        // emojiEnlargementBehavior:
+                        //     EmojiEnlargementBehavior.multi,
                         messages: chatMessages,
                         //onAttachmentPressed: _handleAttachmentPressed,
                         //onMessageTap: _handleMessageTap,
