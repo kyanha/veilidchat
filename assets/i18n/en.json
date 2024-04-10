@@ -58,11 +58,14 @@
     "account_page": {
         "contact_invitations": "Contact Invitations"
     },
-    "accounts_menu": {
-        "invite_contact": "Invite Contact",
+    "add_contact_sheet": {
+        "new_contact": "New Contact",
         "create_invite": "Create Invitation",
         "scan_invite": "Scan Invitation",
         "paste_invite": "Paste Invitation"
+    },
+    "add_chat_sheet": {
+        "new_chat": "New Chat"
     },
     "create_invitation_dialog": {
         "title": "Create Contact Invitation",

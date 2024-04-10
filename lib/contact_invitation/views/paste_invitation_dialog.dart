@@ -125,7 +125,6 @@ class PasteInvitationDialogState extends State<PasteInvitationDialog> {
             maxLines: null,
             controller: _pasteTextController,
             decoration: const InputDecoration(
-              border: OutlineInputBorder(),
               hintText: '--- BEGIN VEILIDCHAT CONTACT INVITE ----\n'
                   'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n'
                   '---- END VEILIDCHAT CONTACT INVITE -----\n',

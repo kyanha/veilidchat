@@ -1,5 +1,6 @@
-import 'package:veilid/veilid.dart';
 import 'dart:io' show Platform;
+
+import 'package:veilid/veilid.dart';
 
 Map<String, dynamic> getDefaultVeilidPlatformConfig(
     bool isWeb, String appName) {

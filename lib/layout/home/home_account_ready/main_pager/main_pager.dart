@@ -5,9 +5,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:preload_page_view/preload_page_view.dart';
-import 'package:stylish_bottom_bar/model/bar_items.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
+import '../../../../chat/chat.dart';
 import '../../../../contact_invitation/contact_invitation.dart';
 import '../../../../theme/theme.dart';
 import '../../../../tools/tools.dart';
@@ -27,8 +27,6 @@ class MainPager extends StatefulWidget {
 
 class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
   //////////////////////////////////////////////////////////////////
-
-  final _unfocusNode = FocusNode();
 
   var _currentPage = 0;
   final pageController = PreloadPageController();
@@ -56,7 +54,6 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _unfocusNode.dispose();
     pageController.dispose();
     super.dispose();
   }
@@ -127,21 +124,13 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
         });
   }
 
-  Widget _onNewChatBottomSheetBuilder(
-          BuildContext sheetContext, BuildContext context) =>
-      const SizedBox(
-          height: 200,
-          child: Center(
-              child: Text(
-                  'Group and custom chat functionality is not available yet')));
-
   Widget _bottomSheetBuilder(BuildContext sheetContext, BuildContext context) {
     if (_currentPage == 0) {
       // New contact invitation
-      return newContactInvitationBottomSheetBuilder(sheetContext, context);
+      return newContactBottomSheetBuilder(sheetContext, context);
     } else if (_currentPage == 1) {
       // New chat
-      return _onNewChatBottomSheetBuilder(sheetContext, context);
+      return newChatBottomSheetBuilder(sheetContext, context);
     } else {
       // Unknown error
       return debugPage('unknown page');

@@ -113,7 +113,9 @@ class NewAccountPageState extends State<NewAccountPage> {
       body: _newAccountForm(
         context,
         onSubmit: (formKey) async {
+          // dismiss the keyboard by unfocusing the textfield
           FocusScope.of(context).unfocus();
+
           try {
             final name =
                 _formKey.currentState!.fields[formFieldName]!.value as String;

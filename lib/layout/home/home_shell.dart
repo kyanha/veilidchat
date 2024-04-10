@@ -19,8 +19,6 @@ class HomeShell extends StatefulWidget {
 }
 
 class HomeShellState extends State<HomeShell> {
-  final _unfocusNode = FocusNode();
-
   @override
   void initState() {
     super.initState();
@@ -28,7 +26,6 @@ class HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
-    _unfocusNode.dispose();
     super.dispose();
   }
 
@@ -69,11 +66,9 @@ class HomeShellState extends State<HomeShell> {
 
     // XXX: eventually write account switcher here
     return SafeArea(
-        child: GestureDetector(
-            onTap: () => FocusScope.of(context).requestFocus(_unfocusNode),
-            child: DecoratedBox(
-                decoration: BoxDecoration(
-                    color: scale.primaryScale.activeElementBackground),
-                child: buildWithLogin(context))));
+        child: DecoratedBox(
+            decoration: BoxDecoration(
+                color: scale.primaryScale.activeElementBackground),
+            child: buildWithLogin(context)));
   }
 }

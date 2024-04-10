@@ -154,7 +154,7 @@ Widget styledTitleContainer({
           title,
           style: textTheme.titleMedium!
               .copyWith(color: scale.primaryScale.subtleText),
-        ).paddingLTRB(8, 8, 8, 8),
+        ).paddingLTRB(8, 8, 8, 4),
         DecoratedBox(
                 decoration: ShapeDecoration(
                     color:
@@ -165,6 +165,43 @@ Widget styledTitleContainer({
                 child: child)
             .paddingAll(4)
             .expanded()
+      ]));
+}
+
+Widget styledBottomSheet({
+  required BuildContext context,
+  required String title,
+  required Widget child,
+  Color? borderColor,
+  Color? backgroundColor,
+}) {
+  final theme = Theme.of(context);
+  final scale = theme.extension<ScaleScheme>()!;
+  final textTheme = theme.textTheme;
+
+  return DecoratedBox(
+      decoration: ShapeDecoration(
+          color: borderColor ?? scale.primaryScale.border,
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16)))),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(
+          title,
+          style: textTheme.titleMedium!
+              .copyWith(color: scale.primaryScale.subtleText),
+        ).paddingLTRB(8, 8, 8, 4),
+        DecoratedBox(
+                decoration: ShapeDecoration(
+                    color:
+                        backgroundColor ?? scale.primaryScale.subtleBackground,
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16)))),
+                child: child)
+            .paddingLTRB(4, 4, 4, 0)
       ]));
 }
 

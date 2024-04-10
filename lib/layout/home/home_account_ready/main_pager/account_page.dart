@@ -18,8 +18,6 @@ class AccountPage extends StatefulWidget {
 }
 
 class AccountPageState extends State<AccountPage> {
-  final _unfocusNode = FocusNode();
-
   @override
   void initState() {
     super.initState();
@@ -27,7 +25,6 @@ class AccountPageState extends State<AccountPage> {
 
   @override
   void dispose() {
-    _unfocusNode.dispose();
     super.dispose();
   }
 

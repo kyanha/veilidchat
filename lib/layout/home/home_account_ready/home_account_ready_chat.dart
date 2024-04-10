@@ -12,8 +12,6 @@ class HomeAccountReadyChat extends StatefulWidget {
 }
 
 class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
-  final _unfocusNode = FocusNode();
-
   @override
   void initState() {
     super.initState();
@@ -26,7 +24,6 @@ class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
 
   @override
   void dispose() {
-    _unfocusNode.dispose();
     super.dispose();
   }
 
@@ -42,8 +39,6 @@ class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-          child: GestureDetector(
-        onTap: () => FocusScope.of(context).requestFocus(_unfocusNode),
         child: buildChatComponent(context),
-      ));
+      );
 }

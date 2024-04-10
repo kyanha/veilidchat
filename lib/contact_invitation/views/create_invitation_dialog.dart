@@ -182,7 +182,7 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
                 LengthLimitingTextInputFormatter(128),
               ],
               decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
+                  //border: const OutlineInputBorder(),
                   hintText:
                       translate('create_invitation_dialog.enter_message_hint'),
                   labelText: translate('create_invitation_dialog.message')),

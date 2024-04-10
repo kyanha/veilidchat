@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:radix_colors/radix_colors.dart';
 
+import '../../tools/tools.dart';
 import 'scale_color.dart';
 import 'scale_scheme.dart';
 
@@ -571,26 +574,27 @@ ColorScheme _scaleToColorScheme(Brightness brightness, ScaleScheme scale) =>
           Colors.red, // scale.primaryScale.hoverElementBackground,
       onPrimaryContainer: Colors.green, //scale.primaryScale.subtleText,
       secondary: scale.secondaryScale.background,
-      onSecondary: scale.secondaryScale.appText,
+      onSecondary: scale.secondaryScale.foregroundText,
       secondaryContainer: scale.secondaryScale.hoverElementBackground,
       onSecondaryContainer: scale.secondaryScale.subtleText,
       tertiary: scale.tertiaryScale.background,
-      onTertiary: scale.tertiaryScale.appText,
+      onTertiary: scale.tertiaryScale.foregroundText,
       tertiaryContainer: scale.tertiaryScale.hoverElementBackground,
       onTertiaryContainer: scale.tertiaryScale.subtleText,
       error: scale.errorScale.background,
-      onError: scale.errorScale.appText,
+      onError: scale.errorScale.foregroundText,
       errorContainer: scale.errorScale.hoverElementBackground,
       onErrorContainer: scale.errorScale.subtleText,
       background: scale.grayScale.appBackground, // reviewed
       onBackground: scale.grayScale.appText, // reviewed
-      surface: scale.primaryScale.activeElementBackground, // reviewed
-      onSurface: scale.primaryScale.subtleText, // reviewed
+      surface: scale.primaryScale.background, // reviewed
+      onSurface: scale.primaryScale.foregroundText, // reviewed
       surfaceVariant: scale.primaryScale.elementBackground,
-      onSurfaceVariant: scale.primaryScale.subtleText, // ?? reviewed a little
+      onSurfaceVariant:
+          scale.primaryScale.foregroundText, // ?? reviewed a little
       outline: scale.primaryScale.border,
       outlineVariant: scale.primaryScale.subtleBorder,
-      shadow: RadixColors.dark.gray.step1,
+      shadow: const Color(0xFF000000),
       scrim: scale.primaryScale.background,
       inverseSurface: scale.primaryScale.subtleText,
       onInverseSurface: scale.primaryScale.subtleBackground,
@@ -612,7 +616,7 @@ ChatTheme makeChatTheme(ScaleScheme scale, TextTheme textTheme) =>
           contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
           border: const OutlineInputBorder(
               borderSide: BorderSide.none,
-              borderRadius: BorderRadius.all(Radius.circular(16))),
+              borderRadius: BorderRadius.all(Radius.circular(8))),
         ),
         inputContainerDecoration:
             BoxDecoration(color: scale.primaryScale.border),
@@ -641,10 +645,39 @@ ChatTheme makeChatTheme(ScaleScheme scale, TextTheme textTheme) =>
           fontSize: 64,
         ));
 
+TextTheme _makeTextTheme(Brightness brightness) {
+  late final TextTheme textTheme;
+  if (Platform.isIOS) {
+    textTheme = (brightness == Brightness.light)
+        ? Typography.blackCupertino
+        : Typography.whiteCupertino;
+  } else if (Platform.isMacOS) {
+    textTheme = (brightness == Brightness.light)
+        ? Typography.blackRedwoodCity
+        : Typography.whiteRedwoodCity;
+  } else if (Platform.isAndroid || Platform.isFuchsia) {
+    textTheme = (brightness == Brightness.light)
+        ? Typography.blackMountainView
+        : Typography.whiteMountainView;
+  } else if (Platform.isLinux) {
+    textTheme = (brightness == Brightness.light)
+        ? Typography.blackHelsinki
+        : Typography.whiteHelsinki;
+  } else if (Platform.isWindows) {
+    textTheme = (brightness == Brightness.light)
+        ? Typography.blackRedmond
+        : Typography.whiteRedmond;
+  } else {
+    log.warning('unknown platform');
+    textTheme = (brightness == Brightness.light)
+        ? Typography.blackHelsinki
+        : Typography.whiteHelsinki;
+  }
+  return textTheme;
+}
+
 ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
-  final textTheme = (brightness == Brightness.light)
-      ? Typography.blackCupertino
-      : Typography.whiteCupertino;
+  final textTheme = _makeTextTheme(brightness);
   final radix = _radixScheme(brightness, themeColor);
   final scaleScheme = radix.toScale();
   final colorScheme = _scaleToColorScheme(brightness, scaleScheme);
@@ -655,8 +688,42 @@ ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
       bottomSheetTheme: themeData.bottomSheetTheme.copyWith(
           elevation: 0,
           modalElevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16)))),
+      canvasColor: scaleScheme.primaryScale.subtleBackground,
+      chipTheme: themeData.chipTheme.copyWith(
+          backgroundColor: scaleScheme.primaryScale.elementBackground,
+          selectedColor: scaleScheme.primaryScale.activeElementBackground,
+          surfaceTintColor: scaleScheme.primaryScale.hoverElementBackground,
+          checkmarkColor: scaleScheme.primaryScale.background,
+          side: BorderSide(color: scaleScheme.primaryScale.border)),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+            backgroundColor: scaleScheme.primaryScale.elementBackground,
+            foregroundColor: scaleScheme.primaryScale.appText,
+            disabledBackgroundColor: scaleScheme.grayScale.elementBackground,
+            disabledForegroundColor: scaleScheme.grayScale.appText,
+            shape: RoundedRectangleBorder(
+                side: BorderSide(color: scaleScheme.primaryScale.border),
+                borderRadius: BorderRadius.circular(8))),
+      ),
+      focusColor: scaleScheme.primaryScale.activeElementBackground,
+      hoverColor: scaleScheme.primaryScale.hoverElementBackground,
+      inputDecorationTheme: themeData.inputDecorationTheme.copyWith(
+          border: OutlineInputBorder(
+              borderSide: BorderSide(color: scaleScheme.primaryScale.border),
+              borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.all(8),
+          labelStyle: TextStyle(
+              color: scaleScheme.primaryScale.subtleText.withAlpha(127)),
+          floatingLabelStyle:
+              TextStyle(color: scaleScheme.primaryScale.subtleText),
+          focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: scaleScheme.primaryScale.hoverBorder, width: 2),
+              borderRadius: BorderRadius.circular(8))),
       extensions: <ThemeExtension<dynamic>>[
         scaleScheme,
       ]);

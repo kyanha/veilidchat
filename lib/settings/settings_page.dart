@@ -53,11 +53,11 @@ class SettingsPageState extends State<SettingsPage> {
                   child: ListView(
                     children: [
                       buildSettingsPageColorPreferences(
-                          onChanged: () => setState(() {})),
+                          context: context, onChanged: () => setState(() {})),
                       buildSettingsPageBrightnessPreferences(
-                          onChanged: () => setState(() {})),
-                    ],
+                          context: context, onChanged: () => setState(() {})),
+                    ].map((x) => x.paddingLTRB(0, 0, 0, 8)).toList(),
                   ),
-                ).paddingSymmetric(horizontal: 24, vertical: 8),
+                ).paddingSymmetric(horizontal: 24, vertical: 16),
               )));
 }

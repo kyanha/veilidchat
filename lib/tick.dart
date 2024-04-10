@@ -1,24 +1,17 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import 'veilid_processor/veilid_processor.dart';
 
 class BackgroundTicker extends StatefulWidget {
-  const BackgroundTicker({required this.builder, super.key});
+  const BackgroundTicker({required this.child, super.key});
 
-  final Widget Function(BuildContext) builder;
+  final Widget child;
 
   @override
   BackgroundTickerState createState() => BackgroundTickerState();
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(ObjectFlagProperty<Widget Function(BuildContext p1)>.has(
-        'builder', builder));
-  }
 }
 
 class BackgroundTickerState extends State<BackgroundTicker> {
@@ -48,7 +41,7 @@ class BackgroundTickerState extends State<BackgroundTicker> {
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
-    return widget.builder(context);
+    return widget.child;
   }
 
   Future<void> _onTick() async {

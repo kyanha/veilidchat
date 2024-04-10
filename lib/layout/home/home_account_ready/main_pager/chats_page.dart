@@ -11,8 +11,6 @@ class ChatsPage extends StatefulWidget {
 }
 
 class ChatsPageState extends State<ChatsPage> {
-  final _unfocusNode = FocusNode();
-
   @override
   void initState() {
     super.initState();
@@ -20,7 +18,6 @@ class ChatsPageState extends State<ChatsPage> {
 
   @override
   void dispose() {
-    _unfocusNode.dispose();
     super.dispose();
   }
 

@@ -30,7 +30,8 @@ List<DropdownMenuItem<dynamic>> _getThemeDropdownItems() {
       .toList();
 }
 
-Widget buildSettingsPageColorPreferences({required void Function() onChanged}) {
+Widget buildSettingsPageColorPreferences(
+    {required BuildContext context, required void Function() onChanged}) {
   final preferencesRepository = PreferencesRepository.instance;
   final themePreferences = preferencesRepository.value.themePreferences;
   return ThemeSwitcher.withTheme(

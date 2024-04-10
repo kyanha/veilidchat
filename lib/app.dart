@@ -1,6 +1,7 @@
 import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -12,8 +13,14 @@ import 'init.dart';
 import 'layout/splash.dart';
 import 'router/router.dart';
 import 'settings/settings.dart';
+import 'theme/models/theme_preference.dart';
 import 'tick.dart';
+import 'tools/loggy.dart';
 import 'veilid_processor/veilid_processor.dart';
+
+class ReloadThemeIntent extends Intent {
+  const ReloadThemeIntent();
+}
 
 class VeilidChatApp extends StatelessWidget {
   const VeilidChatApp({
@@ -24,6 +31,28 @@ class VeilidChatApp extends StatelessWidget {
   static const String name = 'VeilidChat';
 
   final ThemeData initialThemeData;
+
+  void _reloadTheme(BuildContext context) {
+    log.info('Reloading theme');
+    final theme =
+        PreferencesRepository.instance.value.themePreferences.themeData();
+    ThemeSwitcher.of(context).changeTheme(theme: theme);
+  }
+
+  Widget _buildShortcuts(
+          {required BuildContext context,
+          required Widget Function(BuildContext) builder}) =>
+      ThemeSwitcher(
+          builder: (context) => Shortcuts(
+                  shortcuts: <LogicalKeySet, Intent>{
+                    LogicalKeySet(
+                            LogicalKeyboardKey.alt, LogicalKeyboardKey.keyR):
+                        const ReloadThemeIntent(),
+                  },
+                  child: Actions(actions: <Type, Action<Intent>>{
+                    ReloadThemeIntent: CallbackAction<ReloadThemeIntent>(
+                        onInvoke: (intent) => _reloadTheme(context)),
+                  }, child: Focus(autofocus: true, child: builder(context)))));
 
   @override
   Widget build(BuildContext context) => FutureProvider<VeilidChatGlobalInit?>(
@@ -68,21 +97,24 @@ class VeilidChatApp extends StatelessWidget {
                   )
                 ],
                 child: BackgroundTicker(
-                    builder: (context) => MaterialApp.router(
-                          debugShowCheckedModeBanner: false,
-                          routerConfig: context.watch<RouterCubit>().router(),
-                          title: translate('app.title'),
-                          theme: theme,
-                          localizationsDelegates: [
-                            GlobalMaterialLocalizations.delegate,
-                            GlobalWidgetsLocalizations.delegate,
-                            FormBuilderLocalizations.delegate,
-                            localizationDelegate
-                          ],
-                          supportedLocales:
-                              localizationDelegate.supportedLocales,
-                          locale: localizationDelegate.currentLocale,
-                        )),
+                    child: _buildShortcuts(
+                        context: context,
+                        builder: (context) => MaterialApp.router(
+                              debugShowCheckedModeBanner: false,
+                              routerConfig:
+                                  context.watch<RouterCubit>().router(),
+                              title: translate('app.title'),
+                              theme: theme,
+                              localizationsDelegates: [
+                                GlobalMaterialLocalizations.delegate,
+                                GlobalWidgetsLocalizations.delegate,
+                                FormBuilderLocalizations.delegate,
+                                localizationDelegate
+                              ],
+                              supportedLocales:
+                                  localizationDelegate.supportedLocales,
+                              locale: localizationDelegate.currentLocale,
+                            ))),
               )),
         );
       });

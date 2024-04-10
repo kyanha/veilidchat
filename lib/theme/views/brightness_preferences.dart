@@ -22,7 +22,7 @@ List<DropdownMenuItem<dynamic>> _getBrightnessDropdownItems() {
 }
 
 Widget buildSettingsPageBrightnessPreferences(
-    {required void Function() onChanged}) {
+    {required BuildContext context, required void Function() onChanged}) {
   final preferencesRepository = PreferencesRepository.instance;
   final themePreferences = preferencesRepository.value.themePreferences;
   return ThemeSwitcher.withTheme(

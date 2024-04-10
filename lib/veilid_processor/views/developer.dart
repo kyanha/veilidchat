@@ -80,6 +80,18 @@ class _DeveloperPageState extends State<DeveloperPage> {
       return;
     }
 
+    if (debugCommand.startsWith('change_log_ignore ')) {
+      final args = debugCommand.split(' ');
+      if (args.length < 3) {
+        _debugOut('Incorrect number of arguments');
+        return;
+      }
+      final layer = args[1];
+      final changes = args[2].split(',');
+      Veilid.instance.changeLogIgnore(layer, changes);
+      return;
+    }
+
     if (debugCommand == 'ellet') {
       setState(() {
         _showEllet = !_showEllet;

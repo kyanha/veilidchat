@@ -29,14 +29,15 @@ class ContactItemWidget extends StatelessWidget {
     final remoteConversationKey =
         contact.remoteConversationRecordKey.toVeilid();
 
-    const selected =
-        false; // xxx: eventually when we have selectable contacts: activeContactCubit.state == remoteConversationRecordKey;
+    const selected = false; // xxx: eventually when we have selectable contacts:
+    // activeContactCubit.state == remoteConversationRecordKey;
 
     return Container(
         margin: const EdgeInsets.fromLTRB(0, 4, 0, 0),
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
             color: selected
+                // ignore: dead_code
                 ? scale.primaryScale.activeElementBackground
                 : scale.primaryScale.hoverElementBackground,
             shape: RoundedRectangleBorder(
@@ -102,9 +103,11 @@ class ContactItemWidget extends StatelessWidget {
                     ? Text(contact.editedProfile.pronouns)
                     : null,
                 iconColor: selected
+                    // ignore: dead_code
                     ? scale.primaryScale.appText
                     : scale.primaryScale.subtleText,
                 textColor: selected
+                    // ignore: dead_code
                     ? scale.primaryScale.appText
                     : scale.primaryScale.subtleText,
                 selectedColor: scale.primaryScale.appText,
