@@ -69,7 +69,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     // Because this is async, we could get an update while we're
     // still processing the last one. Only called after init future has run
     // so we dont have to wait for that here.
-    _sspUpdate.busyUpdate<T, AsyncValue<IList<T>>>(
+    _sspUpdate.busyUpdate<T, DHTShortArrayState<T>>(
         busy, (emit) async => _refreshInner(emit));
   }
 

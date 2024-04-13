@@ -2,7 +2,7 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../theme/theme.dart';
+import '../theme.dart';
 
 class StyledDialog extends StatelessWidget {
   const StyledDialog({required this.title, required this.child, super.key});
@@ -19,10 +19,11 @@ class StyledDialog extends StatelessWidget {
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
         contentPadding: const EdgeInsets.all(4),
-        backgroundColor: scale.primaryScale.border,
+        backgroundColor: scale.primaryScale.dialogBorder,
         title: Text(
           title,
-          style: textTheme.titleMedium,
+          style: textTheme.titleMedium!
+              .copyWith(color: scale.primaryScale.borderText),
           textAlign: TextAlign.center,
         ),
         titlePadding: const EdgeInsets.fromLTRB(4, 4, 4, 4),

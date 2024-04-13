@@ -67,20 +67,16 @@ class _EnterPinDialogState extends State<EnterPinDialog> {
     );
 
     /// Optionally you can use form to validate the Pinput
-    return Dialog(
-        backgroundColor: scale.grayScale.subtleBackground,
+    return StyledDialog(
+        title: !widget.reenter
+            ? translate('enter_pin_dialog.enter_pin')
+            : translate('enter_pin_dialog.reenter_pin'),
         child: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                !widget.reenter
-                    ? translate('enter_pin_dialog.enter_pin')
-                    : translate('enter_pin_dialog.reenter_pin'),
-                style: theme.textTheme.titleLarge,
-              ).paddingAll(16),
               Directionality(
                 // Specify direction if desired
                 textDirection: TextDirection.ltr,

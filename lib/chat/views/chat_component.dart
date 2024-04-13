@@ -13,7 +13,6 @@ import '../../chat_list/chat_list.dart';
 import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
-import '../../tools/tools.dart';
 import '../chat.dart';
 
 class ChatComponent extends StatelessWidget {
@@ -173,11 +172,13 @@ class ChatComponent extends StatelessWidget {
                                 16, 0, 16, 0),
                             child: Text(_remoteUser.firstName!,
                                 textAlign: TextAlign.start,
-                                style: textTheme.titleMedium),
+                                style: textTheme.titleMedium!.copyWith(
+                                    color: scale.primaryScale.borderText)),
                           )),
                       const Spacer(),
                       IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close,
+                              color: scale.primaryScale.borderText),
                           onPressed: () async {
                             context.read<ActiveChatCubit>().setActiveChat(null);
                           }).paddingLTRB(16, 0, 16, 0)

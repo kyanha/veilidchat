@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
@@ -28,99 +27,51 @@ class ContactInvitationItemWidget extends StatelessWidget {
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    //final textTheme = theme.textTheme;
-    final scale = theme.extension<ScaleScheme>()!;
+    // final remoteConversationKey =
+    //     contact.remoteConversationRecordKey.toVeilid();
 
-    return Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: ShapeDecoration(
-            color: scale.tertiaryScale.subtleBorder,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            )),
-        child: Slidable(
-            // Specify a key if the Slidable is dismissible.
-            key: ObjectKey(contactInvitationRecord),
-            endActionPane: ActionPane(
-              // A motion is a widget used to control how the pane animates.
-              motion: const DrawerMotion(),
+    const selected =
+        false; // xxx: eventually when we have selectable invitations:
+    // activeContactCubit.state == remoteConversationRecordKey;
 
-              // A pane can dismiss the Slidable.
-              //dismissible: DismissiblePane(onDismissed: () {}),
+    final tileDisabled =
+        disabled || context.watch<ContactInvitationListCubit>().isBusy;
 
-              // All actions are defined in the children parameter.
-              children: [
-                // A SlidableAction can have an icon and/or a label.
-                SlidableAction(
-                    onPressed: disabled
-                        ? null
-                        : (context) async {
-                            final contactInvitationListCubit =
-                                context.read<ContactInvitationListCubit>();
-                            await contactInvitationListCubit.deleteInvitation(
-                                accepted: false,
-                                contactRequestInboxRecordKey:
-                                    contactInvitationRecord
-                                        .contactRequestInbox.recordKey
-                                        .toVeilid());
-                          },
-                    backgroundColor: scale.tertiaryScale.background,
-                    foregroundColor: scale.tertiaryScale.appText,
-                    icon: Icons.delete,
-                    label: translate('button.delete'),
-                    padding: const EdgeInsets.all(2)),
-              ],
-            ),
-
-            // startActionPane: ActionPane(
-            //   motion: const DrawerMotion(),
-            //   children: [
-            //     SlidableAction(
-            //       // An action can be bigger than the others.
-            //       flex: 2,
-            //       onPressed: (context) => (),
-            //       backgroundColor: Color(0xFF7BC043),
-            //       foregroundColor: Colors.white,
-            //       icon: Icons.archive,
-            //       label: 'Archive',
-            //     ),
-            //     SlidableAction(
-            //       onPressed: (context) => (),
-            //       backgroundColor: Color(0xFF0392CF),
-            //       foregroundColor: Colors.white,
-            //       icon: Icons.save,
-            //       label: 'Save',
-            //     ),
-            //   ],
-            // ),
-
-            // The child of the Slidable is what the user sees when the
-            // component is not dragged.
-            child: ListTile(
-                //title: Text(translate('contact_list.invitation')),
-                onTap: disabled
-                    ? null
-                    : () async {
-                        if (!context.mounted) {
-                          return;
-                        }
-                        await ContactInvitationDisplayDialog.show(
-                            context: context,
-                            message: contactInvitationRecord.message,
-                            create: (context) => InvitationGeneratorCubit.value(
-                                Uint8List.fromList(
-                                    contactInvitationRecord.invitation)));
-                      },
-                title: Text(
-                  contactInvitationRecord.message.isEmpty
-                      ? translate('contact_list.invitation')
-                      : contactInvitationRecord.message,
-                  softWrap: true,
-                ),
-                iconColor: scale.tertiaryScale.background,
-                textColor: scale.tertiaryScale.appText,
-                //Text(Timestamp.fromInt64(contactInvitationRecord.expiration) / ),
-                leading: const Icon(Icons.person_add))));
+    return SliderTile(
+      key: ObjectKey(contactInvitationRecord),
+      disabled: tileDisabled,
+      selected: selected,
+      tileScale: ScaleKind.primary,
+      title: contactInvitationRecord.message.isEmpty
+          ? translate('contact_list.invitation')
+          : contactInvitationRecord.message,
+      icon: Icons.person_add,
+      onTap: () async {
+        if (!context.mounted) {
+          return;
+        }
+        await ContactInvitationDisplayDialog.show(
+            context: context,
+            message: contactInvitationRecord.message,
+            create: (context) => InvitationGeneratorCubit.value(
+                Uint8List.fromList(contactInvitationRecord.invitation)));
+      },
+      endActions: [
+        SliderTileAction(
+          icon: Icons.delete,
+          label: translate('button.delete'),
+          actionScale: ScaleKind.tertiary,
+          onPressed: (context) async {
+            final contactInvitationListCubit =
+                context.read<ContactInvitationListCubit>();
+            await contactInvitationListCubit.deleteInvitation(
+                accepted: false,
+                contactRequestInboxRecordKey: contactInvitationRecord
+                    .contactRequestInbox.recordKey
+                    .toVeilid());
+          },
+        )
+      ],
+    );
   }
 }

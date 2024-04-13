@@ -7,6 +7,7 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../layout/default_app_bar.dart';
+import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
 import '../../../veilid_processor/veilid_processor.dart';
 import '../../account_manager.dart';

@@ -470,6 +470,8 @@ class _DHTShortArrayHead {
     _subscription = null;
   }
 
+  // Called when the shortarray changes online and we find out from a watch
+  // but not when we make a change locally
   Future<void> _onHeadValueChanged(
       DHTRecord record, Uint8List? data, List<ValueSubkeyRange> subkeys) async {
     // If head record subkey zero changes, then the layout

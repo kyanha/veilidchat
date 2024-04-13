@@ -6,7 +6,6 @@
         "settings_tooltip": "Settings"
     },
     "pager": {
-        "account": "Account",
         "chats": "Chats",
         "contacts": "Contacts"
     },
@@ -66,6 +65,9 @@
     },
     "add_chat_sheet": {
         "new_chat": "New Chat"
+    },
+    "chat": {
+        "say_something": "Say Something"
     },
     "create_invitation_dialog": {
         "title": "Create Contact Invitation",

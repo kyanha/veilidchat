@@ -61,8 +61,9 @@ class AccountPageState extends State<AccountPage> {
             translate('account_page.contact_invitations'),
             textAlign: TextAlign.center,
             style: textTheme.titleMedium!
-                .copyWith(color: scale.primaryScale.subtleText),
+                .copyWith(color: scale.primaryScale.borderText),
           ),
+          iconColor: scale.primaryScale.borderText,
           initiallyExpanded: true,
           children: [
             ContactInvitationListWidget(

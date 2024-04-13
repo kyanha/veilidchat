@@ -1,16 +1,16 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:radix_colors/radix_colors.dart';
 
 import '../../tools/tools.dart';
 import 'scale_color.dart';
+import 'scale_input_decorator_theme.dart';
 import 'scale_scheme.dart';
 
 enum RadixThemeColor {
-  scarlet, // tomato + red + violet
-  babydoll, // crimson + purple + pink
+  scarlet, // red + violet + tomato
+  babydoll, // crimson + pink + purple
   vapor, // pink + cyan + plum
   gold, // yellow + amber + orange
   garden, // grass + orange + brown
@@ -19,7 +19,7 @@ enum RadixThemeColor {
   lapis, // blue + indigo + mint
   eggplant, // violet + purple + indigo
   lime, // lime + yellow + orange
-  grim, // mauve + slate + sage
+  grim, // grey + purple + brown
 }
 
 enum _RadixBaseColor {
@@ -282,11 +282,15 @@ extension ToScaleColor on RadixColor {
         subtleBorder: step6,
         border: step7,
         hoverBorder: step8,
-        background: step9,
-        hoverBackground: step10,
+        primary: step9,
+        hoverPrimary: step10,
         subtleText: step11,
         appText: step12,
-        foregroundText: scaleExtra.foregroundText,
+        primaryText: scaleExtra.foregroundText,
+        borderText: step12,
+        dialogBorder: step9,
+        calloutBackground: step9,
+        calloutText: scaleExtra.foregroundText,
       );
 }
 
@@ -338,28 +342,27 @@ class RadixScheme {
 RadixScheme _radixScheme(Brightness brightness, RadixThemeColor themeColor) {
   late RadixScheme radixScheme;
   switch (themeColor) {
-    // tomato + red + violet
+    // red + violet + tomato
     case RadixThemeColor.scarlet:
       radixScheme = RadixScheme(
-        primaryScale:
-            _radixColorSteps(brightness, false, _RadixBaseColor.tomato),
+        primaryScale: _radixColorSteps(brightness, false, _RadixBaseColor.red),
         primaryExtra: RadixScaleExtra(foregroundText: Colors.white),
         primaryAlphaScale:
-            _radixColorSteps(brightness, true, _RadixBaseColor.tomato),
+            _radixColorSteps(brightness, true, _RadixBaseColor.red),
         primaryAlphaExtra: RadixScaleExtra(foregroundText: Colors.white),
         secondaryScale:
-            _radixColorSteps(brightness, false, _RadixBaseColor.red),
+            _radixColorSteps(brightness, false, _RadixBaseColor.violet),
         secondaryExtra: RadixScaleExtra(foregroundText: Colors.white),
         tertiaryScale:
-            _radixColorSteps(brightness, false, _RadixBaseColor.violet),
+            _radixColorSteps(brightness, false, _RadixBaseColor.tomato),
         tertiaryExtra: RadixScaleExtra(foregroundText: Colors.white),
-        grayScale: _radixGraySteps(brightness, false, _RadixBaseColor.tomato),
+        grayScale: _radixGraySteps(brightness, false, _RadixBaseColor.red),
         grayExtra: RadixScaleExtra(foregroundText: Colors.white),
         errorScale: _radixColorSteps(brightness, false, _RadixBaseColor.yellow),
         errorExtra: RadixScaleExtra(foregroundText: Colors.black),
       );
 
-    // crimson + purple + pink
+    // crimson + pink + purple
     case RadixThemeColor.babydoll:
       radixScheme = RadixScheme(
           primaryScale:
@@ -369,10 +372,10 @@ RadixScheme _radixScheme(Brightness brightness, RadixThemeColor themeColor) {
               _radixColorSteps(brightness, true, _RadixBaseColor.crimson),
           primaryAlphaExtra: RadixScaleExtra(foregroundText: Colors.white),
           secondaryScale:
-              _radixColorSteps(brightness, false, _RadixBaseColor.purple),
+              _radixColorSteps(brightness, false, _RadixBaseColor.pink),
           secondaryExtra: RadixScaleExtra(foregroundText: Colors.white),
           tertiaryScale:
-              _radixColorSteps(brightness, false, _RadixBaseColor.pink),
+              _radixColorSteps(brightness, false, _RadixBaseColor.purple),
           tertiaryExtra: RadixScaleExtra(foregroundText: Colors.white),
           grayScale:
               _radixGraySteps(brightness, false, _RadixBaseColor.crimson),
@@ -546,13 +549,13 @@ RadixScheme _radixScheme(Brightness brightness, RadixThemeColor themeColor) {
             _radixGraySteps(brightness, false, _RadixBaseColor.tomato),
         primaryExtra: RadixScaleExtra(foregroundText: Colors.white),
         primaryAlphaScale:
-            _radixColorSteps(brightness, true, _RadixBaseColor.tomato),
+            _radixGraySteps(brightness, true, _RadixBaseColor.tomato),
         primaryAlphaExtra: RadixScaleExtra(foregroundText: Colors.white),
         secondaryScale:
-            _radixColorSteps(brightness, false, _RadixBaseColor.indigo),
+            _radixColorSteps(brightness, false, _RadixBaseColor.purple),
         secondaryExtra: RadixScaleExtra(foregroundText: Colors.white),
         tertiaryScale:
-            _radixColorSteps(brightness, false, _RadixBaseColor.teal),
+            _radixColorSteps(brightness, false, _RadixBaseColor.brown),
         tertiaryExtra: RadixScaleExtra(foregroundText: Colors.white),
         grayScale: brightness == Brightness.dark
             ? RadixColors.dark.gray
@@ -565,87 +568,7 @@ RadixScheme _radixScheme(Brightness brightness, RadixThemeColor themeColor) {
   return radixScheme;
 }
 
-ColorScheme _scaleToColorScheme(Brightness brightness, ScaleScheme scale) =>
-    ColorScheme(
-      brightness: brightness,
-      primary: scale.primaryScale.background, // reviewed
-      onPrimary: scale.primaryScale.foregroundText, // reviewed
-      primaryContainer:
-          Colors.red, // scale.primaryScale.hoverElementBackground,
-      onPrimaryContainer: Colors.green, //scale.primaryScale.subtleText,
-      secondary: scale.secondaryScale.background,
-      onSecondary: scale.secondaryScale.foregroundText,
-      secondaryContainer: scale.secondaryScale.hoverElementBackground,
-      onSecondaryContainer: scale.secondaryScale.subtleText,
-      tertiary: scale.tertiaryScale.background,
-      onTertiary: scale.tertiaryScale.foregroundText,
-      tertiaryContainer: scale.tertiaryScale.hoverElementBackground,
-      onTertiaryContainer: scale.tertiaryScale.subtleText,
-      error: scale.errorScale.background,
-      onError: scale.errorScale.foregroundText,
-      errorContainer: scale.errorScale.hoverElementBackground,
-      onErrorContainer: scale.errorScale.subtleText,
-      background: scale.grayScale.appBackground, // reviewed
-      onBackground: scale.grayScale.appText, // reviewed
-      surface: scale.primaryScale.background, // reviewed
-      onSurface: scale.primaryScale.foregroundText, // reviewed
-      surfaceVariant: scale.primaryScale.elementBackground,
-      onSurfaceVariant:
-          scale.primaryScale.foregroundText, // ?? reviewed a little
-      outline: scale.primaryScale.border,
-      outlineVariant: scale.primaryScale.subtleBorder,
-      shadow: const Color(0xFF000000),
-      scrim: scale.primaryScale.background,
-      inverseSurface: scale.primaryScale.subtleText,
-      onInverseSurface: scale.primaryScale.subtleBackground,
-      inversePrimary: scale.primaryScale.hoverBackground,
-      surfaceTint: scale.primaryAlphaScale.hoverElementBackground,
-    );
-
-ChatTheme makeChatTheme(ScaleScheme scale, TextTheme textTheme) =>
-    DefaultChatTheme(
-        primaryColor: scale.primaryScale.background,
-        secondaryColor: scale.secondaryScale.background,
-        backgroundColor: scale.grayScale.appBackground,
-        inputBackgroundColor: Colors.blue,
-        inputBorderRadius: BorderRadius.zero,
-        inputTextDecoration: InputDecoration(
-          filled: true,
-          fillColor: scale.primaryScale.elementBackground,
-          isDense: true,
-          contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-          border: const OutlineInputBorder(
-              borderSide: BorderSide.none,
-              borderRadius: BorderRadius.all(Radius.circular(8))),
-        ),
-        inputContainerDecoration:
-            BoxDecoration(color: scale.primaryScale.border),
-        inputPadding: const EdgeInsets.all(9),
-        inputTextColor: scale.primaryScale.appText,
-        attachmentButtonIcon: const Icon(Icons.attach_file),
-        sentMessageBodyTextStyle: TextStyle(
-          color: scale.primaryScale.foregroundText,
-          decorationColor: Colors.red,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
-        ),
-        sentEmojiMessageTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 64,
-        ),
-        receivedMessageBodyTextStyle: TextStyle(
-          color: scale.primaryScale.foregroundText,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
-        ),
-        receivedEmojiMessageTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 64,
-        ));
-
-TextTheme _makeTextTheme(Brightness brightness) {
+TextTheme makeRadixTextTheme(Brightness brightness) {
   late final TextTheme textTheme;
   if (Platform.isIOS) {
     textTheme = (brightness == Brightness.light)
@@ -677,10 +600,11 @@ TextTheme _makeTextTheme(Brightness brightness) {
 }
 
 ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
-  final textTheme = _makeTextTheme(brightness);
+  final textTheme = makeRadixTextTheme(brightness);
   final radix = _radixScheme(brightness, themeColor);
   final scaleScheme = radix.toScale();
-  final colorScheme = _scaleToColorScheme(brightness, scaleScheme);
+  final colorScheme = scaleScheme.toColorScheme(brightness);
+  final scaleConfig = ScaleConfig(useVisualIndicators: false);
 
   final themeData = ThemeData.from(
       colorScheme: colorScheme, textTheme: textTheme, useMaterial3: true);
@@ -697,34 +621,18 @@ ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
           backgroundColor: scaleScheme.primaryScale.elementBackground,
           selectedColor: scaleScheme.primaryScale.activeElementBackground,
           surfaceTintColor: scaleScheme.primaryScale.hoverElementBackground,
-          checkmarkColor: scaleScheme.primaryScale.background,
+          checkmarkColor: scaleScheme.primaryScale.primary,
           side: BorderSide(color: scaleScheme.primaryScale.border)),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
             backgroundColor: scaleScheme.primaryScale.elementBackground,
-            foregroundColor: scaleScheme.primaryScale.appText,
+            foregroundColor: scaleScheme.primaryScale.primary,
             disabledBackgroundColor: scaleScheme.grayScale.elementBackground,
-            disabledForegroundColor: scaleScheme.grayScale.appText,
+            disabledForegroundColor: scaleScheme.grayScale.primary,
             shape: RoundedRectangleBorder(
                 side: BorderSide(color: scaleScheme.primaryScale.border),
                 borderRadius: BorderRadius.circular(8))),
       ),
-      focusColor: scaleScheme.primaryScale.activeElementBackground,
-      hoverColor: scaleScheme.primaryScale.hoverElementBackground,
-      inputDecorationTheme: themeData.inputDecorationTheme.copyWith(
-          border: OutlineInputBorder(
-              borderSide: BorderSide(color: scaleScheme.primaryScale.border),
-              borderRadius: BorderRadius.circular(8)),
-          contentPadding: const EdgeInsets.all(8),
-          labelStyle: TextStyle(
-              color: scaleScheme.primaryScale.subtleText.withAlpha(127)),
-          floatingLabelStyle:
-              TextStyle(color: scaleScheme.primaryScale.subtleText),
-          focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(
-                  color: scaleScheme.primaryScale.hoverBorder, width: 2),
-              borderRadius: BorderRadius.circular(8))),
-      extensions: <ThemeExtension<dynamic>>[
-        scaleScheme,
-      ]);
+      inputDecorationTheme: ScaleInputDecoratorTheme(scaleScheme, textTheme),
+      extensions: <ThemeExtension<dynamic>>[scaleScheme, scaleConfig]);
 }

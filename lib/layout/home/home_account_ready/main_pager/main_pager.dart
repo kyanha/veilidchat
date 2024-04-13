@@ -10,7 +10,6 @@ import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 import '../../../../chat/chat.dart';
 import '../../../../contact_invitation/contact_invitation.dart';
 import '../../../../theme/theme.dart';
-import '../../../../tools/tools.dart';
 import 'account_page.dart';
 import 'bottom_sheet_action_button.dart';
 import 'chats_page.dart';
@@ -41,7 +40,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
     Icons.add_comment_sharp,
   ];
   final _bottomLabelList = <String>[
-    translate('pager.account'),
+    translate('pager.contacts'),
     translate('pager.chats'),
   ];
 
@@ -82,12 +81,11 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
     final scale = theme.extension<ScaleScheme>()!;
     return BottomBarItem(
       title: Text(_bottomLabelList[index]),
-      icon: Icon(_selectedIconList[index], color: scale.primaryScale.appText),
+      icon:
+          Icon(_selectedIconList[index], color: scale.primaryScale.borderText),
       selectedIcon:
-          Icon(_selectedIconList[index], color: scale.primaryScale.appText),
-      backgroundColor: scale.primaryScale.appText,
-      //unSelectedColor: theme.colorScheme.primaryContainer,
-      //selectedColor: theme.colorScheme.primary,
+          Icon(_selectedIconList[index], color: scale.primaryScale.borderText),
+      backgroundColor: scale.primaryScale.borderText,
       //badge: const Text('9+'),
       //showBadge: true,
     );
@@ -169,21 +167,10 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
       // ),
       bottomNavigationBar: StylishBottomBar(
         backgroundColor: scale.primaryScale.hoverBorder,
-        // gradient: LinearGradient(
-        //     begin: Alignment.topCenter,
-        //     end: Alignment.bottomCenter,
-        //     colors: <Color>[
-        //       theme.colorScheme.primary,
-        //       theme.colorScheme.primaryContainer,
-        //     ]),
-        //borderRadius: BorderRadius.all(Radius.circular(16)),
         option: AnimatedBarOptions(
-          // iconSize: 32,
-          //barAnimation: BarAnimation.fade,
-          iconStyle: IconStyle.animated,
           inkEffect: true,
-          inkColor: scale.primaryScale.hoverBackground,
-          //opacity: 0.3,
+          inkColor: scale.primaryScale.hoverPrimary,
+          opacity: 0.3,
         ),
         items: _buildBottomBarItems(),
         hasNotch: true,
@@ -198,11 +185,11 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
       floatingActionButton: BottomSheetActionButton(
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(14))),
-          foregroundColor: scale.secondaryScale.appText,
+          foregroundColor: scale.secondaryScale.borderText,
           backgroundColor: scale.secondaryScale.hoverBorder,
           builder: (context) => Icon(
                 _fabIconList[_currentPage],
-                color: scale.secondaryScale.appText,
+                color: scale.secondaryScale.borderText,
               ),
           bottomSheetBuilder: (sheetContext) =>
               _bottomSheetBuilder(sheetContext, context)),

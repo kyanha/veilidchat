@@ -10,11 +10,15 @@ class ScaleColor {
     required this.subtleBorder,
     required this.border,
     required this.hoverBorder,
-    required this.background,
-    required this.hoverBackground,
+    required this.primary,
+    required this.hoverPrimary,
     required this.subtleText,
     required this.appText,
-    required this.foregroundText,
+    required this.primaryText,
+    required this.borderText,
+    required this.dialogBorder,
+    required this.calloutBackground,
+    required this.calloutText,
   });
 
   Color appBackground;
@@ -25,11 +29,15 @@ class ScaleColor {
   Color subtleBorder;
   Color border;
   Color hoverBorder;
-  Color background;
-  Color hoverBackground;
+  Color primary;
+  Color hoverPrimary;
   Color subtleText;
   Color appText;
-  Color foregroundText;
+  Color primaryText;
+  Color borderText;
+  Color dialogBorder;
+  Color calloutBackground;
+  Color calloutText;
 
   ScaleColor copyWith({
     Color? appBackground,
@@ -45,24 +53,31 @@ class ScaleColor {
     Color? subtleText,
     Color? appText,
     Color? foregroundText,
+    Color? borderText,
+    Color? dialogBorder,
+    Color? calloutBackground,
+    Color? calloutText,
   }) =>
       ScaleColor(
-        appBackground: appBackground ?? this.appBackground,
-        subtleBackground: subtleBackground ?? this.subtleBackground,
-        elementBackground: elementBackground ?? this.elementBackground,
-        hoverElementBackground:
-            hoverElementBackground ?? this.hoverElementBackground,
-        activeElementBackground:
-            activeElementBackground ?? this.activeElementBackground,
-        subtleBorder: subtleBorder ?? this.subtleBorder,
-        border: border ?? this.border,
-        hoverBorder: hoverBorder ?? this.hoverBorder,
-        background: background ?? this.background,
-        hoverBackground: hoverBackground ?? this.hoverBackground,
-        subtleText: subtleText ?? this.subtleText,
-        appText: appText ?? this.appText,
-        foregroundText: foregroundText ?? this.foregroundText,
-      );
+          appBackground: appBackground ?? this.appBackground,
+          subtleBackground: subtleBackground ?? this.subtleBackground,
+          elementBackground: elementBackground ?? this.elementBackground,
+          hoverElementBackground:
+              hoverElementBackground ?? this.hoverElementBackground,
+          activeElementBackground:
+              activeElementBackground ?? this.activeElementBackground,
+          subtleBorder: subtleBorder ?? this.subtleBorder,
+          border: border ?? this.border,
+          hoverBorder: hoverBorder ?? this.hoverBorder,
+          primary: background ?? this.primary,
+          hoverPrimary: hoverBackground ?? this.hoverPrimary,
+          subtleText: subtleText ?? this.subtleText,
+          appText: appText ?? this.appText,
+          primaryText: foregroundText ?? this.primaryText,
+          borderText: borderText ?? this.borderText,
+          dialogBorder: dialogBorder ?? this.dialogBorder,
+          calloutBackground: calloutBackground ?? this.calloutBackground,
+          calloutText: calloutText ?? this.calloutText);
 
   // ignore: prefer_constructors_over_static_methods
   static ScaleColor lerp(ScaleColor a, ScaleColor b, double t) => ScaleColor(
@@ -85,14 +100,22 @@ class ScaleColor {
         border: Color.lerp(a.border, b.border, t) ?? const Color(0x00000000),
         hoverBorder: Color.lerp(a.hoverBorder, b.hoverBorder, t) ??
             const Color(0x00000000),
-        background: Color.lerp(a.background, b.background, t) ??
-            const Color(0x00000000),
-        hoverBackground: Color.lerp(a.hoverBackground, b.hoverBackground, t) ??
+        primary: Color.lerp(a.primary, b.primary, t) ?? const Color(0x00000000),
+        hoverPrimary: Color.lerp(a.hoverPrimary, b.hoverPrimary, t) ??
             const Color(0x00000000),
         subtleText: Color.lerp(a.subtleText, b.subtleText, t) ??
             const Color(0x00000000),
         appText: Color.lerp(a.appText, b.appText, t) ?? const Color(0x00000000),
-        foregroundText: Color.lerp(a.foregroundText, b.foregroundText, t) ??
+        primaryText: Color.lerp(a.primaryText, b.primaryText, t) ??
+            const Color(0x00000000),
+        borderText: Color.lerp(a.borderText, b.borderText, t) ??
+            const Color(0x00000000),
+        dialogBorder: Color.lerp(a.dialogBorder, b.dialogBorder, t) ??
+            const Color(0x00000000),
+        calloutBackground:
+            Color.lerp(a.calloutBackground, b.calloutBackground, t) ??
+                const Color(0x00000000),
+        calloutText: Color.lerp(a.calloutText, b.calloutText, t) ??
             const Color(0x00000000),
       );
 }

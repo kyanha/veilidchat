@@ -9,7 +9,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:motion_toast/motion_toast.dart';
 import 'package:quickalert/quickalert.dart';
 
-import '../theme/theme.dart';
+import '../theme.dart';
 
 extension BorderExt on Widget {
   DecoratedBox debugBorder() => DecoratedBox(
@@ -35,19 +35,22 @@ Widget buildProgressIndicator() => Builder(builder: (context) {
       final theme = Theme.of(context);
       final scale = theme.extension<ScaleScheme>()!;
       return SpinKitFoldingCube(
-        color: scale.tertiaryScale.background,
+        color: scale.tertiaryScale.primary,
         size: 80,
       );
     });
 
-Widget waitingPage({String? text}) => Builder(
-    builder: (context) => ColoredBox(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: Center(
-            child: Column(children: [
-          buildProgressIndicator().expanded(),
-          if (text != null) Text(text)
-        ]))));
+Widget waitingPage({String? text}) => Builder(builder: (context) {
+      final theme = Theme.of(context);
+      final scale = theme.extension<ScaleScheme>()!;
+      return ColoredBox(
+          color: scale.tertiaryScale.primaryText,
+          child: Center(
+              child: Column(children: [
+            buildProgressIndicator().expanded(),
+            if (text != null) Text(text)
+          ])));
+    });
 
 Widget debugPage(String text) => Builder(
     builder: (context) => ColoredBox(
@@ -132,12 +135,30 @@ void showInfoToast(BuildContext context, String message) {
   ).show(context);
 }
 
+// Widget insetBorder(
+//     {required BuildContext context,
+//     required bool enabled,
+//     required Color color,
+//     required Widget child}) {
+//   if (!enabled) {
+//     return child;
+//   }
+
+//   return Stack({
+//     children: [] {
+//       DecoratedBox(decoration: BoxDecoration()
+//       child,
+//     }
+//   })
+// }
+
 Widget styledTitleContainer({
   required BuildContext context,
   required String title,
   required Widget child,
   Color? borderColor,
   Color? backgroundColor,
+  Color? titleColor,
 }) {
   final theme = Theme.of(context);
   final scale = theme.extension<ScaleScheme>()!;
@@ -153,7 +174,7 @@ Widget styledTitleContainer({
         Text(
           title,
           style: textTheme.titleMedium!
-              .copyWith(color: scale.primaryScale.subtleText),
+              .copyWith(color: titleColor ?? scale.primaryScale.borderText),
         ).paddingLTRB(8, 8, 8, 4),
         DecoratedBox(
                 decoration: ShapeDecoration(
@@ -174,6 +195,7 @@ Widget styledBottomSheet({
   required Widget child,
   Color? borderColor,
   Color? backgroundColor,
+  Color? titleColor,
 }) {
   final theme = Theme.of(context);
   final scale = theme.extension<ScaleScheme>()!;
@@ -181,7 +203,7 @@ Widget styledBottomSheet({
 
   return DecoratedBox(
       decoration: ShapeDecoration(
-          color: borderColor ?? scale.primaryScale.border,
+          color: borderColor ?? scale.primaryScale.dialogBorder,
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
@@ -190,7 +212,7 @@ Widget styledBottomSheet({
         Text(
           title,
           style: textTheme.titleMedium!
-              .copyWith(color: scale.primaryScale.subtleText),
+              .copyWith(color: titleColor ?? scale.primaryScale.borderText),
         ).paddingLTRB(8, 8, 8, 4),
         DecoratedBox(
                 decoration: ShapeDecoration(

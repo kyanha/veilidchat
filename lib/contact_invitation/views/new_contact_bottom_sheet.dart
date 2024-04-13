@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../theme/theme.dart';
-import '../../tools/tools.dart';
 import 'create_invitation_dialog.dart';
 import 'paste_invitation_dialog.dart';
 import 'scan_invitation_dialog.dart';
@@ -37,7 +36,7 @@ Widget newContactBottomSheetBuilder(
                           },
                           iconSize: 64,
                           icon: const Icon(Icons.contact_page),
-                          color: scale.primaryScale.background),
+                          color: scale.primaryScale.hoverBorder),
                       Text(
                         translate('add_contact_sheet.create_invite'),
                       )
@@ -50,7 +49,7 @@ Widget newContactBottomSheetBuilder(
                           },
                           iconSize: 64,
                           icon: const Icon(Icons.qr_code_scanner),
-                          color: scale.primaryScale.background),
+                          color: scale.primaryScale.hoverBorder),
                       Text(
                         translate('add_contact_sheet.scan_invite'),
                       )
@@ -63,7 +62,7 @@ Widget newContactBottomSheetBuilder(
                           },
                           iconSize: 64,
                           icon: const Icon(Icons.paste),
-                          color: scale.primaryScale.background),
+                          color: scale.primaryScale.hoverBorder),
                       Text(
                         translate('add_contact_sheet.paste_invite'),
                       )

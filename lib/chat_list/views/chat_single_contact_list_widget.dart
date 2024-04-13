@@ -7,7 +7,7 @@ import 'package:searchable_listview/searchable_listview.dart';
 
 import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
-import '../../tools/tools.dart';
+import '../../theme/theme.dart';
 import '../chat_list.dart';
 
 class ChatSingleContactListWidget extends StatelessWidget {
@@ -41,8 +41,9 @@ class ChatSingleContactListWidget extends StatelessWidget {
                                 return const Text('...');
                               }
                               return ChatSingleContactItemWidget(
-                                  contact: contact,
-                                  disabled: contactListV.busy);
+                                      contact: contact,
+                                      disabled: contactListV.busy)
+                                  .paddingLTRB(0, 4, 0, 0);
                             },
                             filter: (value) {
                               final lowerValue = value.toLowerCase();

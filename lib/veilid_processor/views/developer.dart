@@ -140,17 +140,18 @@ class _DeveloperPageState extends State<DeveloperPage> {
     // });
 
     return Scaffold(
+        backgroundColor: scale.primaryScale.primary,
         appBar: DefaultAppBar(
           title: Text(translate('developer.title')),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: scale.primaryScale.appText),
+            icon: Icon(Icons.arrow_back, color: scale.primaryScale.primaryText),
             onPressed: () => GoRouterHelper(context).pop(),
           ),
           actions: [
             IconButton(
                 icon: const Icon(Icons.copy),
-                color: scale.primaryScale.appText,
-                disabledColor: scale.grayScale.subtleText,
+                color: scale.primaryScale.primaryText,
+                disabledColor: scale.primaryScale.primaryText.withAlpha(0x3F),
                 onPressed: _terminalController.selection == null
                     ? null
                     : () async {
@@ -158,17 +159,22 @@ class _DeveloperPageState extends State<DeveloperPage> {
                       }),
             IconButton(
                 icon: const Icon(Icons.clear_all),
-                color: scale.primaryScale.appText,
-                disabledColor: scale.grayScale.subtleText,
+                color: scale.primaryScale.primaryText,
+                disabledColor: scale.primaryScale.primaryText.withAlpha(0x3F),
                 onPressed: () async {
                   await QuickAlert.show(
                       context: context,
                       type: QuickAlertType.confirm,
                       title: translate('developer.are_you_sure_clear'),
-                      textColor: scale.primaryScale.appText,
-                      confirmBtnColor: scale.primaryScale.elementBackground,
-                      backgroundColor: scale.primaryScale.subtleBackground,
-                      headerBackgroundColor: scale.primaryScale.background,
+                      titleColor: scale.primaryScale.appText,
+                      textColor: scale.primaryScale.subtleText,
+                      confirmBtnColor: scale.primaryScale.primary,
+                      cancelBtnTextStyle: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: scale.primaryScale.appText),
+                      backgroundColor: scale.primaryScale.appBackground,
+                      headerBackgroundColor: scale.primaryScale.primary,
                       confirmBtnText: translate('button.ok'),
                       cancelBtnText: translate('button.cancel'),
                       onConfirmBtnTap: () async {
@@ -194,13 +200,23 @@ class _DeveloperPageState extends State<DeveloperPage> {
                 width: 64,
                 height: 40,
                 render: ResultRender.icon,
+                icon: SizedBox(
+                    width: 10,
+                    height: 10,
+                    child: CustomPaint(
+                        painter: DropdownArrowPainter(
+                            color: scale.primaryScale.primaryText))),
                 textStyle: textTheme.labelMedium!
-                    .copyWith(color: scale.primaryScale.appText),
+                    .copyWith(color: scale.primaryScale.primaryText),
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                 openBoxDecoration: BoxDecoration(
-                    color: scale.primaryScale.activeElementBackground),
-                boxDecoration:
-                    BoxDecoration(color: scale.primaryScale.elementBackground),
+                  color: scale.primaryScale.border,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                boxDecoration: BoxDecoration(
+                  color: scale.primaryScale.hoverBorder,
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               dropdownOptions: DropdownOptions(
                 width: 160,
@@ -224,7 +240,7 @@ class _DeveloperPageState extends State<DeveloperPage> {
                   padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                   selectedPadding: const EdgeInsets.fromLTRB(8, 4, 8, 4)),
               dropdownList: _logLevelDropdownItems,
-            )
+            ).paddingLTRB(0, 0, 8, 0)
           ],
         ),
         body: SafeArea(
@@ -245,13 +261,19 @@ class _DeveloperPageState extends State<DeveloperPage> {
             decoration: InputDecoration(
                 filled: true,
                 contentPadding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
-                border: OutlineInputBorder(
+                enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: scale.primaryScale.border)),
+                    borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 fillColor: scale.primaryScale.subtleBackground,
                 hintText: translate('developer.command'),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.send),
+                  icon: Icon(Icons.send,
+                      color: _debugCommandController.text.isEmpty
+                          ? scale.primaryScale.primary.withAlpha(0x3F)
+                          : scale.primaryScale.primary),
                   onPressed: _debugCommandController.text.isEmpty
                       ? null
                       : () async {

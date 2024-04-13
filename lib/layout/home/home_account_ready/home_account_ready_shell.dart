@@ -11,7 +11,7 @@ import '../../../chat_list/chat_list.dart';
 import '../../../contact_invitation/contact_invitation.dart';
 import '../../../contacts/contacts.dart';
 import '../../../router/router.dart';
-import '../../../tools/tools.dart';
+import '../../../theme/theme.dart';
 
 class HomeAccountReadyShell extends StatefulWidget {
   factory HomeAccountReadyShell(

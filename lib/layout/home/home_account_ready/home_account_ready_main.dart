@@ -37,11 +37,11 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
           Row(children: [
             IconButton(
                 icon: const Icon(Icons.settings),
-                color: scale.secondaryScale.appText,
+                color: scale.secondaryScale.borderText,
                 constraints: const BoxConstraints.expand(height: 64, width: 64),
                 style: ButtonStyle(
-                    backgroundColor:
-                        MaterialStateProperty.all(scale.secondaryScale.border),
+                    backgroundColor: MaterialStateProperty.all(
+                        scale.primaryScale.hoverBorder),
                     shape: MaterialStateProperty.all(
                         const RoundedRectangleBorder(
                             borderRadius:

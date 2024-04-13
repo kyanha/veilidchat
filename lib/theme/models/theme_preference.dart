@@ -2,7 +2,8 @@ import 'package:change_case/change_case.dart';
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../tools/tools.dart';
+import '../views/widget_helpers.dart';
+import 'contrast_generator.dart';
 import 'radix_generator.dart';
 
 part 'theme_preference.freezed.dart';
@@ -83,7 +84,7 @@ extension ThemePreferencesExt on ThemePreferences {
       // Special cases
       case ColorPreference.contrast:
         // xxx do contrastGenerator
-        themeData = radixGenerator(brightness, RadixThemeColor.grim);
+        themeData = contrastGenerator(brightness);
       // Generate from Radix
       case ColorPreference.scarlet:
         themeData = radixGenerator(brightness, RadixThemeColor.scarlet);

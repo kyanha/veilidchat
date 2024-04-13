@@ -31,11 +31,14 @@ class ProfileWidget extends StatelessWidget {
       child: Column(children: [
         Text(
           _profile.name,
-          style: textTheme.headlineSmall,
+          style: textTheme.headlineSmall!
+              .copyWith(color: scale.primaryScale.borderText),
           textAlign: TextAlign.left,
         ).paddingAll(4),
         if (_profile.pronouns.isNotEmpty)
-          Text(_profile.pronouns, style: textTheme.bodyMedium)
+          Text(_profile.pronouns,
+                  style: textTheme.bodyMedium!
+                      .copyWith(color: scale.primaryScale.borderText))
               .paddingLTRB(4, 0, 4, 4),
       ]),
     );

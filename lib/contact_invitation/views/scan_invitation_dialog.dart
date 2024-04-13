@@ -211,7 +211,7 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
                                             scale.grayScale.subtleBackground);
                                   case TorchState.on:
                                     return Icon(Icons.flash_on,
-                                        color: scale.primaryScale.background);
+                                        color: scale.primaryScale.primary);
                                 }
                               },
                             ),
@@ -258,8 +258,8 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
                       alignment: Alignment.topRight,
                       child: IconButton(
                           color: Colors.white,
-                          icon: Icon(Icons.close,
-                              color: scale.grayScale.background),
+                          icon:
+                              Icon(Icons.close, color: scale.grayScale.primary),
                           iconSize: 32,
                           onPressed: () => {
                                 SchedulerBinding.instance
