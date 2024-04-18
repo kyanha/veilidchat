@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
@@ -99,38 +97,52 @@ class ChatComponent extends StatelessWidget {
 
   /////////////////////////////////////////////////////////////////////
 
-  types.Message messageToChatMessage(proto.Message message) {
-    final isLocal = message.author == _localUserIdentityKey.toProto();
+  types.Message messageToChatMessage(MessageState message) {
+    final isLocal = message.author == _localUserIdentityKey;
+
+    types.Status? status;
+    if (message.sendState != null) {
+      assert(isLocal, 'send state should only be on sent messages');
+      switch (message.sendState!) {
+        case MessageSendState.sending:
+          status = types.Status.sending;
+        case MessageSendState.sent:
+          status = types.Status.sent;
+        case MessageSendState.delivered:
+          status = types.Status.delivered;
+      }
+    }
 
     final textMessage = types.TextMessage(
-      author: isLocal ? _localUser : _remoteUser,
-      createdAt: (message.timestamp ~/ 1000).toInt(),
-      id: message.timestamp.toString(),
-      text: message.text,
-    );
+        author: isLocal ? _localUser : _remoteUser,
+        createdAt: (message.timestamp.value ~/ BigInt.from(1000)).toInt(),
+        id: message.timestamp.toString(),
+        text: message.text,
+        showStatus: status != null,
+        status: status);
     return textMessage;
   }
 
-  Future<void> _addMessage(proto.Message message) async {
+  void _addMessage(proto.Message message) {
     if (message.text.isEmpty) {
       return;
     }
-    await _messagesCubit.addMessage(message: message);
+    _messagesCubit.addMessage(message: message);
   }
 
-  Future<void> _handleSendPressed(types.PartialText message) async {
+  void _handleSendPressed(types.PartialText message) {
     final protoMessage = proto.Message()
       ..author = _localUserIdentityKey.toProto()
       ..timestamp = Veilid.instance.now().toInt64()
       ..text = message.text;
     //..signature = signature;
 
-    await _addMessage(protoMessage);
+    _addMessage(protoMessage);
   }
 
-  Future<void> _handleAttachmentPressed() async {
-    //
-  }
+  // void _handleAttachmentPressed() async {
+  //   //
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -195,10 +207,7 @@ class ChatComponent extends StatelessWidget {
                         //onAttachmentPressed: _handleAttachmentPressed,
                         //onMessageTap: _handleMessageTap,
                         //onPreviewDataFetched: _handlePreviewDataFetched,
-                        onSendPressed: (message) {
-                          singleFuture(
-                              this, () async => _handleSendPressed(message));
-                        },
+                        onSendPressed: _handleSendPressed,
                         //showUserAvatars: false,
                         //showUserNames: true,
                         user: _localUser,

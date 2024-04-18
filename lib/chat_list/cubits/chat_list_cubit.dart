@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:async_tools/async_tools.dart';
 import 'package:bloc_tools/bloc_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -14,7 +13,7 @@ import '../../tools/tools.dart';
 
 //////////////////////////////////////////////////
 // Mutable state for per-account chat list
-typedef ChatListCubitState = BlocBusyState<AsyncValue<IList<proto.Chat>>>;
+typedef ChatListCubitState = DHTShortArrayBusyState<proto.Chat>;
 
 class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     with StateMapFollowable<ChatListCubitState, TypedKey, proto.Chat> {
@@ -119,8 +118,8 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     // chat record now
     if (success && deletedItem != null) {
       try {
-        await DHTRecordPool.instance
-            .delete(deletedItem.reconciledChatRecord.toVeilid().recordKey);
+        await DHTRecordPool.instance.deleteRecord(
+            deletedItem.reconciledChatRecord.toVeilid().recordKey);
       } on Exception catch (e) {
         log.debug('error removing reconciled chat record: $e', e);
       }
@@ -135,8 +134,8 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
       return IMap();
     }
     return IMap.fromIterable(stateValue,
-        keyMapper: (e) => e.remoteConversationRecordKey.toVeilid(),
-        valueMapper: (e) => e);
+        keyMapper: (e) => e.value.remoteConversationRecordKey.toVeilid(),
+        valueMapper: (e) => e.value);
   }
 
   final ActiveChatCubit activeChatCubit;

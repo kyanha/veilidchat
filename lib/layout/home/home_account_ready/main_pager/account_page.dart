@@ -38,11 +38,14 @@ class AccountPageState extends State<AccountPage> {
     final cilState = context.watch<ContactInvitationListCubit>().state;
     final cilBusy = cilState.busy;
     final contactInvitationRecordList =
-        cilState.state.asData?.value ?? const IListConst([]);
+        cilState.state.asData?.value.map((x) => x.value).toIList() ??
+            const IListConst([]);
 
     final ciState = context.watch<ContactListCubit>().state;
     final ciBusy = ciState.busy;
-    final contactList = ciState.state.asData?.value ?? const IListConst([]);
+    final contactList =
+        ciState.state.asData?.value.map((x) => x.value).toIList() ??
+            const IListConst([]);
 
     return SizedBox(
         child: Column(children: <Widget>[

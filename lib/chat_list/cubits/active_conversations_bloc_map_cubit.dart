@@ -85,14 +85,14 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
       await addState(key, const AsyncValue.loading());
       return;
     }
-    final contactIndex = contactList
-        .indexWhere((c) => c.remoteConversationRecordKey.toVeilid() == key);
+    final contactIndex = contactList.indexWhere(
+        (c) => c.value.remoteConversationRecordKey.toVeilid() == key);
     if (contactIndex == -1) {
       await addState(key, AsyncValue.error('Contact not found'));
       return;
     }
     final contact = contactList[contactIndex];
-    await _addConversation(contact: contact);
+    await _addConversation(contact: contact.value);
   }
 
   ////

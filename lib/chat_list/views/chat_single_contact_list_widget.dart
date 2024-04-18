@@ -20,8 +20,8 @@ class ChatSingleContactListWidget extends StatelessWidget {
 
     return contactListV.builder((context, contactList) {
       final contactMap = IMap.fromIterable(contactList,
-          keyMapper: (c) => c.remoteConversationRecordKey,
-          valueMapper: (c) => c);
+          keyMapper: (c) => c.value.remoteConversationRecordKey,
+          valueMapper: (c) => c.value);
 
       final chatListV = context.watch<ChatListCubit>().state;
       return chatListV
@@ -33,7 +33,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                     child: (chatList.isEmpty)
                         ? const EmptyChatListWidget()
                         : SearchableList<proto.Chat>(
-                            initialList: chatList.toList(),
+                            initialList: chatList.map((x) => x.value).toList(),
                             builder: (l, i, c) {
                               final contact =
                                   contactMap[c.remoteConversationRecordKey];
@@ -47,7 +47,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                             },
                             filter: (value) {
                               final lowerValue = value.toLowerCase();
-                              return chatList.where((c) {
+                              return chatList.map((x) => x.value).where((c) {
                                 final contact =
                                     contactMap[c.remoteConversationRecordKey];
                                 if (contact == null) {

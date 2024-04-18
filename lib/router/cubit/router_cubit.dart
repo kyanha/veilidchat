@@ -16,10 +16,19 @@ import '../../veilid_processor/views/developer.dart';
 
 part 'router_cubit.freezed.dart';
 part 'router_cubit.g.dart';
-part 'router_state.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavKey');
 final _homeNavKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavKey');
+
+@freezed
+class RouterState with _$RouterState {
+  const factory RouterState(
+      {required bool hasAnyAccount,
+      required bool hasActiveChat}) = _RouterState;
+
+  factory RouterState.fromJson(dynamic json) =>
+      _$RouterStateFromJson(json as Map<String, dynamic>);
+}
 
 class RouterCubit extends Cubit<RouterState> {
   RouterCubit(AccountRepository accountRepository)

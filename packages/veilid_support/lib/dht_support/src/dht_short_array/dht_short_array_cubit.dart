@@ -3,11 +3,24 @@ import 'dart:async';
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
 import 'package:bloc_tools/bloc_tools.dart';
+import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
 
-typedef DHTShortArrayState<T> = AsyncValue<IList<T>>;
+@immutable
+class DHTShortArrayElementState<T> extends Equatable {
+  const DHTShortArrayElementState(
+      {required this.value, required this.isOffline});
+  final T value;
+  final bool isOffline;
+
+  @override
+  List<Object?> get props => [value, isOffline];
+}
+
+typedef DHTShortArrayState<T> = AsyncValue<IList<DHTShortArrayElementState<T>>>;
 typedef DHTShortArrayBusyState<T> = BlocBusyState<DHTShortArrayState<T>>;
 
 class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
@@ -49,13 +62,19 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
   Future<void> _refreshNoWait({bool forceRefresh = false}) async =>
       busy((emit) async => _refreshInner(emit, forceRefresh: forceRefresh));
 
-  Future<void> _refreshInner(void Function(AsyncValue<IList<T>>) emit,
+  Future<void> _refreshInner(void Function(DHTShortArrayState<T>) emit,
       {bool forceRefresh = false}) async {
     try {
-      final newState = (await _shortArray.operate(
-              (reader) => reader.getAllItems(forceRefresh: forceRefresh)))
-          ?.map(_decodeElement)
-          .toIList();
+      final newState = await _shortArray.operate((reader) async {
+        final offlinePositions = await reader.getOfflinePositions();
+        final allItems = (await reader.getAllItems(forceRefresh: forceRefresh))
+            ?.indexed
+            .map((x) => DHTShortArrayElementState(
+                value: _decodeElement(x.$2),
+                isOffline: offlinePositions.contains(x.$1)))
+            .toIList();
+        return allItems;
+      });
       if (newState != null) {
         emit(AsyncValue.data(newState));
       }

@@ -173,8 +173,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         await localConversationCubit.close();
         final conversation = data.value;
         final messagesKey = conversation.messages.toVeilid();
-        await pool.delete(messagesKey);
-        await pool.delete(_localConversationRecordKey!);
+        await pool.deleteRecord(messagesKey);
+        await pool.deleteRecord(_localConversationRecordKey!);
         _localConversationRecordKey = null;
       });
     }
@@ -191,8 +191,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         await remoteConversationCubit.close();
         final conversation = data.value;
         final messagesKey = conversation.messages.toVeilid();
-        await pool.delete(messagesKey);
-        await pool.delete(_remoteConversationRecordKey!);
+        await pool.deleteRecord(messagesKey);
+        await pool.deleteRecord(_remoteConversationRecordKey!);
       });
     }
 

@@ -26,7 +26,8 @@ class AccountRepository {
           ? IList<LocalAccount>.fromJson(
               obj, genericFromJson(LocalAccount.fromJson))
           : IList<LocalAccount>(),
-      valueToJson: (val) => val.toJson((la) => la.toJson()));
+      valueToJson: (val) => val?.toJson((la) => la.toJson()),
+      makeInitialValue: IList<LocalAccount>.empty);
 
   static TableDBValue<IList<UserLogin>> _initUserLogins() => TableDBValue(
       tableName: 'local_account_manager',
@@ -34,13 +35,15 @@ class AccountRepository {
       valueFromJson: (obj) => obj != null
           ? IList<UserLogin>.fromJson(obj, genericFromJson(UserLogin.fromJson))
           : IList<UserLogin>(),
-      valueToJson: (val) => val.toJson((la) => la.toJson()));
+      valueToJson: (val) => val?.toJson((la) => la.toJson()),
+      makeInitialValue: IList<UserLogin>.empty);
 
   static TableDBValue<TypedKey?> _initActiveAccount() => TableDBValue(
       tableName: 'local_account_manager',
       tableKeyName: 'active_local_account',
       valueFromJson: (obj) => obj == null ? null : TypedKey.fromJson(obj),
-      valueToJson: (val) => val?.toJson());
+      valueToJson: (val) => val?.toJson(),
+      makeInitialValue: () => null);
 
   //////////////////////////////////////////////////////////////
   /// Fields
@@ -62,7 +65,9 @@ class AccountRepository {
   }
 
   Future<void> close() async {
-    // ???
+    await _localAccounts.close();
+    await _userLogins.close();
+    await _activeLocalAccount.close();
   }
 
   //////////////////////////////////////////////////////////////
@@ -72,18 +77,18 @@ class AccountRepository {
 
   //////////////////////////////////////////////////////////////
   /// Selectors
-  IList<LocalAccount> getLocalAccounts() => _localAccounts.requireValue;
-  TypedKey? getActiveLocalAccount() => _activeLocalAccount.requireValue;
-  IList<UserLogin> getUserLogins() => _userLogins.requireValue;
+  IList<LocalAccount> getLocalAccounts() => _localAccounts.value;
+  TypedKey? getActiveLocalAccount() => _activeLocalAccount.value;
+  IList<UserLogin> getUserLogins() => _userLogins.value;
   UserLogin? getActiveUserLogin() {
-    final activeLocalAccount = _activeLocalAccount.requireValue;
+    final activeLocalAccount = _activeLocalAccount.value;
     return activeLocalAccount == null
         ? null
         : fetchUserLogin(activeLocalAccount);
   }
 
   LocalAccount? fetchLocalAccount(TypedKey accountMasterRecordKey) {
-    final localAccounts = _localAccounts.requireValue;
+    final localAccounts = _localAccounts.value;
     final idx = localAccounts.indexWhere(
         (e) => e.identityMaster.masterRecordKey == accountMasterRecordKey);
     if (idx == -1) {
@@ -93,7 +98,7 @@ class AccountRepository {
   }
 
   UserLogin? fetchUserLogin(TypedKey accountMasterRecordKey) {
-    final userLogins = _userLogins.requireValue;
+    final userLogins = _userLogins.value;
     final idx = userLogins
         .indexWhere((e) => e.accountMasterRecordKey == accountMasterRecordKey);
     if (idx == -1) {
@@ -295,7 +300,7 @@ class AccountRepository {
 
     if (accountMasterRecordKey != null) {
       // Assert the specified record key can be found, will throw if not
-      final _ = _userLogins.requireValue.firstWhere(
+      final _ = _userLogins.value.firstWhere(
           (ul) => ul.accountMasterRecordKey == accountMasterRecordKey);
     }
     await _activeLocalAccount.set(accountMasterRecordKey);

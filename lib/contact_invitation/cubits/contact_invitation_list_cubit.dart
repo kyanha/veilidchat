@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:async_tools/async_tools.dart';
 import 'package:bloc_tools/bloc_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
@@ -27,7 +26,7 @@ typedef GetEncryptionKeyCallback = Future<SecretKey?> Function(
 //////////////////////////////////////////////////
 
 typedef ContactInvitiationListState
-    = BlocBusyState<AsyncValue<IList<proto.ContactInvitationRecord>>>;
+    = DHTShortArrayBusyState<proto.ContactInvitationRecord>;
 //////////////////////////////////////////////////
 // Mutable state for per-account contact invitations
 
@@ -208,13 +207,14 @@ class ContactInvitationListCubit
         await contactRequestInbox.tryWriteBytes(Uint8List(0));
       });
       try {
-        await pool.delete(contactRequestInbox.recordKey);
+        await pool.deleteRecord(contactRequestInbox.recordKey);
       } on Exception catch (e) {
         log.debug('error removing contact request inbox: $e', e);
       }
       if (!accepted) {
         try {
-          await pool.delete(deletedItem.localConversationRecordKey.toVeilid());
+          await pool
+              .deleteRecord(deletedItem.localConversationRecordKey.toVeilid());
         } on Exception catch (e) {
           log.debug('error removing local conversation record: $e', e);
         }
@@ -246,7 +246,7 @@ class ContactInvitationListCubit
     // If we're chatting to ourselves,
     // we are validating an invitation we have created
     final isSelf = state.state.asData!.value.indexWhere((cir) =>
-            cir.contactRequestInbox.recordKey.toVeilid() ==
+            cir.value.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxKey) !=
         -1;
 
@@ -315,8 +315,8 @@ class ContactInvitationListCubit
       return IMap();
     }
     return IMap.fromIterable(stateValue,
-        keyMapper: (e) => e.contactRequestInbox.recordKey.toVeilid(),
-        valueMapper: (e) => e);
+        keyMapper: (e) => e.value.contactRequestInbox.recordKey.toVeilid(),
+        valueMapper: (e) => e.value);
   }
 
   //

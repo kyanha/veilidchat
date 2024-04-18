@@ -27,8 +27,6 @@ message Attachment {
 }
 
 // A single message as part of a series of messages
-// Messages are stored in a DHTLog
-// DHT Schema: SMPL(0,1,[identityPublicKey])
 message Message {
     // Author of the message
     veilid.TypedKey author = 1;
@@ -53,7 +51,6 @@ message Message {
 // DHT Key (UnicastOutbox): localConversation
 // DHT Secret: None
 // Encryption: DH(IdentityA, IdentityB)
-
 message Conversation {
     // Profile to publish to friend
     Profile profile = 1;

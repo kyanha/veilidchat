@@ -69,7 +69,7 @@ class DHTShortArray {
       return dhtShortArray;
     } on Exception catch (_) {
       await dhtRecord.close();
-      await pool.delete(dhtRecord.key);
+      await pool.deleteRecord(dhtRecord.key);
       rethrow;
     }
   }
@@ -152,7 +152,7 @@ class DHTShortArray {
   /// Free all resources for the DHTShortArray and delete it from the DHT
   Future<void> delete() async {
     await close();
-    await DHTRecordPool.instance.delete(recordKey);
+    await DHTRecordPool.instance.deleteRecord(recordKey);
   }
 
   /// Runs a closure that guarantees the DHTShortArray
@@ -212,6 +212,8 @@ class DHTShortArray {
         return closure(writer);
       }, timeout: timeout);
 
+  /// Listen to and any all changes to the structure of this short array
+  /// regardless of where the changes are coming from
   Future<StreamSubscription<void>> listen(
     void Function() onChanged,
   ) =>

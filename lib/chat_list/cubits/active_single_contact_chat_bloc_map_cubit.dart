@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc_tools/bloc_tools.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -16,7 +15,7 @@ import 'chat_list_cubit.dart';
 // Wraps a MessagesCubit to stream the latest messages to the state
 // Automatically follows the state of a ActiveConversationsBlocMapCubit.
 class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
-        AsyncValue<IList<proto.Message>>, SingleContactMessagesCubit>
+        SingleContactMessagesState, SingleContactMessagesCubit>
     with
         StateMapFollower<ActiveConversationsBlocMapState, TypedKey,
             AsyncValue<ActiveConversationState>> {
@@ -61,14 +60,14 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
       await addState(key, const AsyncValue.loading());
       return;
     }
-    final contactIndex = contactList
-        .indexWhere((c) => c.remoteConversationRecordKey.toVeilid() == key);
+    final contactIndex = contactList.indexWhere(
+        (c) => c.value.remoteConversationRecordKey.toVeilid() == key);
     if (contactIndex == -1) {
       await addState(
           key, AsyncValue.error('Contact not found for conversation'));
       return;
     }
-    final contact = contactList[contactIndex];
+    final contact = contactList[contactIndex].value;
 
     // Get the chat object for this single contact chat
     final chatList = _chatListCubit.state.state.asData?.value;
@@ -76,13 +75,13 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
       await addState(key, const AsyncValue.loading());
       return;
     }
-    final chatIndex = chatList
-        .indexWhere((c) => c.remoteConversationRecordKey.toVeilid() == key);
+    final chatIndex = chatList.indexWhere(
+        (c) => c.value.remoteConversationRecordKey.toVeilid() == key);
     if (contactIndex == -1) {
       await addState(key, AsyncValue.error('Chat not found for conversation'));
       return;
     }
-    final chat = chatList[chatIndex];
+    final chat = chatList[chatIndex].value;
 
     await value.when(
         data: (state) => _addConversationMessages(

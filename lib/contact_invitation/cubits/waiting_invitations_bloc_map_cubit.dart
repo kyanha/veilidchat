@@ -1,6 +1,5 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc_tools/bloc_tools.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -16,10 +15,8 @@ typedef WaitingInvitationsBlocMapState
 class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<InvitationStatus>, WaitingInvitationCubit>
     with
-        StateMapFollower<
-            BlocBusyState<AsyncValue<IList<proto.ContactInvitationRecord>>>,
-            TypedKey,
-            proto.ContactInvitationRecord> {
+        StateMapFollower<DHTShortArrayBusyState<proto.ContactInvitationRecord>,
+            TypedKey, proto.ContactInvitationRecord> {
   WaitingInvitationsBlocMapCubit(
       {required this.activeAccountInfo, required this.account});
 

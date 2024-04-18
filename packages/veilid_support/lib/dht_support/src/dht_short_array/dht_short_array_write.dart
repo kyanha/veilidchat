@@ -92,12 +92,11 @@ extension DHTShortArrayWriteExt on DHTShortArrayWrite {
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// Writer-only implementation
+// Writer implementation
 
-class _DHTShortArrayWrite implements DHTShortArrayWrite {
-  _DHTShortArrayWrite._(_DHTShortArrayHead head)
-      : _head = head,
-        _reader = _DHTShortArrayRead._(head);
+class _DHTShortArrayWrite extends _DHTShortArrayRead
+    implements DHTShortArrayWrite {
+  _DHTShortArrayWrite._(super.head) : super._();
 
   @override
   Future<bool> tryAddItem(Uint8List value) async {
@@ -187,23 +186,4 @@ class _DHTShortArrayWrite implements DHTShortArrayWrite {
     }
     return (oldValue, true);
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-  // Reader passthrough
-
-  @override
-  int get length => _reader.length;
-
-  @override
-  Future<Uint8List?> getItem(int pos, {bool forceRefresh = false}) =>
-      _reader.getItem(pos, forceRefresh: forceRefresh);
-
-  @override
-  Future<List<Uint8List>?> getAllItems({bool forceRefresh = false}) =>
-      _reader.getAllItems(forceRefresh: forceRefresh);
-
-  ////////////////////////////////////////////////////////////////////////////
-  // Fields
-  final _DHTShortArrayHead _head;
-  final _DHTShortArrayRead _reader;
 }

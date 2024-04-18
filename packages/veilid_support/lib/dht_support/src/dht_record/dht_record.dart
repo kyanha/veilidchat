@@ -86,7 +86,7 @@ class DHTRecord {
       if (_open) {
         await close();
       }
-      await DHTRecordPool.instance.delete(key);
+      await DHTRecordPool.instance.deleteRecord(key);
       rethrow;
     }
   }

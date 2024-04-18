@@ -93,7 +93,7 @@ extension IdentityMasterExtension on IdentityMaster {
   /// Deletes a master identity and the identity record under it
   Future<void> delete() async {
     final pool = DHTRecordPool.instance;
-    await pool.delete(masterRecordKey);
+    await pool.deleteRecord(masterRecordKey);
   }
 
   Future<VeilidCryptoSystem> get identityCrypto =>
@@ -110,6 +110,9 @@ extension IdentityMasterExtension on IdentityMaster {
 
   TypedKey identityPublicTypedKey() =>
       TypedKey(kind: identityRecordKey.kind, value: identityPublicKey);
+
+  TypedKey masterPublicTypedKey() =>
+      TypedKey(kind: identityRecordKey.kind, value: masterPublicKey);
 
   Future<VeilidCryptoSystem> validateIdentitySecret(
       SecretKey identitySecret) async {

@@ -15,6 +15,9 @@ abstract class DHTShortArrayRead {
   /// is specified, the network will always be checked for newer values
   /// rather than returning the existing locally stored copy of the elements.
   Future<List<Uint8List>?> getAllItems({bool forceRefresh = false});
+
+  /// Get a list of the positions that were written offline and not flushed yet
+  Future<Set<int>> getOfflinePositions();
 }
 
 extension DHTShortArrayReadExt on DHTShortArrayRead {
@@ -94,6 +97,40 @@ class _DHTShortArrayRead implements DHTShortArrayRead {
     }
 
     return out;
+  }
+
+  /// Get a list of the positions that were written offline and not flushed yet
+  @override
+  Future<Set<int>> getOfflinePositions() async {
+    final indexOffline = <int>{};
+    final inspects = await [
+      _head._headRecord.inspect(),
+      ..._head._linkedRecords.map((lr) => lr.inspect())
+    ].wait;
+
+    // Add to offline index
+    var strideOffset = 0;
+    for (final inspect in inspects) {
+      for (final r in inspect.offlineSubkeys) {
+        for (var i = r.low; i <= r.high; i++) {
+          // If this is the head record, ignore the first head subkey
+          if (strideOffset != 0 || i != 0) {
+            indexOffline.add(i + ((strideOffset == 0) ? -1 : strideOffset));
+          }
+        }
+      }
+      strideOffset += _head._stride;
+    }
+
+    // See which positions map to offline indexes
+    final positionOffline = <int>{};
+    for (var i = 0; i < _head._index.length; i++) {
+      final idx = _head._index[i];
+      if (indexOffline.contains(idx)) {
+        positionOffline.add(i);
+      }
+    }
+    return positionOffline;
   }
 
   ////////////////////////////////////////////////////////////////////////////

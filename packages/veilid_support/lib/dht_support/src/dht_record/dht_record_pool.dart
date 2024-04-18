@@ -109,7 +109,7 @@ class OpenedRecordInfo {
   String get sharedDetails => shared.toString();
 }
 
-class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
+class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   DHTRecordPool._(Veilid veilid, VeilidRoutingContext routingContext)
       : _state = const DHTRecordPoolAllocations(),
         _mutex = Mutex(),
@@ -150,7 +150,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       ? DHTRecordPoolAllocations.fromJson(obj)
       : const DHTRecordPoolAllocations();
   @override
-  Object? valueToJson(DHTRecordPoolAllocations val) => val.toJson();
+  Object? valueToJson(DHTRecordPoolAllocations? val) => val?.toJson();
 
   //////////////////////////////////////////////////////////////
 
@@ -161,7 +161,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     final globalPool = DHTRecordPool._(Veilid.instance, routingContext);
     globalPool
       .._logger = logger
-      .._state = await globalPool.load();
+      .._state = await globalPool.load() ?? const DHTRecordPoolAllocations();
     _singleton = globalPool;
   }
 
@@ -279,7 +279,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
       if (openedRecordInfo.records.isEmpty) {
         await _routingContext.closeDHTRecord(key);
         if (openedRecordInfo.shared.deleteOnClose) {
-          await _deleteInner(key);
+          await _deleteRecordInner(key);
         }
         _opened.remove(key);
       }
@@ -316,7 +316,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     }
   }
 
-  Future<void> _deleteInner(TypedKey recordKey) async {
+  Future<void> _deleteRecordInner(TypedKey recordKey) async {
     log('deleteDHTRecord: key=$recordKey');
 
     // Remove this child from parents
@@ -324,7 +324,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
     await _routingContext.deleteDHTRecord(recordKey);
   }
 
-  Future<void> delete(TypedKey recordKey) async {
+  Future<void> deleteRecord(TypedKey recordKey) async {
     await _mutex.protect(() async {
       final allDeps = _collectChildrenInner(recordKey);
 
@@ -339,7 +339,7 @@ class DHTRecordPool with TableDBBacked<DHTRecordPoolAllocations> {
         ori.shared.deleteOnClose = true;
       } else {
         // delete now
-        await _deleteInner(recordKey);
+        await _deleteRecordInner(recordKey);
       }
     });
   }
