@@ -63,14 +63,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         _remoteConversationRecordKey = remoteConversationRecordKey,
         _remoteMessagesRecordKey = remoteMessagesRecordKey,
         _reconciledChatRecord = reconciledChatRecord,
-        _unreconciledMessagesQueue = PersistentQueueCubit<proto.Message>(
-            table: 'SingleContactUnreconciledMessages',
-            key: remoteConversationRecordKey.toString(),
-            fromBuffer: proto.Message.fromBuffer),
-        _sendingMessagesQueue = PersistentQueueCubit<proto.Message>(
-            table: 'SingleContactSendingMessages',
-            key: remoteConversationRecordKey.toString(),
-            fromBuffer: proto.Message.fromBuffer),
         super(const AsyncValue.loading()) {
     // Async Init
     _initWait.add(_init);
@@ -93,6 +85,20 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Initialize everything
   Future<void> _init() async {
+    // Late initialization of queues with closures
+    _unreconciledMessagesQueue = PersistentQueue<proto.Message>(
+      table: 'SingleContactUnreconciledMessages',
+      key: _remoteConversationRecordKey.toString(),
+      fromBuffer: proto.Message.fromBuffer,
+      closure: _processUnreconciledMessages,
+    );
+    _sendingMessagesQueue = PersistentQueue<proto.Message>(
+      table: 'SingleContactSendingMessages',
+      key: _remoteConversationRecordKey.toString(),
+      fromBuffer: proto.Message.fromBuffer,
+      closure: _processSendingMessages,
+    );
+
     // Make crypto
     await _initMessagesCrypto();
 
@@ -104,32 +110,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     // Remote messages key
     await _initRcvdMessagesCubit();
-
-    // Unreconciled messages processing queue listener
-    Future.delayed(Duration.zero, () async {
-      await for (final entry in _unreconciledMessagesQueue.stream) {
-        final data = entry.asData;
-        if (data != null && data.value.isNotEmpty) {
-          // Process data using recoverable processing mechanism
-          await _unreconciledMessagesQueue.process((messages) async {
-            await _processUnreconciledMessages(data.value);
-          });
-        }
-      }
-    });
-
-    // Sending messages processing queue listener
-    Future.delayed(Duration.zero, () async {
-      await for (final entry in _sendingMessagesQueue.stream) {
-        final data = entry.asData;
-        if (data != null && data.value.isNotEmpty) {
-          // Process data using recoverable processing mechanism
-          await _sendingMessagesQueue.process((messages) async {
-            await _processSendingMessages(data.value);
-          });
-        }
-      }
-    });
   }
 
   // Make crypto
@@ -145,8 +125,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _sentMessagesCubit = DHTShortArrayCubit(
         open: () async => DHTShortArray.openWrite(
             _localMessagesRecordKey, writer,
-            debugName:
-                'SingleContactMessagesCubit::_initSentMessagesCubit::SentMessages',
+            debugName: 'SingleContactMessagesCubit::_initSentMessagesCubit::'
+                'SentMessages',
             parent: _localConversationRecordKey,
             crypto: _messagesCrypto),
         decodeElement: proto.Message.fromBuffer);
@@ -176,7 +156,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     _reconciledMessagesCubit = DHTShortArrayCubit(
         open: () async => DHTShortArray.openOwned(_reconciledChatRecord,
-            debugName: 'SingleContactMessagesCubit::_initReconciledMessages::'
+            debugName:
+                'SingleContactMessagesCubit::_initReconciledMessagesCubit::'
                 'ReconciledMessages',
             parent: accountRecordKey),
         decodeElement: proto.Message.fromBuffer);
@@ -185,34 +166,35 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _updateReconciledMessagesState(_reconciledMessagesCubit!.state);
   }
 
-  // Called when the remote messages list gets a change
+  ////////////////////////////////////////////////////////////////////////////
+
+  // Called when the sent messages cubit gets a change
+  // This will re-render when messages are sent from another machine
+  void _updateSentMessagesState(
+      DHTShortArrayBusyState<proto.Message> avmessages) {
+    final sentMessages = avmessages.state.asData?.value;
+    if (sentMessages == null) {
+      return;
+    }
+    // Don't reconcile, the sending machine will have already added
+    // to the reconciliation queue on that machine
+
+    // Update the view
+    _renderState();
+  }
+
+  // Called when the received messages cubit gets a change
   void _updateRcvdMessagesState(
       DHTShortArrayBusyState<proto.Message> avmessages) {
-    final remoteMessages = avmessages.state.asData?.value;
-    if (remoteMessages == null) {
+    final rcvdMessages = avmessages.state.asData?.value;
+    if (rcvdMessages == null) {
       return;
     }
 
     // Add remote messages updates to queue to process asynchronously
     // Ignore offline state because remote messages are always fully delivered
     // This may happen once per client but should be idempotent
-    _unreconciledMessagesQueue
-        .addAllSync(remoteMessages.map((x) => x.value).toIList());
-
-    // Update the view
-    _renderState();
-  }
-
-  // Called when the send messages list gets a change
-  // This will re-render when messages are sent from another machine
-  void _updateSentMessagesState(
-      DHTShortArrayBusyState<proto.Message> avmessages) {
-    final remoteMessages = avmessages.state.asData?.value;
-    if (remoteMessages == null) {
-      return;
-    }
-    // Don't reconcile, the sending machine will have already added
-    // to the reconciliation queue on that machine
+    _unreconciledMessagesQueue.addAllSync(rcvdMessages.map((x) => x.value));
 
     // Update the view
     _renderState();
@@ -225,6 +207,25 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       DHTShortArrayBusyState<proto.Message> avmessages) {
     // Update the view
     _renderState();
+  }
+
+  // Async process to reconcile messages sent or received in the background
+  Future<void> _processUnreconciledMessages(
+      IList<proto.Message> messages) async {
+    await _reconciledMessagesCubit!
+        .operateWrite((reconciledMessagesWriter) async {
+      await _reconcileMessagesInner(
+          reconciledMessagesWriter: reconciledMessagesWriter,
+          messages: messages);
+    });
+  }
+
+  // Async process to send messages in the background
+  Future<void> _processSendingMessages(IList<proto.Message> messages) async {
+    for (final message in messages) {
+      await _sentMessagesCubit!.operateWriteEventual(
+          (writer) => writer.tryAddItem(message.writeToBuffer()));
+    }
   }
 
   Future<void> _reconcileMessagesInner(
@@ -288,25 +289,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     }
   }
 
-  // Async process to reconcile messages sent or received in the background
-  Future<void> _processUnreconciledMessages(
-      IList<proto.Message> messages) async {
-    await _reconciledMessagesCubit!
-        .operateWrite((reconciledMessagesWriter) async {
-      await _reconcileMessagesInner(
-          reconciledMessagesWriter: reconciledMessagesWriter,
-          messages: messages);
-    });
-  }
-
-  // Async process to send messages in the background
-  Future<void> _processSendingMessages(IList<proto.Message> messages) async {
-    for (final message in messages) {
-      await _sentMessagesCubit!.operateWriteEventual(
-          (writer) => writer.tryAddItem(message.writeToBuffer()));
-    }
-  }
-
   // Produce a state for this cubit from the input cubits and queues
   void _renderState() {
     // Get all reconciled messages
@@ -315,15 +297,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // Get all sent messages
     final sentMessages = _sentMessagesCubit?.state.state.asData?.value;
     // Get all items in the unreconciled queue
-    final unreconciledMessages = _unreconciledMessagesQueue.state.asData?.value;
+    final unreconciledMessages = _unreconciledMessagesQueue.queue;
     // Get all items in the unsent queue
-    final sendingMessages = _sendingMessagesQueue.state.asData?.value;
+    final sendingMessages = _sendingMessagesQueue.queue;
 
     // If we aren't ready to render a state, say we're loading
-    if (reconciledMessages == null ||
-        sentMessages == null ||
-        unreconciledMessages == null ||
-        sendingMessages == null) {
+    if (reconciledMessages == null || sentMessages == null) {
       emit(const AsyncLoading());
       return;
     }
@@ -428,8 +407,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   DHTShortArrayCubit<proto.Message>? _rcvdMessagesCubit;
   DHTShortArrayCubit<proto.Message>? _reconciledMessagesCubit;
 
-  final PersistentQueueCubit<proto.Message> _unreconciledMessagesQueue;
-  final PersistentQueueCubit<proto.Message> _sendingMessagesQueue;
+  late final PersistentQueue<proto.Message> _unreconciledMessagesQueue;
+  late final PersistentQueue<proto.Message> _sendingMessagesQueue;
 
   StreamSubscription<DHTShortArrayBusyState<proto.Message>>? _sentSubscription;
   StreamSubscription<DHTShortArrayBusyState<proto.Message>>? _rcvdSubscription;
