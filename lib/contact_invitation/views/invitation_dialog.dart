@@ -224,8 +224,13 @@ class InvitationDialogState extends State<InvitationDialog> {
         _validInvitation = null;
         widget.onValidationFailed();
       });
-    } on VeilidAPIException {
-      final errorText = translate('invitation_dialog.invalid_invitation');
+    } on VeilidAPIException catch (e) {
+      late final String errorText;
+      if (e is VeilidAPIExceptionTryAgain) {
+        errorText = translate('invitation_dialog.try_again_online');
+      } else {
+        errorText = translate('invitation_dialog.invalid_invitation');
+      }
       if (mounted) {
         showErrorToast(context, errorText);
       }

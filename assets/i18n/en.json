@@ -96,6 +96,7 @@
         "failed_to_accept": "Failed to accept contact invitation",
         "failed_to_reject": "Failed to reject contact invitation",
         "invalid_invitation": "Invalid invitation",
+        "try_again_online": "Invitation could not be reached, try again when online",
         "protected_with_pin": "Contact invitation is protected with a PIN",
         "protected_with_password": "Contact invitation is protected with a password",
         "invalid_pin": "Invalid PIN",

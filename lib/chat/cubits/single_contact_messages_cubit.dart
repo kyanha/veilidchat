@@ -23,13 +23,11 @@ class RenderStateElement {
     if (!isLocal) {
       return null;
     }
-    if (reconciled && sent) {
-      if (!reconciledOffline && !sentOffline) {
-        return MessageSendState.delivered;
-      }
-      return MessageSendState.sent;
-    }
+
     if (sent && !sentOffline) {
+      return MessageSendState.delivered;
+    }
+    if (reconciled && !reconciledOffline) {
       return MessageSendState.sent;
     }
     return MessageSendState.sending;

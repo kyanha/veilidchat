@@ -390,14 +390,14 @@ class DHTRecord {
         // range we care about, don't pass it through
         final overlappedFirstSubkey = overlappedSubkeys.firstSubkey;
         final updateFirstSubkey = subkeys.firstSubkey;
-        final updatedData = (overlappedFirstSubkey != null &&
-                updateFirstSubkey != null &&
-                overlappedFirstSubkey == updateFirstSubkey)
-            ? data
-            : null;
-        // Report only watched subkeys
-        watchController?.add(DHTRecordWatchChange(
-            local: local, data: updatedData, subkeys: overlappedSubkeys));
+        if (overlappedFirstSubkey != null && updateFirstSubkey != null) {
+          final updatedData =
+              overlappedFirstSubkey == updateFirstSubkey ? data : null;
+
+          // Report only watched subkeys
+          watchController?.add(DHTRecordWatchChange(
+              local: local, data: updatedData, subkeys: overlappedSubkeys));
+        }
       }
     }
   }
