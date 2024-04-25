@@ -424,21 +424,18 @@ class _DHTShortArrayHead {
   /// Update the sequence number for a particular index in
   /// our local sequence number list.
   /// If a write is happening, update the network copy as well.
-  Future<void> updatePositionSeq(int pos, bool write) async {
+  void updatePositionSeq(int pos, bool write, int newSeq) {
     final idx = _index[pos];
-    final lookup = await lookupIndex(idx);
-    final report = await lookup.record
-        .inspect(subkeys: [ValueSubkeyRange.single(lookup.recordSubkey)]);
 
     while (_localSeqs.length <= idx) {
       _localSeqs.add(0xFFFFFFFF);
     }
-    _localSeqs[idx] = report.localSeqs[0];
+    _localSeqs[idx] = newSeq;
     if (write) {
       while (_seqs.length <= idx) {
         _seqs.add(0xFFFFFFFF);
       }
-      _seqs[idx] = report.localSeqs[0];
+      _seqs[idx] = newSeq;
     }
   }
 

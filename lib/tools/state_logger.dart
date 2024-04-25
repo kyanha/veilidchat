@@ -8,6 +8,7 @@ const Map<String, LogLevel> _blocChangeLogLevels = {
   'ActiveConversationsBlocMapCubit': LogLevel.off,
   'DHTShortArrayCubit<Message>': LogLevel.off,
   'PersistentQueueCubit<Message>': LogLevel.off,
+  'SingleContactMessagesCubit': LogLevel.off,
 };
 const Map<String, LogLevel> _blocCreateCloseLogLevels = {};
 const Map<String, LogLevel> _blocErrorLogLevels = {};

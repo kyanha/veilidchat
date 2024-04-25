@@ -110,9 +110,6 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
       return false;
     }
 
-    // Get sequence number written
-    await _head.updatePositionSeq(pos, true);
-
     return true;
   }
 
@@ -126,9 +123,6 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
     if (!wasSet) {
       return false;
     }
-
-    // Get sequence number written
-    await _head.updatePositionSeq(pos, true);
 
     return true;
   }
@@ -153,9 +147,17 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
       throw IndexError.withLength(pos, _head.length);
     }
     final lookup = await _head.lookupPosition(pos);
+
+    final outSeqNum = Output<int>();
+
     final result = lookup.seq == 0xFFFFFFFF
         ? null
         : await lookup.record.get(subkey: lookup.recordSubkey);
+
+    if (outSeqNum.value != null) {
+      _head.updatePositionSeq(pos, false, outSeqNum.value!);
+    }
+
     if (result == null) {
       throw StateError('Element does not exist');
     }
@@ -175,11 +177,25 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
       throw IndexError.withLength(pos, _head.length);
     }
     final lookup = await _head.lookupPosition(pos);
+
+    final outSeqNum = Output<int>();
+
     final oldValue = lookup.seq == 0xFFFFFFFF
         ? null
-        : await lookup.record.get(subkey: lookup.recordSubkey);
-    final result = await lookup.record
-        .tryWriteBytes(newValue, subkey: lookup.recordSubkey);
+        : await lookup.record
+            .get(subkey: lookup.recordSubkey, outSeqNum: outSeqNum);
+
+    if (outSeqNum.value != null) {
+      _head.updatePositionSeq(pos, false, outSeqNum.value!);
+    }
+
+    final result = await lookup.record.tryWriteBytes(newValue,
+        subkey: lookup.recordSubkey, outSeqNum: outSeqNum);
+
+    if (outSeqNum.value != null) {
+      _head.updatePositionSeq(pos, true, outSeqNum.value!);
+    }
+
     if (result != null) {
       // A result coming back means the element was overwritten already
       return (result, false);

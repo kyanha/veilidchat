@@ -379,6 +379,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         .toIList();
 
     // Emit the rendered state
+
     emit(AsyncValue.data(renderedState));
   }
 

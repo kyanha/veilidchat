@@ -74,9 +74,14 @@ class _DHTShortArrayRead implements DHTShortArrayRead {
     final lookup = await _head.lookupPosition(pos);
 
     final refresh = forceRefresh || _head.positionNeedsRefresh(pos);
-    final out =
-        lookup.record.get(subkey: lookup.recordSubkey, forceRefresh: refresh);
-    await _head.updatePositionSeq(pos, false);
+    final outSeqNum = Output<int>();
+    final out = lookup.record.get(
+        subkey: lookup.recordSubkey,
+        forceRefresh: refresh,
+        outSeqNum: outSeqNum);
+    if (outSeqNum.value != null) {
+      _head.updatePositionSeq(pos, false, outSeqNum.value!);
+    }
 
     return out;
   }

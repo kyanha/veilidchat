@@ -10,12 +10,19 @@ import 'package:protobuf/protobuf.dart';
 
 import '../../../../veilid_support.dart';
 
+export 'package:fast_immutable_collections/fast_immutable_collections.dart'
+    show Output;
+
 part 'dht_record_pool.freezed.dart';
 part 'dht_record_pool.g.dart';
 part 'dht_record.dart';
 
 const int watchBackoffMultiplier = 2;
 const int watchBackoffMax = 30;
+
+const int? defaultWatchDurationSecs = null; // 600
+const int watchRenewalNumerator = 4;
+const int watchRenewalDenominator = 5;
 
 typedef DHTRecordPoolLogger = void Function(String message);
 
@@ -56,14 +63,17 @@ class WatchState extends Equatable {
       {required this.subkeys,
       required this.expiration,
       required this.count,
-      this.realExpiration});
+      this.realExpiration,
+      this.renewalTime});
   final List<ValueSubkeyRange>? subkeys;
   final Timestamp? expiration;
   final int? count;
   final Timestamp? realExpiration;
+  final Timestamp? renewalTime;
 
   @override
-  List<Object?> get props => [subkeys, expiration, count, realExpiration];
+  List<Object?> get props =>
+      [subkeys, expiration, count, realExpiration, renewalTime];
 }
 
 /// Data shared amongst all DHTRecord instances
@@ -77,6 +87,7 @@ class SharedDHTRecordData {
   VeilidRoutingContext defaultRoutingContext;
   Map<int, int> subkeySeqCache = {};
   bool needsWatchStateUpdate = false;
+  WatchState? unionWatchState;
   bool deleteOnClose = false;
 }
 
@@ -616,6 +627,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     int? totalCount;
     Timestamp? maxExpiration;
     List<ValueSubkeyRange>? allSubkeys;
+    Timestamp? earliestRenewalTime;
 
     var noExpiration = false;
     var everySubkey = false;
@@ -648,6 +660,15 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
         } else {
           everySubkey = true;
         }
+        final wsRenewalTime = ws.renewalTime;
+        if (wsRenewalTime != null) {
+          earliestRenewalTime = earliestRenewalTime == null
+              ? wsRenewalTime
+              : Timestamp(
+                  value: (wsRenewalTime.value < earliestRenewalTime.value
+                      ? wsRenewalTime.value
+                      : earliestRenewalTime.value));
+        }
       }
     }
     if (noExpiration) {
@@ -661,11 +682,14 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     }
 
     return WatchState(
-        subkeys: allSubkeys, expiration: maxExpiration, count: totalCount);
+        subkeys: allSubkeys,
+        expiration: maxExpiration,
+        count: totalCount,
+        renewalTime: earliestRenewalTime);
   }
 
-  void _updateWatchRealExpirations(
-      Iterable<DHTRecord> records, Timestamp realExpiration) {
+  void _updateWatchRealExpirations(Iterable<DHTRecord> records,
+      Timestamp realExpiration, Timestamp renewalTime) {
     for (final rec in records) {
       final ws = rec.watchState;
       if (ws != null) {
@@ -673,7 +697,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             subkeys: ws.subkeys,
             expiration: ws.expiration,
             count: ws.count,
-            realExpiration: realExpiration);
+            realExpiration: realExpiration,
+            renewalTime: renewalTime);
       }
     }
   }
@@ -689,6 +714,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     }
     _inTick = true;
     _tickCount = 0;
+    final now = veilid.now();
 
     try {
       final allSuccess = await _mutex.protect(() async {
@@ -700,12 +726,24 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           final openedRecordInfo = kv.value;
           final dhtctx = openedRecordInfo.shared.defaultRoutingContext;
 
-          if (openedRecordInfo.shared.needsWatchStateUpdate) {
-            final watchState =
+          var wantsWatchStateUpdate =
+              openedRecordInfo.shared.needsWatchStateUpdate;
+
+          // Check if we have reached renewal time for the watch
+          if (openedRecordInfo.shared.unionWatchState != null &&
+              openedRecordInfo.shared.unionWatchState!.renewalTime != null &&
+              now.value >
+                  openedRecordInfo.shared.unionWatchState!.renewalTime!.value) {
+            wantsWatchStateUpdate = true;
+          }
+
+          if (wantsWatchStateUpdate) {
+            // Update union watch state
+            final unionWatchState = openedRecordInfo.shared.unionWatchState =
                 _collectUnionWatchState(openedRecordInfo.records);
 
             // Apply watch changes for record
-            if (watchState == null) {
+            if (unionWatchState == null) {
               unord.add(() async {
                 // Record needs watch cancel
                 var success = false;
@@ -727,26 +765,39 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
                 // Record needs new watch
                 var success = false;
                 try {
-                  final subkeys = watchState.subkeys?.toList();
-                  final count = watchState.count;
-                  final expiration = watchState.expiration;
+                  final subkeys = unionWatchState.subkeys?.toList();
+                  final count = unionWatchState.count;
+                  final expiration = unionWatchState.expiration;
+                  final now = veilid.now();
 
                   final realExpiration = await dhtctx.watchDHTValues(
                       openedRecordKey,
-                      subkeys: watchState.subkeys?.toList(),
-                      count: watchState.count,
-                      expiration: watchState.expiration);
+                      subkeys: unionWatchState.subkeys?.toList(),
+                      count: unionWatchState.count,
+                      expiration: unionWatchState.expiration ??
+                          (defaultWatchDurationSecs == null
+                              ? null
+                              : veilid.now().offset(
+                                  TimestampDuration.fromMillis(
+                                      defaultWatchDurationSecs! * 1000))));
+
+                  final expirationDuration = realExpiration.diff(now);
+                  final renewalTime = now.offset(TimestampDuration(
+                      value: expirationDuration.value *
+                          BigInt.from(watchRenewalNumerator) ~/
+                          BigInt.from(watchRenewalDenominator)));
 
                   log('watchDHTValues: key=$openedRecordKey, subkeys=$subkeys, '
                       'count=$count, expiration=$expiration, '
                       'realExpiration=$realExpiration, '
+                      'renewalTime=$renewalTime, '
                       'debugNames=${openedRecordInfo.debugNames}');
 
                   // Update watch states with real expiration
                   if (realExpiration.value != BigInt.zero) {
                     openedRecordInfo.shared.needsWatchStateUpdate = false;
                     _updateWatchRealExpirations(
-                        openedRecordInfo.records, realExpiration);
+                        openedRecordInfo.records, realExpiration, renewalTime);
                     success = true;
                   }
                 } on VeilidAPIException catch (e) {

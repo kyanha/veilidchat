@@ -158,9 +158,17 @@ class ChatComponent extends StatelessWidget {
 
     // Convert protobuf messages to chat messages
     final chatMessages = <types.Message>[];
+    final tsSet = <String>{};
     for (final message in messages) {
       final chatMessage = messageToChatMessage(message);
       chatMessages.insert(0, chatMessage);
+      if (!tsSet.add(chatMessage.id)) {
+        // ignore: avoid_print
+        print('duplicate id found: ${chatMessage.id}:\n'
+            'Messages:\n$messages\n'
+            'ChatMessages:\n$chatMessages');
+        assert(false, 'should not have duplicate id');
+      }
     }
 
     return DefaultTextStyle(
