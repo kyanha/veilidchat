@@ -93,12 +93,17 @@ class _DHTShortArrayRead implements DHTShortArrayRead {
   Future<List<Uint8List>?> getAllItems({bool forceRefresh = false}) async {
     final out = <Uint8List>[];
 
-    for (var pos = 0; pos < _head.length; pos++) {
-      final elem = await getItem(pos, forceRefresh: forceRefresh);
-      if (elem == null) {
+    final chunks = Iterable<int>.generate(_head.length)
+        .slices(maxDHTConcurrency)
+        .map((chunk) =>
+            chunk.map((pos) => getItem(pos, forceRefresh: forceRefresh)));
+
+    for (final chunk in chunks) {
+      final elems = await chunk.wait;
+      if (elems.contains(null)) {
         return null;
       }
-      out.add(elem);
+      out.addAll(elems.cast<Uint8List>());
     }
 
     return out;

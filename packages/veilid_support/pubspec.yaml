@@ -12,6 +12,7 @@ dependencies:
   bloc: ^8.1.3
   bloc_tools:
     path: ../bloc_tools
+  collection: ^1.18.0
   equatable: ^2.0.5
   fast_immutable_collections: ^10.1.1
   freezed_annotation: ^2.4.1

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:mutex/mutex.dart';
 import 'package:protobuf/protobuf.dart';
 

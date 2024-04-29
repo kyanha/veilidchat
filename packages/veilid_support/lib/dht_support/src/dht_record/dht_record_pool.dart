@@ -24,6 +24,9 @@ const int? defaultWatchDurationSecs = null; // 600
 const int watchRenewalNumerator = 4;
 const int watchRenewalDenominator = 5;
 
+// Maximum number of concurrent DHT operations to perform on the network
+const int maxDHTConcurrency = 8;
+
 typedef DHTRecordPoolLogger = void Function(String message);
 
 /// Record pool that managed DHTRecords and allows for tagged deletion
