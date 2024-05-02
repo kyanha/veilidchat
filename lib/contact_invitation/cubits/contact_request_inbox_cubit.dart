@@ -34,7 +34,7 @@ class ContactRequestInboxCubit
         contactInvitationRecord.contactRequestInbox.recordKey.toVeilid();
     final writer = TypedKeyPair(
         kind: recordKey.kind, key: writerKey, secret: writerSecret);
-    return pool.openRead(recordKey,
+    return pool.openRecordRead(recordKey,
         debugName: 'ContactRequestInboxCubit::_open::'
             'ContactRequestInbox',
         crypto: await DHTRecordCryptoPrivate.fromTypedKeyPair(writer),

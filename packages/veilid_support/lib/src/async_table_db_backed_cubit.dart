@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
-import 'package:mutex/mutex.dart';
 
 import 'table_db.dart';
 

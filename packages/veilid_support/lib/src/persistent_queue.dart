@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:mutex/mutex.dart';
 import 'package:protobuf/protobuf.dart';
 
 import 'table_db.dart';

@@ -48,7 +48,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
           final writer = _activeAccountInfo.conversationWriter;
-          final record = await pool.openWrite(
+          final record = await pool.openRecordWrite(
               _localConversationRecordKey!, writer,
               debugName: 'ConversationCubit::LocalConversation',
               parent: accountRecordKey,
@@ -67,7 +67,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
           // Open remote record key if it is specified
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
-          final record = await pool.openRead(_remoteConversationRecordKey,
+          final record = await pool.openRecordRead(_remoteConversationRecordKey,
               debugName: 'ConversationCubit::RemoteConversation',
               parent: accountRecordKey,
               crypto: crypto);
@@ -226,14 +226,14 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     // Open with SMPL scheme for identity writer
     late final DHTRecord localConversationRecord;
     if (existingConversationRecordKey != null) {
-      localConversationRecord = await pool.openWrite(
+      localConversationRecord = await pool.openRecordWrite(
           existingConversationRecordKey, writer,
           debugName:
               'ConversationCubit::initLocalConversation::LocalConversation',
           parent: accountRecordKey,
           crypto: crypto);
     } else {
-      localConversationRecord = await pool.create(
+      localConversationRecord = await pool.createRecord(
           debugName:
               'ConversationCubit::initLocalConversation::LocalConversation',
           parent: accountRecordKey,

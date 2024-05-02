@@ -57,6 +57,7 @@ class DHTRecord {
   DHTRecordCrypto get crypto => _crypto;
   OwnedDHTRecordPointer get ownedDHTRecordPointer =>
       OwnedDHTRecordPointer(recordKey: key, owner: ownerKeyPair!);
+  bool get isOpen => _open;
 
   Future<void> close() async {
     if (!_open) {

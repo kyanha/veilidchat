@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bloc_tools/bloc_tools.dart';
+import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
 

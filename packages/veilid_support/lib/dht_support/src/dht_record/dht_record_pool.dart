@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:mutex/mutex.dart';
 import 'package:protobuf/protobuf.dart';
 
 import '../../../../veilid_support.dart';
@@ -179,6 +179,13 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     _singleton = globalPool;
   }
 
+  static Future<void> close() async {
+    if (_singleton != null) {
+      _singleton!._routingContext.close();
+      _singleton = null;
+    }
+  }
+
   Veilid get veilid => _veilid;
 
   void log(String message) {
@@ -191,8 +198,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       required DHTSchema schema,
       KeyPair? writer,
       TypedKey? parent}) async {
-    assert(_mutex.isLocked, 'should be locked here');
-
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
     // Create the record
     final recordDescriptor = await dhtctx.createDHTRecord(schema);
 
@@ -225,8 +233,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       required TypedKey recordKey,
       KeyPair? writer,
       TypedKey? parent}) async {
-    assert(_mutex.isLocked, 'should be locked here');
-
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
     log('openDHTRecord: debugName=$debugName key=$recordKey');
 
     // If we are opening a key that already exists
@@ -303,8 +312,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   // Collect all dependencies (including the record itself)
   // in reverse (bottom-up/delete order)
   List<TypedKey> _collectChildrenInner(TypedKey recordKey) {
-    assert(_mutex.isLocked, 'should be locked here');
-
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
     final allDeps = <TypedKey>[];
     final currentDeps = [recordKey];
     while (currentDeps.isNotEmpty) {
@@ -318,16 +328,18 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     return allDeps.reversedView;
   }
 
-  void _debugPrintChildren(TypedKey recordKey, {List<TypedKey>? allDeps}) {
+  String _debugChildren(TypedKey recordKey, {List<TypedKey>? allDeps}) {
     allDeps ??= _collectChildrenInner(recordKey);
     // ignore: avoid_print
-    print('Parent: $recordKey (${_state.debugNames[recordKey.toString()]})');
+    var out =
+        'Parent: $recordKey (${_state.debugNames[recordKey.toString()]})\n';
     for (final dep in allDeps) {
       if (dep != recordKey) {
         // ignore: avoid_print
-        print('  Child: $dep (${_state.debugNames[dep.toString()]})');
+        out += '  Child: $dep (${_state.debugNames[dep.toString()]})\n';
       }
     }
+    return out;
   }
 
   Future<void> _deleteRecordInner(TypedKey recordKey) async {
@@ -343,8 +355,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       final allDeps = _collectChildrenInner(recordKey);
 
       if (allDeps.singleOrNull != recordKey) {
-        _debugPrintChildren(recordKey, allDeps: allDeps);
-        assert(false, 'must delete children first');
+        final dbgstr = _debugChildren(recordKey, allDeps: allDeps);
+        throw StateError('must delete children first: $dbgstr');
       }
 
       final ori = _opened[recordKey];
@@ -359,7 +371,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   }
 
   void _validateParentInner(TypedKey? parent, TypedKey child) {
-    assert(_mutex.isLocked, 'should be locked here');
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
 
     final childJson = child.toJson();
     final existingParent = _state.parentByChild[childJson];
@@ -379,7 +393,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
   Future<void> _addDependencyInner(TypedKey? parent, TypedKey child,
       {required String debugName}) async {
-    assert(_mutex.isLocked, 'should be locked here');
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
     if (parent == null) {
       if (_state.rootRecords.contains(child)) {
         // Dependency already added
@@ -404,8 +420,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   }
 
   Future<void> _removeDependenciesInner(List<TypedKey> childList) async {
-    assert(_mutex.isLocked, 'should be locked here');
-
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
     var state = _state;
 
     for (final child in childList) {
@@ -442,7 +459,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   ///////////////////////////////////////////////////////////////////////
 
   /// Create a root DHTRecord that has no dependent records
-  Future<DHTRecord> create({
+  Future<DHTRecord> createRecord({
     required String debugName,
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
@@ -479,7 +496,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       });
 
   /// Open a DHTRecord readonly
-  Future<DHTRecord> openRead(TypedKey recordKey,
+  Future<DHTRecord> openRecordRead(TypedKey recordKey,
           {required String debugName,
           VeilidRoutingContext? routingContext,
           TypedKey? parent,
@@ -508,7 +525,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       });
 
   /// Open a DHTRecord writable
-  Future<DHTRecord> openWrite(
+  Future<DHTRecord> openRecordWrite(
     TypedKey recordKey,
     KeyPair writer, {
     required String debugName,
@@ -548,7 +565,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   /// This is primarily used for backing up private content on to the DHT
   /// to synchronizing it between devices. Because it is 'owned', the correct
   /// parent must be specified.
-  Future<DHTRecord> openOwned(
+  Future<DHTRecord> openRecordOwned(
     OwnedDHTRecordPointer ownedDHTRecordPointer, {
     required String debugName,
     required TypedKey parent,
@@ -556,7 +573,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     int defaultSubkey = 0,
     DHTRecordCrypto? crypto,
   }) =>
-      openWrite(
+      openRecordWrite(
         ownedDHTRecordPointer.recordKey,
         ownedDHTRecordPointer.owner,
         debugName: debugName,

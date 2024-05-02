@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
-import 'package:bloc_tools/bloc_tools.dart';
+import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';

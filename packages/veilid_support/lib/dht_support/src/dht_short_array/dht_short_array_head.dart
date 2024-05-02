@@ -50,13 +50,30 @@ class _DHTShortArrayHead {
   TypedKey get recordKey => _headRecord.key;
   OwnedDHTRecordPointer get recordPointer => _headRecord.ownedDHTRecordPointer;
   int get length => _index.length;
+  bool get isOpen => _headRecord.isOpen;
 
   Future<void> close() async {
-    final futures = <Future<void>>[_headRecord.close()];
-    for (final lr in _linkedRecords) {
-      futures.add(lr.close());
-    }
-    await Future.wait(futures);
+    await _headMutex.protect(() async {
+      if (!isOpen) {
+        return;
+      }
+      final futures = <Future<void>>[_headRecord.close()];
+      for (final lr in _linkedRecords) {
+        futures.add(lr.close());
+      }
+      await Future.wait(futures);
+    });
+  }
+
+  Future<void> delete() async {
+    await _headMutex.protect(() async {
+      final pool = DHTRecordPool.instance;
+      final futures = <Future<void>>[pool.deleteRecord(_headRecord.key)];
+      for (final lr in _linkedRecords) {
+        futures.add(pool.deleteRecord(lr.key));
+      }
+      await Future.wait(futures);
+    });
   }
 
   Future<T> operate<T>(Future<T> Function(_DHTShortArrayHead) closure) async =>
@@ -270,7 +287,7 @@ class _DHTShortArrayHead {
       final schema = DHTSchema.smpl(
           oCnt: 0,
           members: [DHTSchemaMember(mKey: smplWriter.key, mCnt: _stride)]);
-      final dhtRecord = await pool.create(
+      final dhtRecord = await pool.createRecord(
           debugName: '${_headRecord.debugName}_linked_$recordNumber',
           parent: parent,
           routingContext: routingContext,
@@ -292,14 +309,14 @@ class _DHTShortArrayHead {
       TypedKey recordKey, int recordNumber) async {
     final writer = _headRecord.writer;
     return (writer != null)
-        ? await DHTRecordPool.instance.openWrite(
+        ? await DHTRecordPool.instance.openRecordWrite(
             recordKey,
             writer,
             debugName: '${_headRecord.debugName}_linked_$recordNumber',
             parent: _headRecord.key,
             routingContext: _headRecord.routingContext,
           )
-        : await DHTRecordPool.instance.openRead(
+        : await DHTRecordPool.instance.openRecordRead(
             recordKey,
             debugName: '${_headRecord.debugName}_linked_$recordNumber',
             parent: _headRecord.key,

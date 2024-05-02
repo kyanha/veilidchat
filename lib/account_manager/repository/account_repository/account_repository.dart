@@ -400,7 +400,7 @@ class AccountRepository {
 
     // Record not yet open, do it
     final pool = DHTRecordPool.instance;
-    final record = await pool.openOwned(
+    final record = await pool.openRecordOwned(
         userLogin.accountRecordInfo.accountRecord,
         debugName: 'AccountRepository::openAccountRecord::AccountRecord',
         parent: localAccount.identityMaster.identityRecordKey);

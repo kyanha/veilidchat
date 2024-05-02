@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bloc_tools/bloc_tools.dart';
+import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
@@ -85,7 +85,7 @@ class ContactInvitationListCubit
     // to and it will be eventually encrypted with the DH of the contact's
     // identity key
     late final Uint8List signedContactInvitationBytes;
-    await (await pool.create(
+    await (await pool.createRecord(
             debugName: 'ContactInvitationListCubit::createInvitation::'
                 'LocalConversation',
             parent: _activeAccountInfo.accountRecordKey,
@@ -114,7 +114,7 @@ class ContactInvitationListCubit
       // Create DHT unicast inbox for ContactRequest
       // Subkey 0 is the ContactRequest from the initiator
       // Subkey 1 will contain the invitation response accept/reject eventually
-      await (await pool.create(
+      await (await pool.createRecord(
               debugName: 'ContactInvitationListCubit::createInvitation::'
                   'ContactRequestInbox',
               parent: _activeAccountInfo.accountRecordKey,
@@ -198,7 +198,7 @@ class ContactInvitationListCubit
     if (success && deletedItem != null) {
       // Delete the contact request inbox
       final contactRequestInbox = deletedItem.contactRequestInbox.toVeilid();
-      await (await pool.openOwned(contactRequestInbox,
+      await (await pool.openRecordOwned(contactRequestInbox,
               debugName: 'ContactInvitationListCubit::deleteInvitation::'
                   'ContactRequestInbox',
               parent: accountRecordKey))
@@ -250,7 +250,7 @@ class ContactInvitationListCubit
             contactRequestInboxKey) !=
         -1;
 
-    await (await pool.openRead(contactRequestInboxKey,
+    await (await pool.openRecordRead(contactRequestInboxKey,
             debugName: 'ContactInvitationListCubit::validateInvitation::'
                 'ContactRequestInbox',
             parent: _activeAccountInfo.accountRecordKey))

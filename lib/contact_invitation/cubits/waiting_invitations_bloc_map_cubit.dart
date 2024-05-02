@@ -1,5 +1,5 @@
 import 'package:async_tools/async_tools.dart';
-import 'package:bloc_tools/bloc_tools.dart';
+import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';

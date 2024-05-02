@@ -10,12 +10,13 @@ packages:
     source: hosted
     version: "2.11.0"
   async_tools:
-    dependency: transitive
+    dependency: "direct dev"
     description:
-      path: "../../async_tools"
-      relative: true
-    source: path
-    version: "1.0.0"
+      name: async_tools
+      sha256: "972f68ab663724d86260a31e363c1355ff493308441b872bf4e7b8adc67c832c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   bloc:
     dependency: transitive
     description:
@@ -24,13 +25,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "8.1.4"
-  bloc_tools:
+  bloc_advanced_tools:
     dependency: transitive
     description:
-      path: "../../bloc_tools"
-      relative: true
-    source: path
-    version: "1.0.0"
+      name: bloc_advanced_tools
+      sha256: bc0e1d5c26ae7df011464ab6abc2134dcfb668952acc87359abc7457cab091dd
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -145,14 +147,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_lints:
-    dependency: "direct dev"
-    description:
-      name: flutter_lints
-      sha256: "9e8c3858111da373efc5aa341de011d9bd23e2c5c5e0c62bccf32438e192d7b1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.2"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -221,14 +215,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
-  lints:
-    dependency: transitive
+  lint_hard:
+    dependency: "direct dev"
     description:
-      name: lints
-      sha256: cbf8d4b858bb0134ef3ef87841abdf8d63bfc255c266b7bf6b39daa1085c4290
+      name: lint_hard
+      sha256: "44d15ec309b1a8e1aff99069df9dcb1597f49d5f588f32811ca28fb7b38c32fe"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "4.0.0"
   loggy:
     dependency: transitive
     description:
@@ -261,13 +255,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.11.0"
-  mutex:
-    dependency: "direct dev"
-    description:
-      path: "../../mutex"
-      relative: true
-    source: path
-    version: "3.1.0"
   path:
     dependency: transitive
     description:
@@ -447,7 +434,7 @@ packages:
       path: "../../../../veilid/veilid-flutter"
       relative: true
     source: path
-    version: "0.3.1"
+    version: "0.3.2"
   veilid_support:
     dependency: "direct main"
     description:
@@ -455,6 +442,13 @@ packages:
       relative: true
     source: path
     version: "1.0.2+0"
+  veilid_test:
+    dependency: "direct dev"
+    description:
+      path: "../../../../veilid/veilid-flutter/packages/veilid_test"
+      relative: true
+    source: path
+    version: "0.1.0"
   vm_service:
     dependency: transitive
     description:

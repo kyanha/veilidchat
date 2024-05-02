@@ -134,7 +134,7 @@ extension IdentityMasterExtension on IdentityMaster {
         identityRecordKey.kind, identitySecret);
 
     late final List<AccountRecordInfo> accountRecordInfo;
-    await (await pool.openRead(identityRecordKey,
+    await (await pool.openRecordRead(identityRecordKey,
             debugName:
                 'IdentityMaster::readAccountsFromIdentity::IdentityRecord',
             parent: masterRecordKey,
@@ -168,14 +168,14 @@ extension IdentityMasterExtension on IdentityMaster {
 
     // Open identity key for writing
     veilidLoggy.debug('Opening identity record');
-    return (await pool.openWrite(
+    return (await pool.openRecordWrite(
             identityRecordKey, identityWriter(identitySecret),
             debugName: 'IdentityMaster::addAccountToIdentity::IdentityRecord',
             parent: masterRecordKey))
         .scope((identityRec) async {
       // Create new account to insert into identity
       veilidLoggy.debug('Creating new account');
-      return (await pool.create(
+      return (await pool.createRecord(
               debugName: 'IdentityMaster::addAccountToIdentity::AccountRecord',
               parent: identityRec.key))
           .deleteScope((accountRec) async {
@@ -231,14 +231,14 @@ class IdentityMasterWithSecrets {
 
     // IdentityMaster DHT record is public/unencrypted
     veilidLoggy.debug('Creating master identity record');
-    return (await pool.create(
+    return (await pool.createRecord(
             debugName:
                 'IdentityMasterWithSecrets::create::IdentityMasterRecord',
             crypto: const DHTRecordCryptoPublic()))
         .deleteScope((masterRec) async {
       veilidLoggy.debug('Creating identity record');
       // Identity record is private
-      return (await pool.create(
+      return (await pool.createRecord(
               debugName: 'IdentityMasterWithSecrets::create::IdentityRecord',
               parent: masterRec.key))
           .scope((identityRec) async {
@@ -296,7 +296,7 @@ Future<IdentityMaster> openIdentityMaster(
   final pool = DHTRecordPool.instance;
 
   // IdentityMaster DHT record is public/unencrypted
-  return (await pool.openRead(identityMasterRecordKey,
+  return (await pool.openRecordRead(identityMasterRecordKey,
           debugName:
               'IdentityMaster::openIdentityMaster::IdentityMasterRecord'))
       .deleteScope((masterRec) async {

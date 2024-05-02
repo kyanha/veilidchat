@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -16,15 +17,12 @@ class BackgroundTicker extends StatefulWidget {
 
 class BackgroundTickerState extends State<BackgroundTicker> {
   Timer? _tickTimer;
-  bool _inTick = false;
 
   @override
   void initState() {
     super.initState();
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!_inTick) {
-        unawaited(_onTick());
-      }
+      singleFuture(this, _onTick);
     });
   }
 
@@ -50,12 +48,7 @@ class BackgroundTickerState extends State<BackgroundTicker> {
       return;
     }
 
-    _inTick = true;
-    try {
-      // Tick DHT record pool
-      unawaited(DHTRecordPool.instance.tick());
-    } finally {
-      _inTick = false;
-    }
+    // Tick DHT record pool
+    await DHTRecordPool.instance.tick();
   }
 }
