@@ -172,7 +172,7 @@ class TableDBValue<T> extends TableDBBackedJson<T> {
   final T? Function(Object? obj) _valueFromJson;
   final Object? Function(T? obj) _valueToJson;
   final StreamController<T> _streamController;
-  final WaitSet _initWait = WaitSet();
+  final WaitSet<void> _initWait = WaitSet();
 
   //////////////////////////////////////////////////////////////
   /// AsyncTableDBBacked

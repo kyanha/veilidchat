@@ -42,6 +42,6 @@ abstract class AsyncTableDBBackedCubit<T> extends Cubit<AsyncValue<T?>>
     }
   }
 
-  final WaitSet _initWait = WaitSet();
+  final WaitSet<void> _initWait = WaitSet();
   final Mutex _mutex = Mutex();
 }

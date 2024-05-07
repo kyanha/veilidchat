@@ -112,7 +112,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   DHTRecord get record => _record;
 
   @protected
-  final WaitSet initWait = WaitSet();
+  final WaitSet<void> initWait = WaitSet();
 
   StreamSubscription<DHTRecordWatchChange>? _subscription;
   late DHTRecord _record;

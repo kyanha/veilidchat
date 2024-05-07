@@ -121,7 +121,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     return _shortArray.operateWriteEventual(closure, timeout: timeout);
   }
 
-  final WaitSet _initWait = WaitSet();
+  final WaitSet<void> _initWait = WaitSet();
   late final DHTShortArray _shortArray;
   final T Function(List<int> data) _decodeElement;
   StreamSubscription<void>? _subscription;

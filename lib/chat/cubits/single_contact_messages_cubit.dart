@@ -391,7 +391,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _renderState();
   }
 
-  final WaitSet _initWait = WaitSet();
+  final WaitSet<void> _initWait = WaitSet();
   final ActiveAccountInfo _activeAccountInfo;
   final TypedKey _remoteIdentityPublicKey;
   final TypedKey _localConversationRecordKey;

@@ -36,10 +36,9 @@ packages:
   async_tools:
     dependency: "direct main"
     description:
-      name: async_tools
-      sha256: "972f68ab663724d86260a31e363c1355ff493308441b872bf4e7b8adc67c832c"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../../../dart_async_tools"
+      relative: true
+    source: path
     version: "0.1.0"
   bloc:
     dependency: "direct main"
@@ -52,10 +51,9 @@ packages:
   bloc_advanced_tools:
     dependency: "direct main"
     description:
-      name: bloc_advanced_tools
-      sha256: bc0e1d5c26ae7df011464ab6abc2134dcfb668952acc87359abc7457cab091dd
-      url: "https://pub.dev"
-    source: hosted
+      path: "../../../bloc_advanced_tools"
+      relative: true
+    source: path
     version: "0.1.0"
   boolean_selector:
     dependency: transitive
@@ -718,7 +716,7 @@ packages:
       path: "../../../veilid/veilid-flutter"
       relative: true
     source: path
-    version: "0.3.1"
+    version: "0.3.2"
   vm_service:
     dependency: transitive
     description:

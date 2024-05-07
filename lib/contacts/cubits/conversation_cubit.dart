@@ -159,7 +159,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     final localConversationCubit = _localConversationCubit;
     final remoteConversationCubit = _remoteConversationCubit;
 
-    final deleteSet = DelayedWaitSet();
+    final deleteSet = DelayedWaitSet<void>();
 
     if (localConversationCubit != null) {
       final data = localConversationCubit.state.asData;
@@ -351,5 +351,5 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
       localConversation: null, remoteConversation: null);
   //
   DHTRecordCrypto? _conversationCrypto;
-  final WaitSet _initWait = WaitSet();
+  final WaitSet<void> _initWait = WaitSet();
 }
