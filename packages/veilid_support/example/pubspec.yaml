@@ -7,14 +7,14 @@ environment:
   sdk: '>=3.3.4 <4.0.0'
 
 dependencies:
-  cupertino_icons: ^1.0.6
+  cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
   veilid_support:
     path: ../
 
 dev_dependencies:
-  async_tools: ^0.1.0
+  async_tools: ^0.1.1
   flutter_test:
     sdk: flutter
   integration_test:

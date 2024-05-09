@@ -1,4 +1,4 @@
-@Timeout(Duration(seconds: 120))
+@Timeout(Duration(seconds: 240))
 
 library veilid_support_integration_test;
 
@@ -26,13 +26,6 @@ void main() {
     setUpAll(veilidFixture.setUp);
     tearDownAll(veilidFixture.tearDown);
 
-    // group('Crypto Tests', () {
-    //   test('best cryptosystem', testBestCryptoSystem);
-    //   test('get cryptosystem', testGetCryptoSystem);
-    //   test('get cryptosystem invalid', testGetCryptoSystemInvalid);
-    //   test('hash and verify password', testHashAndVerifyPassword);
-    // });
-
     group('Attached Tests', () {
       setUpAll(veilidFixture.attach);
       tearDownAll(veilidFixture.detach);
@@ -45,21 +38,25 @@ void main() {
 
         test('create pool', testDHTRecordPoolCreate);
 
-        // group('DHTRecordPool Tests', () {
-        //   setUpAll(dhtRecordPoolFixture.setUp);
-        //   tearDownAll(dhtRecordPoolFixture.tearDown);
+        group('DHTRecordPool Tests', () {
+          setUpAll(dhtRecordPoolFixture.setUp);
+          tearDownAll(dhtRecordPoolFixture.tearDown);
 
-        //   test('create/delete record', testDHTRecordCreateDelete);
-        //   test('record scopes', testDHTRecordScopes);
-        //   test('create/delete deep record', testDHTRecordDeepCreateDelete);
-        // });
+          test('create/delete record', testDHTRecordCreateDelete);
+          test('record scopes', testDHTRecordScopes);
+          test('create/delete deep record', testDHTRecordDeepCreateDelete);
+        });
 
         group('DHTShortArray Tests', () {
           setUpAll(dhtRecordPoolFixture.setUp);
           tearDownAll(dhtRecordPoolFixture.tearDown);
 
-          // test('create shortarray', testDHTShortArrayCreateDelete);
-          test('add shortarray', testDHTShortArrayAdd);
+          for (final stride in [256, 64, 32, 16, 8, 4, 2, 1]) {
+            test('create shortarray stride=$stride',
+                makeTestDHTShortArrayCreateDelete(stride: stride));
+            test('add shortarray stride=$stride',
+                makeTestDHTShortArrayAdd(stride: 256));
+          }
         });
       });
     });

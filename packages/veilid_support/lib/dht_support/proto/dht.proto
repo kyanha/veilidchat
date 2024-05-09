@@ -36,7 +36,7 @@ message DHTShortArray {
     // Uses the same writer as this DHTList with SMPL schema
     repeated veilid.TypedKey keys = 1;
     
-    // Item position index (uint8[256])
+    // Item position index (uint8[256./])
     // Actual item location is:
     //   idx = index[n] + 1 (offset for header at idx 0)
     //   key = idx / stride
@@ -50,16 +50,11 @@ message DHTShortArray {
     // calculated through iteration
 }
 
-// DHTLog - represents an appendable/truncatable log collection of individual elements
-// Header in subkey 0 of first key follows this structure
-//
-// stride = descriptor subkey count on first key - 1
-// Subkeys 1..=stride on the first key are individual elements
-// Subkeys 0..stride on the 'keys' keys are also individual elements
-// 
-// Keys must use writable schema in order to make this list mutable
+// DHTLog - represents a long ring buffer of elements utilizing a multi-level
+// indirection table of DHTShortArrays.
+
 message DHTLog {
-    // Other keys to concatenate
+    // Keys to concatenate
     repeated veilid.TypedKey keys = 1;
     // Back link to another DHTLog further back
     veilid.TypedKey back = 2;

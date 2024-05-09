@@ -8,7 +8,7 @@ part of 'preferences.dart';
 
 _$LockPreferenceImpl _$$LockPreferenceImplFromJson(Map<String, dynamic> json) =>
     _$LockPreferenceImpl(
-      inactivityLockSecs: json['inactivity_lock_secs'] as int,
+      inactivityLockSecs: (json['inactivity_lock_secs'] as num).toInt(),
       lockWhenSwitching: json['lock_when_switching'] as bool,
       lockWithSystemLock: json['lock_with_system_lock'] as bool,
     );

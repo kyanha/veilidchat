@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-pushd packages/async_tools > /dev/null
-./build.sh
-popd > /dev/null
-
 pushd packages/veilid_support > /dev/null
 ./build.sh
 popd > /dev/null
