@@ -92,31 +92,29 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
 
     // Remove Chat from account's list
     // if this fails, don't keep retrying, user can try again later
-    final (deletedItem, success) =
+    final deletedItem =
         // Ensure followers get their changes before we return
         await syncFollowers(() => operateWrite((writer) async {
               if (activeChatCubit.state == remoteConversationRecordKey) {
                 activeChatCubit.setActiveChat(null);
               }
               for (var i = 0; i < writer.length; i++) {
-                final cbuf = await writer.getItem(i);
-                if (cbuf == null) {
+                final c =
+                    await writer.getItemProtobuf(proto.Chat.fromBuffer, i);
+                if (c == null) {
                   throw Exception('Failed to get chat');
                 }
-                final c = proto.Chat.fromBuffer(cbuf);
                 if (c.remoteConversationRecordKey == remoteConversationKey) {
                   // Found the right chat
-                  if (await writer.tryRemoveItem(i) != null) {
-                    return c;
-                  }
-                  return null;
+                  await writer.removeItem(i);
+                  return c;
                 }
               }
               return null;
             }));
     // Since followers are synced, we can safetly remove the reconciled
     // chat record now
-    if (success && deletedItem != null) {
+    if (deletedItem != null) {
       try {
         await DHTRecordPool.instance.deleteRecord(
             deletedItem.reconciledChatRecord.toVeilid().recordKey);

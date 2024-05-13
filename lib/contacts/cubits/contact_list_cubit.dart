@@ -70,7 +70,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         contact.remoteConversationRecordKey.toVeilid();
 
     // Remove Contact from account's list
-    final (deletedItem, success) = await operateWrite((writer) async {
+    final deletedItem = await operateWrite((writer) async {
       for (var i = 0; i < writer.length; i++) {
         final item = await writer.getItemProtobuf(proto.Contact.fromBuffer, i);
         if (item == null) {
@@ -78,16 +78,14 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         }
         if (item.remoteConversationRecordKey ==
             contact.remoteConversationRecordKey) {
-          if (await writer.tryRemoveItem(i) != null) {
-            return item;
-          }
-          return null;
+          await writer.removeItem(i);
+          return item;
         }
       }
       return null;
     });
 
-    if (success && deletedItem != null) {
+    if (deletedItem != null) {
       try {
         // Make a conversation cubit to manipulate the conversation
         final conversationCubit = ConversationCubit(

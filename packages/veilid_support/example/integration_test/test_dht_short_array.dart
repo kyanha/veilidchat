@@ -63,7 +63,7 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
 
       print('adding\n');
       {
-        final (res, ok) = await arr.operateWrite((w) async {
+        final res = await arr.operateWrite((w) async {
           for (var n = 0; n < dataset.length; n++) {
             print('$n ');
             final success = await w.tryAddItem(dataset[n]);
@@ -71,26 +71,28 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
           }
         });
         expect(res, isNull);
-        expect(ok, isTrue);
       }
 
       //print('get all\n');
       {
-        final dataset2 = await arr.operate((r) async => r.getAllItems());
+        final dataset2 = await arr.operate((r) async => r.getItemRange(0));
         expect(dataset2, equals(dataset));
+      }
+      {
+        final dataset3 =
+            await arr.operate((r) async => r.getItemRange(64, length: 128));
+        expect(dataset3, equals(dataset.sublist(64, 64 + 128)));
       }
 
       //print('clear\n');
       {
-        final (res, ok) = await arr.operateWrite((w) async => w.tryClear());
-        expect(res, isTrue);
-        expect(ok, isTrue);
+        await arr.operateWrite((w) async => w.clear());
       }
 
       //print('get all\n');
       {
-        final dataset3 = await arr.operate((r) async => r.getAllItems());
-        expect(dataset3, isEmpty);
+        final dataset4 = await arr.operate((r) async => r.getItemRange(0));
+        expect(dataset4, isEmpty);
       }
 
       await arr.delete();

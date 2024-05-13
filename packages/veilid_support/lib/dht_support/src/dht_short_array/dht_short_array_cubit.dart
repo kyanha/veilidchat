@@ -41,19 +41,6 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     });
   }
 
-  // DHTShortArrayCubit.value({
-  //   required DHTShortArray shortArray,
-  //   required T Function(List<int> data) decodeElement,
-  // })  : _shortArray = shortArray,
-  //       _decodeElement = decodeElement,
-  //       super(const BlocBusyState(AsyncValue.loading())) {
-  //   _initFuture = Future(() async {
-  //     // Make initial state update
-  //     unawaited(_refreshNoWait());
-  //     _subscription = await shortArray.listen(_update);
-  //   });
-  // }
-
   Future<void> refresh({bool forceRefresh = false}) async {
     await _initWait();
     await _refreshNoWait(forceRefresh: forceRefresh);
@@ -67,12 +54,13 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     try {
       final newState = await _shortArray.operate((reader) async {
         final offlinePositions = await reader.getOfflinePositions();
-        final allItems = (await reader.getAllItems(forceRefresh: forceRefresh))
-            ?.indexed
-            .map((x) => DHTShortArrayElementState(
-                value: _decodeElement(x.$2),
-                isOffline: offlinePositions.contains(x.$1)))
-            .toIList();
+        final allItems =
+            (await reader.getItemRange(0, forceRefresh: forceRefresh))
+                ?.indexed
+                .map((x) => DHTShortArrayElementState(
+                    value: _decodeElement(x.$2),
+                    isOffline: offlinePositions.contains(x.$1)))
+                .toIList();
         return allItems;
       });
       if (newState != null) {
@@ -103,19 +91,19 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     await super.close();
   }
 
-  Future<R?> operate<R>(Future<R?> Function(DHTShortArrayRead) closure) async {
+  Future<R> operate<R>(Future<R> Function(DHTRandomRead) closure) async {
     await _initWait();
     return _shortArray.operate(closure);
   }
 
-  Future<(R?, bool)> operateWrite<R>(
-      Future<R?> Function(DHTShortArrayWrite) closure) async {
+  Future<R> operateWrite<R>(
+      Future<R> Function(DHTRandomReadWrite) closure) async {
     await _initWait();
     return _shortArray.operateWrite(closure);
   }
 
   Future<void> operateWriteEventual(
-      Future<bool> Function(DHTShortArrayWrite) closure,
+      Future<bool> Function(DHTRandomReadWrite) closure,
       {Duration? timeout}) async {
     await _initWait();
     return _shortArray.operateWriteEventual(closure, timeout: timeout);

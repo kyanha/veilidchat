@@ -82,8 +82,8 @@ class _DHTShortArrayHead {
         return closure(this);
       });
 
-  Future<(T?, bool)> operateWrite<T>(
-          Future<T?> Function(_DHTShortArrayHead) closure) async =>
+  Future<T> operateWrite<T>(
+          Future<T> Function(_DHTShortArrayHead) closure) async =>
       _headMutex.protect(() async {
         final oldLinkedRecords = List.of(_linkedRecords);
         final oldIndex = List.of(_index);
@@ -95,11 +95,11 @@ class _DHTShortArrayHead {
           if (!await _writeHead()) {
             // Failed to write head means head got overwritten so write should
             // be considered failed
-            return (null, false);
+            throw DHTExceptionTryAgain();
           }
 
           onUpdatedHead?.call();
-          return (out, true);
+          return out;
         } on Exception {
           // Exception means state needs to be reverted
           _linkedRecords = oldLinkedRecords;
@@ -249,22 +249,15 @@ class _DHTShortArrayHead {
   }
 
   // Pull the latest or updated copy of the head record from the network
-  Future<bool> _loadHead(
-      {bool forceRefresh = true, bool onlyUpdates = false}) async {
+  Future<void> _loadHead() async {
     // Get an updated head record copy if one exists
     final head = await _headRecord.getProtobuf(proto.DHTShortArray.fromBuffer,
-        subkey: 0, forceRefresh: forceRefresh, onlyUpdates: onlyUpdates);
+        subkey: 0, refreshMode: DHTRecordRefreshMode.refresh);
     if (head == null) {
-      if (onlyUpdates) {
-        // No update
-        return false;
-      }
-      throw StateError('head missing during refresh');
+      throw StateError('shortarray head missing during refresh');
     }
 
     await _updateHead(head);
-
-    return true;
   }
 
   /////////////////////////////////////////////////////////////////////////////

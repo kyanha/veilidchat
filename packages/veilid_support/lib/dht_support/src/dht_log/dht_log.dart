@@ -3,46 +3,55 @@ import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:collection/collection.dart';
+import 'package:equatable/equatable.dart';
 
 import '../../../veilid_support.dart';
 import '../../proto/proto.dart' as proto;
+import '../interfaces/dht_append_truncate.dart';
 
-part 'dht_short_array_head.dart';
-part 'dht_short_array_read.dart';
-part 'dht_short_array_write.dart';
+part 'dht_log_spine.dart';
+part 'dht_log_read.dart';
+part 'dht_log_append.dart';
 
 ///////////////////////////////////////////////////////////////////////
 
-class DHTShortArray implements DHTOpenable {
+/// DHTLog is a ring-buffer queue like data structure with the following
+/// operations:
+///  * Add elements to the tail
+///  * Remove elements from the head
+/// The structure has a 'spine' record that acts as an indirection table of
+/// DHTShortArray record pointers spread over its subkeys.
+/// Subkey 0 of the DHTLog is a head subkey that contains housekeeping data:
+///  * The head and tail position of the log
+///    - subkeyIdx = pos / recordsPerSubkey
+///    - recordIdx = pos % recordsPerSubkey
+class DHTLog implements DHTOpenable {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
-  DHTShortArray._({required DHTRecord headRecord})
-      : _head = _DHTShortArrayHead(headRecord: headRecord) {
-    _head.onUpdatedHead = () {
+  DHTLog._({required _DHTLogSpine spine}) : _spine = spine {
+    _spine.onUpdatedSpine = () {
       _watchController?.sink.add(null);
     };
   }
 
-  // Create a DHTShortArray
-  // if smplWriter is specified, uses a SMPL schema with a single writer
-  // rather than the key owner
-  static Future<DHTShortArray> create(
+  /// Create a DHTLog
+  static Future<DHTLog> create(
       {required String debugName,
-      int stride = maxElements,
+      int stride = DHTShortArray.maxElements,
       VeilidRoutingContext? routingContext,
       TypedKey? parent,
       DHTRecordCrypto? crypto,
       KeyPair? writer}) async {
-    assert(stride <= maxElements, 'stride too long');
+    assert(stride <= DHTShortArray.maxElements, 'stride too long');
     final pool = DHTRecordPool.instance;
 
-    late final DHTRecord dhtRecord;
+    late final DHTRecord spineRecord;
     if (writer != null) {
       final schema = DHTSchema.smpl(
           oCnt: 0,
-          members: [DHTSchemaMember(mKey: writer.key, mCnt: stride + 1)]);
-      dhtRecord = await pool.createRecord(
+          members: [DHTSchemaMember(mKey: writer.key, mCnt: spineSubkeys + 1)]);
+      spineRecord = await pool.createRecord(
           debugName: debugName,
           parent: parent,
           routingContext: routingContext,
@@ -50,8 +59,8 @@ class DHTShortArray implements DHTOpenable {
           crypto: crypto,
           writer: writer);
     } else {
-      final schema = DHTSchema.dflt(oCnt: stride + 1);
-      dhtRecord = await pool.createRecord(
+      const schema = DHTSchema.dflt(oCnt: spineSubkeys + 1);
+      spineRecord = await pool.createRecord(
           debugName: debugName,
           parent: parent,
           routingContext: routingContext,
@@ -60,74 +69,71 @@ class DHTShortArray implements DHTOpenable {
     }
 
     try {
-      final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
-      await dhtShortArray._head.operate((head) async {
-        if (!await head._writeHead()) {
-          throw StateError('Failed to write head at this time');
-        }
-      });
-      return dhtShortArray;
+      final spine = await _DHTLogSpine.create(
+          spineRecord: spineRecord, segmentStride: stride);
+      return DHTLog._(spine: spine);
     } on Exception catch (_) {
-      await dhtRecord.close();
-      await pool.deleteRecord(dhtRecord.key);
+      await spineRecord.close();
+      await spineRecord.delete();
       rethrow;
     }
   }
 
-  static Future<DHTShortArray> openRead(TypedKey headRecordKey,
+  static Future<DHTLog> openRead(TypedKey logRecordKey,
       {required String debugName,
       VeilidRoutingContext? routingContext,
       TypedKey? parent,
       DHTRecordCrypto? crypto}) async {
-    final dhtRecord = await DHTRecordPool.instance.openRecordRead(headRecordKey,
+    final spineRecord = await DHTRecordPool.instance.openRecordRead(
+        logRecordKey,
         debugName: debugName,
         parent: parent,
         routingContext: routingContext,
         crypto: crypto);
     try {
-      final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
-      await dhtShortArray._head.operate((head) => head._loadHead());
-      return dhtShortArray;
+      final spine = await _DHTLogSpine.load(spineRecord: spineRecord);
+      final dhtLog = DHTLog._(spine: spine);
+      return dhtLog;
     } on Exception catch (_) {
-      await dhtRecord.close();
+      await spineRecord.close();
       rethrow;
     }
   }
 
-  static Future<DHTShortArray> openWrite(
-    TypedKey headRecordKey,
+  static Future<DHTLog> openWrite(
+    TypedKey logRecordKey,
     KeyPair writer, {
     required String debugName,
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
     DHTRecordCrypto? crypto,
   }) async {
-    final dhtRecord = await DHTRecordPool.instance.openRecordWrite(
-        headRecordKey, writer,
+    final spineRecord = await DHTRecordPool.instance.openRecordWrite(
+        logRecordKey, writer,
         debugName: debugName,
         parent: parent,
         routingContext: routingContext,
         crypto: crypto);
     try {
-      final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
-      await dhtShortArray._head.operate((head) => head._loadHead());
-      return dhtShortArray;
+      final spine = await _DHTLogSpine.load(spineRecord: spineRecord);
+      final dhtLog = DHTLog._(spine: spine);
+      return dhtLog;
     } on Exception catch (_) {
-      await dhtRecord.close();
+      await spineRecord.close();
       rethrow;
     }
   }
 
-  static Future<DHTShortArray> openOwned(
-    OwnedDHTRecordPointer ownedShortArrayRecordPointer, {
+  static Future<DHTLog> openOwned(
+    OwnedDHTRecordPointer ownedLogRecordPointer, {
     required String debugName,
     required TypedKey parent,
     VeilidRoutingContext? routingContext,
     DHTRecordCrypto? crypto,
   }) =>
       openWrite(
-        ownedShortArrayRecordPointer.recordKey,
-        ownedShortArrayRecordPointer.owner,
+        ownedLogRecordPointer.recordKey,
+        ownedLogRecordPointer.owner,
         debugName: debugName,
         routingContext: routingContext,
         parent: parent,
@@ -137,11 +143,11 @@ class DHTShortArray implements DHTOpenable {
   ////////////////////////////////////////////////////////////////////////////
   // DHTOpenable
 
-  /// Check if the shortarray is open
+  /// Check if the DHTLog is open
   @override
-  bool get isOpen => _head.isOpen;
+  bool get isOpen => _spine.isOpen;
 
-  /// Free all resources for the DHTShortArray
+  /// Free all resources for the DHTLog
   @override
   Future<void> close() async {
     if (!isOpen) {
@@ -149,79 +155,80 @@ class DHTShortArray implements DHTOpenable {
     }
     await _watchController?.close();
     _watchController = null;
-    await _head.close();
+    await _spine.close();
   }
 
-  /// Free all resources for the DHTShortArray and delete it from the DHT
+  /// Free all resources for the DHTLog and delete it from the DHT
   /// Will wait until the short array is closed to delete it
   @override
   Future<void> delete() async {
-    await _head.delete();
+    await _spine.delete();
   }
 
   ////////////////////////////////////////////////////////////////////////////
   // Public API
 
-  /// Get the record key for this shortarray
-  TypedKey get recordKey => _head.recordKey;
+  /// Get the record key for this log
+  TypedKey get recordKey => _spine.recordKey;
 
-  /// Get the record pointer foir this shortarray
-  OwnedDHTRecordPointer get recordPointer => _head.recordPointer;
+  /// Get the record pointer foir this log
+  OwnedDHTRecordPointer get recordPointer => _spine.recordPointer;
 
-  /// Runs a closure allowing read-only access to the shortarray
-  Future<T> operate<T>(Future<T> Function(DHTRandomRead) closure) async {
+  /// Runs a closure allowing read-only access to the log
+  Future<T?> operate<T>(Future<T?> Function(DHTRandomRead) closure) async {
     if (!isOpen) {
-      throw StateError('short array is not open"');
+      throw StateError('log is not open"');
     }
 
-    return _head.operate((head) async {
-      final reader = _DHTShortArrayRead._(head);
+    return _spine.operate((spine) async {
+      final reader = _DHTLogRead._(spine);
       return closure(reader);
     });
   }
 
-  /// Runs a closure allowing read-write access to the shortarray
+  /// Runs a closure allowing append/truncate access to the log
   /// Makes only one attempt to consistently write the changes to the DHT
   /// Returns result of the closure if the write could be performed
-  /// Throws DHTOperateException if the write could not be performed at this time
-  Future<T> operateWrite<T>(
-      Future<T> Function(DHTRandomReadWrite) closure) async {
+  /// Throws DHTOperateException if the write could not be performed
+  /// at this time
+  Future<T> operateAppend<T>(
+      Future<T> Function(DHTAppendTruncateRandomRead) closure) async {
     if (!isOpen) {
-      throw StateError('short array is not open"');
+      throw StateError('log is not open"');
     }
 
-    return _head.operateWrite((head) async {
-      final writer = _DHTShortArrayWrite._(head);
+    return _spine.operateAppend((spine) async {
+      final writer = _DHTLogAppend._(spine);
       return closure(writer);
     });
   }
 
-  /// Runs a closure allowing read-write access to the shortarray
+  /// Runs a closure allowing append/truncate access to the log
   /// Will execute the closure multiple times if a consistent write to the DHT
   /// is not achieved. Timeout if specified will be thrown as a
   /// TimeoutException. The closure should return true if its changes also
   /// succeeded, returning false will trigger another eventual consistency
   /// attempt.
-  Future<void> operateWriteEventual(
-      Future<bool> Function(DHTRandomReadWrite) closure,
+  Future<void> operateAppendEventual(
+      Future<bool> Function(DHTAppendTruncateRandomRead) closure,
       {Duration? timeout}) async {
     if (!isOpen) {
-      throw StateError('short array is not open"');
+      throw StateError('log is not open"');
     }
 
-    return _head.operateWriteEventual((head) async {
-      final writer = _DHTShortArrayWrite._(head);
+    return _spine.operateAppendEventual((spine) async {
+      final writer = _DHTLogAppend._(spine);
       return closure(writer);
     }, timeout: timeout);
   }
 
-  /// Listen to and any all changes to the structure of this short array
+  /// Listen to and any all changes to the structure of this log
   /// regardless of where the changes are coming from
   Future<StreamSubscription<void>> listen(
     void Function() onChanged,
   ) {
     if (!isOpen) {
-      throw StateError('short array is not open"');
+      throw StateError('log is not open"');
     }
 
     return _listenMutex.protect(() async {
@@ -233,13 +240,13 @@ class DHTShortArray implements DHTOpenable {
           // rid of the controller and drop our subscriptions
           unawaited(_listenMutex.protect(() async {
             // Cancel watches of head record
-            await _head.cancelWatch();
+            await _spine.cancelWatch();
             _watchController = null;
           }));
         });
 
-        // Start watching head record
-        await _head.watch();
+        // Start watching head subkey of the spine
+        await _spine.watch();
       }
       // Return subscription
       return _watchController!.stream.listen((_) => onChanged());
@@ -249,10 +256,15 @@ class DHTShortArray implements DHTOpenable {
   ////////////////////////////////////////////////////////////////
   // Fields
 
-  static const maxElements = 256;
+  // 56 subkeys * 512 segments * 36 bytes per typedkey =
+  //   1032192 bytes per record
+  // 512*36 = 18432 bytes per subkey
+  // 28672 shortarrays * 256 elements = 7340032 elements
+  static const spineSubkeys = 56;
+  static const segmentsPerSubkey = 512;
 
-  // Internal representation refreshed from head record
-  final _DHTShortArrayHead _head;
+  // Internal representation refreshed from spine record
+  final _DHTLogSpine _spine;
 
   // Watch mutex to ensure we keep the representation valid
   final Mutex _listenMutex = Mutex();

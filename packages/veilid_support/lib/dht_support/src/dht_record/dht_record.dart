@@ -13,9 +13,22 @@ class DHTRecordWatchChange extends Equatable {
   List<Object?> get props => [local, data, subkeys];
 }
 
+/// Refresh mode for DHT record 'get'
+enum DHTRecordRefreshMode {
+  /// Return existing subkey values if they exist locally already
+  existing,
+
+  /// Always check the network for a newer subkey value
+  refresh,
+
+  /// Always check the network for a newer subkey value but only
+  /// return that value if its sequence number is newer than the local value
+  refreshOnlyUpdates,
+}
+
 /////////////////////////////////////////////////
 
-class DHTRecord {
+class DHTRecord implements DHTOpenable {
   DHTRecord._(
       {required VeilidRoutingContext routingContext,
       required SharedDHTRecordData sharedDHTRecordData,
@@ -30,20 +43,33 @@ class DHTRecord {
         _open = true,
         _sharedDHTRecordData = sharedDHTRecordData;
 
-  final SharedDHTRecordData _sharedDHTRecordData;
-  final VeilidRoutingContext _routingContext;
-  final int _defaultSubkey;
-  final KeyPair? _writer;
-  final DHTRecordCrypto _crypto;
-  final String debugName;
+  ////////////////////////////////////////////////////////////////////////////
+  // DHTOpenable
 
-  bool _open;
-  @internal
-  StreamController<DHTRecordWatchChange>? watchController;
-  @internal
-  WatchState? watchState;
+  /// Check if the DHTRecord is open
+  @override
+  bool get isOpen => _open;
 
-  int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
+  /// Free all resources for the DHTRecord
+  @override
+  Future<void> close() async {
+    if (!_open) {
+      return;
+    }
+    await watchController?.close();
+    await DHTRecordPool.instance._recordClosed(this);
+    _open = false;
+  }
+
+  /// Free all resources for the DHTRecord and delete it from the DHT
+  /// Will wait until the record is closed to delete it
+  @override
+  Future<void> delete() async {
+    await DHTRecordPool.instance.deleteRecord(key);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Public API
 
   VeilidRoutingContext get routingContext => _routingContext;
   TypedKey get key => _sharedDHTRecordData.recordDescriptor.key;
@@ -57,64 +83,30 @@ class DHTRecord {
   DHTRecordCrypto get crypto => _crypto;
   OwnedDHTRecordPointer get ownedDHTRecordPointer =>
       OwnedDHTRecordPointer(recordKey: key, owner: ownerKeyPair!);
-  bool get isOpen => _open;
+  int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
 
-  Future<void> close() async {
-    if (!_open) {
-      return;
-    }
-    await watchController?.close();
-    await DHTRecordPool.instance._recordClosed(this);
-    _open = false;
-  }
-
-  Future<T> scope<T>(Future<T> Function(DHTRecord) scopeFunction) async {
-    try {
-      return await scopeFunction(this);
-    } finally {
-      await close();
-    }
-  }
-
-  Future<T> deleteScope<T>(Future<T> Function(DHTRecord) scopeFunction) async {
-    try {
-      final out = await scopeFunction(this);
-      if (_open) {
-        await close();
-      }
-      return out;
-    } on Exception catch (_) {
-      if (_open) {
-        await close();
-      }
-      await DHTRecordPool.instance.deleteRecord(key);
-      rethrow;
-    }
-  }
-
-  Future<T> maybeDeleteScope<T>(
-      bool delete, Future<T> Function(DHTRecord) scopeFunction) async {
-    if (delete) {
-      return deleteScope(scopeFunction);
-    } else {
-      return scope(scopeFunction);
-    }
-  }
-
+  /// Get a subkey value from this record.
+  /// Returns the most recent value data for this subkey or null if this subkey
+  /// has not yet been written to.
+  /// * 'refreshMode' determines whether or not to return a locally existing
+  ///   value or always check the network
+  /// * 'outSeqNum' optionally returns the sequence number of the value being
+  ///   returned if one was returned.
   Future<Uint8List?> get(
       {int subkey = -1,
       DHTRecordCrypto? crypto,
-      bool forceRefresh = false,
-      bool onlyUpdates = false,
+      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.existing,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
     final valueData = await _routingContext.getDHTValue(key, subkey,
-        forceRefresh: forceRefresh);
+        forceRefresh: refreshMode != DHTRecordRefreshMode.existing);
     if (valueData == null) {
       return null;
     }
     final lastSeq = _sharedDHTRecordData.subkeySeqCache[subkey];
-    if (onlyUpdates && lastSeq != null && valueData.seq <= lastSeq) {
+    if (refreshMode == DHTRecordRefreshMode.refreshOnlyUpdates &&
+        lastSeq != null &&
+        valueData.seq <= lastSeq) {
       return null;
     }
     final out = (crypto ?? _crypto).decrypt(valueData.data, subkey);
@@ -125,17 +117,23 @@ class DHTRecord {
     return out;
   }
 
+  /// Get a subkey value from this record.
+  /// Process the record returned with a JSON unmarshal function 'fromJson'.
+  /// Returns the most recent value data for this subkey or null if this subkey
+  /// has not yet been written to.
+  /// * 'refreshMode' determines whether or not to return a locally existing
+  ///   value or always check the network
+  /// * 'outSeqNum' optionally returns the sequence number of the value being
+  ///   returned if one was returned.
   Future<T?> getJson<T>(T Function(dynamic) fromJson,
       {int subkey = -1,
       DHTRecordCrypto? crypto,
-      bool forceRefresh = false,
-      bool onlyUpdates = false,
+      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.existing,
       Output<int>? outSeqNum}) async {
     final data = await get(
         subkey: subkey,
         crypto: crypto,
-        forceRefresh: forceRefresh,
-        onlyUpdates: onlyUpdates,
+        refreshMode: refreshMode,
         outSeqNum: outSeqNum);
     if (data == null) {
       return null;
@@ -143,18 +141,25 @@ class DHTRecord {
     return jsonDecodeBytes(fromJson, data);
   }
 
+  /// Get a subkey value from this record.
+  /// Process the record returned with a protobuf unmarshal
+  /// function 'fromBuffer'.
+  /// Returns the most recent value data for this subkey or null if this subkey
+  /// has not yet been written to.
+  /// * 'refreshMode' determines whether or not to return a locally existing
+  ///   value or always check the network
+  /// * 'outSeqNum' optionally returns the sequence number of the value being
+  ///   returned if one was returned.
   Future<T?> getProtobuf<T extends GeneratedMessage>(
       T Function(List<int> i) fromBuffer,
       {int subkey = -1,
       DHTRecordCrypto? crypto,
-      bool forceRefresh = false,
-      bool onlyUpdates = false,
+      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.existing,
       Output<int>? outSeqNum}) async {
     final data = await get(
         subkey: subkey,
         crypto: crypto,
-        forceRefresh: forceRefresh,
-        onlyUpdates: onlyUpdates,
+        refreshMode: refreshMode,
         outSeqNum: outSeqNum);
     if (data == null) {
       return null;
@@ -162,6 +167,9 @@ class DHTRecord {
     return fromBuffer(data.toList());
   }
 
+  /// Attempt to write a byte buffer to a DHTRecord subkey
+  /// If a newer value was found on the network, it is returned
+  /// If the value was succesfully written, null is returned
   Future<Uint8List?> tryWriteBytes(Uint8List newValue,
       {int subkey = -1,
       DHTRecordCrypto? crypto,
@@ -211,6 +219,9 @@ class DHTRecord {
     return decryptedNewValue;
   }
 
+  /// Attempt to write a byte buffer to a DHTRecord subkey
+  /// If a newer value was found on the network, another attempt
+  /// will be made to write the subkey until this succeeds
   Future<void> eventualWriteBytes(Uint8List newValue,
       {int subkey = -1,
       DHTRecordCrypto? crypto,
@@ -256,6 +267,11 @@ class DHTRecord {
     }
   }
 
+  /// Attempt to write a byte buffer to a DHTRecord subkey
+  /// If a newer value was found on the network, another attempt
+  /// will be made to write the subkey until this succeeds
+  /// Each attempt to write the value calls an update function with the
+  /// old value to determine what new value should be attempted for that write.
   Future<void> eventualUpdateBytes(
       Future<Uint8List> Function(Uint8List? oldValue) update,
       {int subkey = -1,
@@ -281,6 +297,7 @@ class DHTRecord {
     } while (oldValue != null);
   }
 
+  /// Like 'tryWriteBytes' but with JSON marshal/unmarshal of the value
   Future<T?> tryWriteJson<T>(T Function(dynamic) fromJson, T newValue,
           {int subkey = -1,
           DHTRecordCrypto? crypto,
@@ -298,6 +315,7 @@ class DHTRecord {
         return jsonDecodeBytes(fromJson, out);
       });
 
+  /// Like 'tryWriteBytes' but with protobuf marshal/unmarshal of the value
   Future<T?> tryWriteProtobuf<T extends GeneratedMessage>(
           T Function(List<int>) fromBuffer, T newValue,
           {int subkey = -1,
@@ -316,6 +334,7 @@ class DHTRecord {
         return fromBuffer(out);
       });
 
+  /// Like 'eventualWriteBytes' but with JSON marshal/unmarshal of the value
   Future<void> eventualWriteJson<T>(T newValue,
           {int subkey = -1,
           DHTRecordCrypto? crypto,
@@ -324,6 +343,7 @@ class DHTRecord {
       eventualWriteBytes(jsonEncodeBytes(newValue),
           subkey: subkey, crypto: crypto, writer: writer, outSeqNum: outSeqNum);
 
+  /// Like 'eventualWriteBytes' but with protobuf marshal/unmarshal of the value
   Future<void> eventualWriteProtobuf<T extends GeneratedMessage>(T newValue,
           {int subkey = -1,
           DHTRecordCrypto? crypto,
@@ -332,6 +352,7 @@ class DHTRecord {
       eventualWriteBytes(newValue.writeToBuffer(),
           subkey: subkey, crypto: crypto, writer: writer, outSeqNum: outSeqNum);
 
+  /// Like 'eventualUpdateBytes' but with JSON marshal/unmarshal of the value
   Future<void> eventualUpdateJson<T>(
           T Function(dynamic) fromJson, Future<T> Function(T?) update,
           {int subkey = -1,
@@ -341,6 +362,7 @@ class DHTRecord {
       eventualUpdateBytes(jsonUpdate(fromJson, update),
           subkey: subkey, crypto: crypto, writer: writer, outSeqNum: outSeqNum);
 
+  /// Like 'eventualUpdateBytes' but with protobuf marshal/unmarshal of the value
   Future<void> eventualUpdateProtobuf<T extends GeneratedMessage>(
           T Function(List<int>) fromBuffer, Future<T> Function(T?) update,
           {int subkey = -1,
@@ -350,6 +372,8 @@ class DHTRecord {
       eventualUpdateBytes(protobufUpdate(fromBuffer, update),
           subkey: subkey, crypto: crypto, writer: writer, outSeqNum: outSeqNum);
 
+  /// Watch a subkey range of this DHT record for changes
+  /// Takes effect on the next DHTRecordPool tick
   Future<void> watch(
       {List<ValueSubkeyRange>? subkeys,
       Timestamp? expiration,
@@ -363,6 +387,13 @@ class DHTRecord {
     }
   }
 
+  /// Register a callback for changes made on this this DHT record.
+  /// You must 'watch' the record as well as listen to it in order for this
+  /// call back to be called.
+  /// * 'localChanges' also enables calling the callback if changed are made
+  ///   locally, otherwise only changes seen from the network itself are
+  ///   reported
+  ///
   Future<StreamSubscription<DHTRecordWatchChange>> listen(
     Future<void> Function(
             DHTRecord record, Uint8List? data, List<ValueSubkeyRange> subkeys)
@@ -405,6 +436,8 @@ class DHTRecord {
         });
   }
 
+  /// Stop watching this record for changes
+  /// Takes effect on the next DHTRecordPool tick
   Future<void> cancelWatch() async {
     // Tear down watch requirements
     if (watchState != null) {
@@ -413,10 +446,14 @@ class DHTRecord {
     }
   }
 
+  /// Return the inspection state of a set of subkeys of the DHTRecord
+  /// See Veilid's 'inspectDHTRecord' call for details on how this works
   Future<DHTRecordReport> inspect(
           {List<ValueSubkeyRange>? subkeys,
           DHTReportScope scope = DHTReportScope.local}) =>
       _routingContext.inspectDHTRecord(key, subkeys: subkeys, scope: scope);
+
+  //////////////////////////////////////////////////////////////////////////
 
   void _addValueChange(
       {required bool local,
@@ -458,4 +495,19 @@ class DHTRecord {
     _addValueChange(
         local: false, data: update.value?.data, subkeys: update.subkeys);
   }
+
+  //////////////////////////////////////////////////////////////
+
+  final SharedDHTRecordData _sharedDHTRecordData;
+  final VeilidRoutingContext _routingContext;
+  final int _defaultSubkey;
+  final KeyPair? _writer;
+  final DHTRecordCrypto _crypto;
+  final String debugName;
+
+  bool _open;
+  @internal
+  StreamController<DHTRecordWatchChange>? watchController;
+  @internal
+  WatchState? watchState;
 }

@@ -93,7 +93,7 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
     for (final skr in subkeys) {
       for (var sk = skr.low; sk <= skr.high; sk++) {
         final data = await _record.get(
-            subkey: sk, forceRefresh: true, onlyUpdates: true);
+            subkey: sk, refreshMode: DHTRecordRefreshMode.refreshOnlyUpdates);
         if (data != null) {
           final newState = await _stateFunction(_record, updateSubkeys, data);
           if (newState != null) {
