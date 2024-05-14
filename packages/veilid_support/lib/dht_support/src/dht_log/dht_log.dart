@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:async_tools/async_tools.dart';
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
 import '../../proto/proto.dart' as proto;
@@ -14,6 +15,21 @@ part 'dht_log_read.dart';
 part 'dht_log_append.dart';
 
 ///////////////////////////////////////////////////////////////////////
+
+@immutable
+class DHTLogUpdate extends Equatable {
+  const DHTLogUpdate(
+      {required this.headDelta, required this.tailDelta, required this.length})
+      : assert(headDelta >= 0, 'should never have negative head delta'),
+        assert(tailDelta >= 0, 'should never have negative tail delta'),
+        assert(length >= 0, 'should never have negative length');
+  final int headDelta;
+  final int tailDelta;
+  final int length;
+
+  @override
+  List<Object?> get props => [headDelta, tailDelta, length];
+}
 
 /// DHTLog is a ring-buffer queue like data structure with the following
 /// operations:
@@ -30,8 +46,8 @@ class DHTLog implements DHTOpenable {
   // Constructors
 
   DHTLog._({required _DHTLogSpine spine}) : _spine = spine {
-    _spine.onUpdatedSpine = () {
-      _watchController?.sink.add(null);
+    _spine.onUpdatedSpine = (update) {
+      _watchController?.sink.add(update);
     };
   }
 
@@ -225,7 +241,7 @@ class DHTLog implements DHTOpenable {
   /// Listen to and any all changes to the structure of this log
   /// regardless of where the changes are coming from
   Future<StreamSubscription<void>> listen(
-    void Function() onChanged,
+    void Function(DHTLogUpdate) onChanged,
   ) {
     if (!isOpen) {
       throw StateError('log is not open"');
@@ -235,7 +251,8 @@ class DHTLog implements DHTOpenable {
       // If don't have a controller yet, set it up
       if (_watchController == null) {
         // Set up watch requirements
-        _watchController = StreamController<void>.broadcast(onCancel: () {
+        _watchController =
+            StreamController<DHTLogUpdate>.broadcast(onCancel: () {
           // If there are no more listeners then we can get
           // rid of the controller and drop our subscriptions
           unawaited(_listenMutex.protect(() async {
@@ -249,7 +266,7 @@ class DHTLog implements DHTOpenable {
         await _spine.watch();
       }
       // Return subscription
-      return _watchController!.stream.listen((_) => onChanged());
+      return _watchController!.stream.listen((upd) => onChanged(upd));
     });
   }
 
@@ -269,5 +286,5 @@ class DHTLog implements DHTOpenable {
   // Watch mutex to ensure we keep the representation valid
   final Mutex _listenMutex = Mutex();
   // Stream of external changes
-  StreamController<void>? _watchController;
+  StreamController<DHTLogUpdate>? _watchController;
 }

@@ -105,13 +105,11 @@ class _DHTLogSpine {
         try {
           final out = await closure(this);
           // Write head assuming it has been changed
-          if (!await writeSpineHead()) {
+          if (!await writeSpineHead(old: (oldHead, oldTail))) {
             // Failed to write head means head got overwritten so write should
             // be considered failed
             throw DHTExceptionTryAgain();
           }
-
-          onUpdatedSpine?.call();
           return out;
         } on Exception {
           // Exception means state needs to be reverted
@@ -134,7 +132,6 @@ class _DHTLogSpine {
 
       try {
         // Iterate until we have a successful element and head write
-
         do {
           // Save off old values each pass of writeSpineHead because the head
           // will have changed
@@ -158,9 +155,7 @@ class _DHTLogSpine {
           }
 
           // Try to do the head write
-        } while (!await writeSpineHead());
-
-        onUpdatedSpine?.call();
+        } while (!await writeSpineHead(old: (oldHead, oldTail)));
       } on Exception {
         // Exception means state needs to be reverted
         _head = oldHead;
@@ -173,7 +168,7 @@ class _DHTLogSpine {
   /// Serialize and write out the current spine head subkey, possibly updating
   /// it if a newer copy is available online. Returns true if the write was
   /// successful
-  Future<bool> writeSpineHead() async {
+  Future<bool> writeSpineHead({(int, int)? old}) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
 
     final headBuffer = _toProto().writeToBuffer();
@@ -182,10 +177,26 @@ class _DHTLogSpine {
     if (existingData != null) {
       // Head write failed, incorporate update
       await _updateHead(proto.DHTLog.fromBuffer(existingData));
+      if (old != null) {
+        sendUpdate(old.$1, old.$2);
+      }
       return false;
     }
-
+    if (old != null) {
+      sendUpdate(old.$1, old.$2);
+    }
     return true;
+  }
+
+  /// Send a spine update callback
+  void sendUpdate(int oldHead, int oldTail) {
+    final oldLength = _ringDistance(oldTail, oldHead);
+    if (oldHead != _head || oldTail != _tail || oldLength != length) {
+      onUpdatedSpine?.call(DHTLogUpdate(
+          headDelta: _ringDistance(_head, oldHead),
+          tailDelta: _ringDistance(_tail, oldTail),
+          length: length));
+    }
   }
 
   /// Validate a new spine head subkey that has come in from the network
@@ -486,8 +497,10 @@ class _DHTLogSpine {
 
     // Then update the head record
     await _spineMutex.protect(() async {
+      final oldHead = _head;
+      final oldTail = _tail;
       await _updateHead(headData);
-      onUpdatedSpine?.call();
+      sendUpdate(oldHead, oldTail);
     });
   }
 
@@ -495,9 +508,13 @@ class _DHTLogSpine {
 
   TypedKey get recordKey => _spineRecord.key;
   OwnedDHTRecordPointer get recordPointer => _spineRecord.ownedDHTRecordPointer;
-  int get length =>
-      (_tail < _head) ? (_positionLimit - _head) + _tail : _tail - _head;
+  int get length => _ringDistance(_tail, _head);
+
   bool get isOpen => _spineRecord.isOpen;
+
+  // Ring buffer distance from old to new
+  static int _ringDistance(int n, int o) =>
+      (n < o) ? (_positionLimit - o) + n : n - o;
 
   static const _positionLimit = DHTLog.segmentsPerSubkey *
       DHTLog.spineSubkeys *
@@ -508,7 +525,7 @@ class _DHTLogSpine {
   // Subscription to head record internal changes
   StreamSubscription<DHTRecordWatchChange>? _subscription;
   // Notify closure for external spine head changes
-  void Function()? onUpdatedSpine;
+  void Function(DHTLogUpdate)? onUpdatedSpine;
 
   // Spine DHT record
   final DHTRecord _spineRecord;

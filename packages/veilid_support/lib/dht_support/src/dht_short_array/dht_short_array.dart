@@ -183,7 +183,8 @@ class DHTShortArray implements DHTOpenable {
   /// Runs a closure allowing read-write access to the shortarray
   /// Makes only one attempt to consistently write the changes to the DHT
   /// Returns result of the closure if the write could be performed
-  /// Throws DHTOperateException if the write could not be performed at this time
+  /// Throws DHTOperateException if the write could not be performed
+  /// at this time
   Future<T> operateWrite<T>(
       Future<T> Function(DHTRandomReadWrite) closure) async {
     if (!isOpen) {
