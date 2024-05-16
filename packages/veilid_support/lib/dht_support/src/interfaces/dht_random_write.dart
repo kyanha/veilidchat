@@ -30,6 +30,13 @@ abstract class DHTRandomWrite {
   /// built-in limit of 'maxElements = 256' entries.
   Future<bool> tryAddItem(Uint8List value);
 
+  /// Try to add a list of items to the end of the DHTArray. Return true if the
+  /// elements were successfully added, and false if the state changed before
+  /// the elements could be added or a newer value was found on the network.
+  /// This may throw an exception if the number elements added exceeds the
+  /// built-in limit of 'maxElements = 256' entries.
+  Future<bool> tryAddItems(List<Uint8List> values);
+
   /// Try to insert an item as position 'pos' of the DHTArray.
   /// Return true if the element was successfully inserted, and false if the
   /// state changed before the element could be inserted or a newer value was
@@ -37,6 +44,14 @@ abstract class DHTRandomWrite {
   /// This may throw an exception if the number elements added exceeds the
   /// built-in limit of 'maxElements = 256' entries.
   Future<bool> tryInsertItem(int pos, Uint8List value);
+
+  /// Try to insert items at position 'pos' of the DHTArray.
+  /// Return true if the elements were successfully inserted, and false if the
+  /// state changed before the elements could be inserted or a newer value was
+  /// found on the network.
+  /// This may throw an exception if the number elements added exceeds the
+  /// built-in limit of 'maxElements = 256' entries.
+  Future<bool> tryInsertItems(int pos, List<Uint8List> values);
 
   /// Swap items at position 'aPos' and 'bPos' in the DHTArray.
   /// Throws IndexError if either of the positions swapped exceed

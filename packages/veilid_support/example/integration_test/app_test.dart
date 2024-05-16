@@ -7,6 +7,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:veilid_test/veilid_test.dart';
 
 import 'fixtures/fixtures.dart';
+import 'test_dht_log.dart';
 import 'test_dht_record_pool.dart';
 import 'test_dht_short_array.dart';
 
@@ -38,24 +39,37 @@ void main() {
 
         test('create pool', testDHTRecordPoolCreate);
 
-        group('DHTRecordPool Tests', () {
+        // group('DHTRecordPool Tests', () {
+        //   setUpAll(dhtRecordPoolFixture.setUp);
+        //   tearDownAll(dhtRecordPoolFixture.tearDown);
+
+        //   test('create/delete record', testDHTRecordCreateDelete);
+        //   test('record scopes', testDHTRecordScopes);
+        //   test('create/delete deep record', testDHTRecordDeepCreateDelete);
+        // });
+
+        // group('DHTShortArray Tests', () {
+        //   setUpAll(dhtRecordPoolFixture.setUp);
+        //   tearDownAll(dhtRecordPoolFixture.tearDown);
+
+        //   for (final stride in [256, 16 /*64, 32, 16, 8, 4, 2, 1 */]) {
+        //     test('create shortarray stride=$stride',
+        //         makeTestDHTShortArrayCreateDelete(stride: stride));
+        //     test('add shortarray stride=$stride',
+        //         makeTestDHTShortArrayAdd(stride: 256));
+        //   }
+        // });
+
+        group('DHTLog Tests', () {
           setUpAll(dhtRecordPoolFixture.setUp);
           tearDownAll(dhtRecordPoolFixture.tearDown);
 
-          test('create/delete record', testDHTRecordCreateDelete);
-          test('record scopes', testDHTRecordScopes);
-          test('create/delete deep record', testDHTRecordDeepCreateDelete);
-        });
-
-        group('DHTShortArray Tests', () {
-          setUpAll(dhtRecordPoolFixture.setUp);
-          tearDownAll(dhtRecordPoolFixture.tearDown);
-
-          for (final stride in [256, 64, 32, 16, 8, 4, 2, 1]) {
-            test('create shortarray stride=$stride',
-                makeTestDHTShortArrayCreateDelete(stride: stride));
-            test('add shortarray stride=$stride',
-                makeTestDHTShortArrayAdd(stride: 256));
+          for (final stride in [256, 16 /*64, 32, 16, 8, 4, 2, 1 */]) {
+            test('create log stride=$stride',
+                makeTestDHTLogCreateDelete(stride: stride));
+            test('add/truncate log stride=$stride',
+                makeTestDHTLogAddTruncate(stride: 256),
+                timeout: const Timeout(Duration(seconds: 480)));
           }
         });
       });

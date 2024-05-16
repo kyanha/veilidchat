@@ -29,12 +29,12 @@ extension DHTOpenableExt<D extends DHTOpenable> on D {
     }
 
     try {
-      final out = await scopeFunction(this);
-      await close();
-      return out;
-    } on Exception catch (_) {
+      return await scopeFunction(this);
+    } on Exception {
       await delete();
       rethrow;
+    } finally {
+      await close();
     }
   }
 

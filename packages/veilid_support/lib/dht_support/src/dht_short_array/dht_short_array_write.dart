@@ -8,19 +8,12 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
   _DHTShortArrayWrite._(super.head) : super._();
 
   @override
-  Future<bool> tryAddItem(Uint8List value) async {
-    // Allocate empty index at the end of the list
-    final pos = _head.length;
-    _head.allocateIndex(pos);
+  Future<bool> tryAddItem(Uint8List value) =>
+      tryInsertItem(_head.length, value);
 
-    // Write item
-    final ok = await tryWriteItem(pos, value);
-    if (!ok) {
-      _head.freeIndex(pos);
-    }
-
-    return ok;
-  }
+  @override
+  Future<bool> tryAddItems(List<Uint8List> values) =>
+      tryInsertItems(_head.length, values);
 
   @override
   Future<bool> tryInsertItem(int pos, Uint8List value) async {
@@ -33,6 +26,29 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
       _head.freeIndex(pos);
     }
     return true;
+  }
+
+  @override
+  Future<bool> tryInsertItems(int pos, List<Uint8List> values) async {
+    // Allocate empty indices at the end of the list
+    for (var i = 0; i < values.length; i++) {
+      _head.allocateIndex(pos + i);
+    }
+
+    // Write items
+    var success = true;
+    final dws = DelayedWaitSet<void>();
+    for (var i = 0; i < values.length; i++) {
+      dws.add(() async {
+        final ok = await tryWriteItem(pos + i, values[i]);
+        if (!ok) {
+          _head.freeIndex(pos + i);
+          success = false;
+        }
+      });
+    }
+    await dws(chunkSize: maxDHTConcurrency, onChunkDone: (_) => success);
+    return success;
   }
 
   @override

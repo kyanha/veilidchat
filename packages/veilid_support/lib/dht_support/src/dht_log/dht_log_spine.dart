@@ -83,12 +83,8 @@ class _DHTLogSpine {
 
   Future<void> delete() async {
     await _spineMutex.protect(() async {
-      final pool = DHTRecordPool.instance;
-      final futures = <Future<void>>[pool.deleteRecord(_spineRecord.key)];
-      for (final (_, sc) in _spineCache) {
-        futures.add(sc.delete());
-      }
-      await Future.wait(futures);
+      // Will deep delete all segment records as they are children
+      await _spineRecord.delete();
     });
   }
 
@@ -218,7 +214,7 @@ class _DHTLogSpine {
   static TypedKey? _getSegmentKey(Uint8List subkeyData, int segment) {
     final decodedLength = TypedKey.decodedLength<TypedKey>();
     final segmentKeyBytes = subkeyData.sublist(
-        decodedLength * segment, (decodedLength + 1) * segment);
+        decodedLength * segment, decodedLength * (segment + 1));
     if (segmentKeyBytes.equals(_emptySegmentKey)) {
       return null;
     }
@@ -234,7 +230,7 @@ class _DHTLogSpine {
     } else {
       segmentKeyBytes = segmentKey.decode();
     }
-    subkeyData.setRange(decodedLength * segment, (decodedLength + 1) * segment,
+    subkeyData.setRange(decodedLength * segment, decodedLength * (segment + 1),
         segmentKeyBytes);
   }
 
@@ -435,7 +431,7 @@ class _DHTLogSpine {
     _tail = (_tail + count) % _positionLimit;
   }
 
-  void releaseHead(int count) {
+  Future<void> releaseHead(int count) async {
     assert(_spineMutex.isLocked, 'should be locked');
 
     final currentLength = length;
@@ -447,6 +443,73 @@ class _DHTLogSpine {
     }
 
     _head = (_head + count) % _positionLimit;
+    await _purgeUnusedSegments();
+  }
+
+  Future<void> _deleteSegmentsContiguous(int start, int end) async {
+    assert(_spineMutex.isLocked, 'should be in mutex here');
+
+    final startSegmentNumber = start ~/ DHTShortArray.maxElements;
+    final startSegmentPos = start % DHTShortArray.maxElements;
+
+    final endSegmentNumber = end ~/ DHTShortArray.maxElements;
+    final endSegmentPos = end % DHTShortArray.maxElements;
+
+    final firstDeleteSegment =
+        (startSegmentPos == 0) ? startSegmentNumber : startSegmentNumber + 1;
+    final lastDeleteSegment =
+        (endSegmentPos == 0) ? endSegmentNumber - 1 : endSegmentNumber - 2;
+
+    int? lastSubkey;
+    Uint8List? subkeyData;
+    for (var segmentNumber = firstDeleteSegment;
+        segmentNumber <= lastDeleteSegment;
+        segmentNumber++) {
+      // Lookup what subkey and segment subrange has this position's segment
+      // shortarray
+      final l = lookupSegment(segmentNumber);
+      final subkey = l.subkey;
+      final segment = l.segment;
+
+      if (lastSubkey != subkey) {
+        // Flush subkey writes
+        if (lastSubkey != null) {
+          await _spineRecord.eventualWriteBytes(subkeyData!,
+              subkey: lastSubkey);
+        }
+
+ xxx debug this, it takes forever
+
+        // Get next subkey
+        subkeyData = await _spineRecord.get(subkey: subkey);
+        if (subkeyData != null) {
+          lastSubkey = subkey;
+        } else {
+          lastSubkey = null;
+        }
+      }
+      if (subkeyData != null) {
+        final segmentKey = _getSegmentKey(subkeyData, segment);
+        if (segmentKey != null) {
+          await DHTRecordPool.instance.deleteRecord(segmentKey);
+          _setSegmentKey(subkeyData, segment, null);
+        }
+      }
+    }
+    // Flush subkey writes
+    if (lastSubkey != null) {
+      await _spineRecord.eventualWriteBytes(subkeyData!, subkey: lastSubkey);
+    }
+  }
+
+  Future<void> _purgeUnusedSegments() async {
+    assert(_spineMutex.isLocked, 'should be in mutex here');
+    if (_head < _tail) {
+      await _deleteSegmentsContiguous(0, _head);
+      await _deleteSegmentsContiguous(_tail, _positionLimit);
+    } else if (_head > _tail) {
+      await _deleteSegmentsContiguous(_tail, _head);
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -532,7 +595,7 @@ class _DHTLogSpine {
 
   // Position of the start of the log (oldest items)
   int _head;
-  // Position of the end of the log (newest items)
+  // Position of the end of the log (newest items) (exclusive)
   int _tail;
 
   // LRU cache of DHT spine elements accessed recently

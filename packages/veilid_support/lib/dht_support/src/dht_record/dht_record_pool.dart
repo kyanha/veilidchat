@@ -91,7 +91,6 @@ class SharedDHTRecordData {
   Map<int, int> subkeySeqCache = {};
   bool needsWatchStateUpdate = false;
   WatchState? unionWatchState;
-  bool deleteOnClose = false;
 }
 
 // Per opened record data
@@ -128,6 +127,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       : _state = const DHTRecordPoolAllocations(),
         _mutex = Mutex(),
         _opened = <TypedKey, OpenedRecordInfo>{},
+        _markedForDelete = <TypedKey>{},
         _routingContext = routingContext,
         _veilid = veilid;
 
@@ -140,6 +140,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   final Mutex _mutex;
   // Which DHT records are currently open
   final Map<TypedKey, OpenedRecordInfo> _opened;
+  // Which DHT records are marked for deletion
+  final Set<TypedKey> _markedForDelete;
   // Default routing context to use for new keys
   final VeilidRoutingContext _routingContext;
   // Convenience accessor
@@ -288,6 +290,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     return openedRecordInfo;
   }
 
+  // Called when a DHTRecord is closed
+  // Cleans up the opened record housekeeping and processes any late deletions
   Future<void> _recordClosed(DHTRecord record) async {
     await _mutex.protect(() async {
       final key = record.key;
@@ -301,12 +305,35 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       }
       if (openedRecordInfo.records.isEmpty) {
         await _routingContext.closeDHTRecord(key);
-        if (openedRecordInfo.shared.deleteOnClose) {
-          await _deleteRecordInner(key);
-        }
         _opened.remove(key);
+
+        await _checkForLateDeletesInner(key);
       }
     });
+  }
+
+  // Check to see if this key can finally be deleted
+  // If any parents are marked for deletion, try them first
+  Future<void> _checkForLateDeletesInner(TypedKey key) async {
+    // Get parent list in bottom up order including our own key
+    final parents = <TypedKey>[];
+    TypedKey? nextParent = key;
+    while (nextParent != null) {
+      parents.add(nextParent);
+      nextParent = getParentRecordKey(nextParent);
+    }
+
+    // If any parent is ready to delete all its children do it
+    for (final parent in parents) {
+      if (_markedForDelete.contains(parent)) {
+        final deleted = await _deleteRecordInner(parent);
+        if (!deleted) {
+          // If we couldn't delete a child then no 'marked for delete' parents
+          // above us will be ready to delete either
+          break;
+        }
+      }
+    }
   }
 
   // Collect all dependencies (including the record itself)
@@ -328,7 +355,13 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     return allDeps.reversedView;
   }
 
-  String _debugChildren(TypedKey recordKey, {List<TypedKey>? allDeps}) {
+  /// Collect all dependencies (including the record itself)
+  /// in reverse (bottom-up/delete order)
+  Future<List<TypedKey>> collectChildren(TypedKey recordKey) =>
+      _mutex.protect(() async => _collectChildrenInner(recordKey));
+
+  /// Print children
+  String debugChildren(TypedKey recordKey, {List<TypedKey>? allDeps}) {
     allDeps ??= _collectChildrenInner(recordKey);
     // ignore: avoid_print
     var out =
@@ -342,32 +375,48 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     return out;
   }
 
-  Future<void> _deleteRecordInner(TypedKey recordKey) async {
-    log('deleteDHTRecord: key=$recordKey');
+  // Actual delete function
+  Future<void> _finalizeDeleteRecordInner(TypedKey recordKey) async {
+    log('_finalizeDeleteRecordInner: key=$recordKey');
 
     // Remove this child from parents
     await _removeDependenciesInner([recordKey]);
     await _routingContext.deleteDHTRecord(recordKey);
+    _markedForDelete.remove(recordKey);
   }
 
-  Future<void> deleteRecord(TypedKey recordKey) async {
-    await _mutex.protect(() async {
-      final allDeps = _collectChildrenInner(recordKey);
-
-      if (allDeps.singleOrNull != recordKey) {
-        final dbgstr = _debugChildren(recordKey, allDeps: allDeps);
-        throw StateError('must delete children first: $dbgstr');
+  // Deep delete mechanism inside mutex
+  Future<bool> _deleteRecordInner(TypedKey recordKey) async {
+    final toDelete = _readyForDeleteInner(recordKey);
+    if (toDelete.isNotEmpty) {
+      // delete now
+      for (final deleteKey in toDelete) {
+        await _finalizeDeleteRecordInner(deleteKey);
       }
+      return true;
+    }
+    // mark for deletion
+    _markedForDelete.add(recordKey);
+    return false;
+  }
 
-      final ori = _opened[recordKey];
-      if (ori != null) {
-        // delete after close
-        ori.shared.deleteOnClose = true;
-      } else {
-        // delete now
-        await _deleteRecordInner(recordKey);
+  /// Delete a record and its children if they are all closed
+  /// otherwise mark that record for deletion eventually
+  /// Returns true if the deletion was processed immediately
+  /// Returns false if the deletion was marked for later
+  Future<bool> deleteRecord(TypedKey recordKey) async =>
+      _mutex.protect(() async => _deleteRecordInner(recordKey));
+
+  // If everything underneath is closed including itself, return the
+  // list of children (and itself) to finally actually delete
+  List<TypedKey> _readyForDeleteInner(TypedKey recordKey) {
+    final allDeps = _collectChildrenInner(recordKey);
+    for (final dep in allDeps) {
+      if (_opened.containsKey(dep)) {
+        return [];
       }
-    });
+    }
+    return allDeps;
   }
 
   void _validateParentInner(TypedKey? parent, TypedKey child) {
@@ -455,6 +504,19 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       _state = await store(state);
     }
   }
+
+  bool _isValidRecordKeyInner(TypedKey key) {
+    if (_state.rootRecords.contains(key)) {
+      return true;
+    }
+    if (_state.childrenByParent.containsKey(key.toJson())) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> isValidRecordKey(TypedKey key) =>
+      _mutex.protect(() async => _isValidRecordKeyInner(key));
 
   ///////////////////////////////////////////////////////////////////////
 

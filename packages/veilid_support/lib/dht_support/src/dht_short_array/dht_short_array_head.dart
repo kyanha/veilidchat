@@ -67,12 +67,8 @@ class _DHTShortArrayHead {
 
   Future<void> delete() async {
     await _headMutex.protect(() async {
-      final pool = DHTRecordPool.instance;
-      final futures = <Future<void>>[pool.deleteRecord(_headRecord.key)];
-      for (final lr in _linkedRecords) {
-        futures.add(pool.deleteRecord(lr.key));
-      }
-      await Future.wait(futures);
+      // Will deep delete all linked records as they are children
+      await _headRecord.delete();
     });
   }
 

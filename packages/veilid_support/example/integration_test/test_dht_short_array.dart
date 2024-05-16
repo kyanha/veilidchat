@@ -61,14 +61,48 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
           .map((n) => utf8.encode('elem $n'))
           .toList();
 
-      print('adding\n');
+      print('adding singles\n');
       {
         final res = await arr.operateWrite((w) async {
-          for (var n = 0; n < dataset.length; n++) {
+          for (var n = 4; n < 8; n++) {
             print('$n ');
             final success = await w.tryAddItem(dataset[n]);
             expect(success, isTrue);
           }
+        });
+        expect(res, isNull);
+      }
+
+      print('adding batch\n');
+      {
+        final res = await arr.operateWrite((w) async {
+          print('${dataset.length ~/ 2}-${dataset.length}');
+          final success = await w.tryAddItems(
+              dataset.sublist(dataset.length ~/ 2, dataset.length));
+          expect(success, isTrue);
+        });
+        expect(res, isNull);
+      }
+
+      print('inserting singles\n');
+      {
+        final res = await arr.operateWrite((w) async {
+          for (var n = 0; n < 4; n++) {
+            print('$n ');
+            final success = await w.tryInsertItem(n, dataset[n]);
+            expect(success, isTrue);
+          }
+        });
+        expect(res, isNull);
+      }
+
+      print('inserting batch\n');
+      {
+        final res = await arr.operateWrite((w) async {
+          print('8-${dataset.length ~/ 2}');
+          final success = await w.tryInsertItems(
+              8, dataset.sublist(8, dataset.length ~/ 2));
+          expect(success, isTrue);
         });
         expect(res, isNull);
       }
