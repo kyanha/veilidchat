@@ -15,6 +15,13 @@ class _DHTLogSegmentLookup extends Equatable {
   List<Object?> get props => [subkey, segment];
 }
 
+class _SubkeyData {
+  _SubkeyData({required this.subkey, required this.data});
+  int subkey;
+  Uint8List data;
+  bool changed = false;
+}
+
 class _DHTLogSpine {
   _DHTLogSpine._(
       {required DHTRecord spineRecord,
@@ -47,7 +54,7 @@ class _DHTLogSpine {
   static Future<_DHTLogSpine> load({required DHTRecord spineRecord}) async {
     // Get an updated spine head record copy if one exists
     final spineHead = await spineRecord.getProtobuf(proto.DHTLog.fromBuffer,
-        subkey: 0, refreshMode: DHTRecordRefreshMode.refresh);
+        subkey: 0, refreshMode: DHTRecordRefreshMode.network);
     if (spineHead == null) {
       throw StateError('spine head missing during refresh');
     }
@@ -234,7 +241,7 @@ class _DHTLogSpine {
         segmentKeyBytes);
   }
 
-  Future<DHTShortArray> _getOrCreateSegmentInner(int segmentNumber) async {
+  Future<DHTShortArray> _openOrCreateSegmentInner(int segmentNumber) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
     assert(_spineRecord.writer != null, 'should be writable');
 
@@ -292,7 +299,7 @@ class _DHTLogSpine {
     }
   }
 
-  Future<DHTShortArray?> _getSegmentInner(int segmentNumber) async {
+  Future<DHTShortArray?> _openSegmentInner(int segmentNumber) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
 
     // Lookup what subkey and segment subrange has this position's segment
@@ -321,7 +328,7 @@ class _DHTLogSpine {
     return segmentRec;
   }
 
-  Future<DHTShortArray> getOrCreateSegment(int segmentNumber) async {
+  Future<DHTShortArray> _openOrCreateSegment(int segmentNumber) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
 
     // See if we already have this in the cache
@@ -331,21 +338,22 @@ class _DHTLogSpine {
         final x = _spineCache.removeAt(i);
         _spineCache.add(x);
         // Return the shortarray for this position
-        return x.$2;
+        return x.$2.ref();
       }
     }
 
-    // If we don't have it in the cache, get/create it and then cache it
-    final segment = await _getOrCreateSegmentInner(segmentNumber);
-    _spineCache.add((segmentNumber, segment));
+    // If we don't have it in the cache, get/create it and then cache a ref
+    final segment = await _openOrCreateSegmentInner(segmentNumber);
+    _spineCache.add((segmentNumber, await segment.ref()));
     if (_spineCache.length > _spineCacheLength) {
       // Trim the LRU cache
-      _spineCache.removeAt(0);
+      final (_, sa) = _spineCache.removeAt(0);
+      await sa.close();
     }
     return segment;
   }
 
-  Future<DHTShortArray?> getSegment(int segmentNumber) async {
+  Future<DHTShortArray?> _openSegment(int segmentNumber) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
 
     // See if we already have this in the cache
@@ -355,19 +363,20 @@ class _DHTLogSpine {
         final x = _spineCache.removeAt(i);
         _spineCache.add(x);
         // Return the shortarray for this position
-        return x.$2;
+        return x.$2.ref();
       }
     }
 
     // If we don't have it in the cache, get it and then cache it
-    final segment = await _getSegmentInner(segmentNumber);
+    final segment = await _openSegmentInner(segmentNumber);
     if (segment == null) {
       return null;
     }
-    _spineCache.add((segmentNumber, segment));
+    _spineCache.add((segmentNumber, await segment.ref()));
     if (_spineCache.length > _spineCacheLength) {
       // Trim the LRU cache
-      _spineCache.removeAt(0);
+      final (_, sa) = _spineCache.removeAt(0);
+      await sa.close();
     }
     return segment;
   }
@@ -409,8 +418,8 @@ class _DHTLogSpine {
 
     // Get the segment shortArray
     final shortArray = (_spineRecord.writer == null)
-        ? await getSegment(segmentNumber)
-        : await getOrCreateSegment(segmentNumber);
+        ? await _openSegment(segmentNumber)
+        : await _openOrCreateSegment(segmentNumber);
     if (shortArray == null) {
       return null;
     }
@@ -442,12 +451,16 @@ class _DHTLogSpine {
       throw StateError('ring buffer underflow');
     }
 
+    final oldHead = _head;
     _head = (_head + count) % _positionLimit;
-    await _purgeUnusedSegments();
+    final newHead = _head;
+    await _purgeSegments(oldHead, newHead);
   }
 
   Future<void> _deleteSegmentsContiguous(int start, int end) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
+    DHTRecordPool.instance
+        .log('_deleteSegmentsContiguous: start=$start, end=$end');
 
     final startSegmentNumber = start ~/ DHTShortArray.maxElements;
     final startSegmentPos = start % DHTShortArray.maxElements;
@@ -460,8 +473,7 @@ class _DHTLogSpine {
     final lastDeleteSegment =
         (endSegmentPos == 0) ? endSegmentNumber - 1 : endSegmentNumber - 2;
 
-    int? lastSubkey;
-    Uint8List? subkeyData;
+    _SubkeyData? lastSubkeyData;
     for (var segmentNumber = firstDeleteSegment;
         segmentNumber <= lastDeleteSegment;
         segmentNumber++) {
@@ -471,44 +483,48 @@ class _DHTLogSpine {
       final subkey = l.subkey;
       final segment = l.segment;
 
-      if (lastSubkey != subkey) {
+      if (subkey != lastSubkeyData?.subkey) {
         // Flush subkey writes
-        if (lastSubkey != null) {
-          await _spineRecord.eventualWriteBytes(subkeyData!,
-              subkey: lastSubkey);
+        if (lastSubkeyData != null && lastSubkeyData.changed) {
+          await _spineRecord.eventualWriteBytes(lastSubkeyData.data,
+              subkey: lastSubkeyData.subkey);
         }
 
- xxx debug this, it takes forever
-
-        // Get next subkey
-        subkeyData = await _spineRecord.get(subkey: subkey);
-        if (subkeyData != null) {
-          lastSubkey = subkey;
+        // Get next subkey if available locally
+        final data = await _spineRecord.get(
+            subkey: subkey, refreshMode: DHTRecordRefreshMode.local);
+        if (data != null) {
+          lastSubkeyData = _SubkeyData(subkey: subkey, data: data);
         } else {
-          lastSubkey = null;
+          lastSubkeyData = null;
+          // If the subkey was not available locally we can go to the
+          // last segment number at the end of this subkey
+          segmentNumber = ((subkey + 1) * DHTLog.segmentsPerSubkey) - 1;
         }
       }
-      if (subkeyData != null) {
-        final segmentKey = _getSegmentKey(subkeyData, segment);
+      if (lastSubkeyData != null) {
+        final segmentKey = _getSegmentKey(lastSubkeyData.data, segment);
         if (segmentKey != null) {
           await DHTRecordPool.instance.deleteRecord(segmentKey);
-          _setSegmentKey(subkeyData, segment, null);
+          _setSegmentKey(lastSubkeyData.data, segment, null);
+          lastSubkeyData.changed = true;
         }
       }
     }
     // Flush subkey writes
-    if (lastSubkey != null) {
-      await _spineRecord.eventualWriteBytes(subkeyData!, subkey: lastSubkey);
+    if (lastSubkeyData != null) {
+      await _spineRecord.eventualWriteBytes(lastSubkeyData.data,
+          subkey: lastSubkeyData.subkey);
     }
   }
 
-  Future<void> _purgeUnusedSegments() async {
+  Future<void> _purgeSegments(int from, int to) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
-    if (_head < _tail) {
-      await _deleteSegmentsContiguous(0, _head);
-      await _deleteSegmentsContiguous(_tail, _positionLimit);
-    } else if (_head > _tail) {
-      await _deleteSegmentsContiguous(_tail, _head);
+    if (from < to) {
+      await _deleteSegmentsContiguous(from, to);
+    } else if (from > to) {
+      await _deleteSegmentsContiguous(from, _positionLimit);
+      await _deleteSegmentsContiguous(0, to);
     }
   }
 

@@ -88,7 +88,6 @@ class SharedDHTRecordData {
   DHTRecordDescriptor recordDescriptor;
   KeyPair? defaultWriter;
   VeilidRoutingContext defaultRoutingContext;
-  Map<int, int> subkeySeqCache = {};
   bool needsWatchStateUpdate = false;
   WatchState? unionWatchState;
 }

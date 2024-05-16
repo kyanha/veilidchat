@@ -42,11 +42,13 @@ class DHTLogUpdate extends Equatable {
 ///  * The head and tail position of the log
 ///    - subkeyIdx = pos / recordsPerSubkey
 ///    - recordIdx = pos % recordsPerSubkey
-class DHTLog implements DHTOpenable {
+class DHTLog implements DHTOpenable<DHTLog> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
-  DHTLog._({required _DHTLogSpine spine}) : _spine = spine {
+  DHTLog._({required _DHTLogSpine spine})
+      : _spine = spine,
+        _openCount = 1 {
     _spine.onUpdatedSpine = (update) {
       _watchController?.sink.add(update);
     };
@@ -162,18 +164,29 @@ class DHTLog implements DHTOpenable {
 
   /// Check if the DHTLog is open
   @override
-  bool get isOpen => _spine.isOpen;
+  bool get isOpen => _openCount > 0;
+
+  /// Add a reference to this log
+  @override
+  Future<DHTLog> ref() async => _mutex.protect(() async {
+        _openCount++;
+        return this;
+      });
 
   /// Free all resources for the DHTLog
   @override
-  Future<void> close() async {
-    if (!isOpen) {
-      return;
-    }
-    await _watchController?.close();
-    _watchController = null;
-    await _spine.close();
-  }
+  Future<void> close() async => _mutex.protect(() async {
+        if (_openCount == 0) {
+          throw StateError('already closed');
+        }
+        _openCount--;
+        if (_openCount != 0) {
+          return;
+        }
+        await _watchController?.close();
+        _watchController = null;
+        await _spine.close();
+      });
 
   /// Free all resources for the DHTLog and delete it from the DHT
   /// Will wait until the short array is closed to delete it
@@ -283,6 +296,10 @@ class DHTLog implements DHTOpenable {
 
   // Internal representation refreshed from spine record
   final _DHTLogSpine _spine;
+
+  // Openable
+  int _openCount;
+  final _mutex = Mutex();
 
   // Watch mutex to ensure we keep the representation valid
   final Mutex _listenMutex = Mutex();

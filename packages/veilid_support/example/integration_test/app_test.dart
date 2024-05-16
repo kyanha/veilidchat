@@ -12,6 +12,8 @@ import 'test_dht_record_pool.dart';
 import 'test_dht_short_array.dart';
 
 void main() {
+  final startTime = DateTime.now();
+
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   final veilidFixture =
       DefaultVeilidFixture(programName: 'veilid_support integration test');
@@ -39,26 +41,26 @@ void main() {
 
         test('create pool', testDHTRecordPoolCreate);
 
-        // group('DHTRecordPool Tests', () {
-        //   setUpAll(dhtRecordPoolFixture.setUp);
-        //   tearDownAll(dhtRecordPoolFixture.tearDown);
+        group('DHTRecordPool Tests', () {
+          setUpAll(dhtRecordPoolFixture.setUp);
+          tearDownAll(dhtRecordPoolFixture.tearDown);
 
-        //   test('create/delete record', testDHTRecordCreateDelete);
-        //   test('record scopes', testDHTRecordScopes);
-        //   test('create/delete deep record', testDHTRecordDeepCreateDelete);
-        // });
+          test('create/delete record', testDHTRecordCreateDelete);
+          test('record scopes', testDHTRecordScopes);
+          test('create/delete deep record', testDHTRecordDeepCreateDelete);
+        });
 
-        // group('DHTShortArray Tests', () {
-        //   setUpAll(dhtRecordPoolFixture.setUp);
-        //   tearDownAll(dhtRecordPoolFixture.tearDown);
+        group('DHTShortArray Tests', () {
+          setUpAll(dhtRecordPoolFixture.setUp);
+          tearDownAll(dhtRecordPoolFixture.tearDown);
 
-        //   for (final stride in [256, 16 /*64, 32, 16, 8, 4, 2, 1 */]) {
-        //     test('create shortarray stride=$stride',
-        //         makeTestDHTShortArrayCreateDelete(stride: stride));
-        //     test('add shortarray stride=$stride',
-        //         makeTestDHTShortArrayAdd(stride: 256));
-        //   }
-        // });
+          for (final stride in [256, 16 /*64, 32, 16, 8, 4, 2, 1 */]) {
+            test('create shortarray stride=$stride',
+                makeTestDHTShortArrayCreateDelete(stride: stride));
+            test('add shortarray stride=$stride',
+                makeTestDHTShortArrayAdd(stride: 256));
+          }
+        });
 
         group('DHTLog Tests', () {
           setUpAll(dhtRecordPoolFixture.setUp);
@@ -75,4 +77,7 @@ void main() {
       });
     });
   });
+
+  final endTime = DateTime.now();
+  print('Duration: ${endTime.difference(startTime)}');
 }

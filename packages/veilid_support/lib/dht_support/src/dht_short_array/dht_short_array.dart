@@ -13,12 +13,13 @@ part 'dht_short_array_write.dart';
 
 ///////////////////////////////////////////////////////////////////////
 
-class DHTShortArray implements DHTOpenable {
+class DHTShortArray implements DHTOpenable<DHTShortArray> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
   DHTShortArray._({required DHTRecord headRecord})
-      : _head = _DHTShortArrayHead(headRecord: headRecord) {
+      : _head = _DHTShortArrayHead(headRecord: headRecord),
+        _openCount = 1 {
     _head.onUpdatedHead = () {
       _watchController?.sink.add(null);
     };
@@ -139,18 +140,30 @@ class DHTShortArray implements DHTOpenable {
 
   /// Check if the shortarray is open
   @override
-  bool get isOpen => _head.isOpen;
+  bool get isOpen => _openCount > 0;
+
+  /// Add a reference to this shortarray
+  @override
+  Future<DHTShortArray> ref() async => _mutex.protect(() async {
+        _openCount++;
+        return this;
+      });
 
   /// Free all resources for the DHTShortArray
   @override
-  Future<void> close() async {
-    if (!isOpen) {
-      return;
-    }
-    await _watchController?.close();
-    _watchController = null;
-    await _head.close();
-  }
+  Future<void> close() async => _mutex.protect(() async {
+        if (_openCount == 0) {
+          throw StateError('already closed');
+        }
+        _openCount--;
+        if (_openCount != 0) {
+          return;
+        }
+
+        await _watchController?.close();
+        _watchController = null;
+        await _head.close();
+      });
 
   /// Free all resources for the DHTShortArray and delete it from the DHT
   /// Will wait until the short array is closed to delete it
@@ -254,6 +267,10 @@ class DHTShortArray implements DHTOpenable {
 
   // Internal representation refreshed from head record
   final _DHTShortArrayHead _head;
+
+  // Openable
+  int _openCount;
+  final _mutex = Mutex();
 
   // Watch mutex to ensure we keep the representation valid
   final Mutex _listenMutex = Mutex();

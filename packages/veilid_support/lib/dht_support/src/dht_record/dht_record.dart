@@ -16,19 +16,27 @@ class DHTRecordWatchChange extends Equatable {
 /// Refresh mode for DHT record 'get'
 enum DHTRecordRefreshMode {
   /// Return existing subkey values if they exist locally already
-  existing,
+  /// And then check the network for a newer value
+  /// This is the default refresh mode
+  cached,
+
+  /// Return existing subkey values only if they exist locally already
+  local,
 
   /// Always check the network for a newer subkey value
-  refresh,
+  network,
 
   /// Always check the network for a newer subkey value but only
   /// return that value if its sequence number is newer than the local value
-  refreshOnlyUpdates,
+  update;
+
+  bool get _forceRefresh => this == network || this == update;
+  bool get _inspectLocal => this == local || this == update;
 }
 
 /////////////////////////////////////////////////
 
-class DHTRecord implements DHTOpenable {
+class DHTRecord implements DHTOpenable<DHTRecord> {
   DHTRecord._(
       {required VeilidRoutingContext routingContext,
       required SharedDHTRecordData sharedDHTRecordData,
@@ -40,7 +48,7 @@ class DHTRecord implements DHTOpenable {
         _routingContext = routingContext,
         _defaultSubkey = defaultSubkey,
         _writer = writer,
-        _open = true,
+        _openCount = 1,
         _sharedDHTRecordData = sharedDHTRecordData;
 
   ////////////////////////////////////////////////////////////////////////////
@@ -48,25 +56,37 @@ class DHTRecord implements DHTOpenable {
 
   /// Check if the DHTRecord is open
   @override
-  bool get isOpen => _open;
+  bool get isOpen => _openCount > 0;
+
+  /// Add a reference to this DHTRecord
+  @override
+  Future<DHTRecord> ref() async => _mutex.protect(() async {
+        _openCount++;
+        return this;
+      });
 
   /// Free all resources for the DHTRecord
   @override
-  Future<void> close() async {
-    if (!_open) {
-      return;
-    }
-    await watchController?.close();
-    await DHTRecordPool.instance._recordClosed(this);
-    _open = false;
-  }
+  Future<void> close() async => _mutex.protect(() async {
+        if (_openCount == 0) {
+          throw StateError('already closed');
+        }
+        _openCount--;
+        if (_openCount != 0) {
+          return;
+        }
+
+        await _watchController?.close();
+        _watchController = null;
+        await DHTRecordPool.instance._recordClosed(this);
+      });
 
   /// Free all resources for the DHTRecord and delete it from the DHT
   /// Will wait until the record is closed to delete it
   @override
-  Future<void> delete() async {
-    await DHTRecordPool.instance.deleteRecord(key);
-  }
+  Future<void> delete() async => _mutex.protect(() async {
+        await DHTRecordPool.instance.deleteRecord(key);
+      });
 
   ////////////////////////////////////////////////////////////////////////////
   // Public API
@@ -95,25 +115,37 @@ class DHTRecord implements DHTOpenable {
   Future<Uint8List?> get(
       {int subkey = -1,
       DHTRecordCrypto? crypto,
-      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.existing,
+      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
+
+    // Get the last sequence number if we need it
+    final lastSeq =
+        refreshMode._inspectLocal ? await _localSubkeySeq(subkey) : null;
+
+    // See if we only ever want the locally stored value
+    if (refreshMode == DHTRecordRefreshMode.local && lastSeq == null) {
+      // If it's not available locally already just return null now
+      return null;
+    }
+
     final valueData = await _routingContext.getDHTValue(key, subkey,
-        forceRefresh: refreshMode != DHTRecordRefreshMode.existing);
+        forceRefresh: refreshMode._forceRefresh);
     if (valueData == null) {
       return null;
     }
-    final lastSeq = _sharedDHTRecordData.subkeySeqCache[subkey];
-    if (refreshMode == DHTRecordRefreshMode.refreshOnlyUpdates &&
+    // See if this get resulted in a newer sequence number
+    if (refreshMode == DHTRecordRefreshMode.update &&
         lastSeq != null &&
         valueData.seq <= lastSeq) {
+      // If we're only returning updates then punt now
       return null;
     }
+    // If we're returning a value, decrypt it
     final out = (crypto ?? _crypto).decrypt(valueData.data, subkey);
     if (outSeqNum != null) {
       outSeqNum.save(valueData.seq);
     }
-    _sharedDHTRecordData.subkeySeqCache[subkey] = valueData.seq;
     return out;
   }
 
@@ -128,7 +160,7 @@ class DHTRecord implements DHTOpenable {
   Future<T?> getJson<T>(T Function(dynamic) fromJson,
       {int subkey = -1,
       DHTRecordCrypto? crypto,
-      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.existing,
+      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
       Output<int>? outSeqNum}) async {
     final data = await get(
         subkey: subkey,
@@ -154,7 +186,7 @@ class DHTRecord implements DHTOpenable {
       T Function(List<int> i) fromBuffer,
       {int subkey = -1,
       DHTRecordCrypto? crypto,
-      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.existing,
+      DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
       Output<int>? outSeqNum}) async {
     final data = await get(
         subkey: subkey,
@@ -176,7 +208,7 @@ class DHTRecord implements DHTOpenable {
       KeyPair? writer,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
-    final lastSeq = _sharedDHTRecordData.subkeySeqCache[subkey];
+    final lastSeq = await _localSubkeySeq(subkey);
     final encryptedNewValue =
         await (crypto ?? _crypto).encrypt(newValue, subkey);
 
@@ -198,7 +230,6 @@ class DHTRecord implements DHTOpenable {
     if (isUpdated && outSeqNum != null) {
       outSeqNum.save(newValueData.seq);
     }
-    _sharedDHTRecordData.subkeySeqCache[subkey] = newValueData.seq;
 
     // See if the encrypted data returned is exactly the same
     // if so, shortcut and don't bother decrypting it
@@ -228,7 +259,7 @@ class DHTRecord implements DHTOpenable {
       KeyPair? writer,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
-    final lastSeq = _sharedDHTRecordData.subkeySeqCache[subkey];
+    final lastSeq = await _localSubkeySeq(subkey);
     final encryptedNewValue =
         await (crypto ?? _crypto).encrypt(newValue, subkey);
 
@@ -254,7 +285,6 @@ class DHTRecord implements DHTOpenable {
       if (outSeqNum != null) {
         outSeqNum.save(newValueData.seq);
       }
-      _sharedDHTRecordData.subkeySeqCache[subkey] = newValueData.seq;
 
       // The encrypted data returned should be exactly the same
       // as what we are trying to set,
@@ -402,13 +432,13 @@ class DHTRecord implements DHTOpenable {
     DHTRecordCrypto? crypto,
   }) async {
     // Set up watch requirements
-    watchController ??=
+    _watchController ??=
         StreamController<DHTRecordWatchChange>.broadcast(onCancel: () {
       // If there are no more listeners then we can get rid of the controller
-      watchController = null;
+      _watchController = null;
     });
 
-    return watchController!.stream.listen(
+    return _watchController!.stream.listen(
         (change) {
           if (change.local && !localChanges) {
             return;
@@ -431,8 +461,8 @@ class DHTRecord implements DHTOpenable {
         },
         cancelOnError: true,
         onError: (e) async {
-          await watchController!.close();
-          watchController = null;
+          await _watchController!.close();
+          _watchController = null;
         });
   }
 
@@ -455,6 +485,14 @@ class DHTRecord implements DHTOpenable {
 
   //////////////////////////////////////////////////////////////////////////
 
+  Future<int?> _localSubkeySeq(int subkey) async {
+    final rr = await _routingContext.inspectDHTRecord(
+      key,
+      subkeys: [ValueSubkeyRange.single(subkey)],
+    );
+    return rr.localSeqs.firstOrNull ?? 0xFFFFFFFF;
+  }
+
   void _addValueChange(
       {required bool local,
       required Uint8List? data,
@@ -464,7 +502,7 @@ class DHTRecord implements DHTOpenable {
       final watchedSubkeys = ws.subkeys;
       if (watchedSubkeys == null) {
         // Report all subkeys
-        watchController?.add(
+        _watchController?.add(
             DHTRecordWatchChange(local: local, data: data, subkeys: subkeys));
       } else {
         // Only some subkeys are being watched, see if the reported update
@@ -479,7 +517,7 @@ class DHTRecord implements DHTOpenable {
               overlappedFirstSubkey == updateFirstSubkey ? data : null;
 
           // Report only watched subkeys
-          watchController?.add(DHTRecordWatchChange(
+          _watchController?.add(DHTRecordWatchChange(
               local: local, data: updatedData, subkeys: overlappedSubkeys));
         }
       }
@@ -504,10 +542,9 @@ class DHTRecord implements DHTOpenable {
   final KeyPair? _writer;
   final DHTRecordCrypto _crypto;
   final String debugName;
-
-  bool _open;
-  @internal
-  StreamController<DHTRecordWatchChange>? watchController;
+  final _mutex = Mutex();
+  int _openCount;
+  StreamController<DHTRecordWatchChange>? _watchController;
   @internal
   WatchState? watchState;
 }

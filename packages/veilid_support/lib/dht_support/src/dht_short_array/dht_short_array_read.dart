@@ -22,8 +22,8 @@ class _DHTShortArrayRead implements DHTRandomRead {
     final out = lookup.record.get(
         subkey: lookup.recordSubkey,
         refreshMode: refresh
-            ? DHTRecordRefreshMode.refresh
-            : DHTRecordRefreshMode.existing,
+            ? DHTRecordRefreshMode.network
+            : DHTRecordRefreshMode.cached,
         outSeqNum: outSeqNum);
     if (outSeqNum.value != null) {
       _head.updatePositionSeq(pos, false, outSeqNum.value!);

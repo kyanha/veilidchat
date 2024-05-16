@@ -248,7 +248,7 @@ class _DHTShortArrayHead {
   Future<void> _loadHead() async {
     // Get an updated head record copy if one exists
     final head = await _headRecord.getProtobuf(proto.DHTShortArray.fromBuffer,
-        subkey: 0, refreshMode: DHTRecordRefreshMode.refresh);
+        subkey: 0, refreshMode: DHTRecordRefreshMode.network);
     if (head == null) {
       throw StateError('shortarray head missing during refresh');
     }

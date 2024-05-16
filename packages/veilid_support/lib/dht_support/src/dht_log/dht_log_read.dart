@@ -19,8 +19,8 @@ class _DHTLogRead implements DHTRandomRead {
       return null;
     }
 
-    return lookup.shortArray.operate(
-        (read) => read.getItem(lookup.pos, forceRefresh: forceRefresh));
+    return lookup.shortArray.scope((sa) => sa.operate(
+        (read) => read.getItem(lookup.pos, forceRefresh: forceRefresh)));
   }
 
   (int, int) _clampStartLen(int start, int? len) {
@@ -71,22 +71,22 @@ class _DHTLogRead implements DHTRandomRead {
 
       // Check each segment for offline positions
       var foundOffline = false;
-      await lookup.shortArray.operate((read) async {
-        final segmentOffline = await read.getOfflinePositions();
+      await lookup.shortArray.scope((sa) => sa.operate((read) async {
+            final segmentOffline = await read.getOfflinePositions();
 
-        // For each shortarray segment go through their segment positions
-        // in reverse order and see if they are offline
-        for (var segmentPos = lookup.pos;
-            segmentPos >= 0 && pos >= 0;
-            segmentPos--, pos--) {
-          // If the position in the segment is offline, then
-          // mark the position in the log as offline
-          if (segmentOffline.contains(segmentPos)) {
-            positionOffline.add(pos);
-            foundOffline = true;
-          }
-        }
-      });
+            // For each shortarray segment go through their segment positions
+            // in reverse order and see if they are offline
+            for (var segmentPos = lookup.pos;
+                segmentPos >= 0 && pos >= 0;
+                segmentPos--, pos--) {
+              // If the position in the segment is offline, then
+              // mark the position in the log as offline
+              if (segmentOffline.contains(segmentPos)) {
+                positionOffline.add(pos);
+                foundOffline = true;
+              }
+            }
+          }));
 
       // If we found nothing offline in this segment then we can stop
       if (!foundOffline) {

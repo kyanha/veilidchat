@@ -17,16 +17,16 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
     }
 
     // Write item to the segment
-    return lookup.shortArray.operateWrite((write) async {
-      // If this a new segment, then clear it in case we have wrapped around
-      if (lookup.pos == 0) {
-        await write.clear();
-      } else if (lookup.pos != write.length) {
-        // We should always be appending at the length
-        throw StateError('appending should be at the end');
-      }
-      return write.tryAddItem(value);
-    });
+    return lookup.shortArray.scope((sa) => sa.operateWrite((write) async {
+          // If this a new segment, then clear it in case we have wrapped around
+          if (lookup.pos == 0) {
+            await write.clear();
+          } else if (lookup.pos != write.length) {
+            // We should always be appending at the length
+            throw StateError('appending should be at the end');
+          }
+          return write.tryAddItem(value);
+        }));
   }
 
   @override
@@ -45,16 +45,19 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
       }
 
       final sacount = min(remaining, DHTShortArray.maxElements - lookup.pos);
-      final success = await lookup.shortArray.operateWrite((write) async {
-        // If this a new segment, then clear it in case we have wrapped around
-        if (lookup.pos == 0) {
-          await write.clear();
-        } else if (lookup.pos != write.length) {
-          // We should always be appending at the length
-          throw StateError('appending should be at the end');
-        }
-        return write.tryAddItems(values.sublist(valueIdx, valueIdx + sacount));
-      });
+      final success =
+          await lookup.shortArray.scope((sa) => sa.operateWrite((write) async {
+                // If this a new segment, then clear it in
+                // case we have wrapped around
+                if (lookup.pos == 0) {
+                  await write.clear();
+                } else if (lookup.pos != write.length) {
+                  // We should always be appending at the length
+                  throw StateError('appending should be at the end');
+                }
+                return write
+                    .tryAddItems(values.sublist(valueIdx, valueIdx + sacount));
+              }));
       if (!success) {
         return false;
       }

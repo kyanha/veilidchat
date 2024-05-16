@@ -39,7 +39,7 @@ class DefaultDHTRecordCubit<T> extends DHTRecordCubit<T> {
           final firstSubkey = subkeys.firstOrNull!.low;
           if (firstSubkey != defaultSubkey || updatedata == null) {
             final maybeData =
-                await record.get(refreshMode: DHTRecordRefreshMode.refresh);
+                await record.get(refreshMode: DHTRecordRefreshMode.network);
             if (maybeData == null) {
               return null;
             }

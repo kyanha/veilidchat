@@ -42,7 +42,7 @@ Future<void> Function() makeTestDHTLogCreateDelete({required int stride}) =>
         // Operate should still succeed because things aren't closed
         expect(await dlog.operate((r) async => r.length), isZero);
         await dlog.close();
-        await dlog.close();
+        await expectLater(() async => dlog.close(), throwsA(isA<StateError>()));
         // Operate should fail
         await expectLater(() async => dlog.operate((r) async => r.length),
             throwsA(isA<StateError>()));
@@ -51,8 +51,6 @@ Future<void> Function() makeTestDHTLogCreateDelete({required int stride}) =>
 
 Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
     () async {
-      final startTime = DateTime.now();
-
       final dlog = await DHTLog.create(
           debugName: 'log_add 1 stride $stride', stride: stride);
 
@@ -121,10 +119,8 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
         final dataset8 = await dlog.operate((r) async => r.getItemRange(0));
         expect(dataset8, isEmpty);
       }
+      print('delete and close\n');
 
       await dlog.delete();
       await dlog.close();
-
-      final endTime = DateTime.now();
-      print('Duration: ${endTime.difference(startTime)}');
     };

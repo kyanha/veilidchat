@@ -43,7 +43,7 @@ Future<void> Function() makeTestDHTShortArrayCreateDelete(
         // Operate should still succeed because things aren't closed
         expect(await arr.operate((r) async => r.length), isZero);
         await arr.close();
-        await arr.close();
+        await expectLater(() async => arr.close(), throwsA(isA<StateError>()));
         // Operate should fail
         await expectLater(() async => arr.operate((r) async => r.length),
             throwsA(isA<StateError>()));
@@ -52,8 +52,6 @@ Future<void> Function() makeTestDHTShortArrayCreateDelete(
 
 Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
     () async {
-      final startTime = DateTime.now();
-
       final arr = await DHTShortArray.create(
           debugName: 'sa_add 1 stride $stride', stride: stride);
 
@@ -131,7 +129,4 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
 
       await arr.delete();
       await arr.close();
-
-      final endTime = DateTime.now();
-      print('Duration: ${endTime.difference(startTime)}');
     };

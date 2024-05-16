@@ -1,12 +1,13 @@
 import 'dart:async';
 
-abstract class DHTOpenable {
+abstract class DHTOpenable<C> {
   bool get isOpen;
+  Future<C> ref();
   Future<void> close();
   Future<void> delete();
 }
 
-extension DHTOpenableExt<D extends DHTOpenable> on D {
+extension DHTOpenableExt<D extends DHTOpenable<D>> on D {
   /// Runs a closure that guarantees the DHTOpenable
   /// will be closed upon exit, even if an uncaught exception is thrown
   Future<T> scope<T>(Future<T> Function(D) scopeFunction) async {

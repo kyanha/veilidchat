@@ -48,7 +48,7 @@ Future<void> testDHTRecordCreateDelete() async {
     // Set should succeed still
     await rec3.tryWriteBytes(utf8.encode('test'));
     await rec3.close();
-    await rec3.close();
+    await expectLater(() async => rec3.close(), throwsA(isA<StateError>()));
     // Set should fail
     await expectLater(() async => rec3.tryWriteBytes(utf8.encode('test')),
         throwsA(isA<VeilidAPIException>()));
@@ -84,7 +84,7 @@ Future<void> testDHTRecordScopes() async {
     } on Exception {
       assert(false, 'should not throw');
     }
-    await rec2.close();
+    await expectLater(() async => rec2.close(), throwsA(isA<StateError>()));
     await pool.deleteRecord(rec2.key);
   }
 
@@ -115,6 +115,7 @@ Future<void> testDHTRecordGetSet() async {
     final val = await rec.get();
     await pool.deleteRecord(rec.key);
     expect(val, isNull);
+    await rec.close();
   }
 
   // Test set then get
@@ -125,6 +126,7 @@ Future<void> testDHTRecordGetSet() async {
     // Invalid subkey should throw
     await expectLater(
         () async => rec2.get(subkey: 1), throwsA(isA<VeilidAPIException>()));
+    await rec2.close();
     await pool.deleteRecord(rec2.key);
   }
 
