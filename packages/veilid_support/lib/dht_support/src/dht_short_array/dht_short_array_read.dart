@@ -15,7 +15,7 @@ class _DHTShortArrayRead implements DHTRandomRead {
       throw IndexError.withLength(pos, length);
     }
 
-    final lookup = await _head.lookupPosition(pos);
+    final lookup = await _head.lookupPosition(pos, false);
 
     final refresh = forceRefresh || _head.positionNeedsRefresh(pos);
     final outSeqNum = Output<int>();

@@ -20,6 +20,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   lint_hard: ^4.0.0
+  test: ^1.25.2
   veilid_test:
     path: ../../../../veilid/veilid-flutter/packages/veilid_test
 

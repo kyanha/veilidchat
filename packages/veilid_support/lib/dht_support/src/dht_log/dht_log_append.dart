@@ -36,6 +36,9 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
     _spine.allocateTail(values.length);
 
     // Look up the first position and shortarray
+    final dws = DelayedWaitSet<void>();
+
+    var success = true;
     for (var valueIdx = 0; valueIdx < values.length;) {
       final remaining = values.length - valueIdx;
 
@@ -45,25 +48,32 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
       }
 
       final sacount = min(remaining, DHTShortArray.maxElements - lookup.pos);
-      final success =
-          await lookup.shortArray.scope((sa) => sa.operateWrite((write) async {
-                // If this a new segment, then clear it in
-                // case we have wrapped around
-                if (lookup.pos == 0) {
-                  await write.clear();
-                } else if (lookup.pos != write.length) {
-                  // We should always be appending at the length
-                  throw StateError('appending should be at the end');
-                }
-                return write
-                    .tryAddItems(values.sublist(valueIdx, valueIdx + sacount));
-              }));
-      if (!success) {
-        return false;
-      }
+      final sublistValues = values.sublist(valueIdx, valueIdx + sacount);
+
+      dws.add(() async {
+        final ok = await lookup.shortArray
+            .scope((sa) => sa.operateWrite((write) async {
+                  // If this a new segment, then clear it in
+                  // case we have wrapped around
+                  if (lookup.pos == 0) {
+                    await write.clear();
+                  } else if (lookup.pos != write.length) {
+                    // We should always be appending at the length
+                    throw StateError('appending should be at the end');
+                  }
+                  return write.tryAddItems(sublistValues);
+                }));
+        if (!ok) {
+          success = false;
+        }
+      });
+
       valueIdx += sacount;
     }
-    return true;
+
+    await dws(chunkSize: maxDHTConcurrency);
+
+    return success;
   }
 
   @override

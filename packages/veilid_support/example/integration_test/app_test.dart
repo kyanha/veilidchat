@@ -1,8 +1,9 @@
-@Timeout(Duration(seconds: 240))
+//@Timeout(Duration(seconds: 240))
 
-library veilid_support_integration_test;
+//library veilid_support_integration_test;
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
+import 'package:test/test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:veilid_test/veilid_test.dart';
 
@@ -28,6 +29,10 @@ void main() {
   group('Started Tests', () {
     setUpAll(veilidFixture.setUp);
     tearDownAll(veilidFixture.tearDown);
+    tearDownAll(() {
+      final endTime = DateTime.now();
+      debugPrintSynchronously('Duration: ${endTime.difference(startTime)}');
+    });
 
     group('Attached Tests', () {
       setUpAll(veilidFixture.attach);
@@ -58,7 +63,7 @@ void main() {
             test('create shortarray stride=$stride',
                 makeTestDHTShortArrayCreateDelete(stride: stride));
             test('add shortarray stride=$stride',
-                makeTestDHTShortArrayAdd(stride: 256));
+                makeTestDHTShortArrayAdd(stride: stride));
           }
         });
 
@@ -70,14 +75,11 @@ void main() {
             test('create log stride=$stride',
                 makeTestDHTLogCreateDelete(stride: stride));
             test('add/truncate log stride=$stride',
-                makeTestDHTLogAddTruncate(stride: 256),
+                makeTestDHTLogAddTruncate(stride: stride),
                 timeout: const Timeout(Duration(seconds: 480)));
           }
         });
       });
     });
   });
-
-  final endTime = DateTime.now();
-  print('Duration: ${endTime.difference(startTime)}');
 }

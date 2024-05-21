@@ -34,7 +34,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                         ? const EmptyChatListWidget()
                         : SearchableList<proto.Chat>(
                             initialList: chatList.map((x) => x.value).toList(),
-                            builder: (l, i, c) {
+                            itemBuilder: (c) {
                               final contact =
                                   contactMap[c.remoteConversationRecordKey];
                               if (contact == null) {

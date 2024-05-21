@@ -17,37 +17,77 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
 
   @override
   Future<bool> tryInsertItem(int pos, Uint8List value) async {
+    if (pos < 0 || pos > _head.length) {
+      throw IndexError.withLength(pos, _head.length);
+    }
+
     // Allocate empty index at position
     _head.allocateIndex(pos);
-
-    // Write item
-    final ok = await tryWriteItem(pos, value);
-    if (!ok) {
-      _head.freeIndex(pos);
+    var success = false;
+    try {
+      // Write item
+      success = await tryWriteItem(pos, value);
+    } finally {
+      if (!success) {
+        _head.freeIndex(pos);
+      }
     }
     return true;
   }
 
   @override
   Future<bool> tryInsertItems(int pos, List<Uint8List> values) async {
-    // Allocate empty indices at the end of the list
+    if (pos < 0 || pos > _head.length) {
+      throw IndexError.withLength(pos, _head.length);
+    }
+
+    // Allocate empty indices
     for (var i = 0; i < values.length; i++) {
       _head.allocateIndex(pos + i);
     }
 
-    // Write items
     var success = true;
-    final dws = DelayedWaitSet<void>();
-    for (var i = 0; i < values.length; i++) {
-      dws.add(() async {
-        final ok = await tryWriteItem(pos + i, values[i]);
-        if (!ok) {
-          _head.freeIndex(pos + i);
-          success = false;
+    final outSeqNums = List.generate(values.length, (_) => Output<int>());
+    final lookups = <DHTShortArrayHeadLookup>[];
+    try {
+      // do all lookups
+      for (var i = 0; i < values.length; i++) {
+        final lookup = await _head.lookupPosition(pos + i, true);
+        lookups.add(lookup);
+      }
+
+      // Write items in parallel
+      final dws = DelayedWaitSet<void>();
+      for (var i = 0; i < values.length; i++) {
+        final lookup = lookups[i];
+        final value = values[i];
+        final outSeqNum = outSeqNums[i];
+        dws.add(() async {
+          final outValue = await lookup.record.tryWriteBytes(value,
+              subkey: lookup.recordSubkey, outSeqNum: outSeqNum);
+          if (outValue != null) {
+            success = false;
+          }
+        });
+      }
+
+      await dws(chunkSize: maxDHTConcurrency, onChunkDone: (_) => success);
+    } finally {
+      // Update sequence numbers
+      for (var i = 0; i < values.length; i++) {
+        if (outSeqNums[i].value != null) {
+          _head.updatePositionSeq(pos + i, true, outSeqNums[i].value!);
         }
-      });
+      }
+
+      // Free indices if this was a failure
+      if (!success) {
+        for (var i = 0; i < values.length; i++) {
+          _head.freeIndex(pos);
+        }
+      }
     }
-    await dws(chunkSize: maxDHTConcurrency, onChunkDone: (_) => success);
+
     return success;
   }
 
@@ -68,7 +108,7 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
     if (pos < 0 || pos >= _head.length) {
       throw IndexError.withLength(pos, _head.length);
     }
-    final lookup = await _head.lookupPosition(pos);
+    final lookup = await _head.lookupPosition(pos, true);
 
     final outSeqNum = Output<int>();
 
@@ -98,24 +138,22 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
     if (pos < 0 || pos >= _head.length) {
       throw IndexError.withLength(pos, _head.length);
     }
-    final lookup = await _head.lookupPosition(pos);
+    final lookup = await _head.lookupPosition(pos, true);
 
-    final outSeqNum = Output<int>();
-
+    final outSeqNumRead = Output<int>();
     final oldValue = lookup.seq == 0xFFFFFFFF
         ? null
         : await lookup.record
-            .get(subkey: lookup.recordSubkey, outSeqNum: outSeqNum);
-
-    if (outSeqNum.value != null) {
-      _head.updatePositionSeq(pos, false, outSeqNum.value!);
+            .get(subkey: lookup.recordSubkey, outSeqNum: outSeqNumRead);
+    if (outSeqNumRead.value != null) {
+      _head.updatePositionSeq(pos, false, outSeqNumRead.value!);
     }
 
+    final outSeqNumWrite = Output<int>();
     final result = await lookup.record.tryWriteBytes(newValue,
-        subkey: lookup.recordSubkey, outSeqNum: outSeqNum);
-
-    if (outSeqNum.value != null) {
-      _head.updatePositionSeq(pos, true, outSeqNum.value!);
+        subkey: lookup.recordSubkey, outSeqNum: outSeqNumWrite);
+    if (outSeqNumWrite.value != null) {
+      _head.updatePositionSeq(pos, true, outSeqNumWrite.value!);
     }
 
     if (result != null) {
