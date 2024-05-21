@@ -177,7 +177,7 @@ class ContactInvitationListCubit
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove ContactInvitationRecord from account's list
-    final (deletedItem, success) = await operateWrite((writer) async {
+    final deletedItem = await operateWrite((writer) async {
       for (var i = 0; i < writer.length; i++) {
         final item = await writer.getItemProtobuf(
             proto.ContactInvitationRecord.fromBuffer, i);
@@ -186,16 +186,14 @@ class ContactInvitationListCubit
         }
         if (item.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxRecordKey) {
-          if (await writer.tryRemoveItem(i) != null) {
-            return item;
-          }
-          return null;
+          await writer.removeItem(i);
+          return item;
         }
       }
       return null;
     });
 
-    if (success && deletedItem != null) {
+    if (deletedItem != null) {
       // Delete the contact request inbox
       final contactRequestInbox = deletedItem.contactRequestInbox.toVeilid();
       await (await pool.openRecordOwned(contactRequestInbox,

@@ -38,7 +38,7 @@ class ContactListWidget extends StatelessWidget {
                   ? const EmptyContactListWidget()
                   : SearchableList<proto.Contact>(
                       initialList: contactList.toList(),
-                      builder: (l, i, c) =>
+                      itemBuilder: (c) =>
                           ContactItemWidget(contact: c, disabled: disabled)
                               .paddingLTRB(0, 4, 0, 0),
                       filter: (value) {

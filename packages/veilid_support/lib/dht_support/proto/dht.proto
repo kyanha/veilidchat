@@ -23,6 +23,18 @@ message DHTData {
     uint32 size = 4;
 }
 
+
+// DHTLog - represents a ring buffer of many elements with append/truncate semantics
+// Header in subkey 0 of first key follows this structure
+message DHTLog {
+    // Position of the start of the log (oldest items)
+    uint32 head = 1;
+    // Position of the end of the log (newest items)
+    uint32 tail = 2;
+    // Stride of each segment of the dhtlog
+    uint32 stride = 3;
+}
+
 // DHTShortArray - represents a re-orderable collection of up to 256 individual elements
 // Header in subkey 0 of first key follows this structure
 //
@@ -48,20 +60,6 @@ message DHTShortArray {
     
     // Free items are not represented in the list but can be
     // calculated through iteration
-}
-
-// DHTLog - represents a long ring buffer of elements utilizing a multi-level
-// indirection table of DHTShortArrays.
-
-message DHTLog {
-    // Keys to concatenate
-    repeated veilid.TypedKey keys = 1;
-    // Back link to another DHTLog further back
-    veilid.TypedKey back = 2;
-    // Count of subkeys in all keys in this DHTLog
-    repeated uint32 subkey_counts = 3;
-    // Total count of subkeys in all keys in this DHTLog including all backlogs
-    uint32 total_subkeys = 4;
 }
 
 // DataReference

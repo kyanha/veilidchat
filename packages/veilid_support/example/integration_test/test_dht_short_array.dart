@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 Future<void> Function() makeTestDHTShortArrayCreateDelete(
@@ -43,7 +43,7 @@ Future<void> Function() makeTestDHTShortArrayCreateDelete(
         // Operate should still succeed because things aren't closed
         expect(await arr.operate((r) async => r.length), isZero);
         await arr.close();
-        await arr.close();
+        await expectLater(() async => arr.close(), throwsA(isA<StateError>()));
         // Operate should fail
         await expectLater(() async => arr.operate((r) async => r.length),
             throwsA(isA<StateError>()));
@@ -52,8 +52,6 @@ Future<void> Function() makeTestDHTShortArrayCreateDelete(
 
 Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
     () async {
-      final startTime = DateTime.now();
-
       final arr = await DHTShortArray.create(
           debugName: 'sa_add 1 stride $stride', stride: stride);
 
@@ -61,41 +59,77 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
           .map((n) => utf8.encode('elem $n'))
           .toList();
 
-      print('adding\n');
+      print('adding singles\n');
       {
-        final (res, ok) = await arr.operateWrite((w) async {
-          for (var n = 0; n < dataset.length; n++) {
+        final res = await arr.operateWrite((w) async {
+          for (var n = 4; n < 8; n++) {
             print('$n ');
             final success = await w.tryAddItem(dataset[n]);
             expect(success, isTrue);
           }
         });
         expect(res, isNull);
-        expect(ok, isTrue);
+      }
+
+      print('adding batch\n');
+      {
+        final res = await arr.operateWrite((w) async {
+          print('${dataset.length ~/ 2}-${dataset.length}');
+          final success = await w.tryAddItems(
+              dataset.sublist(dataset.length ~/ 2, dataset.length));
+          expect(success, isTrue);
+        });
+        expect(res, isNull);
+      }
+
+      print('inserting singles\n');
+      {
+        final res = await arr.operateWrite((w) async {
+          for (var n = 0; n < 4; n++) {
+            print('$n ');
+            final success = await w.tryInsertItem(n, dataset[n]);
+            expect(success, isTrue);
+          }
+        });
+        expect(res, isNull);
+      }
+
+      print('inserting batch\n');
+      {
+        final res = await arr.operateWrite((w) async {
+          print('8-${dataset.length ~/ 2}');
+          final success = await w.tryInsertItems(
+              8, dataset.sublist(8, dataset.length ~/ 2));
+          expect(success, isTrue);
+        });
+        expect(res, isNull);
       }
 
       //print('get all\n');
       {
-        final dataset2 = await arr.operate((r) async => r.getAllItems());
+        final dataset2 = await arr.operate((r) async => r.getItemRange(0));
         expect(dataset2, equals(dataset));
+      }
+      {
+        final dataset3 =
+            await arr.operate((r) async => r.getItemRange(64, length: 128));
+        expect(dataset3, equals(dataset.sublist(64, 64 + 128)));
       }
 
       //print('clear\n');
       {
-        final (res, ok) = await arr.operateWrite((w) async => w.tryClear());
-        expect(res, isTrue);
-        expect(ok, isTrue);
+        await arr.operateWriteEventual((w) async {
+          await w.clear();
+          return true;
+        });
       }
 
       //print('get all\n');
       {
-        final dataset3 = await arr.operate((r) async => r.getAllItems());
-        expect(dataset3, isEmpty);
+        final dataset4 = await arr.operate((r) async => r.getItemRange(0));
+        expect(dataset4, isEmpty);
       }
 
       await arr.delete();
       await arr.close();
-
-      final endTime = DateTime.now();
-      print('Duration: ${endTime.difference(startTime)}');
     };

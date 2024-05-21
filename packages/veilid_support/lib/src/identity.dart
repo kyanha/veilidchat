@@ -300,8 +300,8 @@ Future<IdentityMaster> openIdentityMaster(
           debugName:
               'IdentityMaster::openIdentityMaster::IdentityMasterRecord'))
       .deleteScope((masterRec) async {
-    final identityMaster =
-        (await masterRec.getJson(IdentityMaster.fromJson, forceRefresh: true))!;
+    final identityMaster = (await masterRec.getJson(IdentityMaster.fromJson,
+        refreshMode: DHTRecordRefreshMode.network))!;
 
     // Validate IdentityMaster
     final masterRecordKey = masterRec.key;

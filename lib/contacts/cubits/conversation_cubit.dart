@@ -295,7 +295,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
             debugName: 'ConversationCubit::initLocalMessages::LocalMessages',
             parent: localConversationKey,
             crypto: crypto,
-            smplWriter: writer))
+            writer: writer))
         .deleteScope((messages) async => await callback(messages));
   }
 

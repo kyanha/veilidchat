@@ -227,7 +227,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   Future<void> _reconcileMessagesInner(
-      {required DHTShortArrayWrite reconciledMessagesWriter,
+      {required DHTRandomReadWrite reconciledMessagesWriter,
       required IList<proto.Message> messages}) async {
     // Ensure remoteMessages is sorted by timestamp
     final newMessages = messages
@@ -236,7 +236,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     // Existing messages will always be sorted by timestamp so merging is easy
     final existingMessages = await reconciledMessagesWriter
-        .getAllItemsProtobuf(proto.Message.fromBuffer);
+        .getItemRangeProtobuf(proto.Message.fromBuffer, 0);
     if (existingMessages == null) {
       throw Exception(
           'Could not load existing reconciled messages at this time');

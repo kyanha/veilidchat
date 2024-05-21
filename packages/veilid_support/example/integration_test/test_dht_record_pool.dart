@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 Future<void> testDHTRecordPoolCreate() async {
@@ -48,7 +48,7 @@ Future<void> testDHTRecordCreateDelete() async {
     // Set should succeed still
     await rec3.tryWriteBytes(utf8.encode('test'));
     await rec3.close();
-    await rec3.close();
+    await expectLater(() async => rec3.close(), throwsA(isA<StateError>()));
     // Set should fail
     await expectLater(() async => rec3.tryWriteBytes(utf8.encode('test')),
         throwsA(isA<VeilidAPIException>()));
@@ -84,7 +84,7 @@ Future<void> testDHTRecordScopes() async {
     } on Exception {
       assert(false, 'should not throw');
     }
-    await rec2.close();
+    await expectLater(() async => rec2.close(), throwsA(isA<StateError>()));
     await pool.deleteRecord(rec2.key);
   }
 
@@ -115,6 +115,7 @@ Future<void> testDHTRecordGetSet() async {
     final val = await rec.get();
     await pool.deleteRecord(rec.key);
     expect(val, isNull);
+    await rec.close();
   }
 
   // Test set then get
@@ -125,6 +126,7 @@ Future<void> testDHTRecordGetSet() async {
     // Invalid subkey should throw
     await expectLater(
         () async => rec2.get(subkey: 1), throwsA(isA<VeilidAPIException>()));
+    await rec2.close();
     await pool.deleteRecord(rec2.key);
   }
 
@@ -151,17 +153,29 @@ Future<void> testDHTRecordDeepCreateDelete() async {
   // Make root record
   final recroot = await pool.createRecord(debugName: 'test_deep_create_delete');
 
-  for (var d = 0; d < numIterations; d++) {
-    // Make child set 1
-    var parent = recroot;
-    final children = <DHTRecord>[];
-    for (var n = 0; n < numChildren; n++) {
-      final child =
-          await pool.createRecord(debugName: 'deep $n', parent: parent.key);
-      children.add(child);
-      parent = child;
-    }
+  // Make child set 1
+  var parent = recroot;
+  final children = <DHTRecord>[];
+  for (var n = 0; n < numChildren; n++) {
+    final child =
+        await pool.createRecord(debugName: 'deep $n', parent: parent.key);
+    children.add(child);
+    parent = child;
+  }
 
+  // Should mark for deletion
+  expect(await pool.deleteRecord(recroot.key), isFalse);
+
+  // Root should still be valid
+  expect(await pool.isValidRecordKey(recroot.key), isTrue);
+
+  // Close root record
+  await recroot.close();
+
+  // Root should still be valid because children still exist
+  expect(await pool.isValidRecordKey(recroot.key), isTrue);
+
+  for (var d = 0; d < numIterations; d++) {
     // Make child set 2
     final children2 = <DHTRecord>[];
     parent = recroot;
@@ -171,31 +185,31 @@ Future<void> testDHTRecordDeepCreateDelete() async {
       children2.add(child);
       parent = child;
     }
-    // Should fail to delete root
-    await expectLater(
-        () async => pool.deleteRecord(recroot.key), throwsA(isA<StateError>()));
-
-    // Close child set 1
-    await children.map((c) => c.close()).wait;
-
-    // Delete child set 1 in reverse order
-    for (var n = numChildren - 1; n >= 0; n--) {
-      await pool.deleteRecord(children[n].key);
-    }
-
-    // Should fail to delete root
-    await expectLater(
-        () async => pool.deleteRecord(recroot.key), throwsA(isA<StateError>()));
-
-    // Close child set 1
-    await children2.map((c) => c.close()).wait;
 
     // Delete child set 2 in reverse order
     for (var n = numChildren - 1; n >= 0; n--) {
-      await pool.deleteRecord(children2[n].key);
+      expect(await pool.deleteRecord(children2[n].key), isFalse);
     }
+
+    // Root should still be there
+    expect(await pool.isValidRecordKey(recroot.key), isTrue);
+
+    // Close child set 2
+    await children2.map((c) => c.close()).wait;
+
+    // All child set 2 should be invalid
+    for (final c2 in children2) {
+      // Children should be invalid and deleted now
+      expect(await pool.isValidRecordKey(c2.key), isFalse);
+    }
+
+    // Root should still be valid
+    expect(await pool.isValidRecordKey(recroot.key), isTrue);
   }
 
-  // Should be able to delete root now
-  await pool.deleteRecord(recroot.key);
+  // Close child set 1
+  await children.map((c) => c.close()).wait;
+
+  // Root should have gone away
+  expect(await pool.isValidRecordKey(recroot.key), isFalse);
 }

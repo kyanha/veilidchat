@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:awesome_extensions/awesome_extensions.dart';
@@ -16,65 +15,64 @@ import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import 'invitation_dialog.dart';
 
-class BarcodeOverlay extends CustomPainter {
-  BarcodeOverlay({
-    required this.barcode,
-    required this.arguments,
-    required this.boxFit,
-    required this.capture,
-  });
+// class BarcodeOverlay extends CustomPainter {
+//   BarcodeOverlay({
+//     required this.barcode,
+//     required this.boxFit,
+//     required this.capture,
+//     required this.size,
+//   });
 
-  final BarcodeCapture capture;
-  final Barcode barcode;
-  final MobileScannerArguments arguments;
-  final BoxFit boxFit;
+//   final BarcodeCapture capture;
+//   final Barcode barcode;
+//   final BoxFit boxFit;
+//   final Size size;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final adjustedSize = applyBoxFit(boxFit, arguments.size, size);
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final adjustedSize = applyBoxFit(boxFit, size, size);
 
-    var verticalPadding = size.height - adjustedSize.destination.height;
-    var horizontalPadding = size.width - adjustedSize.destination.width;
-    if (verticalPadding > 0) {
-      verticalPadding = verticalPadding / 2;
-    } else {
-      verticalPadding = 0;
-    }
+//     var verticalPadding = size.height - adjustedSize.destination.height;
+//     var horizontalPadding = size.width - adjustedSize.destination.width;
+//     if (verticalPadding > 0) {
+//       verticalPadding = verticalPadding / 2;
+//     } else {
+//       verticalPadding = 0;
+//     }
 
-    if (horizontalPadding > 0) {
-      horizontalPadding = horizontalPadding / 2;
-    } else {
-      horizontalPadding = 0;
-    }
+//     if (horizontalPadding > 0) {
+//       horizontalPadding = horizontalPadding / 2;
+//     } else {
+//       horizontalPadding = 0;
+//     }
 
-    final ratioWidth = (Platform.isIOS ? capture.width : arguments.size.width) /
-        adjustedSize.destination.width;
-    final ratioHeight =
-        (Platform.isIOS ? capture.height : arguments.size.height) /
-            adjustedSize.destination.height;
+//     final ratioWidth = (Platform.isIOS ? capture.size.width : size.width) /
+//         adjustedSize.destination.width;
+//     final ratioHeight = (Platform.isIOS ? capture.size.height : size.height) /
+//         adjustedSize.destination.height;
 
-    final adjustedOffset = <Offset>[];
-    for (final offset in barcode.corners) {
-      adjustedOffset.add(
-        Offset(
-          offset.dx / ratioWidth + horizontalPadding,
-          offset.dy / ratioHeight + verticalPadding,
-        ),
-      );
-    }
-    final cutoutPath = Path()..addPolygon(adjustedOffset, true);
+//     final adjustedOffset = <Offset>[];
+//     for (final offset in barcode.corners) {
+//       adjustedOffset.add(
+//         Offset(
+//           offset.dx / ratioWidth + horizontalPadding,
+//           offset.dy / ratioHeight + verticalPadding,
+//         ),
+//       );
+//     }
+//     final cutoutPath = Path()..addPolygon(adjustedOffset, true);
 
-    final backgroundPaint = Paint()
-      ..color = Colors.red.withOpacity(0.3)
-      ..style = PaintingStyle.fill
-      ..blendMode = BlendMode.dstOut;
+//     final backgroundPaint = Paint()
+//       ..color = Colors.red.withOpacity(0.3)
+//       ..style = PaintingStyle.fill
+//       ..blendMode = BlendMode.dstOut;
 
-    canvas.drawPath(cutoutPath, backgroundPaint);
-  }
+//     canvas.drawPath(cutoutPath, backgroundPaint);
+//   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+//   @override
+//   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+// }
 
 class ScannerOverlay extends CustomPainter {
   ScannerOverlay(this.scanWindow);
@@ -202,15 +200,21 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
                           IconButton(
                             color: Colors.white,
                             icon: ValueListenableBuilder(
-                              valueListenable: cameraController.torchState,
+                              valueListenable: cameraController,
                               builder: (context, state, child) {
-                                switch (state) {
+                                switch (state.torchState) {
                                   case TorchState.off:
                                     return Icon(Icons.flash_off,
                                         color:
                                             scale.grayScale.subtleBackground);
                                   case TorchState.on:
                                     return Icon(Icons.flash_on,
+                                        color: scale.primaryScale.primary);
+                                  case TorchState.auto:
+                                    return Icon(Icons.flash_auto,
+                                        color: scale.primaryScale.primary);
+                                  case TorchState.unavailable:
+                                    return Icon(Icons.no_flash,
                                         color: scale.primaryScale.primary);
                                 }
                               },
@@ -236,10 +240,9 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
                           IconButton(
                             color: Colors.white,
                             icon: ValueListenableBuilder(
-                              valueListenable:
-                                  cameraController.cameraFacingState,
+                              valueListenable: cameraController,
                               builder: (context, state, child) {
-                                switch (state) {
+                                switch (state.cameraDirection) {
                                   case CameraFacing.front:
                                     return const Icon(Icons.camera_front);
                                   case CameraFacing.back:
@@ -265,7 +268,7 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
                                 SchedulerBinding.instance
                                     .addPostFrameCallback((_) {
                                   cameraController.dispose();
-                                  Navigator.pop(context, null);
+                                  Navigator.pop(context);
                                 })
                               })),
                 ],

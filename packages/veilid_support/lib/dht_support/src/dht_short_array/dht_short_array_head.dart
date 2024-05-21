@@ -67,12 +67,8 @@ class _DHTShortArrayHead {
 
   Future<void> delete() async {
     await _headMutex.protect(() async {
-      final pool = DHTRecordPool.instance;
-      final futures = <Future<void>>[pool.deleteRecord(_headRecord.key)];
-      for (final lr in _linkedRecords) {
-        futures.add(pool.deleteRecord(lr.key));
-      }
-      await Future.wait(futures);
+      // Will deep delete all linked records as they are children
+      await _headRecord.delete();
     });
   }
 
@@ -82,8 +78,8 @@ class _DHTShortArrayHead {
         return closure(this);
       });
 
-  Future<(T?, bool)> operateWrite<T>(
-          Future<T?> Function(_DHTShortArrayHead) closure) async =>
+  Future<T> operateWrite<T>(
+          Future<T> Function(_DHTShortArrayHead) closure) async =>
       _headMutex.protect(() async {
         final oldLinkedRecords = List.of(_linkedRecords);
         final oldIndex = List.of(_index);
@@ -95,11 +91,11 @@ class _DHTShortArrayHead {
           if (!await _writeHead()) {
             // Failed to write head means head got overwritten so write should
             // be considered failed
-            return (null, false);
+            throw DHTExceptionTryAgain();
           }
 
           onUpdatedHead?.call();
-          return (out, true);
+          return out;
         } on Exception {
           // Exception means state needs to be reverted
           _linkedRecords = oldLinkedRecords;
@@ -219,7 +215,7 @@ class _DHTShortArrayHead {
       }
     } on Exception catch (_) {
       // On any exception close the records we have opened
-      await Future.wait(newRecords.entries.map((e) => e.value.close()));
+      await newRecords.entries.map((e) => e.value.close()).wait;
       rethrow;
     }
 
@@ -249,34 +245,36 @@ class _DHTShortArrayHead {
   }
 
   // Pull the latest or updated copy of the head record from the network
-  Future<bool> _loadHead(
-      {bool forceRefresh = true, bool onlyUpdates = false}) async {
+  Future<void> _loadHead() async {
     // Get an updated head record copy if one exists
     final head = await _headRecord.getProtobuf(proto.DHTShortArray.fromBuffer,
-        subkey: 0, forceRefresh: forceRefresh, onlyUpdates: onlyUpdates);
+        subkey: 0, refreshMode: DHTRecordRefreshMode.network);
     if (head == null) {
-      if (onlyUpdates) {
-        // No update
-        return false;
-      }
-      throw StateError('head missing during refresh');
+      throw StateError('shortarray head missing during refresh');
     }
 
     await _updateHead(head);
-
-    return true;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Linked record management
 
-  Future<DHTRecord> _getOrCreateLinkedRecord(int recordNumber) async {
+  Future<DHTRecord> _getOrCreateLinkedRecord(
+      int recordNumber, bool allowCreate) async {
     if (recordNumber == 0) {
       return _headRecord;
     }
-    final pool = DHTRecordPool.instance;
     recordNumber--;
-    while (recordNumber >= _linkedRecords.length) {
+    if (recordNumber < _linkedRecords.length) {
+      return _linkedRecords[recordNumber];
+    }
+
+    if (!allowCreate) {
+      throw StateError("asked for non-existent record and can't create");
+    }
+
+    final pool = DHTRecordPool.instance;
+    for (var rn = _linkedRecords.length; rn <= recordNumber; rn++) {
       // Linked records must use SMPL schema so writer can be specified
       // Use the same writer as the head record
       final smplWriter = _headRecord.writer!;
@@ -297,9 +295,6 @@ class _DHTShortArrayHead {
 
       // Add to linked records
       _linkedRecords.add(dhtRecord);
-    }
-    if (!await _writeHead()) {
-      throw StateError('failed to add linked record');
     }
     return _linkedRecords[recordNumber];
   }
@@ -324,15 +319,16 @@ class _DHTShortArrayHead {
           );
   }
 
-  Future<DHTShortArrayHeadLookup> lookupPosition(int pos) async {
+  Future<DHTShortArrayHeadLookup> lookupPosition(
+      int pos, bool allowCreate) async {
     final idx = _index[pos];
-    return lookupIndex(idx);
+    return lookupIndex(idx, allowCreate);
   }
 
-  Future<DHTShortArrayHeadLookup> lookupIndex(int idx) async {
+  Future<DHTShortArrayHeadLookup> lookupIndex(int idx, bool allowCreate) async {
     final seq = idx < _seqs.length ? _seqs[idx] : 0xFFFFFFFF;
     final recordNumber = idx ~/ _stride;
-    final record = await _getOrCreateLinkedRecord(recordNumber);
+    final record = await _getOrCreateLinkedRecord(recordNumber, allowCreate);
     final recordSubkey = (idx % _stride) + ((recordNumber == 0) ? 1 : 0);
     return DHTShortArrayHeadLookup(
         record: record, recordSubkey: recordSubkey, seq: seq);
@@ -389,7 +385,7 @@ class _DHTShortArrayHead {
     assert(
         newKeys.length <=
             (DHTShortArray.maxElements + (_stride - 1)) ~/ _stride,
-        'too many keys');
+        'too many keys: $newKeys.length');
     assert(newKeys.length == linkedKeys.length, 'duplicated linked keys');
     final newIndex = index.toSet();
     assert(newIndex.length <= DHTShortArray.maxElements, 'too many indexes');

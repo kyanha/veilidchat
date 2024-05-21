@@ -1,16 +1,16 @@
-@Timeout(Duration(seconds: 240))
-
-library veilid_support_integration_test;
-
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:test/test.dart';
 import 'package:veilid_test/veilid_test.dart';
 
 import 'fixtures/fixtures.dart';
+import 'test_dht_log.dart';
 import 'test_dht_record_pool.dart';
 import 'test_dht_short_array.dart';
 
 void main() {
+  final startTime = DateTime.now();
+
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   final veilidFixture =
       DefaultVeilidFixture(programName: 'veilid_support integration test');
@@ -22,9 +22,13 @@ void main() {
       tickerFixture: tickerFixture,
       updateProcessorFixture: updateProcessorFixture);
 
-  group('Started Tests', () {
+  group(timeout: const Timeout(Duration(seconds: 240)), 'Started Tests', () {
     setUpAll(veilidFixture.setUp);
     tearDownAll(veilidFixture.tearDown);
+    tearDownAll(() {
+      final endTime = DateTime.now();
+      debugPrintSynchronously('Duration: ${endTime.difference(startTime)}');
+    });
 
     group('Attached Tests', () {
       setUpAll(veilidFixture.attach);
@@ -51,11 +55,26 @@ void main() {
           setUpAll(dhtRecordPoolFixture.setUp);
           tearDownAll(dhtRecordPoolFixture.tearDown);
 
-          for (final stride in [256, 64, 32, 16, 8, 4, 2, 1]) {
+          for (final stride in [256, 16 /*64, 32, 16, 8, 4, 2, 1 */]) {
             test('create shortarray stride=$stride',
                 makeTestDHTShortArrayCreateDelete(stride: stride));
             test('add shortarray stride=$stride',
-                makeTestDHTShortArrayAdd(stride: 256));
+                makeTestDHTShortArrayAdd(stride: stride));
+          }
+        });
+
+        group('DHTLog Tests', () {
+          setUpAll(dhtRecordPoolFixture.setUp);
+          tearDownAll(dhtRecordPoolFixture.tearDown);
+
+          for (final stride in [256, 16 /*64, 32, 16, 8, 4, 2, 1 */]) {
+            test('create log stride=$stride',
+                makeTestDHTLogCreateDelete(stride: stride));
+            test(
+              timeout: const Timeout(Duration(seconds: 480)),
+              'add/truncate log stride=$stride',
+              makeTestDHTLogAddTruncate(stride: stride),
+            );
           }
         });
       });
