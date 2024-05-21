@@ -19,7 +19,7 @@ class _DHTLogRead implements DHTRandomRead {
       return null;
     }
 
-    return lookup.shortArray.scope((sa) => sa.operate(
+    return lookup.scope((sa) => sa.operate(
         (read) => read.getItem(lookup.pos, forceRefresh: forceRefresh)));
   }
 
@@ -71,7 +71,7 @@ class _DHTLogRead implements DHTRandomRead {
 
       // Check each segment for offline positions
       var foundOffline = false;
-      await lookup.shortArray.scope((sa) => sa.operate((read) async {
+      await lookup.scope((sa) => sa.operate((read) async {
             final segmentOffline = await read.getOfflinePositions();
 
             // For each shortarray segment go through their segment positions

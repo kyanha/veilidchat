@@ -36,7 +36,7 @@ enum DHTRecordRefreshMode {
 
 /////////////////////////////////////////////////
 
-class DHTRecord implements DHTOpenable<DHTRecord> {
+class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   DHTRecord._(
       {required VeilidRoutingContext routingContext,
       required SharedDHTRecordData sharedDHTRecordData,
@@ -52,11 +52,15 @@ class DHTRecord implements DHTOpenable<DHTRecord> {
         _sharedDHTRecordData = sharedDHTRecordData;
 
   ////////////////////////////////////////////////////////////////////////////
-  // DHTOpenable
+  // DHTCloseable
 
   /// Check if the DHTRecord is open
   @override
   bool get isOpen => _openCount > 0;
+
+  /// The type of the openable scope
+  @override
+  FutureOr<DHTRecord> scoped() => this;
 
   /// Add a reference to this DHTRecord
   @override

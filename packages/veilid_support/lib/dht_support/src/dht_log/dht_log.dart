@@ -42,7 +42,7 @@ class DHTLogUpdate extends Equatable {
 ///  * The head and tail position of the log
 ///    - subkeyIdx = pos / recordsPerSubkey
 ///    - recordIdx = pos % recordsPerSubkey
-class DHTLog implements DHTOpenable<DHTLog> {
+class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
@@ -160,11 +160,15 @@ class DHTLog implements DHTOpenable<DHTLog> {
       );
 
   ////////////////////////////////////////////////////////////////////////////
-  // DHTOpenable
+  // DHTCloseable
 
   /// Check if the DHTLog is open
   @override
   bool get isOpen => _openCount > 0;
+
+  /// The type of the openable scope
+  @override
+  FutureOr<DHTLog> scoped() => this;
 
   /// Add a reference to this log
   @override

@@ -13,7 +13,7 @@ part 'dht_short_array_write.dart';
 
 ///////////////////////////////////////////////////////////////////////
 
-class DHTShortArray implements DHTOpenable<DHTShortArray> {
+class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
@@ -136,11 +136,15 @@ class DHTShortArray implements DHTOpenable<DHTShortArray> {
       );
 
   ////////////////////////////////////////////////////////////////////////////
-  // DHTOpenable
+  // DHTCloseable
 
   /// Check if the shortarray is open
   @override
   bool get isOpen => _openCount > 0;
+
+  /// The type of the openable scope
+  @override
+  FutureOr<DHTShortArray> scoped() => this;
 
   /// Add a reference to this shortarray
   @override

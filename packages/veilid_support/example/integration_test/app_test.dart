@@ -1,10 +1,6 @@
-//@Timeout(Duration(seconds: 240))
-
-//library veilid_support_integration_test;
-
 import 'package:flutter/foundation.dart';
-import 'package:test/test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:test/test.dart';
 import 'package:veilid_test/veilid_test.dart';
 
 import 'fixtures/fixtures.dart';
@@ -26,7 +22,7 @@ void main() {
       tickerFixture: tickerFixture,
       updateProcessorFixture: updateProcessorFixture);
 
-  group('Started Tests', () {
+  group(timeout: const Timeout(Duration(seconds: 240)), 'Started Tests', () {
     setUpAll(veilidFixture.setUp);
     tearDownAll(veilidFixture.tearDown);
     tearDownAll(() {
@@ -74,9 +70,11 @@ void main() {
           for (final stride in [256, 16 /*64, 32, 16, 8, 4, 2, 1 */]) {
             test('create log stride=$stride',
                 makeTestDHTLogCreateDelete(stride: stride));
-            test('add/truncate log stride=$stride',
-                makeTestDHTLogAddTruncate(stride: stride),
-                timeout: const Timeout(Duration(seconds: 480)));
+            test(
+              timeout: const Timeout(Duration(seconds: 480)),
+              'add/truncate log stride=$stride',
+              makeTestDHTLogAddTruncate(stride: stride),
+            );
           }
         });
       });

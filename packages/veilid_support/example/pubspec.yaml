@@ -15,8 +15,6 @@ dependencies:
 
 dev_dependencies:
   async_tools: ^0.1.1
-  flutter_test:
-    sdk: flutter
   integration_test:
     sdk: flutter
   lint_hard: ^4.0.0

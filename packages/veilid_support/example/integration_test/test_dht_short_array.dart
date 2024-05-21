@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 Future<void> Function() makeTestDHTShortArrayCreateDelete(
@@ -118,7 +118,10 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
 
       //print('clear\n');
       {
-        await arr.operateWrite((w) async => w.clear());
+        await arr.operateWriteEventual((w) async {
+          await w.clear();
+          return true;
+        });
       }
 
       //print('get all\n');

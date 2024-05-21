@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 Future<void> Function() makeTestDHTLogCreateDelete({required int stride}) =>
@@ -61,7 +61,7 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
       print('adding\n');
       {
         final res = await dlog.operateAppend((w) async {
-          const chunk = 50;
+          const chunk = 25;
           for (var n = 0; n < dataset.length; n += chunk) {
             print('$n-${n + chunk - 1} ');
             final success =

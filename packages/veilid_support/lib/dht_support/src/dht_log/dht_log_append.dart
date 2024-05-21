@@ -17,7 +17,7 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
     }
 
     // Write item to the segment
-    return lookup.shortArray.scope((sa) => sa.operateWrite((write) async {
+    return lookup.scope((sa) => sa.operateWrite((write) async {
           // If this a new segment, then clear it in case we have wrapped around
           if (lookup.pos == 0) {
             await write.clear();
@@ -51,18 +51,17 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
       final sublistValues = values.sublist(valueIdx, valueIdx + sacount);
 
       dws.add(() async {
-        final ok = await lookup.shortArray
-            .scope((sa) => sa.operateWrite((write) async {
-                  // If this a new segment, then clear it in
-                  // case we have wrapped around
-                  if (lookup.pos == 0) {
-                    await write.clear();
-                  } else if (lookup.pos != write.length) {
-                    // We should always be appending at the length
-                    throw StateError('appending should be at the end');
-                  }
-                  return write.tryAddItems(sublistValues);
-                }));
+        final ok = await lookup.scope((sa) => sa.operateWrite((write) async {
+              // If this a new segment, then clear it in
+              // case we have wrapped around
+              if (lookup.pos == 0) {
+                await write.clear();
+              } else if (lookup.pos != write.length) {
+                // We should always be appending at the length
+                throw StateError('appending should be at the end');
+              }
+              return write.tryAddItems(sublistValues);
+            }));
         if (!ok) {
           success = false;
         }
@@ -71,7 +70,7 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
       valueIdx += sacount;
     }
 
-    await dws(chunkSize: maxDHTConcurrency);
+    await dws();
 
     return success;
   }

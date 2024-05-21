@@ -1,9 +1,58 @@
 part of 'dht_log.dart';
 
-class DHTLogPositionLookup {
-  const DHTLogPositionLookup({required this.shortArray, required this.pos});
-  final DHTShortArray shortArray;
+class _DHTLogPosition extends DHTCloseable<_DHTLogPosition, DHTShortArray> {
+  _DHTLogPosition._({
+    required _DHTLogSpine dhtLogSpine,
+    required DHTShortArray shortArray,
+    required this.pos,
+    required int segmentNumber,
+  })  : _segmentShortArray = shortArray,
+        _dhtLogSpine = dhtLogSpine,
+        _segmentNumber = segmentNumber;
   final int pos;
+
+  final _DHTLogSpine _dhtLogSpine;
+  final DHTShortArray _segmentShortArray;
+  var _openCount = 1;
+  final int _segmentNumber;
+  final Mutex _mutex = Mutex();
+
+  /// Check if the DHTLogPosition is open
+  @override
+  bool get isOpen => _openCount > 0;
+
+  /// The type of the openable scope
+  @override
+  FutureOr<DHTShortArray> scoped() => _segmentShortArray;
+
+  /// Add a reference to this log
+  @override
+  Future<_DHTLogPosition> ref() async => _mutex.protect(() async {
+        _openCount++;
+        return this;
+      });
+
+  /// Free all resources for the DHTLogPosition
+  @override
+  Future<void> close() async => _mutex.protect(() async {
+        if (_openCount == 0) {
+          throw StateError('already closed');
+        }
+        _openCount--;
+        if (_openCount != 0) {
+          return;
+        }
+        await _dhtLogSpine._segmentClosed(_segmentNumber);
+      });
+}
+
+class _OpenedSegment {
+  _OpenedSegment._({
+    required this.shortArray,
+  });
+
+  final DHTShortArray shortArray;
+  int openCount = 1;
 }
 
 class _DHTLogSegmentLookup extends Equatable {
@@ -32,6 +81,7 @@ class _DHTLogSpine {
         _head = head,
         _tail = tail,
         _segmentStride = stride,
+        _openedSegments = {},
         _spineCache = [];
 
   // Create a new spine record and push it to the network
@@ -85,6 +135,8 @@ class _DHTLogSpine {
         futures.add(sc.close());
       }
       await Future.wait(futures);
+
+      assert(_openedSegments.isEmpty, 'should have closed all segments by now');
     });
   }
 
@@ -247,7 +299,7 @@ class _DHTLogSpine {
 
     // Lookup what subkey and segment subrange has this position's segment
     // shortarray
-    final l = lookupSegment(segmentNumber);
+    final l = _lookupSegment(segmentNumber);
     final subkey = l.subkey;
     final segment = l.segment;
 
@@ -304,7 +356,7 @@ class _DHTLogSpine {
 
     // Lookup what subkey and segment subrange has this position's segment
     // shortarray
-    final l = lookupSegment(segmentNumber);
+    final l = _lookupSegment(segmentNumber);
     final subkey = l.subkey;
     final segment = l.segment;
 
@@ -381,7 +433,7 @@ class _DHTLogSpine {
     return segment;
   }
 
-  _DHTLogSegmentLookup lookupSegment(int segmentNumber) {
+  _DHTLogSegmentLookup _lookupSegment(int segmentNumber) {
     assert(_spineMutex.isLocked, 'should be in mutex here');
 
     if (segmentNumber < 0) {
@@ -400,30 +452,60 @@ class _DHTLogSpine {
   ///////////////////////////////////////////
   // API for public interfaces
 
-  Future<DHTLogPositionLookup?> lookupPosition(int pos) async {
+  Future<_DHTLogPosition?> lookupPosition(int pos) async {
     assert(_spineMutex.isLocked, 'should be locked');
+    return _spineCacheMutex.protect(() async {
+      // Check if our position is in bounds
+      final endPos = length;
+      if (pos < 0 || pos >= endPos) {
+        throw IndexError.withLength(pos, endPos);
+      }
 
-    // Check if our position is in bounds
-    final endPos = length;
-    if (pos < 0 || pos >= endPos) {
-      throw IndexError.withLength(pos, endPos);
-    }
+      // Calculate absolute position, ring-buffer style
+      final absolutePosition = (_head + pos) % _positionLimit;
 
-    // Calculate absolute position, ring-buffer style
-    final absolutePosition = (_head + pos) % _positionLimit;
+      // Determine the segment number and position within the segment
+      final segmentNumber = absolutePosition ~/ DHTShortArray.maxElements;
+      final segmentPos = absolutePosition % DHTShortArray.maxElements;
 
-    // Determine the segment number and position within the segment
-    final segmentNumber = absolutePosition ~/ DHTShortArray.maxElements;
-    final segmentPos = absolutePosition % DHTShortArray.maxElements;
+      // Get the segment shortArray
+      final openedSegment = _openedSegments[segmentNumber];
+      late final DHTShortArray shortArray;
+      if (openedSegment != null) {
+        openedSegment.openCount++;
+        shortArray = openedSegment.shortArray;
+      } else {
+        final newShortArray = (_spineRecord.writer == null)
+            ? await _openSegment(segmentNumber)
+            : await _openOrCreateSegment(segmentNumber);
+        if (newShortArray == null) {
+          return null;
+        }
 
-    // Get the segment shortArray
-    final shortArray = (_spineRecord.writer == null)
-        ? await _openSegment(segmentNumber)
-        : await _openOrCreateSegment(segmentNumber);
-    if (shortArray == null) {
-      return null;
-    }
-    return DHTLogPositionLookup(shortArray: shortArray, pos: segmentPos);
+        _openedSegments[segmentNumber] =
+            _OpenedSegment._(shortArray: newShortArray);
+
+        shortArray = newShortArray;
+      }
+
+      return _DHTLogPosition._(
+          dhtLogSpine: this,
+          shortArray: shortArray,
+          pos: segmentPos,
+          segmentNumber: segmentNumber);
+    });
+  }
+
+  Future<void> _segmentClosed(int segmentNumber) async {
+    assert(_spineMutex.isLocked, 'should be locked');
+    await _spineCacheMutex.protect(() async {
+      final os = _openedSegments[segmentNumber]!;
+      os.openCount--;
+      if (os.openCount == 0) {
+        _openedSegments.remove(segmentNumber);
+        await os.shortArray.close();
+      }
+    });
   }
 
   void allocateTail(int count) {
@@ -479,7 +561,7 @@ class _DHTLogSpine {
         segmentNumber++) {
       // Lookup what subkey and segment subrange has this position's segment
       // shortarray
-      final l = lookupSegment(segmentNumber);
+      final l = _lookupSegment(segmentNumber);
       final subkey = l.subkey;
       final segment = l.segment;
 
@@ -608,6 +690,8 @@ class _DHTLogSpine {
 
   // Spine DHT record
   final DHTRecord _spineRecord;
+  // Segment stride to use for spine elements
+  final int _segmentStride;
 
   // Position of the start of the log (oldest items)
   int _head;
@@ -616,8 +700,8 @@ class _DHTLogSpine {
 
   // LRU cache of DHT spine elements accessed recently
   // Pair of position and associated shortarray segment
+  final Mutex _spineCacheMutex = Mutex();
   final List<(int, DHTShortArray)> _spineCache;
+  final Map<int, _OpenedSegment> _openedSegments;
   static const int _spineCacheLength = 3;
-  // Segment stride to use for spine elements
-  final int _segmentStride;
 }
