@@ -17,7 +17,7 @@ IF NOT DEFINED ProgramFiles(x86) (
 FOR %%X IN (protoc.exe) DO (SET PROTOC_FOUND=%%~$PATH:X)
 IF NOT DEFINED PROTOC_FOUND (
     echo protobuf compiler ^(protoc^) is required but it's not installed. Install protoc 23.2 or higher. Ensure it is in your path. Aborting.
-    echo protoc is available here: https://github.com/protocolbuffers/protobuf/releases/download/v23.2/protoc-23.2-win64.zip
+    echo protoc is available here: https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip
     goto end
 )
 

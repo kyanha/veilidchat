@@ -1,6 +1,6 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-PROTOC_VERSION="24.3" # Keep in sync with veilid-core/build.rs
+PROTOC_VERSION="25.3"
 
 UNAME_M=$(uname -m)
 if [[ "$UNAME_M" == "x86_64" ]]; then 
