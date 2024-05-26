@@ -526,7 +526,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     TypedKey? parent,
     DHTSchema schema = const DHTSchema.dflt(oCnt: 1),
     int defaultSubkey = 0,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
     KeyPair? writer,
   }) async =>
       _mutex.protect(() async {
@@ -547,7 +547,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             writer: writer ??
                 openedRecordInfo.shared.recordDescriptor.ownerKeyPair(),
             crypto: crypto ??
-                await DHTRecordCryptoPrivate.fromTypedKeyPair(openedRecordInfo
+                await VeilidCryptoPrivate.fromTypedKeyPair(openedRecordInfo
                     .shared.recordDescriptor
                     .ownerTypedKeyPair()!));
 
@@ -562,7 +562,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           VeilidRoutingContext? routingContext,
           TypedKey? parent,
           int defaultSubkey = 0,
-          DHTRecordCrypto? crypto}) async =>
+          VeilidCrypto? crypto}) async =>
       _mutex.protect(() async {
         final dhtctx = routingContext ?? _routingContext;
 
@@ -578,7 +578,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             defaultSubkey: defaultSubkey,
             sharedDHTRecordData: openedRecordInfo.shared,
             writer: null,
-            crypto: crypto ?? const DHTRecordCryptoPublic());
+            crypto: crypto ?? const VeilidCryptoPublic());
 
         openedRecordInfo.records.add(rec);
 
@@ -593,7 +593,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
     int defaultSubkey = 0,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) async =>
       _mutex.protect(() async {
         final dhtctx = routingContext ?? _routingContext;
@@ -612,7 +612,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             writer: writer,
             sharedDHTRecordData: openedRecordInfo.shared,
             crypto: crypto ??
-                await DHTRecordCryptoPrivate.fromTypedKeyPair(
+                await VeilidCryptoPrivate.fromTypedKeyPair(
                     TypedKeyPair.fromKeyPair(recordKey.kind, writer)));
 
         openedRecordInfo.records.add(rec);
@@ -632,7 +632,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     required TypedKey parent,
     VeilidRoutingContext? routingContext,
     int defaultSubkey = 0,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) =>
       openRecordWrite(
         ownedDHTRecordPointer.recordKey,

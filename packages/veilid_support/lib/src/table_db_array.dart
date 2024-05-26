@@ -1,0 +1,517 @@
+import 'dart:async';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:async_tools/async_tools.dart';
+import 'package:charcode/charcode.dart';
+
+import '../veilid_support.dart';
+
+class TableDBArray {
+  TableDBArray({
+    required String table,
+    required VeilidCrypto crypto,
+  })  : _table = table,
+        _crypto = crypto {
+    _initWait.add(_init);
+  }
+
+  Future<void> _init() async {
+    // Load the array details
+    await _mutex.protect(() async {
+      _tableDB = await Veilid.instance.openTableDB(_table, 1);
+    });
+  }
+
+  Future<void> close({bool delete = false}) async {
+    // Ensure the init finished
+    await _initWait();
+
+    await _mutex.acquire();
+
+    await _changeStream.close();
+    _tableDB.close();
+
+    if (delete) {
+      await Veilid.instance.deleteTableDB(_table);
+    }
+  }
+
+  Future<StreamSubscription<void>> listen(void Function() onChanged) async =>
+      _changeStream.stream.listen((_) => onChanged());
+
+  ////////////////////////////////////////////////////////////
+  // Public interface
+
+  int get length => _length;
+
+  Future<void> add(Uint8List value) async {
+    await _initWait();
+    return _writeTransaction((t) async => _addInner(t, value));
+  }
+
+  Future<void> addAll(List<Uint8List> values) async {
+    await _initWait();
+    return _writeTransaction((t) async => _addAllInner(t, values));
+  }
+
+  Future<void> insert(int pos, Uint8List value) async {
+    await _initWait();
+    return _writeTransaction((t) async => _insertInner(t, pos, value));
+  }
+
+  Future<void> insertAll(int pos, List<Uint8List> values) async {
+    await _initWait();
+    return _writeTransaction((t) async => _insertAllInner(t, pos, values));
+  }
+
+  Future<Uint8List> get(int pos) async {
+    await _initWait();
+    return _mutex.protect(() async => _getInner(pos));
+  }
+
+  Future<List<Uint8List>> getAll(int start, int length) async {
+    await _initWait();
+    return _mutex.protect(() async => _getAllInner(start, length));
+  }
+
+  Future<void> remove(int pos, {Output<Uint8List>? out}) async {
+    await _initWait();
+    return _writeTransaction((t) async => _removeInner(t, pos, out: out));
+  }
+
+  Future<void> removeRange(int start, int length,
+      {Output<List<Uint8List>>? out}) async {
+    await _initWait();
+    return _writeTransaction(
+        (t) async => _removeRangeInner(t, start, length, out: out));
+  }
+
+  Future<void> clear() async {
+    await _initWait();
+    return _writeTransaction((t) async {
+      final keys = await _tableDB.getKeys(0);
+      for (final key in keys) {
+        await t.delete(0, key);
+      }
+      _length = 0;
+      _nextFree = 0;
+      _dirtyChunks.clear();
+      _chunkCache.clear();
+    });
+  }
+
+  ////////////////////////////////////////////////////////////
+  // Inner interface
+
+  Future<void> _addInner(VeilidTableDBTransaction t, Uint8List value) async {
+    // Allocate an entry to store the value
+    final entry = await _allocateEntry();
+    await _storeEntry(t, entry, value);
+
+    // Put the entry in the index
+    final pos = _length;
+    _length++;
+    await _setIndexEntry(pos, entry);
+  }
+
+  Future<void> _addAllInner(
+      VeilidTableDBTransaction t, List<Uint8List> values) async {
+    var pos = _length;
+    _length += values.length;
+    for (final value in values) {
+      // Allocate an entry to store the value
+      final entry = await _allocateEntry();
+      await _storeEntry(t, entry, value);
+
+      // Put the entry in the index
+      await _setIndexEntry(pos, entry);
+      pos++;
+    }
+  }
+
+  Future<void> _insertInner(
+      VeilidTableDBTransaction t, int pos, Uint8List value) async {
+    if (pos == _length) {
+      return _addInner(t, value);
+    }
+    if (pos < 0 || pos >= _length) {
+      throw IndexError.withLength(pos, _length);
+    }
+    // Allocate an entry to store the value
+    final entry = await _allocateEntry();
+    await _storeEntry(t, entry, value);
+
+    // Put the entry in the index
+    await _insertIndexEntry(pos);
+    await _setIndexEntry(pos, entry);
+  }
+
+  Future<void> _insertAllInner(
+      VeilidTableDBTransaction t, int pos, List<Uint8List> values) async {
+    if (pos == _length) {
+      return _addAllInner(t, values);
+    }
+    if (pos < 0 || pos >= _length) {
+      throw IndexError.withLength(pos, _length);
+    }
+    await _insertIndexEntries(pos, values.length);
+    for (final value in values) {
+      // Allocate an entry to store the value
+      final entry = await _allocateEntry();
+      await _storeEntry(t, entry, value);
+
+      // Put the entry in the index
+      await _setIndexEntry(pos, entry);
+      pos++;
+    }
+  }
+
+  Future<Uint8List> _getInner(int pos) async {
+    if (pos < 0 || pos >= _length) {
+      throw IndexError.withLength(pos, _length);
+    }
+    final entry = await _getIndexEntry(pos);
+    return (await _loadEntry(entry))!;
+  }
+
+  Future<List<Uint8List>> _getAllInner(int start, int length) async {
+    if (length < 0) {
+      throw StateError('length should not be negative');
+    }
+    if (start < 0 || start >= _length) {
+      throw IndexError.withLength(start, _length);
+    }
+    if ((start + length) > _length) {
+      throw IndexError.withLength(start + length, _length);
+    }
+
+    final out = <Uint8List>[];
+    for (var pos = start; pos < (start + length); pos++) {
+      final entry = await _getIndexEntry(pos);
+      final value = (await _loadEntry(entry))!;
+      out.add(value);
+    }
+    return out;
+  }
+
+  Future<void> _removeInner(VeilidTableDBTransaction t, int pos,
+      {Output<Uint8List>? out}) async {
+    if (pos < 0 || pos >= _length) {
+      throw IndexError.withLength(pos, _length);
+    }
+
+    final entry = await _getIndexEntry(pos);
+    if (out != null) {
+      final value = (await _loadEntry(entry))!;
+      out.save(value);
+    }
+
+    await _freeEntry(t, entry);
+    await _removeIndexEntry(pos);
+  }
+
+  Future<void> _removeRangeInner(
+      VeilidTableDBTransaction t, int start, int length,
+      {Output<List<Uint8List>>? out}) async {
+    if (length < 0) {
+      throw StateError('length should not be negative');
+    }
+    if (start < 0 || start >= _length) {
+      throw IndexError.withLength(start, _length);
+    }
+    if ((start + length) > _length) {
+      throw IndexError.withLength(start + length, _length);
+    }
+
+    final outList = <Uint8List>[];
+    for (var pos = start; pos < (start + length); pos++) {
+      final entry = await _getIndexEntry(pos);
+      if (out != null) {
+        final value = (await _loadEntry(entry))!;
+        outList.add(value);
+      }
+      await _freeEntry(t, entry);
+    }
+    if (out != null) {
+      out.save(outList);
+    }
+
+    await _removeIndexEntries(start, length);
+  }
+
+  ////////////////////////////////////////////////////////////
+  // Private implementation
+
+  static final Uint8List _headKey = Uint8List.fromList([$_, $H, $E, $A, $D]);
+  static Uint8List _entryKey(int k) =>
+      (ByteData(4)..setUint32(0, k)).buffer.asUint8List();
+  static Uint8List _chunkKey(int n) =>
+      (ByteData(2)..setUint16(0, n)).buffer.asUint8List();
+
+  Future<T> _writeTransaction<T>(
+          Future<T> Function(VeilidTableDBTransaction) closure) async =>
+      _mutex.protect(() async {
+        final _oldLength = _length;
+        final _oldNextFree = _nextFree;
+        try {
+          final out = await transactionScope(_tableDB, (t) async {
+            final out = closure(t);
+            await _saveHead(t);
+            await _flushDirtyChunks(t);
+            return out;
+          });
+
+          return out;
+        } on Exception {
+          // restore head
+          _length = _oldLength;
+          _nextFree = _oldNextFree;
+          // invalidate caches because they could have been written to
+          _chunkCache.clear();
+          _dirtyChunks.clear();
+          // propagate exception
+          rethrow;
+        }
+      });
+
+  Future<void> _storeEntry(
+          VeilidTableDBTransaction t, int entry, Uint8List value) async =>
+      t.store(0, _entryKey(entry), await _crypto.encrypt(value));
+
+  Future<Uint8List?> _loadEntry(int entry) async {
+    final encryptedValue = await _tableDB.load(0, _entryKey(entry));
+    return (encryptedValue == null) ? null : _crypto.decrypt(encryptedValue);
+  }
+
+  Future<int> _getIndexEntry(int pos) async {
+    if (pos < 0 || pos >= _length) {
+      throw IndexError.withLength(pos, _length);
+    }
+    final chunkNumber = pos ~/ _indexStride;
+    final chunkOffset = pos % _indexStride;
+
+    final chunk = await _loadIndexChunk(chunkNumber);
+
+    return chunk.buffer.asByteData().getUint32(chunkOffset * 4);
+  }
+
+  Future<void> _setIndexEntry(int pos, int entry) async {
+    if (pos < 0 || pos >= _length) {
+      throw IndexError.withLength(pos, _length);
+    }
+
+    final chunkNumber = pos ~/ _indexStride;
+    final chunkOffset = pos % _indexStride;
+
+    final chunk = await _loadIndexChunk(chunkNumber);
+    chunk.buffer.asByteData().setUint32(chunkOffset * 4, entry);
+
+    _dirtyChunks[chunkNumber] = chunk;
+  }
+
+  Future<void> _insertIndexEntry(int pos) async => _insertIndexEntries(pos, 1);
+
+  Future<void> _insertIndexEntries(int start, int length) async {
+    if (length == 0) {
+      return;
+    }
+    if (length < 0) {
+      throw StateError('length should not be negative');
+    }
+    if (start < 0 || start >= _length) {
+      throw IndexError.withLength(start, _length);
+    }
+    final end = start + length - 1;
+
+    // Slide everything over in reverse
+    final toCopyTotal = _length - start;
+    var dest = end + toCopyTotal;
+    var src = _length - 1;
+
+    (int, Uint8List)? lastSrcChunk;
+    (int, Uint8List)? lastDestChunk;
+    while (src >= start) {
+      final srcChunkNumber = src ~/ _indexStride;
+      final srcIndex = src % _indexStride;
+      final srcLength = srcIndex + 1;
+
+      final srcChunk =
+          (lastSrcChunk != null && (lastSrcChunk.$1 == srcChunkNumber))
+              ? lastSrcChunk.$2
+              : await _loadIndexChunk(srcChunkNumber);
+      lastSrcChunk = (srcChunkNumber, srcChunk);
+
+      final destChunkNumber = dest ~/ _indexStride;
+      final destIndex = dest % _indexStride;
+      final destLength = destIndex + 1;
+
+      final destChunk =
+          (lastDestChunk != null && (lastDestChunk.$1 == destChunkNumber))
+              ? lastDestChunk.$2
+              : await _loadIndexChunk(destChunkNumber);
+      lastDestChunk = (destChunkNumber, destChunk);
+
+      final toCopy = min(srcLength, destLength);
+      destChunk.setRange((destIndex - (toCopy - 1)) * 4, (destIndex + 1) * 4,
+          srcChunk, (srcIndex - (toCopy - 1)) * 4);
+
+      dest -= toCopy;
+      src -= toCopy;
+    }
+
+    // Then add to length
+    _length += length;
+  }
+
+  Future<void> _removeIndexEntry(int pos) async => _removeIndexEntries(pos, 1);
+
+  Future<void> _removeIndexEntries(int start, int length) async {
+    if (length == 0) {
+      return;
+    }
+    if (length < 0) {
+      throw StateError('length should not be negative');
+    }
+    if (start < 0 || start >= _length) {
+      throw IndexError.withLength(start, _length);
+    }
+    final end = start + length - 1;
+    if (end < 0 || end >= _length) {
+      throw IndexError.withLength(end, _length);
+    }
+
+    // Slide everything over
+    var dest = start;
+    var src = end + 1;
+    (int, Uint8List)? lastSrcChunk;
+    (int, Uint8List)? lastDestChunk;
+    while (src < _length) {
+      final srcChunkNumber = src ~/ _indexStride;
+      final srcIndex = src % _indexStride;
+      final srcLength = _indexStride - srcIndex;
+
+      final srcChunk =
+          (lastSrcChunk != null && (lastSrcChunk.$1 == srcChunkNumber))
+              ? lastSrcChunk.$2
+              : await _loadIndexChunk(srcChunkNumber);
+      lastSrcChunk = (srcChunkNumber, srcChunk);
+
+      final destChunkNumber = dest ~/ _indexStride;
+      final destIndex = dest % _indexStride;
+      final destLength = _indexStride - destIndex;
+
+      final destChunk =
+          (lastDestChunk != null && (lastDestChunk.$1 == destChunkNumber))
+              ? lastDestChunk.$2
+              : await _loadIndexChunk(destChunkNumber);
+      lastDestChunk = (destChunkNumber, destChunk);
+
+      final toCopy = min(srcLength, destLength);
+      destChunk.setRange(
+          destIndex * 4, (destIndex + toCopy) * 4, srcChunk, srcIndex * 4);
+
+      dest += toCopy;
+      src += toCopy;
+    }
+
+    // Then truncate
+    _length -= length;
+  }
+
+  Future<Uint8List> _loadIndexChunk(int chunkNumber) async {
+    // Get it from the dirty chunks if we have it
+    final dirtyChunk = _dirtyChunks[chunkNumber];
+    if (dirtyChunk != null) {
+      return dirtyChunk;
+    }
+
+    // Get from cache if we have it
+    for (var i = 0; i < _chunkCache.length; i++) {
+      if (_chunkCache[i].$1 == chunkNumber) {
+        // Touch the element
+        final x = _chunkCache.removeAt(i);
+        _chunkCache.add(x);
+        // Return the chunk for this position
+        return x.$2;
+      }
+    }
+
+    // Get chunk from disk
+    var chunk = await _tableDB.load(0, _chunkKey(chunkNumber));
+    chunk ??= Uint8List(_indexStride * 4);
+
+    // Cache the chunk
+    _chunkCache.add((chunkNumber, chunk));
+    if (_chunkCache.length > _chunkCacheLength) {
+      // Trim the LRU cache
+      final (_, _) = _chunkCache.removeAt(0);
+    }
+
+    return chunk;
+  }
+
+  Future<void> _flushDirtyChunks(VeilidTableDBTransaction t) async {
+    for (final ec in _dirtyChunks.entries) {
+      await _tableDB.store(0, _chunkKey(ec.key), ec.value);
+    }
+    _dirtyChunks.clear();
+  }
+
+  Future<void> _loadHead() async {
+    assert(_mutex.isLocked, 'should be locked');
+    final headBytes = await _tableDB.load(0, _headKey);
+    if (headBytes == null) {
+      _length = 0;
+      _nextFree = 0;
+    } else {
+      final b = headBytes.buffer.asByteData();
+      _length = b.getUint32(0);
+      _nextFree = b.getUint32(4);
+    }
+  }
+
+  Future<void> _saveHead(VeilidTableDBTransaction t) async {
+    assert(_mutex.isLocked, 'should be locked');
+    final b = ByteData(8)
+      ..setUint32(0, _length)
+      ..setUint32(4, _nextFree);
+    await t.store(0, _headKey, b.buffer.asUint8List());
+  }
+
+  Future<int> _allocateEntry() async {
+    assert(_mutex.isLocked, 'should be locked');
+    if (_nextFree == 0) {
+      return _length;
+    }
+    // pop endogenous free list
+    final free = _nextFree;
+    final nextFreeBytes = await _tableDB.load(0, _entryKey(free));
+    _nextFree = nextFreeBytes!.buffer.asByteData().getUint8(0);
+    return free;
+  }
+
+  Future<void> _freeEntry(VeilidTableDBTransaction t, int entry) async {
+    assert(_mutex.isLocked, 'should be locked');
+    // push endogenous free list
+    final b = ByteData(4)..setUint32(0, _nextFree);
+    await t.store(0, _entryKey(entry), b.buffer.asUint8List());
+    _nextFree = entry;
+  }
+
+  final String _table;
+  late final VeilidTableDB _tableDB;
+  final VeilidCrypto _crypto;
+  final WaitSet<void> _initWait = WaitSet();
+  final Mutex _mutex = Mutex();
+
+  // Head state
+  int _length = 0;
+  int _nextFree = 0;
+  static const int _indexStride = 16384;
+  final List<(int, Uint8List)> _chunkCache = [];
+  final Map<int, Uint8List> _dirtyChunks = {};
+  static const int _chunkCacheLength = 3;
+
+  final StreamController<void> _changeStream = StreamController.broadcast();
+}

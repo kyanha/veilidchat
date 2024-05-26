@@ -37,7 +37,7 @@ class ContactRequestInboxCubit
     return pool.openRecordRead(recordKey,
         debugName: 'ContactRequestInboxCubit::_open::'
             'ContactRequestInbox',
-        crypto: await DHTRecordCryptoPrivate.fromTypedKeyPair(writer),
+        crypto: await VeilidCryptoPrivate.fromTypedKeyPair(writer),
         parent: accountRecordKey,
         defaultSubkey: 1);
   }

@@ -3,8 +3,16 @@ part of 'dht_short_array.dart';
 ////////////////////////////////////////////////////////////////////////////
 // Writer implementation
 
+abstract class DHTShortArrayWriteOperations
+    implements
+        DHTRandomRead,
+        DHTRandomWrite,
+        DHTInsertRemove,
+        DHTAdd,
+        DHTClear {}
+
 class _DHTShortArrayWrite extends _DHTShortArrayRead
-    implements DHTRandomReadWrite {
+    implements DHTShortArrayWriteOperations {
   _DHTShortArrayWrite._(super.head) : super._();
 
   @override

@@ -8,7 +8,6 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
-import '../interfaces/dht_append_truncate.dart';
 
 @immutable
 class DHTLogElementState<T> extends Equatable {
@@ -184,19 +183,20 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     await super.close();
   }
 
-  Future<R?> operate<R>(Future<R?> Function(DHTRandomRead) closure) async {
+  Future<R?> operate<R>(
+      Future<R?> Function(DHTLogReadOperations) closure) async {
     await _initWait();
     return _log.operate(closure);
   }
 
   Future<R> operateAppend<R>(
-      Future<R> Function(DHTAppendTruncateRandomRead) closure) async {
+      Future<R> Function(DHTLogWriteOperations) closure) async {
     await _initWait();
     return _log.operateAppend(closure);
   }
 
   Future<void> operateAppendEventual(
-      Future<bool> Function(DHTAppendTruncateRandomRead) closure,
+      Future<bool> Function(DHTLogWriteOperations) closure,
       {Duration? timeout}) async {
     await _initWait();
     return _log.operateAppendEventual(closure, timeout: timeout);

@@ -120,9 +120,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   Future<void> _initSentMessagesCubit() async {
     final writer = _activeAccountInfo.conversationWriter;
 
-    _sentMessagesCubit = DHTShortArrayCubit(
-        open: () async => DHTShortArray.openWrite(
-            _localMessagesRecordKey, writer,
+    _sentMessagesCubit = DHTLogCubit(
+        open: () async => DHTLog.openWrite(_localMessagesRecordKey, writer,
             debugName: 'SingleContactMessagesCubit::_initSentMessagesCubit::'
                 'SentMessages',
             parent: _localConversationRecordKey,
@@ -135,8 +134,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Open remote messages key
   Future<void> _initRcvdMessagesCubit() async {
-    _rcvdMessagesCubit = DHTShortArrayCubit(
-        open: () async => DHTShortArray.openRead(_remoteMessagesRecordKey,
+    _rcvdMessagesCubit = DHTLogCubit(
+        open: () async => DHTLog.openRead(_remoteMessagesRecordKey,
             debugName: 'SingleContactMessagesCubit::_initRcvdMessagesCubit::'
                 'RcvdMessages',
             parent: _remoteConversationRecordKey,
@@ -152,8 +151,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     final accountRecordKey =
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
-    _reconciledMessagesCubit = DHTShortArrayCubit(
-        open: () async => DHTShortArray.openOwned(_reconciledChatRecord,
+    _reconciledMessagesCubit = DHTLogCubit(
+        open: () async => DHTLog.openOwned(_reconciledChatRecord,
             debugName:
                 'SingleContactMessagesCubit::_initReconciledMessagesCubit::'
                 'ReconciledMessages',
@@ -166,10 +165,24 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   ////////////////////////////////////////////////////////////////////////////
 
+  // Set the tail position of the log for pagination.
+  // If tail is 0, the end of the log is used.
+  // If tail is negative, the position is subtracted from the current log
+  // length.
+  // If tail is positive, the position is absolute from the head of the log
+  // If follow is enabled, the tail offset will update when the log changes
+  Future<void> setWindow(
+      {int? tail, int? count, bool? follow, bool forceRefresh = false}) async {
+    await _initWait();
+    await _reconciledMessagesCubit!.setWindow(
+        tail: tail, count: count, follow: follow, forceRefresh: forceRefresh);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+
   // Called when the sent messages cubit gets a change
   // This will re-render when messages are sent from another machine
-  void _updateSentMessagesState(
-      DHTShortArrayBusyState<proto.Message> avmessages) {
+  void _updateSentMessagesState(DHTLogBusyState<proto.Message> avmessages) {
     final sentMessages = avmessages.state.asData?.value;
     if (sentMessages == null) {
       return;
@@ -182,27 +195,52 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   // Called when the received messages cubit gets a change
-  void _updateRcvdMessagesState(
-      DHTShortArrayBusyState<proto.Message> avmessages) {
+  void _updateRcvdMessagesState(DHTLogBusyState<proto.Message> avmessages) {
     final rcvdMessages = avmessages.state.asData?.value;
     if (rcvdMessages == null) {
       return;
     }
 
-    // Add remote messages updates to queue to process asynchronously
-    // Ignore offline state because remote messages are always fully delivered
-    // This may happen once per client but should be idempotent
-    _unreconciledMessagesQueue.addAllSync(rcvdMessages.map((x) => x.value));
+    singleFuture(_rcvdMessagesCubit!, () async {
+      // Get the timestamp of our most recent reconciled message
+      final lastReconciledMessageTs =
+          await _reconciledMessagesCubit!.operate((r) async {
+        final len = r.length;
+        if (len == 0) {
+          return null;
+        } else {
+          final lastMessage =
+              await r.getItemProtobuf(proto.Message.fromBuffer, len - 1);
+          if (lastMessage == null) {
+            throw StateError('should have gotten last message');
+          }
+          return lastMessage.timestamp;
+        }
+      });
 
-    // Update the view
-    _renderState();
+      // Find oldest message we have not yet reconciled
+
+      // // Go through all the ones from the cubit state first since we've already
+      // // gotten them from the DHT
+      // for (var rn = rcvdMessages.elements.length; rn >= 0; rn--) {
+      //   //
+      // }
+
+      // // Add remote messages updates to queue to process asynchronously
+      // // Ignore offline state because remote messages are always fully delivered
+      // // This may happen once per client but should be idempotent
+      // _unreconciledMessagesQueue.addAllSync(rcvdMessages.map((x) => x.value));
+
+      // Update the view
+      _renderState();
+    });
   }
 
   // Called when the reconciled messages list gets a change
   // This can happen when multiple clients for the same identity are
   // reading and reconciling the same remote chat
   void _updateReconciledMessagesState(
-      DHTShortArrayBusyState<proto.Message> avmessages) {
+      DHTLogBusyState<proto.Message> avmessages) {
     // Update the view
     _renderState();
   }
@@ -210,85 +248,85 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   // Async process to reconcile messages sent or received in the background
   Future<void> _processUnreconciledMessages(
       IList<proto.Message> messages) async {
-    await _reconciledMessagesCubit!
-        .operateWrite((reconciledMessagesWriter) async {
-      await _reconcileMessagesInner(
-          reconciledMessagesWriter: reconciledMessagesWriter,
-          messages: messages);
-    });
+    // await _reconciledMessagesCubit!
+    //     .operateAppendEventual((reconciledMessagesWriter) async {
+    //   await _reconcileMessagesInner(
+    //       reconciledMessagesWriter: reconciledMessagesWriter,
+    //       messages: messages);
+    // });
   }
 
   // Async process to send messages in the background
   Future<void> _processSendingMessages(IList<proto.Message> messages) async {
-    for (final message in messages) {
-      await _sentMessagesCubit!.operateWriteEventual(
-          (writer) => writer.tryAddItem(message.writeToBuffer()));
-    }
+    await _sentMessagesCubit!.operateAppendEventual((writer) =>
+        writer.tryAddItems(messages.map((m) => m.writeToBuffer()).toList()));
   }
 
   Future<void> _reconcileMessagesInner(
-      {required DHTRandomReadWrite reconciledMessagesWriter,
+      {required DHTLogWriteOperations reconciledMessagesWriter,
       required IList<proto.Message> messages}) async {
-    // Ensure remoteMessages is sorted by timestamp
-    final newMessages = messages
-        .sort((a, b) => a.timestamp.compareTo(b.timestamp))
-        .removeDuplicates();
+    // // Ensure remoteMessages is sorted by timestamp
+    // final newMessages = messages
+    //     .sort((a, b) => a.timestamp.compareTo(b.timestamp))
+    //     .removeDuplicates();
 
-    // Existing messages will always be sorted by timestamp so merging is easy
-    final existingMessages = await reconciledMessagesWriter
-        .getItemRangeProtobuf(proto.Message.fromBuffer, 0);
-    if (existingMessages == null) {
-      throw Exception(
-          'Could not load existing reconciled messages at this time');
-    }
+    // // Existing messages will always be sorted by timestamp so merging is easy
+    // final existingMessages = await reconciledMessagesWriter
+    //     .getItemRangeProtobuf(proto.Message.fromBuffer, 0);
+    // if (existingMessages == null) {
+    //   throw Exception(
+    //       'Could not load existing reconciled messages at this time');
+    // }
 
-    var ePos = 0;
-    var nPos = 0;
-    while (ePos < existingMessages.length && nPos < newMessages.length) {
-      final existingMessage = existingMessages[ePos];
-      final newMessage = newMessages[nPos];
+    // var ePos = 0;
+    // var nPos = 0;
+    // while (ePos < existingMessages.length && nPos < newMessages.length) {
+    //   final existingMessage = existingMessages[ePos];
+    //   final newMessage = newMessages[nPos];
 
-      // If timestamp to insert is less than
-      // the current position, insert it here
-      final newTs = Timestamp.fromInt64(newMessage.timestamp);
-      final existingTs = Timestamp.fromInt64(existingMessage.timestamp);
-      final cmp = newTs.compareTo(existingTs);
-      if (cmp < 0) {
-        // New message belongs here
+    //   // If timestamp to insert is less than
+    //   // the current position, insert it here
+    //   final newTs = Timestamp.fromInt64(newMessage.timestamp);
+    //   final existingTs = Timestamp.fromInt64(existingMessage.timestamp);
+    //   final cmp = newTs.compareTo(existingTs);
+    //   if (cmp < 0) {
+    //     // New message belongs here
 
-        // Insert into dht backing array
-        await reconciledMessagesWriter.tryInsertItem(
-            ePos, newMessage.writeToBuffer());
-        // Insert into local copy as well for this operation
-        existingMessages.insert(ePos, newMessage);
+    //     // Insert into dht backing array
+    //     await reconciledMessagesWriter.tryInsertItem(
+    //         ePos, newMessage.writeToBuffer());
+    //     // Insert into local copy as well for this operation
+    //     existingMessages.insert(ePos, newMessage);
 
-        // Next message
-        nPos++;
-        ePos++;
-      } else if (cmp == 0) {
-        // Duplicate, skip
-        nPos++;
-        ePos++;
-      } else if (cmp > 0) {
-        // New message belongs later
-        ePos++;
-      }
-    }
-    // If there are any new messages left, append them all
-    while (nPos < newMessages.length) {
-      final newMessage = newMessages[nPos];
+    //     // Next message
+    //     nPos++;
+    //     ePos++;
+    //   } else if (cmp == 0) {
+    //     // Duplicate, skip
+    //     nPos++;
+    //     ePos++;
+    //   } else if (cmp > 0) {
+    //     // New message belongs later
+    //     ePos++;
+    //   }
+    // }
+    // // If there are any new messages left, append them all
+    // while (nPos < newMessages.length) {
+    //   final newMessage = newMessages[nPos];
 
-      // Append to dht backing array
-      await reconciledMessagesWriter.tryAddItem(newMessage.writeToBuffer());
-      // Insert into local copy as well for this operation
-      existingMessages.add(newMessage);
+    //   // Append to dht backing array
+    //   await reconciledMessagesWriter.tryAddItem(newMessage.writeToBuffer());
+    //   // Insert into local copy as well for this operation
+    //   existingMessages.add(newMessage);
 
-      nPos++;
-    }
+    //   nPos++;
+    // }
   }
 
   // Produce a state for this cubit from the input cubits and queues
   void _renderState() {
+    //  xxx move into a singlefuture
+
     // Get all reconciled messages
     final reconciledMessages =
         _reconciledMessagesCubit?.state.state.asData?.value;
@@ -307,14 +345,14 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     // Generate state for each message
     final sentMessagesMap =
-        IMap<Int64, DHTShortArrayElementState<proto.Message>>.fromValues(
+        IMap<Int64, DHTLogElementState<proto.Message>>.fromValues(
       keyMapper: (x) => x.value.timestamp,
-      values: sentMessages,
+      values: sentMessages.elements,
     );
     final reconciledMessagesMap =
-        IMap<Int64, DHTShortArrayElementState<proto.Message>>.fromValues(
+        IMap<Int64, DHTLogElementState<proto.Message>>.fromValues(
       keyMapper: (x) => x.value.timestamp,
-      values: reconciledMessages,
+      values: reconciledMessages.elements,
     );
     final sendingMessagesMap = IMap<Int64, proto.Message>.fromValues(
       keyMapper: (x) => x.timestamp,
@@ -372,9 +410,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         .sort((x, y) => x.key.compareTo(y.key));
     final renderedState = messageKeys
         .map((x) => MessageState(
-            author: x.value.message.author.toVeilid(),
+            content: x.value.message,
             timestamp: Timestamp.fromInt64(x.key),
-            text: x.value.message.text,
             sendState: x.value.sendState))
         .toIList();
 
@@ -400,17 +437,16 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   final TypedKey _remoteMessagesRecordKey;
   final OwnedDHTRecordPointer _reconciledChatRecord;
 
-  late final DHTRecordCrypto _messagesCrypto;
+  late final VeilidCrypto _messagesCrypto;
 
-  DHTShortArrayCubit<proto.Message>? _sentMessagesCubit;
-  DHTShortArrayCubit<proto.Message>? _rcvdMessagesCubit;
-  DHTShortArrayCubit<proto.Message>? _reconciledMessagesCubit;
+  DHTLogCubit<proto.Message>? _sentMessagesCubit;
+  DHTLogCubit<proto.Message>? _rcvdMessagesCubit;
+  DHTLogCubit<proto.Message>? _reconciledMessagesCubit;
 
   late final PersistentQueue<proto.Message> _unreconciledMessagesQueue;
   late final PersistentQueue<proto.Message> _sendingMessagesQueue;
 
-  StreamSubscription<DHTShortArrayBusyState<proto.Message>>? _sentSubscription;
-  StreamSubscription<DHTShortArrayBusyState<proto.Message>>? _rcvdSubscription;
-  StreamSubscription<DHTShortArrayBusyState<proto.Message>>?
-      _reconciledSubscription;
+  StreamSubscription<DHTLogBusyState<proto.Message>>? _sentSubscription;
+  StreamSubscription<DHTLogBusyState<proto.Message>>? _rcvdSubscription;
+  StreamSubscription<DHTLogBusyState<proto.Message>>? _reconciledSubscription;
 }

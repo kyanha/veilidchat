@@ -3,7 +3,9 @@ part of 'dht_log.dart';
 ////////////////////////////////////////////////////////////////////////////
 // Reader-only implementation
 
-class _DHTLogRead implements DHTRandomRead {
+abstract class DHTLogReadOperations implements DHTRandomRead {}
+
+class _DHTLogRead implements DHTLogReadOperations {
   _DHTLogRead._(_DHTLogSpine spine) : _spine = spine;
 
   @override

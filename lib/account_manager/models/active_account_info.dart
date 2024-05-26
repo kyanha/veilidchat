@@ -24,7 +24,7 @@ class ActiveAccountInfo {
     return KeyPair(key: identityKey, secret: identitySecret.value);
   }
 
-  Future<DHTRecordCrypto> makeConversationCrypto(
+  Future<VeilidCrypto> makeConversationCrypto(
       TypedKey remoteIdentityPublicKey) async {
     final identitySecret = userLogin.identitySecret;
     final cs = await Veilid.instance.getCryptoSystem(identitySecret.kind);
@@ -33,8 +33,8 @@ class ActiveAccountInfo {
         identitySecret.value,
         utf8.encode('VeilidChat Conversation'));
 
-    final messagesCrypto = await DHTRecordCryptoPrivate.fromSecret(
-        identitySecret.kind, sharedSecret);
+    final messagesCrypto =
+        await VeilidCryptoPrivate.fromSecret(identitySecret.kind, sharedSecret);
     return messagesCrypto;
   }
 

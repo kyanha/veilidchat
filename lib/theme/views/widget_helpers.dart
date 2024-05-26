@@ -44,7 +44,7 @@ Widget waitingPage({String? text}) => Builder(builder: (context) {
       final theme = Theme.of(context);
       final scale = theme.extension<ScaleScheme>()!;
       return ColoredBox(
-          color: scale.tertiaryScale.primaryText,
+          color: scale.tertiaryScale.appBackground,
           child: Center(
               child: Column(children: [
             buildProgressIndicator().expanded(),

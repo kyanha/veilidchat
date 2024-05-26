@@ -65,7 +65,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
           .userLogin.accountRecordInfo.accountRecord.recordKey;
 
       // Make a record that can store the reconciled version of the chat
-      final reconciledChatRecord = await (await DHTShortArray.create(
+      final reconciledChatRecord = await (await DHTLog.create(
               debugName:
                   'ChatListCubit::getOrCreateChatSingleContact::ReconciledChat',
               parent: accountRecordKey))

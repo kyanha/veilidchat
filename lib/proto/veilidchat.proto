@@ -1,44 +1,222 @@
+////////////////////////////////////////////////////////////////////////////////////
+// VeilidChat Protocol Buffer Definitions
+//
+// * Timestamps are in microseconds (us) since epoch
+// * Durations are in microseconds (us)
+////////////////////////////////////////////////////////////////////////////////////
+
 syntax = "proto3";
 package veilidchat;
 
 import "veilid.proto";
 import "dht.proto";
 
-// AttachmentKind
-// Enumeration of well-known attachment types
-enum AttachmentKind {
-    ATTACHMENT_KIND_UNSPECIFIED = 0;
-    ATTACHMENT_KIND_FILE = 1;
-    ATTACHMENT_KIND_IMAGE = 2;
+////////////////////////////////////////////////////////////////////////////////////
+// Enumerations
+////////////////////////////////////////////////////////////////////////////////////
+
+// Contact availability
+enum Availability {
+    AVAILABILITY_UNSPECIFIED = 0;
+    AVAILABILITY_OFFLINE = 1;
+    AVAILABILITY_FREE = 2;
+    AVAILABILITY_BUSY = 3;
+    AVAILABILITY_AWAY = 4;
 }
+
+// Encryption used on secret keys
+enum EncryptionKeyType {
+    ENCRYPTION_KEY_TYPE_UNSPECIFIED = 0;
+    ENCRYPTION_KEY_TYPE_NONE = 1;
+    ENCRYPTION_KEY_TYPE_PIN = 2;
+    ENCRYPTION_KEY_TYPE_PASSWORD = 3;
+}
+
+// Scope of a chat
+enum Scope {
+    // Can read chats but not send messages
+    WATCHERS = 0;
+    // Can send messages subject to moderation
+    // If moderation is disabled, this is equivalent to WATCHERS
+    MODERATED = 1;
+    // Can send messages without moderation
+    TALKERS = 2;
+    // Can moderate messages sent my members if moderation is enabled
+    MODERATORS = 3;
+    // Can perform all actions
+    ADMINS = 4;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Attachments
+////////////////////////////////////////////////////////////////////////////////////
 
 // A single attachment
 message Attachment {
-    // Type of the data
-    AttachmentKind kind = 1;
-    // MIME type of the data
-    string mime = 2;
-    // Title or filename
-    string name = 3;
-    // Pointer to the data content
-    dht.DataReference content = 4;
+    oneof kind {
+        AttachmentMedia media = 1;
+    }
     // Author signature over all attachment fields and content fields and bytes
-    veilid.Signature signature = 5;
+    veilid.Signature signature = 2;
 }
+
+// A file, audio, image, or video attachment
+message AttachmentMedia {
+    // MIME type of the data
+    string mime = 1;
+    // Title or filename
+    string name = 2;
+    // Pointer to the data content
+    dht.DataReference content = 3;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Chat room controls
+////////////////////////////////////////////////////////////////////////////////////
+
+// Permissions of a chat
+message Permissions {
+    // Parties in this scope or higher can add members to their own group or lower
+    Scope can_add_members = 1;
+    // Parties in this scope or higher can change the 'info' of a group
+    Scope can_edit_info = 2;
+    // If moderation is enabled or not.
+    bool moderated = 3;
+}
+
+// The membership of a chat
+message Membership {
+    // Conversation keys for parties in the 'watchers' group
+    repeated veilid.TypedKey watchers = 1;
+    // Conversation keys for parties in the 'moderated' group
+    repeated veilid.TypedKey moderated = 2;
+    // Conversation keys for parties in the 'talkers' group
+    repeated veilid.TypedKey talkers = 3;
+    // Conversation keys for parties in the 'moderators' group
+    repeated veilid.TypedKey moderators = 4;
+    // Conversation keys for parties in the 'admins' group
+    repeated veilid.TypedKey admins = 5;
+}
+
+// The chat settings
+message ChatSettings {
+    // Title for the chat 
+    string title = 1;
+    // Description for the chat 
+    string description = 2;
+    // Icon for the chat 
+    optional dht.DataReference icon = 3;
+    // Default message expiration duration (in us)
+    uint64 default_expiration = 4;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Messages
+////////////////////////////////////////////////////////////////////////////////////
 
 // A single message as part of a series of messages
 message Message {
-    // Author of the message
-    veilid.TypedKey author = 1;
-    // Time the message was sent (us since epoch)
-    uint64 timestamp = 2;
-    // Text of the message
-    string text = 3;
+
+    // A text message
+    message Text {
+        // Text of the message
+        string text = 1;
+        // Topic of the message / Content warning
+        string topic = 2;
+        // Message id replied to
+        veilid.TypedKey reply_id = 3;
+        // Message expiration timestamp
+        uint64 expiration = 4;
+        // Message view limit before deletion
+        uint64 view_limit = 5;
+        // Attachments on the message
+        repeated Attachment attachments = 6;
+    }
+    
+    // A secret message
+    message Secret {
+        // Text message protobuf encrypted by a key
+        bytes ciphertext = 1;
+        // Secret expiration timestamp
+        // This is the time after which an un-revealed secret will get deleted
+        uint64 expiration = 2;
+    }
+
+    // A 'delete' control message
+    // Deletes a set of messages by their ids
+    message ControlDelete {
+        repeated veilid.TypedKey ids = 1;
+    } 
+    // A 'clear' control message
+    // Deletes a set of messages from before some timestamp
+    message ControlClear {
+        // The latest timestamp to delete messages before
+        // If this is zero then all messages are cleared
+        uint64 timestamp = 1;
+    }
+    // A 'change settings' control message
+    message ControlSettings {
+        ChatSettings settings = 1;
+    }
+
+    // A 'change permissions' control message
+    // Changes the permissions of a chat
+    message ControlPermissions {
+        Permissions permissions = 1;
+    }
+
+    // A 'change membership' control message
+    // Changes the 
+    message ControlMembership {
+        Membership membership = 1;
+    }
+
+    // A 'moderation' control message
+    // Accepts or rejects a set of messages
+    message ControlModeration {
+        repeated veilid.TypedKey accepted_ids = 1;
+        repeated veilid.TypedKey rejected_ids = 2;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+
+    // Hash of previous message from the same author, 
+    // including its previous hash.
+    // Also serves as a unique key for the message.
+    veilid.TypedKey id = 1;
+    // Author of the message (identity public key)
+    veilid.TypedKey author = 2;
+    // Time the message was sent according to sender
+    uint64 timestamp = 3;
+
+    // Message kind
+    oneof kind {
+        Text text = 4;
+        Secret secret = 5;
+        ControlDelete delete = 6;
+        ControlClear clear = 7;
+        ControlSettings settings = 8;
+        ControlPermissions permissions = 9;
+        ControlMembership membership = 10;
+        ControlModeration moderation = 11;
+    }
+    
     // Author signature over all of the fields and attachment signatures
-    veilid.Signature signature = 4;
-    // Attachments on the message
-    repeated Attachment attachments = 5;
+    veilid.Signature signature = 12;
 }
+
+// Locally stored messages for chats
+message ReconciledMessage {
+    // The message as sent
+    Message content = 1;
+    // The timestamp the message was reconciled
+    uint64 reconciled_time = 2;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Chats
+////////////////////////////////////////////////////////////////////////////////////
 
 // The means of direct communications that is synchronized between
 // two users. Visible and encrypted for the other party.
@@ -46,6 +224,7 @@ message Message {
 //  * Profile changes
 //  * Identity changes
 //  * 1-1 chat messages
+//  * Group chat messages
 //
 // DHT Schema: SMPL(0,1,[identityPublicKey])
 // DHT Key (UnicastOutbox): localConversation
@@ -54,10 +233,82 @@ message Message {
 message Conversation {
     // Profile to publish to friend
     Profile profile = 1;
-    // Identity master (JSON) to publish to friend
+    // Identity master (JSON) to publish to friend or chat room
     string identity_master_json = 2;
-    // Messages DHTLog (xxx for now DHTShortArray)
+    // Messages DHTLog
     veilid.TypedKey messages = 3;
+}
+
+// Either a 1-1 conversation or a group chat
+// Privately encrypted, this is the local user's copy of the chat
+message Chat {
+    // Settings
+    ChatSettings settings = 1;
+    // Conversation key for this user
+    veilid.TypedKey local_conversation_record_key = 2;
+    // Conversation key for the other party
+    veilid.TypedKey remote_conversation_record_key = 3;
+}
+
+// A group chat
+// Privately encrypted, this is the local user's copy of the chat
+message GroupChat {
+    // Settings
+    ChatSettings settings = 1;
+    // Conversation key for this user
+    veilid.TypedKey local_conversation_record_key = 2;
+    // Conversation keys for the other parties
+    repeated veilid.TypedKey remote_conversation_record_keys = 3;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Accounts
+////////////////////////////////////////////////////////////////////////////////////
+
+// Publicly shared profile information for both contacts and accounts
+// Contains:
+// Name - Friendly name
+// Pronouns - Pronouns of user
+// Icon - Little picture to represent user in contact list
+message Profile  {
+    // Friendy name
+    string name = 1;
+    // Pronouns of user
+    string pronouns = 2;
+    // Description of the user
+    string about = 3;
+    // Status/away message
+    string status = 4;
+    // Availability
+    Availability availability = 5;
+    // Avatar DHTData
+    optional veilid.TypedKey avatar = 6;
+}
+
+// A record of an individual account
+// Pointed to by the identity account map in the identity key
+//
+// DHT Schema: DFLT(1)
+// DHT Private: accountSecretKey
+message Account {
+    // The user's profile that gets shared with contacts
+    Profile profile = 1;
+    // Invisibility makes you always look 'Offline'
+    bool invisible = 2;
+    // Auto-away sets 'away' mode after an inactivity time
+    uint32 auto_away_timeout_sec = 3;
+    // The contacts DHTList for this account
+    // DHT Private
+    dht.OwnedDHTRecordPointer contact_list = 4;
+    // The ContactInvitationRecord DHTShortArray for this account
+    // DHT Private
+    dht.OwnedDHTRecordPointer contact_invitation_records = 5;
+    // The Chats DHTList for this account
+    // DHT Private
+    dht.OwnedDHTRecordPointer chat_list = 6;
+    // The GroupChats DHTList for this account
+    // DHT Private
+    dht.OwnedDHTRecordPointer group_chat_list = 7;
 }
 
 // A record of a contact that has accepted a contact invitation
@@ -80,87 +331,13 @@ message Contact {
     veilid.TypedKey remote_conversation_record_key = 5;
     // Our conversation key for friend to sync
     veilid.TypedKey local_conversation_record_key = 6;
-    // Show availability
+    // Show availability to this contact
     bool show_availability = 7;
 }
 
-// Contact availability
-enum Availability {
-    AVAILABILITY_UNSPECIFIED = 0;
-    AVAILABILITY_OFFLINE = 1;
-    AVAILABILITY_FREE = 2;
-    AVAILABILITY_BUSY = 3;
-    AVAILABILITY_AWAY = 4;
-}
-
-// Publicly shared profile information for both contacts and accounts
-// Contains:
-// Name - Friendly name
-// Pronouns - Pronouns of user
-// Icon - Little picture to represent user in contact list
-message Profile  {
-    // Friendy name
-    string name = 1;
-    // Pronouns of user
-    string pronouns = 2;
-    // Status/away message
-    string status = 3;
-    // Availability
-    Availability availability = 4;
-    // Avatar DHTData
-    optional veilid.TypedKey avatar = 5;
-}
-
-
-enum ChatType {
-    CHAT_TYPE_UNSPECIFIED = 0;
-    SINGLE_CONTACT = 1;
-    GROUP = 2;
-}
-
-// Either a 1-1 conversation or a group chat (eventually)
-// Privately encrypted, this is the local user's copy of the chat
-message Chat {
-    // What kind of chat is this
-    ChatType type = 1;
-    // Conversation key for the other party
-    veilid.TypedKey remote_conversation_record_key = 2;
-    // Reconciled chat record DHTLog (xxx for now DHTShortArray)
-    dht.OwnedDHTRecordPointer reconciled_chat_record = 3;    
-}
-
-// A record of an individual account
-// Pointed to by the identity account map in the identity key
-//
-// DHT Schema: DFLT(1)
-// DHT Private: accountSecretKey
-message Account {
-    // The user's profile that gets shared with contacts
-    Profile profile = 1;
-    // Invisibility makes you always look 'Offline'
-    bool invisible = 2;
-    // Auto-away sets 'away' mode after an inactivity time
-    uint32 auto_away_timeout_sec = 3;
-    // The contacts DHTList for this account
-    // DHT Private
-    dht.OwnedDHTRecordPointer contact_list = 4;
-    // The ContactInvitationRecord DHTShortArray for this account
-    // DHT Private
-    dht.OwnedDHTRecordPointer contact_invitation_records = 5;
-    // The chats DHTList for this account
-    // DHT Private
-    dht.OwnedDHTRecordPointer chat_list = 6;
-    
-}
-
-// EncryptionKeyType
-// Encryption of secret
-enum EncryptionKeyType {
-    ENCRYPTION_KEY_TYPE_UNSPECIFIED = 0;
-    ENCRYPTION_KEY_TYPE_NONE = 1;
-    ENCRYPTION_KEY_TYPE_PIN = 2;
-    ENCRYPTION_KEY_TYPE_PASSWORD = 3;
-}
+////////////////////////////////////////////////////////////////////////////////////
+// Invitations
+////////////////////////////////////////////////////////////////////////////////////
 
 // Invitation that is shared for VeilidChat contact connections
 // serialized to QR code or data blob, not send over DHT, out of band.

@@ -3,7 +3,9 @@ part of 'dht_short_array.dart';
 ////////////////////////////////////////////////////////////////////////////
 // Reader-only implementation
 
-class _DHTShortArrayRead implements DHTRandomRead {
+abstract class DHTShortArrayReadOperations implements DHTRandomRead {}
+
+class _DHTShortArrayRead implements DHTShortArrayReadOperations {
   _DHTShortArrayRead._(_DHTShortArrayHead head) : _head = head;
 
   @override

@@ -20,9 +20,12 @@ MessageState _$MessageStateFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$MessageState {
-  Typed<FixedEncodedString43> get author => throw _privateConstructorUsedError;
-  Timestamp get timestamp => throw _privateConstructorUsedError;
-  String get text => throw _privateConstructorUsedError;
+// Content of the message
+  @JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+  proto.Message get content =>
+      throw _privateConstructorUsedError; // Received or delivered timestamp
+  Timestamp get timestamp =>
+      throw _privateConstructorUsedError; // The state of the mssage
   MessageSendState? get sendState => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -38,9 +41,9 @@ abstract class $MessageStateCopyWith<$Res> {
       _$MessageStateCopyWithImpl<$Res, MessageState>;
   @useResult
   $Res call(
-      {Typed<FixedEncodedString43> author,
+      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      proto.Message content,
       Timestamp timestamp,
-      String text,
       MessageSendState? sendState});
 }
 
@@ -57,24 +60,19 @@ class _$MessageStateCopyWithImpl<$Res, $Val extends MessageState>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? author = null,
+    Object? content = null,
     Object? timestamp = null,
-    Object? text = null,
     Object? sendState = freezed,
   }) {
     return _then(_value.copyWith(
-      author: null == author
-          ? _value.author
-          : author // ignore: cast_nullable_to_non_nullable
-              as Typed<FixedEncodedString43>,
+      content: null == content
+          ? _value.content
+          : content // ignore: cast_nullable_to_non_nullable
+              as proto.Message,
       timestamp: null == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
               as Timestamp,
-      text: null == text
-          ? _value.text
-          : text // ignore: cast_nullable_to_non_nullable
-              as String,
       sendState: freezed == sendState
           ? _value.sendState
           : sendState // ignore: cast_nullable_to_non_nullable
@@ -92,9 +90,9 @@ abstract class _$$MessageStateImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {Typed<FixedEncodedString43> author,
+      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      proto.Message content,
       Timestamp timestamp,
-      String text,
       MessageSendState? sendState});
 }
 
@@ -109,24 +107,19 @@ class __$$MessageStateImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? author = null,
+    Object? content = null,
     Object? timestamp = null,
-    Object? text = null,
     Object? sendState = freezed,
   }) {
     return _then(_$MessageStateImpl(
-      author: null == author
-          ? _value.author
-          : author // ignore: cast_nullable_to_non_nullable
-              as Typed<FixedEncodedString43>,
+      content: null == content
+          ? _value.content
+          : content // ignore: cast_nullable_to_non_nullable
+              as proto.Message,
       timestamp: null == timestamp
           ? _value.timestamp
           : timestamp // ignore: cast_nullable_to_non_nullable
               as Timestamp,
-      text: null == text
-          ? _value.text
-          : text // ignore: cast_nullable_to_non_nullable
-              as String,
       sendState: freezed == sendState
           ? _value.sendState
           : sendState // ignore: cast_nullable_to_non_nullable
@@ -139,26 +132,28 @@ class __$$MessageStateImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
   const _$MessageStateImpl(
-      {required this.author,
+      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      required this.content,
       required this.timestamp,
-      required this.text,
       required this.sendState});
 
   factory _$MessageStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageStateImplFromJson(json);
 
+// Content of the message
   @override
-  final Typed<FixedEncodedString43> author;
+  @JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+  final proto.Message content;
+// Received or delivered timestamp
   @override
   final Timestamp timestamp;
-  @override
-  final String text;
+// The state of the mssage
   @override
   final MessageSendState? sendState;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'MessageState(author: $author, timestamp: $timestamp, text: $text, sendState: $sendState)';
+    return 'MessageState(content: $content, timestamp: $timestamp, sendState: $sendState)';
   }
 
   @override
@@ -166,9 +161,8 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'MessageState'))
-      ..add(DiagnosticsProperty('author', author))
+      ..add(DiagnosticsProperty('content', content))
       ..add(DiagnosticsProperty('timestamp', timestamp))
-      ..add(DiagnosticsProperty('text', text))
       ..add(DiagnosticsProperty('sendState', sendState));
   }
 
@@ -177,18 +171,16 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$MessageStateImpl &&
-            (identical(other.author, author) || other.author == author) &&
+            (identical(other.content, content) || other.content == content) &&
             (identical(other.timestamp, timestamp) ||
                 other.timestamp == timestamp) &&
-            (identical(other.text, text) || other.text == text) &&
             (identical(other.sendState, sendState) ||
                 other.sendState == sendState));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, author, timestamp, text, sendState);
+  int get hashCode => Object.hash(runtimeType, content, timestamp, sendState);
 
   @JsonKey(ignore: true)
   @override
@@ -206,21 +198,20 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
 
 abstract class _MessageState implements MessageState {
   const factory _MessageState(
-      {required final Typed<FixedEncodedString43> author,
+      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      required final proto.Message content,
       required final Timestamp timestamp,
-      required final String text,
       required final MessageSendState? sendState}) = _$MessageStateImpl;
 
   factory _MessageState.fromJson(Map<String, dynamic> json) =
       _$MessageStateImpl.fromJson;
 
-  @override
-  Typed<FixedEncodedString43> get author;
-  @override
+  @override // Content of the message
+  @JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+  proto.Message get content;
+  @override // Received or delivered timestamp
   Timestamp get timestamp;
-  @override
-  String get text;
-  @override
+  @override // The state of the mssage
   MessageSendState? get sendState;
   @override
   @JsonKey(ignore: true)

@@ -130,7 +130,7 @@ extension IdentityMasterExtension on IdentityMaster {
     // Read the identity key to get the account keys
     final pool = DHTRecordPool.instance;
 
-    final identityRecordCrypto = await DHTRecordCryptoPrivate.fromSecret(
+    final identityRecordCrypto = await VeilidCryptoPrivate.fromSecret(
         identityRecordKey.kind, identitySecret);
 
     late final List<AccountRecordInfo> accountRecordInfo;
@@ -234,7 +234,7 @@ class IdentityMasterWithSecrets {
     return (await pool.createRecord(
             debugName:
                 'IdentityMasterWithSecrets::create::IdentityMasterRecord',
-            crypto: const DHTRecordCryptoPublic()))
+            crypto: const VeilidCryptoPublic()))
         .deleteScope((masterRec) async {
       veilidLoggy.debug('Creating identity record');
       // Identity record is private

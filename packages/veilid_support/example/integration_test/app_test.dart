@@ -7,6 +7,7 @@ import 'fixtures/fixtures.dart';
 import 'test_dht_log.dart';
 import 'test_dht_record_pool.dart';
 import 'test_dht_short_array.dart';
+import 'test_table_db_array.dart';
 
 void main() {
   final startTime = DateTime.now();
@@ -33,6 +34,17 @@ void main() {
     group('Attached Tests', () {
       setUpAll(veilidFixture.attach);
       tearDownAll(veilidFixture.detach);
+
+      group('TableDB Tests', () {
+        group('TableDBArray Tests', () {
+          test('create TableDBArray', makeTestTableDBArrayCreateDelete());
+          test(
+            timeout: const Timeout(Duration(seconds: 480)),
+            'add/truncate TableDBArray',
+            makeTestDHTLogAddTruncate(),
+          );
+        });
+      });
 
       group('DHT Support Tests', () {
         setUpAll(updateProcessorFixture.setUp);

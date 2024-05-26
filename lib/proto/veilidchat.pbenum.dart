@@ -13,23 +13,6 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
-class AttachmentKind extends $pb.ProtobufEnum {
-  static const AttachmentKind ATTACHMENT_KIND_UNSPECIFIED = AttachmentKind._(0, _omitEnumNames ? '' : 'ATTACHMENT_KIND_UNSPECIFIED');
-  static const AttachmentKind ATTACHMENT_KIND_FILE = AttachmentKind._(1, _omitEnumNames ? '' : 'ATTACHMENT_KIND_FILE');
-  static const AttachmentKind ATTACHMENT_KIND_IMAGE = AttachmentKind._(2, _omitEnumNames ? '' : 'ATTACHMENT_KIND_IMAGE');
-
-  static const $core.List<AttachmentKind> values = <AttachmentKind> [
-    ATTACHMENT_KIND_UNSPECIFIED,
-    ATTACHMENT_KIND_FILE,
-    ATTACHMENT_KIND_IMAGE,
-  ];
-
-  static final $core.Map<$core.int, AttachmentKind> _byValue = $pb.ProtobufEnum.initByValue(values);
-  static AttachmentKind? valueOf($core.int value) => _byValue[value];
-
-  const AttachmentKind._($core.int v, $core.String n) : super(v, n);
-}
-
 class Availability extends $pb.ProtobufEnum {
   static const Availability AVAILABILITY_UNSPECIFIED = Availability._(0, _omitEnumNames ? '' : 'AVAILABILITY_UNSPECIFIED');
   static const Availability AVAILABILITY_OFFLINE = Availability._(1, _omitEnumNames ? '' : 'AVAILABILITY_OFFLINE');
@@ -51,23 +34,6 @@ class Availability extends $pb.ProtobufEnum {
   const Availability._($core.int v, $core.String n) : super(v, n);
 }
 
-class ChatType extends $pb.ProtobufEnum {
-  static const ChatType CHAT_TYPE_UNSPECIFIED = ChatType._(0, _omitEnumNames ? '' : 'CHAT_TYPE_UNSPECIFIED');
-  static const ChatType SINGLE_CONTACT = ChatType._(1, _omitEnumNames ? '' : 'SINGLE_CONTACT');
-  static const ChatType GROUP = ChatType._(2, _omitEnumNames ? '' : 'GROUP');
-
-  static const $core.List<ChatType> values = <ChatType> [
-    CHAT_TYPE_UNSPECIFIED,
-    SINGLE_CONTACT,
-    GROUP,
-  ];
-
-  static final $core.Map<$core.int, ChatType> _byValue = $pb.ProtobufEnum.initByValue(values);
-  static ChatType? valueOf($core.int value) => _byValue[value];
-
-  const ChatType._($core.int v, $core.String n) : super(v, n);
-}
-
 class EncryptionKeyType extends $pb.ProtobufEnum {
   static const EncryptionKeyType ENCRYPTION_KEY_TYPE_UNSPECIFIED = EncryptionKeyType._(0, _omitEnumNames ? '' : 'ENCRYPTION_KEY_TYPE_UNSPECIFIED');
   static const EncryptionKeyType ENCRYPTION_KEY_TYPE_NONE = EncryptionKeyType._(1, _omitEnumNames ? '' : 'ENCRYPTION_KEY_TYPE_NONE');
@@ -85,6 +51,27 @@ class EncryptionKeyType extends $pb.ProtobufEnum {
   static EncryptionKeyType? valueOf($core.int value) => _byValue[value];
 
   const EncryptionKeyType._($core.int v, $core.String n) : super(v, n);
+}
+
+class Scope extends $pb.ProtobufEnum {
+  static const Scope WATCHERS = Scope._(0, _omitEnumNames ? '' : 'WATCHERS');
+  static const Scope MODERATED = Scope._(1, _omitEnumNames ? '' : 'MODERATED');
+  static const Scope TALKERS = Scope._(2, _omitEnumNames ? '' : 'TALKERS');
+  static const Scope MODERATORS = Scope._(3, _omitEnumNames ? '' : 'MODERATORS');
+  static const Scope ADMINS = Scope._(4, _omitEnumNames ? '' : 'ADMINS');
+
+  static const $core.List<Scope> values = <Scope> [
+    WATCHERS,
+    MODERATED,
+    TALKERS,
+    MODERATORS,
+    ADMINS,
+  ];
+
+  static final $core.Map<$core.int, Scope> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static Scope? valueOf($core.int value) => _byValue[value];
+
+  const Scope._($core.int v, $core.String n) : super(v, n);
 }
 
 

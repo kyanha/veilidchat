@@ -121,7 +121,7 @@ class ContactInvitationListCubit
               schema: DHTSchema.smpl(oCnt: 1, members: [
                 DHTSchemaMember(mCnt: 1, mKey: contactRequestWriter.key)
               ]),
-              crypto: const DHTRecordCryptoPublic()))
+              crypto: const VeilidCryptoPublic()))
           .deleteScope((contactRequestInbox) async {
         // Store ContactRequest in owner subkey
         await contactRequestInbox.eventualWriteProtobuf(creq);
@@ -129,7 +129,7 @@ class ContactInvitationListCubit
         await contactRequestInbox.eventualWriteBytes(Uint8List(0),
             subkey: 1,
             writer: contactRequestWriter,
-            crypto: await DHTRecordCryptoPrivate.fromTypedKeyPair(
+            crypto: await VeilidCryptoPrivate.fromTypedKeyPair(
                 TypedKeyPair.fromKeyPair(
                     contactRequestInbox.key.kind, contactRequestWriter)));
 

@@ -8,9 +8,8 @@ part of 'message_state.dart';
 
 _$MessageStateImpl _$$MessageStateImplFromJson(Map<String, dynamic> json) =>
     _$MessageStateImpl(
-      author: Typed<FixedEncodedString43>.fromJson(json['author']),
+      content: messageFromJson(json['content'] as Map<String, dynamic>),
       timestamp: Timestamp.fromJson(json['timestamp']),
-      text: json['text'] as String,
       sendState: json['send_state'] == null
           ? null
           : MessageSendState.fromJson(json['send_state']),
@@ -18,8 +17,7 @@ _$MessageStateImpl _$$MessageStateImplFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$$MessageStateImplToJson(_$MessageStateImpl instance) =>
     <String, dynamic>{
-      'author': instance.author.toJson(),
+      'content': messageToJson(instance.content),
       'timestamp': instance.timestamp.toJson(),
-      'text': instance.text,
       'send_state': instance.sendState?.toJson(),
     };

@@ -7,22 +7,21 @@ import '../../../veilid_support.dart';
 ////////////////////////////////////////////////////////////////////////////
 // Reader interface
 abstract class DHTRandomRead {
-  /// Returns the number of elements in the DHTArray
-  /// This number will be >= 0 and <= DHTShortArray.maxElements (256)
+  /// Returns the number of elements in the DHT container
   int get length;
 
-  /// Return the item at position 'pos' in the DHTArray. If 'forceRefresh'
+  /// Return the item at position 'pos' in the DHT container. If 'forceRefresh'
   /// is specified, the network will always be checked for newer values
   /// rather than returning the existing locally stored copy of the elements.
-  /// * 'pos' must be >= 0 and < 'length'
+  /// Throws an IndexError if the 'pos' is not within the length
+  /// of the container.
   Future<Uint8List?> getItem(int pos, {bool forceRefresh = false});
 
   /// Return a list of a range of items in the DHTArray. If 'forceRefresh'
   /// is specified, the network will always be checked for newer values
   /// rather than returning the existing locally stored copy of the elements.
-  /// * 'start' must be >= 0
-  /// * 'len' must be >= 0 and <= DHTShortArray.maxElements (256) and defaults
-  ///    to the maximum length
+  /// Throws an IndexError if either 'start' or '(start+length)' is not within
+  /// the length of the container.
   Future<List<Uint8List>?> getItemRange(int start,
       {int? length, bool forceRefresh = false});
 

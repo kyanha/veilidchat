@@ -1,13 +1,32 @@
 part of 'dht_log.dart';
 
 ////////////////////////////////////////////////////////////////////////////
-// Append/truncate implementation
+// Writer implementation
 
-class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
-  _DHTLogAppend._(super.spine) : super._();
+abstract class DHTLogWriteOperations
+    implements DHTRandomRead, DHTRandomWrite, DHTAdd, DHTTruncate, DHTClear {}
+
+class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
+  _DHTLogWrite._(super.spine) : super._();
 
   @override
-  Future<bool> tryAppendItem(Uint8List value) async {
+  Future<bool> tryWriteItem(int pos, Uint8List newValue,
+      {Output<Uint8List>? output}) async {
+    if (pos < 0 || pos >= _spine.length) {
+      throw IndexError.withLength(pos, _spine.length);
+    }
+    final lookup = await _spine.lookupPosition(pos);
+    if (lookup == null) {
+      throw StateError("can't write to dht log");
+    }
+
+    // Write item to the segment
+    return lookup.scope((sa) => sa.operateWrite((write) async =>
+        write.tryWriteItem(lookup.pos, newValue, output: output)));
+  }
+
+  @override
+  Future<bool> tryAddItem(Uint8List value) async {
     // Allocate empty index at the end of the list
     final insertPos = _spine.length;
     _spine.allocateTail(1);
@@ -30,7 +49,7 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
   }
 
   @override
-  Future<bool> tryAppendItems(List<Uint8List> values) async {
+  Future<bool> tryAddItems(List<Uint8List> values) async {
     // Allocate empty index at the end of the list
     final insertPos = _spine.length;
     _spine.allocateTail(values.length);
@@ -76,15 +95,14 @@ class _DHTLogAppend extends _DHTLogRead implements DHTAppendTruncateRandomRead {
   }
 
   @override
-  Future<void> truncate(int count) async {
-    count = min(count, _spine.length);
-    if (count == 0) {
+  Future<void> truncate(int newLength) async {
+    if (newLength < 0) {
+      throw StateError('can not truncate to negative length');
+    }
+    if (newLength >= _spine.length) {
       return;
     }
-    if (count < 0) {
-      throw StateError('can not remove negative items');
-    }
-    await _spine.releaseHead(count);
+    await _spine.releaseHead(_spine.length - newLength);
   }
 
   @override

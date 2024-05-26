@@ -64,8 +64,7 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
           const chunk = 25;
           for (var n = 0; n < dataset.length; n += chunk) {
             print('$n-${n + chunk - 1} ');
-            final success =
-                await w.tryAppendItems(dataset.sublist(n, n + chunk));
+            final success = await w.tryAddItems(dataset.sublist(n, n + chunk));
             expect(success, isTrue);
           }
         });
@@ -94,7 +93,7 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
       }
       print('truncate\n');
       {
-        await dlog.operateAppend((w) async => w.truncate(5));
+        await dlog.operateAppend((w) async => w.truncate(w.length - 5));
       }
       {
         final dataset6 = await dlog
@@ -103,7 +102,7 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
       }
       print('truncate 2\n');
       {
-        await dlog.operateAppend((w) async => w.truncate(251));
+        await dlog.operateAppend((w) async => w.truncate(w.length - 251));
       }
       {
         final dataset7 = await dlog
