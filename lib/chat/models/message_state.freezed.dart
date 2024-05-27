@@ -25,7 +25,7 @@ mixin _$MessageState {
   proto.Message get content =>
       throw _privateConstructorUsedError; // Received or delivered timestamp
   Timestamp get timestamp =>
-      throw _privateConstructorUsedError; // The state of the mssage
+      throw _privateConstructorUsedError; // The state of the message
   MessageSendState? get sendState => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -147,7 +147,7 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
 // Received or delivered timestamp
   @override
   final Timestamp timestamp;
-// The state of the mssage
+// The state of the message
   @override
   final MessageSendState? sendState;
 
@@ -211,7 +211,7 @@ abstract class _MessageState implements MessageState {
   proto.Message get content;
   @override // Received or delivered timestamp
   Timestamp get timestamp;
-  @override // The state of the mssage
+  @override // The state of the message
   MessageSendState? get sendState;
   @override
   @JsonKey(ignore: true)

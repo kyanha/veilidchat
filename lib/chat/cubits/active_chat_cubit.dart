@@ -4,7 +4,7 @@ import 'package:veilid_support/veilid_support.dart';
 class ActiveChatCubit extends Cubit<TypedKey?> {
   ActiveChatCubit(super.initialState);
 
-  void setActiveChat(TypedKey? activeChatRemoteConversationRecordKey) {
-    emit(activeChatRemoteConversationRecordKey);
+  void setActiveChat(TypedKey? activeChatLocalConversationRecordKey) {
+    emit(activeChatLocalConversationRecordKey);
   }
 }

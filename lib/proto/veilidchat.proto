@@ -123,13 +123,13 @@ message Message {
         // Text of the message
         string text = 1;
         // Topic of the message / Content warning
-        string topic = 2;
+        optional string topic = 2;
         // Message id replied to
-        veilid.TypedKey reply_id = 3;
+        optional bytes reply_id = 3;
         // Message expiration timestamp
         uint64 expiration = 4;
         // Message view limit before deletion
-        uint64 view_limit = 5;
+        uint32 view_limit = 5;
         // Attachments on the message
         repeated Attachment attachments = 6;
     }
@@ -148,9 +148,9 @@ message Message {
     message ControlDelete {
         repeated veilid.TypedKey ids = 1;
     } 
-    // A 'clear' control message
+    // An 'erase' control message
     // Deletes a set of messages from before some timestamp
-    message ControlClear {
+    message ControlErase {
         // The latest timestamp to delete messages before
         // If this is zero then all messages are cleared
         uint64 timestamp = 1;
@@ -181,10 +181,9 @@ message Message {
 
     //////////////////////////////////////////////////////////////////////////
 
-    // Hash of previous message from the same author, 
-    // including its previous hash.
-    // Also serves as a unique key for the message.
-    veilid.TypedKey id = 1;
+    // Unique id for this author stream
+    // Calculated from the hash of the previous message from this author
+    bytes id = 1;
     // Author of the message (identity public key)
     veilid.TypedKey author = 2;
     // Time the message was sent according to sender
@@ -195,7 +194,7 @@ message Message {
         Text text = 4;
         Secret secret = 5;
         ControlDelete delete = 6;
-        ControlClear clear = 7;
+        ControlErase erase = 7;
         ControlSettings settings = 8;
         ControlPermissions permissions = 9;
         ControlMembership membership = 10;

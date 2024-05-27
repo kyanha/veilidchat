@@ -29,11 +29,11 @@ class ContactItemWidget extends StatelessWidget {
   Widget build(
     BuildContext context,
   ) {
-    final remoteConversationKey =
-        contact.remoteConversationRecordKey.toVeilid();
+    final localConversationRecordKey =
+        contact.localConversationRecordKey.toVeilid();
 
     const selected = false; // xxx: eventually when we have selectable contacts:
-    // activeContactCubit.state == remoteConversationRecordKey;
+    // activeContactCubit.state == localConversationRecordKey;
 
     final tileDisabled = disabled || context.watch<ContactListCubit>().isBusy;
 
@@ -49,8 +49,7 @@ class ContactItemWidget extends StatelessWidget {
         // Start a chat
         final chatListCubit = context.read<ChatListCubit>();
 
-        await chatListCubit.getOrCreateChatSingleContact(
-            remoteConversationRecordKey: remoteConversationKey);
+        await chatListCubit.getOrCreateChatSingleContact(contact: contact);
         // Click over to chats
         if (context.mounted) {
           await MainPager.of(context)
@@ -69,7 +68,7 @@ class ContactItemWidget extends StatelessWidget {
 
               // Remove any chats for this contact
               await chatListCubit.deleteChat(
-                  remoteConversationRecordKey: remoteConversationKey);
+                  localConversationRecordKey: localConversationRecordKey);
 
               // Delete the contact itself
               await contactListCubit.deleteContact(contact: contact);

@@ -34,7 +34,7 @@ class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
       return const EmptyChatWidget();
     }
     return ChatComponent.builder(
-        remoteConversationRecordKey: activeChatRemoteConversationKey);
+        localConversationRecordKey: activeChatRemoteConversationKey);
   }
 
   @override

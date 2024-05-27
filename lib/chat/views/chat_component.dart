@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
@@ -12,6 +15,10 @@ import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../chat.dart';
+
+const String metadataKeyExpirationDuration = 'expiration';
+const String metadataKeyViewLimit = 'view_limit';
+const String metadataKeyAttachments = 'attachments';
 
 class ChatComponent extends StatelessWidget {
   const ChatComponent._(
@@ -35,7 +42,7 @@ class ChatComponent extends StatelessWidget {
 
   // Builder wrapper function that takes care of state management requirements
   static Widget builder(
-          {required TypedKey remoteConversationRecordKey, Key? key}) =>
+          {required TypedKey localConversationRecordKey, Key? key}) =>
       Builder(builder: (context) {
         // Get all watched dependendies
         final activeAccountInfo = context.watch<ActiveAccountInfo>();
@@ -51,7 +58,7 @@ class ChatComponent extends StatelessWidget {
         }
         final avconversation = context.select<ActiveConversationsBlocMapCubit,
                 AsyncValue<ActiveConversationState>?>(
-            (x) => x.state[remoteConversationRecordKey]);
+            (x) => x.state[localConversationRecordKey]);
         if (avconversation == null) {
           return waitingPage();
         }
@@ -77,7 +84,7 @@ class ChatComponent extends StatelessWidget {
         // Get the messages cubit
         final messages = context.select<ActiveSingleContactChatBlocMapCubit,
                 (SingleContactMessagesCubit, SingleContactMessagesState)?>(
-            (x) => x.tryOperate(remoteConversationRecordKey,
+            (x) => x.tryOperate(localConversationRecordKey,
                 closure: (cubit) => (cubit, cubit.state)));
 
         // Get the messages to display
@@ -97,8 +104,8 @@ class ChatComponent extends StatelessWidget {
 
   /////////////////////////////////////////////////////////////////////
 
-  types.Message messageToChatMessage(MessageState message) {
-    final isLocal = message.author == _localUserIdentityKey;
+  types.Message? messageToChatMessage(MessageState message) {
+    final isLocal = message.content.author.toVeilid() == _localUserIdentityKey;
 
     types.Status? status;
     if (message.sendState != null) {
@@ -113,31 +120,83 @@ class ChatComponent extends StatelessWidget {
       }
     }
 
-    final textMessage = types.TextMessage(
-        author: isLocal ? _localUser : _remoteUser,
-        createdAt: (message.timestamp.value ~/ BigInt.from(1000)).toInt(),
-        id: message.timestamp.toString(),
-        text: message.text,
-        showStatus: status != null,
-        status: status);
-    return textMessage;
+    switch (message.content.whichKind()) {
+      case proto.Message_Kind.text:
+        final contextText = message.content.text;
+        final textMessage = types.TextMessage(
+            author: isLocal ? _localUser : _remoteUser,
+            createdAt: (message.timestamp.value ~/ BigInt.from(1000)).toInt(),
+            id: message.uniqueId,
+            text: contextText.text,
+            showStatus: status != null,
+            status: status);
+        return textMessage;
+      case proto.Message_Kind.secret:
+      case proto.Message_Kind.delete:
+      case proto.Message_Kind.erase:
+      case proto.Message_Kind.settings:
+      case proto.Message_Kind.permissions:
+      case proto.Message_Kind.membership:
+      case proto.Message_Kind.moderation:
+      case proto.Message_Kind.notSet:
+        return null;
+    }
   }
 
-  void _addMessage(proto.Message message) {
-    if (message.text.isEmpty) {
-      return;
+  void _addTextMessage(
+      {required String text,
+      String? topic,
+      Uint8List? replyId,
+      Timestamp? expiration,
+      int? viewLimit,
+      List<proto.Attachment> attachments = const []}) {
+    final protoMessageText = proto.Message_Text()..text = text;
+    if (topic != null) {
+      protoMessageText.topic = topic;
     }
-    _messagesCubit.addMessage(message: message);
+    if (replyId != null) {
+      protoMessageText.replyId = replyId;
+    }
+    protoMessageText
+      ..expiration = expiration?.toInt64() ?? Int64.ZERO
+      ..viewLimit = viewLimit ?? 0;
+    protoMessageText.attachments.addAll(attachments);
+
+    _messagesCubit.addTextMessage(messageText: protoMessageText);
   }
 
   void _handleSendPressed(types.PartialText message) {
-    final protoMessage = proto.Message()
-      ..author = _localUserIdentityKey.toProto()
-      ..timestamp = Veilid.instance.now().toInt64()
-      ..text = message.text;
-    //..signature = signature;
+    final text = message.text;
+    final replyId = (message.repliedMessage != null)
+        ? MessageStateExt.splitUniqueId(message.repliedMessage!.id).$2
+        : null;
+    Timestamp? expiration;
+    int? viewLimit;
+    List<proto.Attachment>? attachments;
+    final metadata = message.metadata;
+    if (metadata != null) {
+      final expirationValue =
+          metadata[metadataKeyExpirationDuration] as TimestampDuration?;
+      if (expirationValue != null) {
+        expiration = Veilid.instance.now().offset(expirationValue);
+      }
+      final viewLimitValue = metadata[metadataKeyViewLimit] as int?;
+      if (viewLimitValue != null) {
+        viewLimit = viewLimitValue;
+      }
+      final attachmentsValue =
+          metadata[metadataKeyAttachments] as List<proto.Attachment>?;
+      if (attachmentsValue != null) {
+        attachments = attachmentsValue;
+      }
+    }
 
-    _addMessage(protoMessage);
+    _addTextMessage(
+        text: text,
+        replyId: replyId,
+        expiration: expiration,
+        viewLimit: viewLimit,
+        attachments: attachments ?? []);
   }
 
   // void _handleAttachmentPressed() async {
@@ -161,6 +220,9 @@ class ChatComponent extends StatelessWidget {
     final tsSet = <String>{};
     for (final message in messages) {
       final chatMessage = messageToChatMessage(message);
+      if (chatMessage == null) {
+        continue;
+      }
       chatMessages.insert(0, chatMessage);
       if (!tsSet.add(chatMessage.id)) {
         // ignore: avoid_print

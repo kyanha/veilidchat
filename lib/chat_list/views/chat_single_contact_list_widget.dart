@@ -20,7 +20,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
 
     return contactListV.builder((context, contactList) {
       final contactMap = IMap.fromIterable(contactList,
-          keyMapper: (c) => c.value.remoteConversationRecordKey,
+          keyMapper: (c) => c.value.localConversationRecordKey,
           valueMapper: (c) => c.value);
 
       final chatListV = context.watch<ChatListCubit>().state;
@@ -36,7 +36,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                             initialList: chatList.map((x) => x.value).toList(),
                             itemBuilder: (c) {
                               final contact =
-                                  contactMap[c.remoteConversationRecordKey];
+                                  contactMap[c.localConversationRecordKey];
                               if (contact == null) {
                                 return const Text('...');
                               }
@@ -49,7 +49,7 @@ class ChatSingleContactListWidget extends StatelessWidget {
                               final lowerValue = value.toLowerCase();
                               return chatList.map((x) => x.value).where((c) {
                                 final contact =
-                                    contactMap[c.remoteConversationRecordKey];
+                                    contactMap[c.localConversationRecordKey];
                                 if (contact == null) {
                                   return false;
                                 }

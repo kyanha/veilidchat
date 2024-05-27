@@ -11,7 +11,7 @@ import '../../proto/proto.dart' as proto;
 import 'active_conversations_bloc_map_cubit.dart';
 import 'chat_list_cubit.dart';
 
-// Map of remoteConversationRecordKey to MessagesCubit
+// Map of localConversationRecordKey to MessagesCubit
 // Wraps a MessagesCubit to stream the latest messages to the state
 // Automatically follows the state of a ActiveConversationsBlocMapCubit.
 class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
@@ -33,7 +33,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
           required proto.Conversation localConversation,
           required proto.Conversation remoteConversation}) async =>
       add(() => MapEntry(
-          contact.remoteConversationRecordKey.toVeilid(),
+          contact.localConversationRecordKey.toVeilid(),
           SingleContactMessagesCubit(
             activeAccountInfo: _activeAccountInfo,
             remoteIdentityPublicKey: contact.identityPublicKey.toVeilid(),
@@ -43,7 +43,6 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
                 contact.remoteConversationRecordKey.toVeilid(),
             localMessagesRecordKey: localConversation.messages.toVeilid(),
             remoteMessagesRecordKey: remoteConversation.messages.toVeilid(),
-            reconciledChatRecord: chat.reconciledChatRecord.toVeilid(),
           )));
 
   /// StateFollower /////////////////////////
@@ -61,7 +60,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
       return;
     }
     final contactIndex = contactList.indexWhere(
-        (c) => c.value.remoteConversationRecordKey.toVeilid() == key);
+        (c) => c.value.localConversationRecordKey.toVeilid() == key);
     if (contactIndex == -1) {
       await addState(
           key, AsyncValue.error('Contact not found for conversation'));
@@ -76,7 +75,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
       return;
     }
     final chatIndex = chatList.indexWhere(
-        (c) => c.value.remoteConversationRecordKey.toVeilid() == key);
+        (c) => c.value.localConversationRecordKey.toVeilid() == key);
     if (contactIndex == -1) {
       await addState(key, AsyncValue.error('Chat not found for conversation'));
       return;

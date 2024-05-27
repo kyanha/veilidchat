@@ -53,14 +53,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     required TypedKey localMessagesRecordKey,
     required TypedKey remoteConversationRecordKey,
     required TypedKey remoteMessagesRecordKey,
-    required OwnedDHTRecordPointer reconciledChatRecord,
   })  : _activeAccountInfo = activeAccountInfo,
         _remoteIdentityPublicKey = remoteIdentityPublicKey,
         _localConversationRecordKey = localConversationRecordKey,
         _localMessagesRecordKey = localMessagesRecordKey,
         _remoteConversationRecordKey = remoteConversationRecordKey,
         _remoteMessagesRecordKey = remoteMessagesRecordKey,
-        _reconciledChatRecord = reconciledChatRecord,
         super(const AsyncValue.loading()) {
     // Async Init
     _initWait.add(_init);
@@ -420,13 +418,35 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     emit(AsyncValue.data(renderedState));
   }
 
-  void addMessage({required proto.Message message}) {
+  void addTextMessage({required proto.Message_Text messageText}) {
+    final message = proto.Message()
+      ..author = _activeAccountInfo.localAccount.identityMaster
+          .identityPublicTypedKey()
+          .toProto()
+      ..timestamp = Veilid.instance.now().toInt64()
+      ..text = messageText;
+
     _unreconciledMessagesQueue.addSync(message);
     _sendingMessagesQueue.addSync(message);
 
     // Update the view
     _renderState();
   }
+
+  /////////////////////////////////////////////////////////////////////////
+
+  static Future<void> cleanupAndDeleteMessages(
+      {required TypedKey localConversationRecordKey}) async {
+    final recmsgdbname =
+        _reconciledMessagesTableDBName(localConversationRecordKey);
+    await Veilid.instance.deleteTableDB(recmsgdbname);
+  }
+
+  static String _reconciledMessagesTableDBName(
+          TypedKey localConversationRecordKey) =>
+      'msg_$localConversationRecordKey';
+
+  /////////////////////////////////////////////////////////////////////////
 
   final WaitSet<void> _initWait = WaitSet();
   final ActiveAccountInfo _activeAccountInfo;
@@ -435,7 +455,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   final TypedKey _localMessagesRecordKey;
   final TypedKey _remoteConversationRecordKey;
   final TypedKey _remoteMessagesRecordKey;
-  final OwnedDHTRecordPointer _reconciledChatRecord;
 
   late final VeilidCrypto _messagesCrypto;
 

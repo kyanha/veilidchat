@@ -66,13 +66,13 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
           Material(color: Colors.transparent, child: buildUserPanel()));
 
   Widget buildTabletRightPane(BuildContext context) {
-    final activeChatRemoteConversationKey =
+    final activeChatLocalConversationKey =
         context.watch<ActiveChatCubit>().state;
-    if (activeChatRemoteConversationKey == null) {
+    if (activeChatLocalConversationKey == null) {
       return const EmptyChatWidget();
     }
     return ChatComponent.builder(
-        remoteConversationRecordKey: activeChatRemoteConversationKey);
+        localConversationRecordKey: activeChatLocalConversationKey);
   }
 
   // ignore: prefer_expression_function_bodies

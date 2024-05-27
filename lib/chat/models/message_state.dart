@@ -30,10 +30,28 @@ class MessageState with _$MessageState {
     required proto.Message content,
     // Received or delivered timestamp
     required Timestamp timestamp,
-    // The state of the mssage
+    // The state of the message
     required MessageSendState? sendState,
   }) = _MessageState;
 
   factory MessageState.fromJson(dynamic json) =>
       _$MessageStateFromJson(json as Map<String, dynamic>);
+}
+
+extension MessageStateExt on MessageState {
+  String get uniqueId {
+    final author = content.author.toVeilid().toString();
+    final id = base64UrlNoPadEncode(content.id);
+    return '$author|$id';
+  }
+
+  static (proto.TypedKey, Uint8List) splitUniqueId(String uniqueId) {
+    final parts = uniqueId.split('|');
+    if (parts.length != 2) {
+      throw Exception('invalid unique id');
+    }
+    final author = TypedKey.fromString(parts[0]).toProto();
+    final id = base64UrlNoPadDecode(parts[1]);
+    return (author, id);
+  }
 }

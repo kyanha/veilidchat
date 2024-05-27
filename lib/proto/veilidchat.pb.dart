@@ -350,9 +350,9 @@ class Message_Text extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Message.Text', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'text')
     ..aOS(2, _omitFieldNames ? '' : 'topic')
-    ..aOM<$0.TypedKey>(3, _omitFieldNames ? '' : 'replyId', subBuilder: $0.TypedKey.create)
+    ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'replyId', $pb.PbFieldType.OY)
     ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'expiration', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-    ..a<$fixnum.Int64>(5, _omitFieldNames ? '' : 'viewLimit', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'viewLimit', $pb.PbFieldType.OU3)
     ..pc<Attachment>(6, _omitFieldNames ? '' : 'attachments', $pb.PbFieldType.PM, subBuilder: Attachment.create)
     ..hasRequiredFields = false
   ;
@@ -397,15 +397,13 @@ class Message_Text extends $pb.GeneratedMessage {
   void clearTopic() => clearField(2);
 
   @$pb.TagNumber(3)
-  $0.TypedKey get replyId => $_getN(2);
+  $core.List<$core.int> get replyId => $_getN(2);
   @$pb.TagNumber(3)
-  set replyId($0.TypedKey v) { setField(3, v); }
+  set replyId($core.List<$core.int> v) { $_setBytes(2, v); }
   @$pb.TagNumber(3)
   $core.bool hasReplyId() => $_has(2);
   @$pb.TagNumber(3)
   void clearReplyId() => clearField(3);
-  @$pb.TagNumber(3)
-  $0.TypedKey ensureReplyId() => $_ensure(2);
 
   @$pb.TagNumber(4)
   $fixnum.Int64 get expiration => $_getI64(3);
@@ -417,9 +415,9 @@ class Message_Text extends $pb.GeneratedMessage {
   void clearExpiration() => clearField(4);
 
   @$pb.TagNumber(5)
-  $fixnum.Int64 get viewLimit => $_getI64(4);
+  $core.int get viewLimit => $_getIZ(4);
   @$pb.TagNumber(5)
-  set viewLimit($fixnum.Int64 v) { $_setInt64(4, v); }
+  set viewLimit($core.int v) { $_setUnsignedInt32(4, v); }
   @$pb.TagNumber(5)
   $core.bool hasViewLimit() => $_has(4);
   @$pb.TagNumber(5)
@@ -517,13 +515,13 @@ class Message_ControlDelete extends $pb.GeneratedMessage {
   $core.List<$0.TypedKey> get ids => $_getList(0);
 }
 
-class Message_ControlClear extends $pb.GeneratedMessage {
-  factory Message_ControlClear() => create();
-  Message_ControlClear._() : super();
-  factory Message_ControlClear.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory Message_ControlClear.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+class Message_ControlErase extends $pb.GeneratedMessage {
+  factory Message_ControlErase() => create();
+  Message_ControlErase._() : super();
+  factory Message_ControlErase.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory Message_ControlErase.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Message.ControlClear', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Message.ControlErase', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'timestamp', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..hasRequiredFields = false
   ;
@@ -532,22 +530,22 @@ class Message_ControlClear extends $pb.GeneratedMessage {
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
   'Will be removed in next major version')
-  Message_ControlClear clone() => Message_ControlClear()..mergeFromMessage(this);
+  Message_ControlErase clone() => Message_ControlErase()..mergeFromMessage(this);
   @$core.Deprecated(
   'Using this can add significant overhead to your binary. '
   'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
   'Will be removed in next major version')
-  Message_ControlClear copyWith(void Function(Message_ControlClear) updates) => super.copyWith((message) => updates(message as Message_ControlClear)) as Message_ControlClear;
+  Message_ControlErase copyWith(void Function(Message_ControlErase) updates) => super.copyWith((message) => updates(message as Message_ControlErase)) as Message_ControlErase;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static Message_ControlClear create() => Message_ControlClear._();
-  Message_ControlClear createEmptyInstance() => create();
-  static $pb.PbList<Message_ControlClear> createRepeated() => $pb.PbList<Message_ControlClear>();
+  static Message_ControlErase create() => Message_ControlErase._();
+  Message_ControlErase createEmptyInstance() => create();
+  static $pb.PbList<Message_ControlErase> createRepeated() => $pb.PbList<Message_ControlErase>();
   @$core.pragma('dart2js:noInline')
-  static Message_ControlClear getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Message_ControlClear>(create);
-  static Message_ControlClear? _defaultInstance;
+  static Message_ControlErase getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Message_ControlErase>(create);
+  static Message_ControlErase? _defaultInstance;
 
   @$pb.TagNumber(1)
   $fixnum.Int64 get timestamp => $_getI64(0);
@@ -735,7 +733,7 @@ enum Message_Kind {
   text, 
   secret, 
   delete, 
-  clear_7, 
+  erase, 
   settings, 
   permissions, 
   membership, 
@@ -753,7 +751,7 @@ class Message extends $pb.GeneratedMessage {
     4 : Message_Kind.text,
     5 : Message_Kind.secret,
     6 : Message_Kind.delete,
-    7 : Message_Kind.clear_7,
+    7 : Message_Kind.erase,
     8 : Message_Kind.settings,
     9 : Message_Kind.permissions,
     10 : Message_Kind.membership,
@@ -762,13 +760,13 @@ class Message extends $pb.GeneratedMessage {
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Message', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..oo(0, [4, 5, 6, 7, 8, 9, 10, 11])
-    ..aOM<$0.TypedKey>(1, _omitFieldNames ? '' : 'id', subBuilder: $0.TypedKey.create)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'id', $pb.PbFieldType.OY)
     ..aOM<$0.TypedKey>(2, _omitFieldNames ? '' : 'author', subBuilder: $0.TypedKey.create)
     ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'timestamp', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..aOM<Message_Text>(4, _omitFieldNames ? '' : 'text', subBuilder: Message_Text.create)
     ..aOM<Message_Secret>(5, _omitFieldNames ? '' : 'secret', subBuilder: Message_Secret.create)
     ..aOM<Message_ControlDelete>(6, _omitFieldNames ? '' : 'delete', subBuilder: Message_ControlDelete.create)
-    ..aOM<Message_ControlClear>(7, _omitFieldNames ? '' : 'clear', subBuilder: Message_ControlClear.create)
+    ..aOM<Message_ControlErase>(7, _omitFieldNames ? '' : 'erase', subBuilder: Message_ControlErase.create)
     ..aOM<Message_ControlSettings>(8, _omitFieldNames ? '' : 'settings', subBuilder: Message_ControlSettings.create)
     ..aOM<Message_ControlPermissions>(9, _omitFieldNames ? '' : 'permissions', subBuilder: Message_ControlPermissions.create)
     ..aOM<Message_ControlMembership>(10, _omitFieldNames ? '' : 'membership', subBuilder: Message_ControlMembership.create)
@@ -802,15 +800,13 @@ class Message extends $pb.GeneratedMessage {
   void clearKind() => clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
-  $0.TypedKey get id => $_getN(0);
+  $core.List<$core.int> get id => $_getN(0);
   @$pb.TagNumber(1)
-  set id($0.TypedKey v) { setField(1, v); }
+  set id($core.List<$core.int> v) { $_setBytes(0, v); }
   @$pb.TagNumber(1)
   $core.bool hasId() => $_has(0);
   @$pb.TagNumber(1)
   void clearId() => clearField(1);
-  @$pb.TagNumber(1)
-  $0.TypedKey ensureId() => $_ensure(0);
 
   @$pb.TagNumber(2)
   $0.TypedKey get author => $_getN(1);
@@ -866,15 +862,15 @@ class Message extends $pb.GeneratedMessage {
   Message_ControlDelete ensureDelete() => $_ensure(5);
 
   @$pb.TagNumber(7)
-  Message_ControlClear get clear_7 => $_getN(6);
+  Message_ControlErase get erase => $_getN(6);
   @$pb.TagNumber(7)
-  set clear_7(Message_ControlClear v) { setField(7, v); }
+  set erase(Message_ControlErase v) { setField(7, v); }
   @$pb.TagNumber(7)
-  $core.bool hasClear_7() => $_has(6);
+  $core.bool hasErase() => $_has(6);
   @$pb.TagNumber(7)
-  void clearClear_7() => clearField(7);
+  void clearErase() => clearField(7);
   @$pb.TagNumber(7)
-  Message_ControlClear ensureClear_7() => $_ensure(6);
+  Message_ControlErase ensureErase() => $_ensure(6);
 
   @$pb.TagNumber(8)
   Message_ControlSettings get settings => $_getN(7);

@@ -76,8 +76,8 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         if (item == null) {
           throw Exception('Failed to get contact');
         }
-        if (item.remoteConversationRecordKey ==
-            contact.remoteConversationRecordKey) {
+        if (item.localConversationRecordKey ==
+            contact.localConversationRecordKey) {
           await writer.removeItem(i);
           return item;
         }

@@ -159,20 +159,20 @@ final $typed_data.Uint8List chatSettingsDescriptor = $convert.base64Decode(
 const Message$json = {
   '1': 'Message',
   '2': [
-    {'1': 'id', '3': 1, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'id'},
+    {'1': 'id', '3': 1, '4': 1, '5': 12, '10': 'id'},
     {'1': 'author', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'author'},
     {'1': 'timestamp', '3': 3, '4': 1, '5': 4, '10': 'timestamp'},
     {'1': 'text', '3': 4, '4': 1, '5': 11, '6': '.veilidchat.Message.Text', '9': 0, '10': 'text'},
     {'1': 'secret', '3': 5, '4': 1, '5': 11, '6': '.veilidchat.Message.Secret', '9': 0, '10': 'secret'},
     {'1': 'delete', '3': 6, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlDelete', '9': 0, '10': 'delete'},
-    {'1': 'clear', '3': 7, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlClear', '9': 0, '10': 'clear'},
+    {'1': 'erase', '3': 7, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlErase', '9': 0, '10': 'erase'},
     {'1': 'settings', '3': 8, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlSettings', '9': 0, '10': 'settings'},
     {'1': 'permissions', '3': 9, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlPermissions', '9': 0, '10': 'permissions'},
     {'1': 'membership', '3': 10, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlMembership', '9': 0, '10': 'membership'},
     {'1': 'moderation', '3': 11, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlModeration', '9': 0, '10': 'moderation'},
     {'1': 'signature', '3': 12, '4': 1, '5': 11, '6': '.veilid.Signature', '10': 'signature'},
   ],
-  '3': [Message_Text$json, Message_Secret$json, Message_ControlDelete$json, Message_ControlClear$json, Message_ControlSettings$json, Message_ControlPermissions$json, Message_ControlMembership$json, Message_ControlModeration$json],
+  '3': [Message_Text$json, Message_Secret$json, Message_ControlDelete$json, Message_ControlErase$json, Message_ControlSettings$json, Message_ControlPermissions$json, Message_ControlMembership$json, Message_ControlModeration$json],
   '8': [
     {'1': 'kind'},
   ],
@@ -183,11 +183,15 @@ const Message_Text$json = {
   '1': 'Text',
   '2': [
     {'1': 'text', '3': 1, '4': 1, '5': 9, '10': 'text'},
-    {'1': 'topic', '3': 2, '4': 1, '5': 9, '10': 'topic'},
-    {'1': 'reply_id', '3': 3, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'replyId'},
+    {'1': 'topic', '3': 2, '4': 1, '5': 9, '9': 0, '10': 'topic', '17': true},
+    {'1': 'reply_id', '3': 3, '4': 1, '5': 12, '9': 1, '10': 'replyId', '17': true},
     {'1': 'expiration', '3': 4, '4': 1, '5': 4, '10': 'expiration'},
-    {'1': 'view_limit', '3': 5, '4': 1, '5': 4, '10': 'viewLimit'},
+    {'1': 'view_limit', '3': 5, '4': 1, '5': 13, '10': 'viewLimit'},
     {'1': 'attachments', '3': 6, '4': 3, '5': 11, '6': '.veilidchat.Attachment', '10': 'attachments'},
+  ],
+  '8': [
+    {'1': '_topic'},
+    {'1': '_reply_id'},
   ],
 };
 
@@ -209,8 +213,8 @@ const Message_ControlDelete$json = {
 };
 
 @$core.Deprecated('Use messageDescriptor instead')
-const Message_ControlClear$json = {
-  '1': 'ControlClear',
+const Message_ControlErase$json = {
+  '1': 'ControlErase',
   '2': [
     {'1': 'timestamp', '3': 1, '4': 1, '5': 4, '10': 'timestamp'},
   ],
@@ -251,32 +255,32 @@ const Message_ControlModeration$json = {
 
 /// Descriptor for `Message`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List messageDescriptor = $convert.base64Decode(
-    'CgdNZXNzYWdlEiAKAmlkGAEgASgLMhAudmVpbGlkLlR5cGVkS2V5UgJpZBIoCgZhdXRob3IYAi'
-    'ABKAsyEC52ZWlsaWQuVHlwZWRLZXlSBmF1dGhvchIcCgl0aW1lc3RhbXAYAyABKARSCXRpbWVz'
-    'dGFtcBIuCgR0ZXh0GAQgASgLMhgudmVpbGlkY2hhdC5NZXNzYWdlLlRleHRIAFIEdGV4dBI0Cg'
-    'ZzZWNyZXQYBSABKAsyGi52ZWlsaWRjaGF0Lk1lc3NhZ2UuU2VjcmV0SABSBnNlY3JldBI7CgZk'
-    'ZWxldGUYBiABKAsyIS52ZWlsaWRjaGF0Lk1lc3NhZ2UuQ29udHJvbERlbGV0ZUgAUgZkZWxldG'
-    'USOAoFY2xlYXIYByABKAsyIC52ZWlsaWRjaGF0Lk1lc3NhZ2UuQ29udHJvbENsZWFySABSBWNs'
-    'ZWFyEkEKCHNldHRpbmdzGAggASgLMiMudmVpbGlkY2hhdC5NZXNzYWdlLkNvbnRyb2xTZXR0aW'
-    '5nc0gAUghzZXR0aW5ncxJKCgtwZXJtaXNzaW9ucxgJIAEoCzImLnZlaWxpZGNoYXQuTWVzc2Fn'
-    'ZS5Db250cm9sUGVybWlzc2lvbnNIAFILcGVybWlzc2lvbnMSRwoKbWVtYmVyc2hpcBgKIAEoCz'
-    'IlLnZlaWxpZGNoYXQuTWVzc2FnZS5Db250cm9sTWVtYmVyc2hpcEgAUgptZW1iZXJzaGlwEkcK'
-    'Cm1vZGVyYXRpb24YCyABKAsyJS52ZWlsaWRjaGF0Lk1lc3NhZ2UuQ29udHJvbE1vZGVyYXRpb2'
-    '5IAFIKbW9kZXJhdGlvbhIvCglzaWduYXR1cmUYDCABKAsyES52ZWlsaWQuU2lnbmF0dXJlUglz'
-    'aWduYXR1cmUa1gEKBFRleHQSEgoEdGV4dBgBIAEoCVIEdGV4dBIUCgV0b3BpYxgCIAEoCVIFdG'
-    '9waWMSKwoIcmVwbHlfaWQYAyABKAsyEC52ZWlsaWQuVHlwZWRLZXlSB3JlcGx5SWQSHgoKZXhw'
-    'aXJhdGlvbhgEIAEoBFIKZXhwaXJhdGlvbhIdCgp2aWV3X2xpbWl0GAUgASgEUgl2aWV3TGltaX'
-    'QSOAoLYXR0YWNobWVudHMYBiADKAsyFi52ZWlsaWRjaGF0LkF0dGFjaG1lbnRSC2F0dGFjaG1l'
-    'bnRzGkgKBlNlY3JldBIeCgpjaXBoZXJ0ZXh0GAEgASgMUgpjaXBoZXJ0ZXh0Eh4KCmV4cGlyYX'
-    'Rpb24YAiABKARSCmV4cGlyYXRpb24aMwoNQ29udHJvbERlbGV0ZRIiCgNpZHMYASADKAsyEC52'
-    'ZWlsaWQuVHlwZWRLZXlSA2lkcxosCgxDb250cm9sQ2xlYXISHAoJdGltZXN0YW1wGAEgASgEUg'
-    'l0aW1lc3RhbXAaRwoPQ29udHJvbFNldHRpbmdzEjQKCHNldHRpbmdzGAEgASgLMhgudmVpbGlk'
-    'Y2hhdC5DaGF0U2V0dGluZ3NSCHNldHRpbmdzGk8KEkNvbnRyb2xQZXJtaXNzaW9ucxI5CgtwZX'
-    'JtaXNzaW9ucxgBIAEoCzIXLnZlaWxpZGNoYXQuUGVybWlzc2lvbnNSC3Blcm1pc3Npb25zGksK'
-    'EUNvbnRyb2xNZW1iZXJzaGlwEjYKCm1lbWJlcnNoaXAYASABKAsyFi52ZWlsaWRjaGF0Lk1lbW'
-    'JlcnNoaXBSCm1lbWJlcnNoaXAafQoRQ29udHJvbE1vZGVyYXRpb24SMwoMYWNjZXB0ZWRfaWRz'
-    'GAEgAygLMhAudmVpbGlkLlR5cGVkS2V5UgthY2NlcHRlZElkcxIzCgxyZWplY3RlZF9pZHMYAi'
-    'ADKAsyEC52ZWlsaWQuVHlwZWRLZXlSC3JlamVjdGVkSWRzQgYKBGtpbmQ=');
+    'CgdNZXNzYWdlEg4KAmlkGAEgASgMUgJpZBIoCgZhdXRob3IYAiABKAsyEC52ZWlsaWQuVHlwZW'
+    'RLZXlSBmF1dGhvchIcCgl0aW1lc3RhbXAYAyABKARSCXRpbWVzdGFtcBIuCgR0ZXh0GAQgASgL'
+    'MhgudmVpbGlkY2hhdC5NZXNzYWdlLlRleHRIAFIEdGV4dBI0CgZzZWNyZXQYBSABKAsyGi52ZW'
+    'lsaWRjaGF0Lk1lc3NhZ2UuU2VjcmV0SABSBnNlY3JldBI7CgZkZWxldGUYBiABKAsyIS52ZWls'
+    'aWRjaGF0Lk1lc3NhZ2UuQ29udHJvbERlbGV0ZUgAUgZkZWxldGUSOAoFZXJhc2UYByABKAsyIC'
+    '52ZWlsaWRjaGF0Lk1lc3NhZ2UuQ29udHJvbEVyYXNlSABSBWVyYXNlEkEKCHNldHRpbmdzGAgg'
+    'ASgLMiMudmVpbGlkY2hhdC5NZXNzYWdlLkNvbnRyb2xTZXR0aW5nc0gAUghzZXR0aW5ncxJKCg'
+    'twZXJtaXNzaW9ucxgJIAEoCzImLnZlaWxpZGNoYXQuTWVzc2FnZS5Db250cm9sUGVybWlzc2lv'
+    'bnNIAFILcGVybWlzc2lvbnMSRwoKbWVtYmVyc2hpcBgKIAEoCzIlLnZlaWxpZGNoYXQuTWVzc2'
+    'FnZS5Db250cm9sTWVtYmVyc2hpcEgAUgptZW1iZXJzaGlwEkcKCm1vZGVyYXRpb24YCyABKAsy'
+    'JS52ZWlsaWRjaGF0Lk1lc3NhZ2UuQ29udHJvbE1vZGVyYXRpb25IAFIKbW9kZXJhdGlvbhIvCg'
+    'lzaWduYXR1cmUYDCABKAsyES52ZWlsaWQuU2lnbmF0dXJlUglzaWduYXR1cmUa5QEKBFRleHQS'
+    'EgoEdGV4dBgBIAEoCVIEdGV4dBIZCgV0b3BpYxgCIAEoCUgAUgV0b3BpY4gBARIeCghyZXBseV'
+    '9pZBgDIAEoDEgBUgdyZXBseUlkiAEBEh4KCmV4cGlyYXRpb24YBCABKARSCmV4cGlyYXRpb24S'
+    'HQoKdmlld19saW1pdBgFIAEoDVIJdmlld0xpbWl0EjgKC2F0dGFjaG1lbnRzGAYgAygLMhYudm'
+    'VpbGlkY2hhdC5BdHRhY2htZW50UgthdHRhY2htZW50c0IICgZfdG9waWNCCwoJX3JlcGx5X2lk'
+    'GkgKBlNlY3JldBIeCgpjaXBoZXJ0ZXh0GAEgASgMUgpjaXBoZXJ0ZXh0Eh4KCmV4cGlyYXRpb2'
+    '4YAiABKARSCmV4cGlyYXRpb24aMwoNQ29udHJvbERlbGV0ZRIiCgNpZHMYASADKAsyEC52ZWls'
+    'aWQuVHlwZWRLZXlSA2lkcxosCgxDb250cm9sRXJhc2USHAoJdGltZXN0YW1wGAEgASgEUgl0aW'
+    '1lc3RhbXAaRwoPQ29udHJvbFNldHRpbmdzEjQKCHNldHRpbmdzGAEgASgLMhgudmVpbGlkY2hh'
+    'dC5DaGF0U2V0dGluZ3NSCHNldHRpbmdzGk8KEkNvbnRyb2xQZXJtaXNzaW9ucxI5CgtwZXJtaX'
+    'NzaW9ucxgBIAEoCzIXLnZlaWxpZGNoYXQuUGVybWlzc2lvbnNSC3Blcm1pc3Npb25zGksKEUNv'
+    'bnRyb2xNZW1iZXJzaGlwEjYKCm1lbWJlcnNoaXAYASABKAsyFi52ZWlsaWRjaGF0Lk1lbWJlcn'
+    'NoaXBSCm1lbWJlcnNoaXAafQoRQ29udHJvbE1vZGVyYXRpb24SMwoMYWNjZXB0ZWRfaWRzGAEg'
+    'AygLMhAudmVpbGlkLlR5cGVkS2V5UgthY2NlcHRlZElkcxIzCgxyZWplY3RlZF9pZHMYAiADKA'
+    'syEC52ZWlsaWQuVHlwZWRLZXlSC3JlamVjdGVkSWRzQgYKBGtpbmQ=');
 
 @$core.Deprecated('Use reconciledMessageDescriptor instead')
 const ReconciledMessage$json = {
