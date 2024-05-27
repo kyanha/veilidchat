@@ -16,10 +16,25 @@ class TableDBArray {
     _initWait.add(_init);
   }
 
+  static Future<TableDBArray> make({
+    required String table,
+    required VeilidCrypto crypto,
+  }) async {
+    final out = TableDBArray(table: table, crypto: crypto);
+    await out._initWait();
+    return out;
+  }
+
+  Future<void> initWait() async {
+    await _initWait();
+  }
+
   Future<void> _init() async {
     // Load the array details
     await _mutex.protect(() async {
       _tableDB = await Veilid.instance.openTableDB(_table, 1);
+      await _loadHead();
+      _initDone = true;
     });
   }
 
@@ -27,14 +42,25 @@ class TableDBArray {
     // Ensure the init finished
     await _initWait();
 
-    await _mutex.acquire();
-
-    await _changeStream.close();
-    _tableDB.close();
-
+    // Allow multiple attempts to close
+    if (_open) {
+      await _mutex.protect(() async {
+        await _changeStream.close();
+        _tableDB.close();
+        _open = false;
+      });
+    }
     if (delete) {
       await Veilid.instance.deleteTableDB(_table);
     }
+  }
+
+  Future<void> delete() async {
+    await _initWait();
+    if (_open) {
+      throw StateError('should be closed first');
+    }
+    await Veilid.instance.deleteTableDB(_table);
   }
 
   Future<StreamSubscription<void>> listen(void Function() onChanged) async =>
@@ -43,7 +69,18 @@ class TableDBArray {
   ////////////////////////////////////////////////////////////
   // Public interface
 
-  int get length => _length;
+  int get length {
+    if (!_open) {
+      throw StateError('not open');
+    }
+    if (!_initDone) {
+      throw StateError('not initialized');
+    }
+
+    return _length;
+  }
+
+  bool get isOpen => _open;
 
   Future<void> add(Uint8List value) async {
     await _initWait();
@@ -67,12 +104,22 @@ class TableDBArray {
 
   Future<Uint8List> get(int pos) async {
     await _initWait();
-    return _mutex.protect(() async => _getInner(pos));
+    return _mutex.protect(() async {
+      if (!_open) {
+        throw StateError('not open');
+      }
+      return _getInner(pos);
+    });
   }
 
-  Future<List<Uint8List>> getAll(int start, int length) async {
+  Future<List<Uint8List>> getRange(int start, int length) async {
     await _initWait();
-    return _mutex.protect(() async => _getAllInner(start, length));
+    return _mutex.protect(() async {
+      if (!_open) {
+        throw StateError('not open');
+      }
+      return _getRangeInner(start, length);
+    });
   }
 
   Future<void> remove(int pos, {Output<Uint8List>? out}) async {
@@ -96,6 +143,7 @@ class TableDBArray {
       }
       _length = 0;
       _nextFree = 0;
+      _maxEntry = 0;
       _dirtyChunks.clear();
       _chunkCache.clear();
     });
@@ -175,7 +223,7 @@ class TableDBArray {
     return (await _loadEntry(entry))!;
   }
 
-  Future<List<Uint8List>> _getAllInner(int start, int length) async {
+  Future<List<Uint8List>> _getRangeInner(int start, int length) async {
     if (length < 0) {
       throw StateError('length should not be negative');
     }
@@ -252,11 +300,16 @@ class TableDBArray {
   Future<T> _writeTransaction<T>(
           Future<T> Function(VeilidTableDBTransaction) closure) async =>
       _mutex.protect(() async {
+        if (!_open) {
+          throw StateError('not open');
+        }
+
         final _oldLength = _length;
         final _oldNextFree = _nextFree;
+        final _oldMaxEntry = _maxEntry;
         try {
           final out = await transactionScope(_tableDB, (t) async {
-            final out = closure(t);
+            final out = await closure(t);
             await _saveHead(t);
             await _flushDirtyChunks(t);
             return out;
@@ -267,6 +320,7 @@ class TableDBArray {
           // restore head
           _length = _oldLength;
           _nextFree = _oldNextFree;
+          _maxEntry = _oldMaxEntry;
           // invalidate caches because they could have been written to
           _chunkCache.clear();
           _dirtyChunks.clear();
@@ -322,34 +376,35 @@ class TableDBArray {
     if (start < 0 || start >= _length) {
       throw IndexError.withLength(start, _length);
     }
-    final end = start + length - 1;
 
     // Slide everything over in reverse
-    final toCopyTotal = _length - start;
-    var dest = end + toCopyTotal;
     var src = _length - 1;
+    var dest = src + length;
 
     (int, Uint8List)? lastSrcChunk;
     (int, Uint8List)? lastDestChunk;
     while (src >= start) {
+      final remaining = (src - start) + 1;
       final srcChunkNumber = src ~/ _indexStride;
       final srcIndex = src % _indexStride;
-      final srcLength = srcIndex + 1;
+      final srcLength = min(remaining, srcIndex + 1);
 
       final srcChunk =
           (lastSrcChunk != null && (lastSrcChunk.$1 == srcChunkNumber))
               ? lastSrcChunk.$2
               : await _loadIndexChunk(srcChunkNumber);
+      _dirtyChunks[srcChunkNumber] = srcChunk;
       lastSrcChunk = (srcChunkNumber, srcChunk);
 
       final destChunkNumber = dest ~/ _indexStride;
       final destIndex = dest % _indexStride;
-      final destLength = destIndex + 1;
+      final destLength = min(remaining, destIndex + 1);
 
       final destChunk =
           (lastDestChunk != null && (lastDestChunk.$1 == destChunkNumber))
               ? lastDestChunk.$2
               : await _loadIndexChunk(destChunkNumber);
+      _dirtyChunks[destChunkNumber] = destChunk;
       lastDestChunk = (destChunkNumber, destChunk);
 
       final toCopy = min(srcLength, destLength);
@@ -395,6 +450,7 @@ class TableDBArray {
           (lastSrcChunk != null && (lastSrcChunk.$1 == srcChunkNumber))
               ? lastSrcChunk.$2
               : await _loadIndexChunk(srcChunkNumber);
+      _dirtyChunks[srcChunkNumber] = srcChunk;
       lastSrcChunk = (srcChunkNumber, srcChunk);
 
       final destChunkNumber = dest ~/ _indexStride;
@@ -405,6 +461,7 @@ class TableDBArray {
           (lastDestChunk != null && (lastDestChunk.$1 == destChunkNumber))
               ? lastDestChunk.$2
               : await _loadIndexChunk(destChunkNumber);
+      _dirtyChunks[destChunkNumber] = destChunk;
       lastDestChunk = (destChunkNumber, destChunk);
 
       final toCopy = min(srcLength, destLength);
@@ -453,7 +510,7 @@ class TableDBArray {
 
   Future<void> _flushDirtyChunks(VeilidTableDBTransaction t) async {
     for (final ec in _dirtyChunks.entries) {
-      await _tableDB.store(0, _chunkKey(ec.key), ec.value);
+      await t.store(0, _chunkKey(ec.key), ec.value);
     }
     _dirtyChunks.clear();
   }
@@ -464,25 +521,28 @@ class TableDBArray {
     if (headBytes == null) {
       _length = 0;
       _nextFree = 0;
+      _maxEntry = 0;
     } else {
       final b = headBytes.buffer.asByteData();
       _length = b.getUint32(0);
       _nextFree = b.getUint32(4);
+      _maxEntry = b.getUint32(8);
     }
   }
 
   Future<void> _saveHead(VeilidTableDBTransaction t) async {
     assert(_mutex.isLocked, 'should be locked');
-    final b = ByteData(8)
+    final b = ByteData(12)
       ..setUint32(0, _length)
-      ..setUint32(4, _nextFree);
+      ..setUint32(4, _nextFree)
+      ..setUint32(8, _maxEntry);
     await t.store(0, _headKey, b.buffer.asUint8List());
   }
 
   Future<int> _allocateEntry() async {
     assert(_mutex.isLocked, 'should be locked');
     if (_nextFree == 0) {
-      return _length;
+      return _maxEntry++;
     }
     // pop endogenous free list
     final free = _nextFree;
@@ -501,6 +561,8 @@ class TableDBArray {
 
   final String _table;
   late final VeilidTableDB _tableDB;
+  var _open = true;
+  var _initDone = false;
   final VeilidCrypto _crypto;
   final WaitSet<void> _initWait = WaitSet();
   final Mutex _mutex = Mutex();
@@ -508,6 +570,7 @@ class TableDBArray {
   // Head state
   int _length = 0;
   int _nextFree = 0;
+  int _maxEntry = 0;
   static const int _indexStride = 16384;
   final List<(int, Uint8List)> _chunkCache = [];
   final Map<int, Uint8List> _dirtyChunks = {};

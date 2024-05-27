@@ -1,134 +1,213 @@
 import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:test/test.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-Future<void> Function() makeTestTableDBArrayCreateDelete() => () async {
-      // Close before delete
-      {
-        final arr = await TableDBArray(
-            table: 'test', crypto: const VeilidCryptoPublic());
+Future<void> testTableDBArrayCreateDelete() async {
+  // Close before delete
+  {
+    final arr =
+        TableDBArray(table: 'testArray', crypto: const VeilidCryptoPublic());
+    expect(() => arr.length, throwsA(isA<StateError>()));
+    expect(arr.isOpen, isTrue);
+    await arr.initWait();
+    expect(arr.isOpen, isTrue);
+    expect(arr.length, isZero);
+    await arr.close();
+    expect(arr.isOpen, isFalse);
+    await arr.delete();
+    expect(arr.isOpen, isFalse);
+  }
 
-        expect(await arr.operate((r) async => r.length), isZero);
-        expect(arr.isOpen, isTrue);
-        await arr.close();
-        expect(arr.isOpen, isFalse);
-        await arr.delete();
-        // Operate should fail
-        await expectLater(() async => arr.operate((r) async => r.length),
-            throwsA(isA<StateError>()));
+  // Async create with close after delete and then reopen
+  {
+    final arr = await TableDBArray.make(
+        table: 'testArray', crypto: const VeilidCryptoPublic());
+    expect(arr.length, isZero);
+    expect(arr.isOpen, isTrue);
+    await expectLater(() async {
+      await arr.delete();
+    }, throwsA(isA<StateError>()));
+    expect(arr.isOpen, isTrue);
+    await arr.close();
+    expect(arr.isOpen, isFalse);
+
+    final arr2 = await TableDBArray.make(
+        table: 'testArray', crypto: const VeilidCryptoPublic());
+    expect(arr2.isOpen, isTrue);
+    expect(arr.isOpen, isFalse);
+    await arr2.close();
+    expect(arr2.isOpen, isFalse);
+    await arr2.delete();
+  }
+}
+
+Uint8List makeData(int n) => utf8.encode('elem $n');
+List<Uint8List> makeDataBatch(int n, int batchSize) =>
+    List.generate(batchSize, (x) => makeData(n + x));
+
+Future<void> Function() makeTestTableDBArrayAddGetClear(
+        {required int count,
+        required int singles,
+        required int batchSize,
+        required VeilidCrypto crypto}) =>
+    () async {
+      final arr = await TableDBArray.make(table: 'testArray', crypto: crypto);
+
+      print('adding');
+      {
+        for (var n = 0; n < count;) {
+          var toAdd = min(batchSize, count - n);
+          for (var s = 0; s < min(singles, toAdd); s++) {
+            await arr.add(makeData(n));
+            toAdd--;
+            n++;
+          }
+
+          await arr.addAll(makeDataBatch(n, toAdd));
+          n += toAdd;
+
+          print('  $n/$count');
+        }
       }
 
-      // Close after delete
+      print('get singles');
       {
-        final arr = await DHTShortArray.create(
-            debugName: 'sa_create_delete 2 stride $stride', stride: stride);
-        await arr.delete();
-        // Operate should still succeed because things aren't closed
-        expect(await arr.operate((r) async => r.length), isZero);
-        await arr.close();
-        // Operate should fail
-        await expectLater(() async => arr.operate((r) async => r.length),
-            throwsA(isA<StateError>()));
+        for (var n = 0; n < batchSize; n++) {
+          expect(await arr.get(n), equals(makeData(n)));
+        }
       }
 
-      // Close after delete multiple
-      // Okay to request delete multiple times before close
+      print('get batch');
       {
-        final arr = await DHTShortArray.create(
-            debugName: 'sa_create_delete 3 stride $stride', stride: stride);
-        await arr.delete();
-        await arr.delete();
-        // Operate should still succeed because things aren't closed
-        expect(await arr.operate((r) async => r.length), isZero);
-        await arr.close();
-        await expectLater(() async => arr.close(), throwsA(isA<StateError>()));
-        // Operate should fail
-        await expectLater(() async => arr.operate((r) async => r.length),
-            throwsA(isA<StateError>()));
+        for (var n = batchSize; n < count; n += batchSize) {
+          final toGet = min(batchSize, count - n);
+          expect(await arr.getRange(n, toGet), equals(makeDataBatch(n, toGet)));
+        }
       }
+
+      print('clear');
+      {
+        await arr.clear();
+        expect(arr.length, isZero);
+      }
+
+      await arr.close(delete: true);
     };
 
-Future<void> Function() makeTestTableDBArrayAdd({required int stride}) =>
+Future<void> Function() makeTestTableDBArrayInsert(
+        {required int count,
+        required int singles,
+        required int batchSize,
+        required VeilidCrypto crypto}) =>
     () async {
-      final arr = await DHTShortArray.create(
-          debugName: 'sa_add 1 stride $stride', stride: stride);
+      final arr = await TableDBArray.make(table: 'testArray', crypto: crypto);
 
-      final dataset = Iterable<int>.generate(256)
-          .map((n) => utf8.encode('elem $n'))
-          .toList();
+      final match = <Uint8List>[];
 
-      print('adding singles\n');
+      print('inserting');
       {
-        final res = await arr.operateWrite((w) async {
-          for (var n = 4; n < 8; n++) {
-            print('$n ');
-            final success = await w.tryAddItem(dataset[n]);
-            expect(success, isTrue);
+        for (var n = 0; n < count;) {
+          final start = n;
+          var toAdd = min(batchSize, count - n);
+          for (var s = 0; s < min(singles, toAdd); s++) {
+            final data = makeData(n);
+            await arr.insert(start, data);
+            match.insert(start, data);
+            toAdd--;
+            n++;
           }
-        });
-        expect(res, isNull);
+
+          final data = makeDataBatch(n, toAdd);
+          await arr.insertAll(start, data);
+          match.insertAll(start, data);
+          n += toAdd;
+
+          print('  $n/$count');
+        }
       }
 
-      print('adding batch\n');
+      print('get singles');
       {
-        final res = await arr.operateWrite((w) async {
-          print('${dataset.length ~/ 2}-${dataset.length}');
-          final success = await w.tryAddItems(
-              dataset.sublist(dataset.length ~/ 2, dataset.length));
-          expect(success, isTrue);
-        });
-        expect(res, isNull);
+        for (var n = 0; n < batchSize; n++) {
+          expect(await arr.get(n), equals(match[n]));
+        }
       }
 
-      print('inserting singles\n');
+      print('get batch');
       {
-        final res = await arr.operateWrite((w) async {
-          for (var n = 0; n < 4; n++) {
-            print('$n ');
-            final success = await w.tryInsertItem(n, dataset[n]);
-            expect(success, isTrue);
+        for (var n = batchSize; n < count; n += batchSize) {
+          final toGet = min(batchSize, count - n);
+          expect(await arr.getRange(n, toGet),
+              equals(match.sublist(n, n + toGet)));
+        }
+      }
+
+      print('clear');
+      {
+        await arr.clear();
+        expect(arr.length, isZero);
+      }
+
+      await arr.close(delete: true);
+    };
+
+
+Future<void> Function() makeTestTableDBArrayRemove(
+        {required int count,
+        required int singles,
+        required int batchSize,
+        required VeilidCrypto crypto}) =>
+    () async {
+      final arr = await TableDBArray.make(table: 'testArray', crypto: crypto);
+
+      final match = <Uint8List>[];
+xxx removal test
+      print('inserting');
+      {
+        for (var n = 0; n < count;) {
+          final start = n;
+          var toAdd = min(batchSize, count - n);
+          for (var s = 0; s < min(singles, toAdd); s++) {
+            final data = makeData(n);
+            await arr.insert(start, data);
+            match.insert(start, data);
+            toAdd--;
+            n++;
           }
-        });
-        expect(res, isNull);
+
+          final data = makeDataBatch(n, toAdd);
+          await arr.insertAll(start, data);
+          match.insertAll(start, data);
+          n += toAdd;
+
+          print('  $n/$count');
+        }
       }
 
-      print('inserting batch\n');
+      print('get singles');
       {
-        final res = await arr.operateWrite((w) async {
-          print('8-${dataset.length ~/ 2}');
-          final success = await w.tryInsertItems(
-              8, dataset.sublist(8, dataset.length ~/ 2));
-          expect(success, isTrue);
-        });
-        expect(res, isNull);
+        for (var n = 0; n < batchSize; n++) {
+          expect(await arr.get(n), equals(match[n]));
+        }
       }
 
-      //print('get all\n');
+      print('get batch');
       {
-        final dataset2 = await arr.operate((r) async => r.getItemRange(0));
-        expect(dataset2, equals(dataset));
-      }
-      {
-        final dataset3 =
-            await arr.operate((r) async => r.getItemRange(64, length: 128));
-        expect(dataset3, equals(dataset.sublist(64, 64 + 128)));
+        for (var n = batchSize; n < count; n += batchSize) {
+          final toGet = min(batchSize, count - n);
+          expect(await arr.getRange(n, toGet),
+              equals(match.sublist(n, n + toGet)));
+        }
       }
 
-      //print('clear\n');
+      print('clear');
       {
-        await arr.operateWriteEventual((w) async {
-          await w.clear();
-          return true;
-        });
+        await arr.clear();
+        expect(arr.length, isZero);
       }
 
-      //print('get all\n');
-      {
-        final dataset4 = await arr.operate((r) async => r.getItemRange(0));
-        expect(dataset4, isEmpty);
-      }
-
-      await arr.delete();
-      await arr.close();
+      await arr.close(delete: true);
     };
