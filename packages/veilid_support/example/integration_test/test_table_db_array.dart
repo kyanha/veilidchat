@@ -84,7 +84,8 @@ Future<void> Function() makeTestTableDBArrayAddGetClear(
       {
         for (var n = batchSize; n < count; n += batchSize) {
           final toGet = min(batchSize, count - n);
-          expect(await arr.getRange(n, toGet), equals(makeDataBatch(n, toGet)));
+          expect(await arr.getRange(n, n + toGet),
+              equals(makeDataBatch(n, toGet)));
         }
       }
 
@@ -140,7 +141,7 @@ Future<void> Function() makeTestTableDBArrayInsert(
       {
         for (var n = batchSize; n < count; n += batchSize) {
           final toGet = min(batchSize, count - n);
-          expect(await arr.getRange(n, toGet),
+          expect(await arr.getRange(n, n + toGet),
               equals(match.sublist(n, n + toGet)));
         }
       }
@@ -154,7 +155,6 @@ Future<void> Function() makeTestTableDBArrayInsert(
       await arr.close(delete: true);
     };
 
-
 Future<void> Function() makeTestTableDBArrayRemove(
         {required int count,
         required int singles,
@@ -164,42 +164,79 @@ Future<void> Function() makeTestTableDBArrayRemove(
       final arr = await TableDBArray.make(table: 'testArray', crypto: crypto);
 
       final match = <Uint8List>[];
-xxx removal test
-      print('inserting');
+
       {
-        for (var n = 0; n < count;) {
-          final start = n;
-          var toAdd = min(batchSize, count - n);
-          for (var s = 0; s < min(singles, toAdd); s++) {
-            final data = makeData(n);
-            await arr.insert(start, data);
-            match.insert(start, data);
-            toAdd--;
-            n++;
+        final rems = [
+          (0, 0),
+          (0, 1),
+          (0, batchSize),
+          (1, batchSize - 1),
+          (batchSize, 1),
+          (batchSize + 1, batchSize),
+          (batchSize - 1, batchSize + 1)
+        ];
+        for (final rem in rems) {
+          print('adding ');
+          {
+            for (var n = match.length; n < count;) {
+              final toAdd = min(batchSize, count - n);
+              final data = makeDataBatch(n, toAdd);
+              await arr.addAll(data);
+              match.addAll(data);
+              n += toAdd;
+              print('  $n/$count');
+            }
+            expect(arr.length, equals(match.length));
           }
 
-          final data = makeDataBatch(n, toAdd);
-          await arr.insertAll(start, data);
-          match.insertAll(start, data);
-          n += toAdd;
+          {
+            final start = rem.$1;
+            final length = rem.$2;
+            print('removing start=$start length=$length');
 
-          print('  $n/$count');
-        }
-      }
+            final out = Output<List<Uint8List>>();
+            await arr.removeRange(start, start + length, out: out);
+            expect(out.value, equals(match.sublist(start, start + length)));
+            match.removeRange(start, start + length);
+            expect(arr.length, equals(match.length));
 
-      print('get singles');
-      {
-        for (var n = 0; n < batchSize; n++) {
-          expect(await arr.get(n), equals(match[n]));
-        }
-      }
+            print('get batch');
+            {
+              final checkCount = match.length;
+              for (var n = 0; n < checkCount;) {
+                final toGet = min(batchSize, checkCount - n);
+                expect(await arr.getRange(n, n + toGet),
+                    equals(match.sublist(n, n + toGet)));
+                n += toGet;
+                print('  $n/$checkCount');
+              }
+            }
+          }
 
-      print('get batch');
-      {
-        for (var n = batchSize; n < count; n += batchSize) {
-          final toGet = min(batchSize, count - n);
-          expect(await arr.getRange(n, toGet),
-              equals(match.sublist(n, n + toGet)));
+          {
+            final start = match.length - rem.$1 - rem.$2;
+            final length = rem.$2;
+            print('removing from end start=$start length=$length');
+
+            final out = Output<List<Uint8List>>();
+            await arr.removeRange(start, start + length, out: out);
+            expect(out.value, equals(match.sublist(start, start + length)));
+            match.removeRange(start, start + length);
+            expect(arr.length, equals(match.length));
+
+            print('get batch');
+            {
+              final checkCount = match.length;
+              for (var n = 0; n < checkCount;) {
+                final toGet = min(batchSize, checkCount - n);
+                expect(await arr.getRange(n, n + toGet),
+                    equals(match.sublist(n, n + toGet)));
+                n += toGet;
+                print('  $n/$checkCount');
+              }
+              expect(arr.length, equals(match.length));
+            }
+          }
         }
       }
 

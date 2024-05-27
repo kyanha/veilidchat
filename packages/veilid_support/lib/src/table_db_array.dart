@@ -112,13 +112,13 @@ class TableDBArray {
     });
   }
 
-  Future<List<Uint8List>> getRange(int start, int length) async {
+  Future<List<Uint8List>> getRange(int start, int end) async {
     await _initWait();
     return _mutex.protect(() async {
       if (!_open) {
         throw StateError('not open');
       }
-      return _getRangeInner(start, length);
+      return _getRangeInner(start, end);
     });
   }
 
@@ -127,11 +127,11 @@ class TableDBArray {
     return _writeTransaction((t) async => _removeInner(t, pos, out: out));
   }
 
-  Future<void> removeRange(int start, int length,
+  Future<void> removeRange(int start, int end,
       {Output<List<Uint8List>>? out}) async {
     await _initWait();
     return _writeTransaction(
-        (t) async => _removeRangeInner(t, start, length, out: out));
+        (t) async => _removeRangeInner(t, start, end, out: out));
   }
 
   Future<void> clear() async {
@@ -223,23 +223,34 @@ class TableDBArray {
     return (await _loadEntry(entry))!;
   }
 
-  Future<List<Uint8List>> _getRangeInner(int start, int length) async {
+  Future<List<Uint8List>> _getRangeInner(int start, int end) async {
+    final length = end - start;
     if (length < 0) {
       throw StateError('length should not be negative');
     }
     if (start < 0 || start >= _length) {
       throw IndexError.withLength(start, _length);
     }
-    if ((start + length) > _length) {
-      throw IndexError.withLength(start + length, _length);
+    if (end > _length) {
+      throw IndexError.withLength(end, _length);
     }
 
     final out = <Uint8List>[];
-    for (var pos = start; pos < (start + length); pos++) {
-      final entry = await _getIndexEntry(pos);
-      final value = (await _loadEntry(entry))!;
-      out.add(value);
+    const batchSize = 16;
+
+    for (var pos = start; pos < end;) {
+      var batchLen = min(batchSize, end - pos);
+      final dws = DelayedWaitSet<Uint8List>();
+      while (batchLen > 0) {
+        final entry = await _getIndexEntry(pos);
+        dws.add(() async => (await _loadEntry(entry))!);
+        pos++;
+        batchLen--;
+      }
+      final batchOut = await dws();
+      out.addAll(batchOut);
     }
+
     return out;
   }
 
@@ -259,21 +270,21 @@ class TableDBArray {
     await _removeIndexEntry(pos);
   }
 
-  Future<void> _removeRangeInner(
-      VeilidTableDBTransaction t, int start, int length,
+  Future<void> _removeRangeInner(VeilidTableDBTransaction t, int start, int end,
       {Output<List<Uint8List>>? out}) async {
+    final length = end - start;
     if (length < 0) {
       throw StateError('length should not be negative');
     }
-    if (start < 0 || start >= _length) {
+    if (start < 0) {
       throw IndexError.withLength(start, _length);
     }
-    if ((start + length) > _length) {
-      throw IndexError.withLength(start + length, _length);
+    if (end > _length) {
+      throw IndexError.withLength(end, _length);
     }
 
     final outList = <Uint8List>[];
-    for (var pos = start; pos < (start + length); pos++) {
+    for (var pos = start; pos < end; pos++) {
       final entry = await _getIndexEntry(pos);
       if (out != null) {
         final value = (await _loadEntry(entry))!;
