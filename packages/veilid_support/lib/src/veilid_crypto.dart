@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import '../../../veilid_support.dart';
 
@@ -16,15 +17,24 @@ class VeilidCryptoPrivate implements VeilidCrypto {
   final VeilidCryptoSystem _cryptoSystem;
   final SharedSecret _secretKey;
 
-  static Future<VeilidCryptoPrivate> fromTypedKeyPair(
-      TypedKeyPair typedKeyPair) async {
-    final cryptoSystem =
-        await Veilid.instance.getCryptoSystem(typedKeyPair.kind);
-    final secretKey = typedKeyPair.secret;
+  static Future<VeilidCryptoPrivate> fromTypedKey(
+      TypedKey typedKey, String domain) async {
+    final cryptoSystem = await Veilid.instance.getCryptoSystem(typedKey.kind);
+    final keyMaterial = Uint8List(0)
+      ..addAll(typedKey.value.decode())
+      ..addAll(utf8.encode(domain));
+    final secretKey = await cryptoSystem.generateHash(keyMaterial);
     return VeilidCryptoPrivate._(cryptoSystem, secretKey);
   }
 
-  static Future<VeilidCryptoPrivate> fromSecret(
+  static Future<VeilidCryptoPrivate> fromTypedKeyPair(
+      TypedKeyPair typedKeyPair, String domain) async {
+    final typedSecret =
+        TypedKey(kind: typedKeyPair.kind, value: typedKeyPair.secret);
+    return fromTypedKey(typedSecret, domain);
+  }
+
+  static Future<VeilidCryptoPrivate> fromSharedSecret(
       CryptoKind kind, SharedSecret secretKey) async {
     final cryptoSystem = await Veilid.instance.getCryptoSystem(kind);
     return VeilidCryptoPrivate._(cryptoSystem, secretKey);

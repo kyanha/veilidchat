@@ -27,6 +27,9 @@ const int watchRenewalDenominator = 5;
 // Maximum number of concurrent DHT operations to perform on the network
 const int maxDHTConcurrency = 8;
 
+// DHT crypto domain
+const String cryptoDomainDHT = 'dht';
+
 typedef DHTRecordPoolLogger = void Function(String message);
 
 /// Record pool that managed DHTRecords and allows for tagged deletion
@@ -547,9 +550,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             writer: writer ??
                 openedRecordInfo.shared.recordDescriptor.ownerKeyPair(),
             crypto: crypto ??
-                await VeilidCryptoPrivate.fromTypedKeyPair(openedRecordInfo
+                await privateCryptoFromTypedSecret(openedRecordInfo
                     .shared.recordDescriptor
-                    .ownerTypedKeyPair()!));
+                    .ownerTypedSecret()!));
 
         openedRecordInfo.records.add(rec);
 
@@ -612,8 +615,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             writer: writer,
             sharedDHTRecordData: openedRecordInfo.shared,
             crypto: crypto ??
-                await VeilidCryptoPrivate.fromTypedKeyPair(
-                    TypedKeyPair.fromKeyPair(recordKey.kind, writer)));
+                await privateCryptoFromTypedSecret(
+                    TypedKey(kind: recordKey.kind, value: writer.secret)));
 
         openedRecordInfo.records.add(rec);
 
@@ -662,6 +665,11 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       }
     }
   }
+
+  /// Generate default VeilidCrypto for a writer
+  static Future<VeilidCrypto> privateCryptoFromTypedSecret(
+          TypedKey typedSecret) async =>
+      VeilidCryptoPrivate.fromTypedKey(typedSecret, cryptoDomainDHT);
 
   /// Handle the DHT record updates coming from Veilid
   void processRemoteValueChange(VeilidUpdateValueChange updateValueChange) {

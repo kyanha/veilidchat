@@ -129,9 +129,9 @@ class ContactInvitationListCubit
         await contactRequestInbox.eventualWriteBytes(Uint8List(0),
             subkey: 1,
             writer: contactRequestWriter,
-            crypto: await VeilidCryptoPrivate.fromTypedKeyPair(
-                TypedKeyPair.fromKeyPair(
-                    contactRequestInbox.key.kind, contactRequestWriter)));
+            crypto: await DHTRecordPool.privateCryptoFromTypedSecret(TypedKey(
+                kind: contactRequestInbox.key.kind,
+                value: contactRequestWriter.secret)));
 
         // Create ContactInvitation and SignedContactInvitation
         final cinv = proto.ContactInvitation()

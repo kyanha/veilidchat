@@ -33,8 +33,8 @@ class ActiveAccountInfo {
         identitySecret.value,
         utf8.encode('VeilidChat Conversation'));
 
-    final messagesCrypto =
-        await VeilidCryptoPrivate.fromSecret(identitySecret.kind, sharedSecret);
+    final messagesCrypto = await VeilidCryptoPrivate.fromSharedSecret(
+        identitySecret.kind, sharedSecret);
     return messagesCrypto;
   }
 

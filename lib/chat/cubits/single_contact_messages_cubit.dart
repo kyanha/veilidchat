@@ -146,15 +146,13 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Open reconciled chat record key
   Future<void> _initReconciledMessagesCubit() async {
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
+    final tableName = _localConversationRecordKey.toString();
 
-    _reconciledMessagesCubit = DHTLogCubit(
-        open: () async => DHTLog.openOwned(_reconciledChatRecord,
-            debugName:
-                'SingleContactMessagesCubit::_initReconciledMessagesCubit::'
-                'ReconciledMessages',
-            parent: accountRecordKey),
+  xxx whats the right encryption for reconciled messages cubit?
+
+    final crypto = VeilidCryptoPrivate.fromTypedKey(kind, secretKey);
+    _reconciledMessagesCubit = TableDBArrayCubit(
+        open: () async => TableDBArray.make(table: tableName, crypto: crypto),
         decodeElement: proto.Message.fromBuffer);
     _reconciledSubscription =
         _reconciledMessagesCubit!.stream.listen(_updateReconciledMessagesState);
@@ -461,7 +459,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   DHTLogCubit<proto.Message>? _sentMessagesCubit;
   DHTLogCubit<proto.Message>? _rcvdMessagesCubit;
-  DHTLogCubit<proto.Message>? _reconciledMessagesCubit;
+  TableDBArrayCubit<proto.Message>? _reconciledMessagesCubit;
 
   late final PersistentQueue<proto.Message> _unreconciledMessagesQueue;
   late final PersistentQueue<proto.Message> _sendingMessagesQueue;

@@ -125,13 +125,14 @@ extension IdentityMasterExtension on IdentityMaster {
   }
 
   Future<List<AccountRecordInfo>> readAccountsFromIdentity(
-      {required SharedSecret identitySecret,
-      required String accountKey}) async {
+      {required SecretKey identitySecret, required String accountKey}) async {
     // Read the identity key to get the account keys
     final pool = DHTRecordPool.instance;
 
-    final identityRecordCrypto = await VeilidCryptoPrivate.fromSecret(
-        identityRecordKey.kind, identitySecret);
+    final identityRecordCrypto =
+        await DHTRecordPool.privateCryptoFromTypedSecret(
+      TypedKey(kind: identityRecordKey.kind, value: identitySecret),
+    );
 
     late final List<AccountRecordInfo> accountRecordInfo;
     await (await pool.openRecordRead(identityRecordKey,
@@ -157,7 +158,7 @@ extension IdentityMasterExtension on IdentityMaster {
   /// Creates a new Account associated with master identity and store it in the
   /// identity key.
   Future<AccountRecordInfo> addAccountToIdentity<T extends GeneratedMessage>({
-    required SharedSecret identitySecret,
+    required SecretKey identitySecret,
     required String accountKey,
     required Future<T> Function(TypedKey parent) createAccountCallback,
     int maxAccounts = 1,

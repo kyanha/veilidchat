@@ -28,16 +28,16 @@ class ContactRequestInboxCubit
     final pool = DHTRecordPool.instance;
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-    final writerKey = contactInvitationRecord.writerKey.toVeilid();
     final writerSecret = contactInvitationRecord.writerSecret.toVeilid();
     final recordKey =
         contactInvitationRecord.contactRequestInbox.recordKey.toVeilid();
-    final writer = TypedKeyPair(
-        kind: recordKey.kind, key: writerKey, secret: writerSecret);
+    final writerTypedSecret =
+        TypedKey(kind: recordKey.kind, value: writerSecret);
     return pool.openRecordRead(recordKey,
         debugName: 'ContactRequestInboxCubit::_open::'
             'ContactRequestInbox',
-        crypto: await VeilidCryptoPrivate.fromTypedKeyPair(writer),
+        crypto:
+            await DHTRecordPool.privateCryptoFromTypedSecret(writerTypedSecret),
         parent: accountRecordKey,
         defaultSubkey: 1);
   }
