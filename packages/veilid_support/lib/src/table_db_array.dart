@@ -4,8 +4,23 @@ import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:charcode/charcode.dart';
+import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 
 import '../veilid_support.dart';
+
+@immutable
+class TableDBArrayUpdate extends Equatable {
+  const TableDBArrayUpdate(
+      {required this.headDelta, required this.tailDelta, required this.length})
+      : assert(length >= 0, 'should never have negative length');
+  final int headDelta;
+  final int tailDelta;
+  final int length;
+
+  @override
+  List<Object?> get props => [headDelta, tailDelta, length];
+}
 
 class TableDBArray {
   TableDBArray({
@@ -63,8 +78,9 @@ class TableDBArray {
     await Veilid.instance.deleteTableDB(_table);
   }
 
-  Future<StreamSubscription<void>> listen(void Function() onChanged) async =>
-      _changeStream.stream.listen((_) => onChanged());
+  Future<StreamSubscription<void>> listen(
+          void Function(TableDBArrayUpdate) onChanged) async =>
+      _changeStream.stream.listen(onChanged);
 
   ////////////////////////////////////////////////////////////
   // Public interface
@@ -160,6 +176,7 @@ class TableDBArray {
     // Put the entry in the index
     final pos = _length;
     _length++;
+    _tailDelta++;
     await _setIndexEntry(pos, entry);
   }
 
@@ -167,6 +184,7 @@ class TableDBArray {
       VeilidTableDBTransaction t, List<Uint8List> values) async {
     var pos = _length;
     _length += values.length;
+    _tailDelta += values.length;
     for (final value in values) {
       // Allocate an entry to store the value
       final entry = await _allocateEntry();
@@ -318,11 +336,18 @@ class TableDBArray {
         final _oldLength = _length;
         final _oldNextFree = _nextFree;
         final _oldMaxEntry = _maxEntry;
+        final _oldHeadDelta = _headDelta;
+        final _oldTailDelta = _tailDelta;
         try {
           final out = await transactionScope(_tableDB, (t) async {
             final out = await closure(t);
             await _saveHead(t);
             await _flushDirtyChunks(t);
+            // Send change
+            _changeStream.add(TableDBArrayUpdate(
+                headDelta: _headDelta, tailDelta: _tailDelta, length: _length));
+            _headDelta = 0;
+            _tailDelta = 0;
             return out;
           });
 
@@ -332,6 +357,8 @@ class TableDBArray {
           _length = _oldLength;
           _nextFree = _oldNextFree;
           _maxEntry = _oldMaxEntry;
+          _headDelta = _oldHeadDelta;
+          _tailDelta = _oldTailDelta;
           // invalidate caches because they could have been written to
           _chunkCache.clear();
           _dirtyChunks.clear();
@@ -428,6 +455,10 @@ class TableDBArray {
 
     // Then add to length
     _length += length;
+    if (start == 0) {
+      _headDelta += length;
+    }
+    _tailDelta += length;
   }
 
   Future<void> _removeIndexEntry(int pos) async => _removeIndexEntries(pos, 1);
@@ -485,6 +516,10 @@ class TableDBArray {
 
     // Then truncate
     _length -= length;
+    if (start == 0) {
+      _headDelta -= length;
+    }
+    _tailDelta -= length;
   }
 
   Future<Uint8List> _loadIndexChunk(int chunkNumber) async {
@@ -578,6 +613,10 @@ class TableDBArray {
   final WaitSet<void> _initWait = WaitSet();
   final Mutex _mutex = Mutex();
 
+  // Change tracking
+  int _headDelta = 0;
+  int _tailDelta = 0;
+
   // Head state
   int _length = 0;
   int _nextFree = 0;
@@ -587,5 +626,6 @@ class TableDBArray {
   final Map<int, Uint8List> _dirtyChunks = {};
   static const int _chunkCacheLength = 3;
 
-  final StreamController<void> _changeStream = StreamController.broadcast();
+  final StreamController<TableDBArrayUpdate> _changeStream =
+      StreamController.broadcast();
 }

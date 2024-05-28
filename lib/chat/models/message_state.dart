@@ -39,19 +39,9 @@ class MessageState with _$MessageState {
 }
 
 extension MessageStateExt on MessageState {
-  String get uniqueId {
-    final author = content.author.toVeilid().toString();
-    final id = base64UrlNoPadEncode(content.id);
-    return '$author|$id';
-  }
-
-  static (proto.TypedKey, Uint8List) splitUniqueId(String uniqueId) {
-    final parts = uniqueId.split('|');
-    if (parts.length != 2) {
-      throw Exception('invalid unique id');
-    }
-    final author = TypedKey.fromString(parts[0]).toProto();
-    final id = base64UrlNoPadDecode(parts[1]);
-    return (author, id);
+  Uint8List get uniqueId {
+    final author = content.author.toVeilid().decode();
+    final id = content.id;
+    return author..addAll(id);
   }
 }

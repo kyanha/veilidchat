@@ -124,7 +124,7 @@ message Message {
         string text = 1;
         // Topic of the message / Content warning
         optional string topic = 2;
-        // Message id replied to
+        // Message id replied to (author id + message id)
         optional bytes reply_id = 3;
         // Message expiration timestamp
         uint64 expiration = 4;

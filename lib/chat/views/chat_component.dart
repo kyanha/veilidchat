@@ -126,7 +126,7 @@ class ChatComponent extends StatelessWidget {
         final textMessage = types.TextMessage(
             author: isLocal ? _localUser : _remoteUser,
             createdAt: (message.timestamp.value ~/ BigInt.from(1000)).toInt(),
-            id: message.uniqueId,
+            id: base64UrlNoPadEncode(message.uniqueId),
             text: contextText.text,
             showStatus: status != null,
             status: status);
@@ -168,7 +168,7 @@ class ChatComponent extends StatelessWidget {
   void _handleSendPressed(types.PartialText message) {
     final text = message.text;
     final replyId = (message.repliedMessage != null)
-        ? MessageStateExt.splitUniqueId(message.repliedMessage!.id).$2
+        ? base64UrlNoPadDecode(message.repliedMessage!.id)
         : null;
     Timestamp? expiration;
     int? viewLimit;

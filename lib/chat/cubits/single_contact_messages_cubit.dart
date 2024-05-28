@@ -420,6 +420,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   void addTextMessage({required proto.Message_Text messageText}) {
     final message = proto.Message()
+      ..id = generateNextId()
       ..author = _activeAccountInfo.localAccount.identityMaster
           .identityPublicTypedKey()
           .toProto()
