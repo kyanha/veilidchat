@@ -28,20 +28,14 @@ class MessageState with _$MessageState {
     // Content of the message
     @JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
     required proto.Message content,
-    // Received or delivered timestamp
-    required Timestamp timestamp,
+    // Sent timestamp
+    required Timestamp sentTimestamp,
+    // Reconciled timestamp
+    required Timestamp? reconciledTimestamp,
     // The state of the message
     required MessageSendState? sendState,
   }) = _MessageState;
 
   factory MessageState.fromJson(dynamic json) =>
       _$MessageStateFromJson(json as Map<String, dynamic>);
-}
-
-extension MessageStateExt on MessageState {
-  Uint8List get uniqueId {
-    final author = content.author.toVeilid().decode();
-    final id = content.id;
-    return author..addAll(id);
-  }
 }

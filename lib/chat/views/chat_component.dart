@@ -104,7 +104,7 @@ class ChatComponent extends StatelessWidget {
 
   /////////////////////////////////////////////////////////////////////
 
-  types.Message? messageToChatMessage(MessageState message) {
+  types.Message? messageStateToChatMessage(MessageState message) {
     final isLocal = message.content.author.toVeilid() == _localUserIdentityKey;
 
     types.Status? status;
@@ -125,8 +125,9 @@ class ChatComponent extends StatelessWidget {
         final contextText = message.content.text;
         final textMessage = types.TextMessage(
             author: isLocal ? _localUser : _remoteUser,
-            createdAt: (message.timestamp.value ~/ BigInt.from(1000)).toInt(),
-            id: base64UrlNoPadEncode(message.uniqueId),
+            createdAt:
+                (message.sentTimestamp.value ~/ BigInt.from(1000)).toInt(),
+            id: message.content.uniqueIdString,
             text: contextText.text,
             showStatus: status != null,
             status: status);
@@ -219,7 +220,7 @@ class ChatComponent extends StatelessWidget {
     final chatMessages = <types.Message>[];
     final tsSet = <String>{};
     for (final message in messages) {
-      final chatMessage = messageToChatMessage(message);
+      final chatMessage = messageStateToChatMessage(message);
       if (chatMessage == null) {
         continue;
       }

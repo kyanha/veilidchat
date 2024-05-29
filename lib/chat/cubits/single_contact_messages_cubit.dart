@@ -16,7 +16,7 @@ class RenderStateElement {
   RenderStateElement(
       {required this.message,
       required this.isLocal,
-      this.reconciled = false,
+      this.reconciledTimestamp,
       this.sent = false,
       this.sentOffline = false});
 
@@ -28,7 +28,7 @@ class RenderStateElement {
     if (sent && !sentOffline) {
       return MessageSendState.delivered;
     }
-    if (reconciled) {
+    if (reconciledTimestamp != null) {
       return MessageSendState.sent;
     }
     return MessageSendState.sending;
@@ -36,7 +36,7 @@ class RenderStateElement {
 
   proto.Message message;
   bool isLocal;
-  bool reconciled;
+  Timestamp? reconciledTimestamp;
   bool sent;
   bool sentOffline;
 }
@@ -68,7 +68,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   Future<void> close() async {
     await _initWait();
 
-    await _unreconciledMessagesQueue.close();
     await _sendingMessagesQueue.close();
     await _sentSubscription?.cancel();
     await _rcvdSubscription?.cancel();
@@ -81,13 +80,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Initialize everything
   Future<void> _init() async {
-    // Late initialization of queues with closures
-    _unreconciledMessagesQueue = PersistentQueue<proto.Message>(
-      table: 'SingleContactUnreconciledMessages',
-      key: _remoteConversationRecordKey.toString(),
-      fromBuffer: proto.Message.fromBuffer,
-      closure: _processUnreconciledMessages,
-    );
     _sendingMessagesQueue = PersistentQueue<proto.Message>(
       table: 'SingleContactSendingMessages',
       key: _remoteConversationRecordKey.toString(),
@@ -160,13 +152,14 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     _reconciledMessagesCubit = TableDBArrayCubit(
         open: () async => TableDBArray.make(table: tableName, crypto: crypto),
-        decodeElement: proto.Message.fromBuffer);
+        decodeElement: proto.ReconciledMessage.fromBuffer);
     _reconciledSubscription =
         _reconciledMessagesCubit!.stream.listen(_updateReconciledMessagesState);
     _updateReconciledMessagesState(_reconciledMessagesCubit!.state);
   }
 
   ////////////////////////////////////////////////////////////////////////////
+  // Public interface
 
   // Set the tail position of the log for pagination.
   // If tail is 0, the end of the log is used.
@@ -181,7 +174,14 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         tail: tail, count: count, follow: follow, forceRefresh: forceRefresh);
   }
 
+  // Set a user-visible 'text' message with possible attachments
+  void sendTextMessage({required proto.Message_Text messageText}) {
+    final message = proto.Message()..text = messageText;
+    _sendMessage(message: message);
+  }
+
   ////////////////////////////////////////////////////////////////////////////
+  // Internal implementation
 
   // Called when the sent messages cubit gets a change
   // This will re-render when messages are sent from another machine
@@ -191,10 +191,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       return;
     }
 
-    await _reconcileMessages(sentMessages, _sentMessagesCubit);
-
-    // Update the view
-    _renderState();
+    _reconcileMessages(sentMessages, _sentMessagesCubit!);
   }
 
   // Called when the received messages cubit gets a change
@@ -204,59 +201,14 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       return;
     }
 
-    await _reconcileMessages(rcvdMessages, _rcvdMessagesCubit);
-
-    singleFuture(_rcvdMessagesCubit!, () async {
-      // Get the timestamp of our most recent reconciled message
-      final lastReconciledMessageTs =
-          await _reconciledMessagesCubit!.operate((arr) async {
-        final len = arr.length;
-        if (len == 0) {
-          return null;
-        } else {
-          final lastMessage =
-              await arr.getProtobuf(proto.Message.fromBuffer, len - 1);
-          if (lastMessage == null) {
-            throw StateError('should have gotten last message');
-          }
-          return lastMessage.timestamp;
-        }
-      });
-
-      // Find oldest message we have not yet reconciled
-
-      // // Go through all the ones from the cubit state first since we've already
-      // // gotten them from the DHT
-      // for (var rn = rcvdMessages.elements.length; rn >= 0; rn--) {
-      //   //
-      // }
-
-      // // Add remote messages updates to queue to process asynchronously
-      // // Ignore offline state because remote messages are always fully delivered
-      // // This may happen once per client but should be idempotent
-      // _unreconciledMessagesQueue.addAllSync(rcvdMessages.map((x) => x.value));
-
-      // Update the view
-      _renderState();
-    });
+    _reconcileMessages(rcvdMessages, _rcvdMessagesCubit!);
   }
 
   // Called when the reconciled messages window gets a change
   void _updateReconciledMessagesState(
-      TableDBArrayBusyState<proto.Message> avmessages) {
+      TableDBArrayBusyState<proto.ReconciledMessage> avmessages) {
     // Update the view
     _renderState();
-  }
-
-  // Async process to reconcile messages sent or received in the background
-  Future<void> _processUnreconciledMessages(
-      IList<proto.Message> messages) async {
-    // await _reconciledMessagesCubit!
-    //     .operateAppendEventual((reconciledMessagesWriter) async {
-    //   await _reconcileMessagesInner(
-    //       reconciledMessagesWriter: reconciledMessagesWriter,
-    //       messages: messages);
-    // });
   }
 
   Future<Uint8List> _hashSignature(proto.Signature signature) async =>
@@ -315,6 +267,43 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     await _sentMessagesCubit!.operateAppendEventual((writer) =>
         writer.tryAddAll(messages.map((m) => m.writeToBuffer()).toList()));
+  }
+
+  void _reconcileMessages(DHTLogStateData<proto.Message> inputMessages,
+      DHTLogCubit<proto.Message> inputMessagesCubit) {
+    singleFuture(_reconciledMessagesCubit!, () async {
+      // Get the timestamp of our most recent reconciled message
+      final lastReconciledMessageTs =
+          await _reconciledMessagesCubit!.operate((arr) async {
+        final len = arr.length;
+        if (len == 0) {
+          return null;
+        } else {
+          final lastMessage =
+              await arr.getProtobuf(proto.Message.fromBuffer, len - 1);
+          if (lastMessage == null) {
+            throw StateError('should have gotten last message');
+          }
+          return lastMessage.timestamp;
+        }
+      });
+
+      // Find oldest message we have not yet reconciled
+
+      // // Go through all the ones from the cubit state first since we've already
+      // // gotten them from the DHT
+      // for (var rn = rcvdMessages.elements.length; rn >= 0; rn--) {
+      //   //
+      // }
+
+      // // Add remote messages updates to queue to process asynchronously
+      // // Ignore offline state because remote messages are always fully delivered
+      // // This may happen once per client but should be idempotent
+      // _unreconciledMessagesQueue.addAllSync(rcvdMessages.map((x) => x.value));
+
+      // Update the view
+      _renderState();
+    });
   }
 
   Future<void> _reconcileMessagesInner(
@@ -380,15 +369,11 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Produce a state for this cubit from the input cubits and queues
   void _renderState() {
-    //  xxx move into a singlefuture
-
     // Get all reconciled messages
     final reconciledMessages =
         _reconciledMessagesCubit?.state.state.asData?.value;
     // Get all sent messages
     final sentMessages = _sentMessagesCubit?.state.state.asData?.value;
-    // Get all items in the unreconciled queue
-    final unreconciledMessages = _unreconciledMessagesQueue.queue;
     // Get all items in the unsent queue
     final sendingMessages = _sendingMessagesQueue.queue;
 
@@ -400,31 +385,30 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     // Generate state for each message
     final sentMessagesMap =
-        IMap<Int64, DHTLogElementState<proto.Message>>.fromValues(
-      keyMapper: (x) => x.value.timestamp,
+        IMap<String, DHTLogElementState<proto.Message>>.fromValues(
+      keyMapper: (x) => x.value.uniqueIdString,
       values: sentMessages.elements,
     );
-    final reconciledMessagesMap = IMap<Int64, proto.Message>.fromValues(
-      keyMapper: (x) => x.timestamp,
+    final reconciledMessagesMap =
+        IMap<String, proto.ReconciledMessage>.fromValues(
+      keyMapper: (x) => x.content.uniqueIdString,
       values: reconciledMessages.elements,
     );
-    final sendingMessagesMap = IMap<Int64, proto.Message>.fromValues(
-      keyMapper: (x) => x.timestamp,
+    final sendingMessagesMap = IMap<String, proto.Message>.fromValues(
+      keyMapper: (x) => x.uniqueIdString,
       values: sendingMessages,
     );
-    final unreconciledMessagesMap = IMap<Int64, proto.Message>.fromValues(
-      keyMapper: (x) => x.timestamp,
-      values: unreconciledMessages,
-    );
 
-    final renderedElements = <Int64, RenderStateElement>{};
+    final renderedElements = <String, RenderStateElement>{};
 
     for (final m in reconciledMessagesMap.entries) {
       renderedElements[m.key] = RenderStateElement(
-          message: m.value.value,
-          isLocal: m.value.value.author.toVeilid() != _remoteIdentityPublicKey,
-          reconciled: true,
-          reconciledOffline: m.value.isOffline);
+        message: m.value.content,
+        isLocal: m.value.content.author.toVeilid() ==
+            _activeAccountInfo.localAccount.identityMaster
+                .identityPublicTypedKey(),
+        reconciledTimestamp: Timestamp.fromInt64(m.value.reconciledTime),
+      );
     }
     for (final m in sentMessagesMap.entries) {
       renderedElements.putIfAbsent(
@@ -435,17 +419,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
               ))
         ..sent = true
         ..sentOffline = m.value.isOffline;
-    }
-    for (final m in unreconciledMessagesMap.entries) {
-      renderedElements
-          .putIfAbsent(
-              m.key,
-              () => RenderStateElement(
-                    message: m.value,
-                    isLocal:
-                        m.value.author.toVeilid() != _remoteIdentityPublicKey,
-                  ))
-          .reconciled = false;
     }
     for (final m in sendingMessagesMap.entries) {
       renderedElements
@@ -465,24 +438,25 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     final renderedState = messageKeys
         .map((x) => MessageState(
             content: x.value.message,
-            timestamp: Timestamp.fromInt64(x.key),
+            sentTimestamp: Timestamp.fromInt64(x.value.message.timestamp),
+            reconciledTimestamp: x.value.reconciledTimestamp,
             sendState: x.value.sendState))
         .toIList();
 
     // Emit the rendered state
-
     emit(AsyncValue.data(renderedState));
   }
 
-  void sendTextMessage({required proto.Message_Text messageText}) {
-    final message = proto.Message()
-      ..id = generateNextId()
+  void _sendMessage({required proto.Message message}) {
+    // Add common fields
+    // id and signature will get set by _processMessageToSend
+    message
       ..author = _activeAccountInfo.localAccount.identityMaster
           .identityPublicTypedKey()
           .toProto()
-      ..timestamp = Veilid.instance.now().toInt64()
-      ..text = messageText;
+      ..timestamp = Veilid.instance.now().toInt64();
 
+    // Put in the queue
     _sendingMessagesQueue.addSync(message);
 
     // Update the view
@@ -490,6 +464,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   /////////////////////////////////////////////////////////////////////////
+  // Static utility functions
 
   static Future<void> cleanupAndDeleteMessages(
       {required TypedKey localConversationRecordKey}) async {
@@ -518,13 +493,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   DHTLogCubit<proto.Message>? _sentMessagesCubit;
   DHTLogCubit<proto.Message>? _rcvdMessagesCubit;
-  TableDBArrayCubit<proto.Message>? _reconciledMessagesCubit;
+  TableDBArrayCubit<proto.ReconciledMessage>? _reconciledMessagesCubit;
 
-  late final PersistentQueue<proto.Message> _unreconciledMessagesQueue; xxx can we eliminate this? and make rcvd messages cubit listener work like sent?
   late final PersistentQueue<proto.Message> _sendingMessagesQueue;
 
   StreamSubscription<DHTLogBusyState<proto.Message>>? _sentSubscription;
   StreamSubscription<DHTLogBusyState<proto.Message>>? _rcvdSubscription;
-  StreamSubscription<TableDBArrayBusyState<proto.Message>>?
+  StreamSubscription<TableDBArrayBusyState<proto.ReconciledMessage>>?
       _reconciledSubscription;
 }
