@@ -1,16 +1,28 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
+import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import '../models/models.dart';
+
+@immutable
+class MessagePosition extends Equatable {
+  const MessagePosition(this.message, this.pos);
+  final proto.Message message;
+  final int pos;
+  @override
+  List<Object?> get props => [message, pos];
+}
 
 class RenderStateElement {
   RenderStateElement(
@@ -191,7 +203,10 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       return;
     }
 
-    _reconcileMessages(sentMessages, _sentMessagesCubit!);
+    _reconcileMessages(
+        _activeAccountInfo.localAccount.identityMaster.identityPublicTypedKey(),
+        sentMessages,
+        _sentMessagesCubit!);
   }
 
   // Called when the received messages cubit gets a change
@@ -201,7 +216,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       return;
     }
 
-    _reconcileMessages(rcvdMessages, _rcvdMessagesCubit!);
+    _reconcileMessages(
+        _remoteIdentityPublicKey, rcvdMessages, _rcvdMessagesCubit!);
   }
 
   // Called when the reconciled messages window gets a change
@@ -269,37 +285,108 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         writer.tryAddAll(messages.map((m) => m.writeToBuffer()).toList()));
   }
 
-  void _reconcileMessages(DHTLogStateData<proto.Message> inputMessages,
+  void _reconcileMessages(
+      TypedKey author,
+      DHTLogStateData<proto.Message> inputMessages,
       DHTLogCubit<proto.Message> inputMessagesCubit) {
     singleFuture(_reconciledMessagesCubit!, () async {
-      // Get the timestamp of our most recent reconciled message
-      final lastReconciledMessageTs =
+      // Get the position of our most recent
+      // reconciled message from this author
+      // XXX: For a group chat, this should find when the author
+      // was added to the membership so we don't just go back in time forever
+      final lastReconciledMessage =
           await _reconciledMessagesCubit!.operate((arr) async {
-        final len = arr.length;
-        if (len == 0) {
-          return null;
-        } else {
-          final lastMessage =
-              await arr.getProtobuf(proto.Message.fromBuffer, len - 1);
-          if (lastMessage == null) {
+        var pos = arr.length - 1;
+        while (pos >= 0) {
+          final message = await arr.getProtobuf(proto.Message.fromBuffer, pos);
+          if (message == null) {
             throw StateError('should have gotten last message');
           }
-          return lastMessage.timestamp;
+          if (message.author.toVeilid() == author) {
+            return MessagePosition(message, pos);
+          }
+          pos--;
         }
+        return null;
       });
 
       // Find oldest message we have not yet reconciled
+      final toReconcile = ListQueue<proto.Message>();
 
-      // // Go through all the ones from the cubit state first since we've already
-      // // gotten them from the DHT
-      // for (var rn = rcvdMessages.elements.length; rn >= 0; rn--) {
-      //   //
-      // }
+      // Go through batches of the input dhtlog starting with
+      // the current cubit state which is at the tail of the log
+      // Find the last reconciled message for this author
+      var currentInputPos = inputMessages.tail;
+      var currentInputElements = inputMessages.elements;
+      final inputBatchCount = inputMessages.count;
+      outer:
+      while (true) {
+        for (var rn = currentInputElements.length;
+            rn >= 0 && currentInputPos >= 0;
+            rn--, currentInputPos--) {
+          final elem = currentInputElements[rn];
 
-      // // Add remote messages updates to queue to process asynchronously
-      // // Ignore offline state because remote messages are always fully delivered
-      // // This may happen once per client but should be idempotent
-      // _unreconciledMessagesQueue.addAllSync(rcvdMessages.map((x) => x.value));
+          // If we've found an input element that is older than our last
+          // reconciled message for this author, then we stop
+          if (lastReconciledMessage != null) {
+            if (elem.value.timestamp <
+                lastReconciledMessage.message.timestamp) {
+              break outer;
+            }
+          }
+
+          // Drop the 'offline' elements because we don't reconcile
+          // anything until it has been confirmed to be committed to the DHT
+          if (elem.isOffline) {
+            continue;
+          }
+
+          // Add to head of reconciliation queue
+          toReconcile.addFirst(elem.value);
+          if (toReconcile.length > _maxReconcileChunk) {
+            toReconcile.removeLast();
+          }
+        }
+        if (currentInputPos < 0) {
+          break;
+        }
+
+        // Get another input batch futher back
+        final nextInputBatch = await inputMessagesCubit.loadElements(
+            currentInputPos, inputBatchCount);
+        final asErr = nextInputBatch.asError;
+        if (asErr != null) {
+          emit(AsyncValue.error(asErr.error, asErr.stackTrace));
+          return;
+        }
+        final asLoading = nextInputBatch.asLoading;
+        if (asLoading != null) {
+          // xxx: no need to block the cubit here for this
+          // xxx: might want to switch to a 'busy' state though
+          // xxx: to let the messages view show a spinner at the bottom
+          // xxx: while we reconcile...
+          // emit(const AsyncValue.loading());
+          return;
+        }
+        currentInputElements = nextInputBatch.asData!.value;
+      }
+
+      // Now iterate from our current input position in batches
+      // and reconcile the messages in the forward direction
+      var insertPosition =
+          (lastReconciledMessage != null) ? lastReconciledMessage.pos : 0;
+      var lastInsertTime = (lastReconciledMessage != null)
+          ? lastReconciledMessage.message.timestamp
+          : Int64.ZERO;
+
+      // Insert this batch
+      xxx expand upon 'res' and iterate batches and update insert position/time
+      final res = await _reconciledMessagesCubit!.operate((arr) async =>
+          _reconcileMessagesInner(
+              reconciledArray: arr,
+              toReconcile: toReconcile,
+              insertPosition: insertPosition,
+              lastInsertTime: lastInsertTime));
 
       // Update the view
       _renderState();
@@ -307,8 +394,10 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   Future<void> _reconcileMessagesInner(
-      {required DHTLogWriteOperations reconciledMessagesWriter,
-      required IList<proto.Message> messages}) async {
+      {required TableDBArray reconciledArray,
+      required Iterable<proto.Message> toReconcile,
+      required int insertPosition,
+      required Int64 lastInsertTime}) async {
     // // Ensure remoteMessages is sorted by timestamp
     // final newMessages = messages
     //     .sort((a, b) => a.timestamp.compareTo(b.timestamp))
@@ -501,4 +590,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   StreamSubscription<DHTLogBusyState<proto.Message>>? _rcvdSubscription;
   StreamSubscription<TableDBArrayBusyState<proto.ReconciledMessage>>?
       _reconciledSubscription;
+
+  static const int _maxReconcileChunk = 65536;
 }
