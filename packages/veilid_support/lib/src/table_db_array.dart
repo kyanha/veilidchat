@@ -6,6 +6,7 @@ import 'package:async_tools/async_tools.dart';
 import 'package:charcode/charcode.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:protobuf/protobuf.dart';
 
 import '../veilid_support.dart';
 
@@ -128,13 +129,13 @@ class TableDBArray {
     });
   }
 
-  Future<List<Uint8List>> getRange(int start, int end) async {
+  Future<List<Uint8List>> getRange(int start, [int? end]) async {
     await _initWait();
     return _mutex.protect(() async {
       if (!_open) {
         throw StateError('not open');
       }
-      return _getRangeInner(start, end);
+      return _getRangeInner(start, end ?? _length);
     });
   }
 
@@ -628,4 +629,37 @@ class TableDBArray {
 
   final StreamController<TableDBArrayUpdate> _changeStream =
       StreamController.broadcast();
+}
+
+extension TableDBArrayExt on TableDBArray {
+  /// Convenience function:
+  /// Like get but also parses the returned element as JSON
+  Future<T?> getJson<T>(
+    T Function(dynamic) fromJson,
+    int pos,
+  ) =>
+      get(
+        pos,
+      ).then((out) => jsonDecodeOptBytes(fromJson, out));
+
+  /// Convenience function:
+  /// Like getRange but also parses the returned elements as JSON
+  Future<List<T>?> getRangeJson<T>(T Function(dynamic) fromJson, int start,
+          [int? end]) =>
+      getRange(start, end ?? _length).then((out) => out.map(fromJson).toList());
+
+  /// Convenience function:
+  /// Like get but also parses the returned element as a protobuf object
+  Future<T?> getProtobuf<T extends GeneratedMessage>(
+    T Function(List<int>) fromBuffer,
+    int pos,
+  ) =>
+      get(pos).then(fromBuffer);
+
+  /// Convenience function:
+  /// Like getRange but also parses the returned elements as protobuf objects
+  Future<List<T>?> getRangeProtobuf<T extends GeneratedMessage>(
+          T Function(List<int>) fromBuffer, int start, [int? end]) =>
+      getRange(start, end ?? _length)
+          .then((out) => out.map(fromBuffer).toList());
 }

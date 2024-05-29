@@ -56,7 +56,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     // Add Contact to account's list
     // if this fails, don't keep retrying, user can try again later
     await operateWrite((writer) async {
-      if (!await writer.tryAddItem(contact.writeToBuffer())) {
+      if (!await writer.tryAdd(contact.writeToBuffer())) {
         throw Exception('Failed to add contact record');
       }
     });
@@ -72,13 +72,13 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     // Remove Contact from account's list
     final deletedItem = await operateWrite((writer) async {
       for (var i = 0; i < writer.length; i++) {
-        final item = await writer.getItemProtobuf(proto.Contact.fromBuffer, i);
+        final item = await writer.getProtobuf(proto.Contact.fromBuffer, i);
         if (item == null) {
           throw Exception('Failed to get contact');
         }
         if (item.localConversationRecordKey ==
             contact.localConversationRecordKey) {
-          await writer.removeItem(i);
+          await writer.remove(i);
           return item;
         }
       }

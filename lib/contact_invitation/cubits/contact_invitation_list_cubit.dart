@@ -159,7 +159,7 @@ class ContactInvitationListCubit
         // Add ContactInvitationRecord to account's list
         // if this fails, don't keep retrying, user can try again later
         await operateWrite((writer) async {
-          if (await writer.tryAddItem(cinvrec.writeToBuffer()) == false) {
+          if (await writer.tryAdd(cinvrec.writeToBuffer()) == false) {
             throw Exception('Failed to add contact invitation record');
           }
         });
@@ -179,14 +179,14 @@ class ContactInvitationListCubit
     // Remove ContactInvitationRecord from account's list
     final deletedItem = await operateWrite((writer) async {
       for (var i = 0; i < writer.length; i++) {
-        final item = await writer.getItemProtobuf(
+        final item = await writer.getProtobuf(
             proto.ContactInvitationRecord.fromBuffer, i);
         if (item == null) {
           throw Exception('Failed to get contact invitation record');
         }
         if (item.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxRecordKey) {
-          await writer.removeItem(i);
+          await writer.remove(i);
           return item;
         }
       }

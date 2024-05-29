@@ -1,4 +1,4 @@
-export 'dht_append.dart';
+export 'dht_add.dart';
 export 'dht_clear.dart';
 export 'dht_closeable.dart';
 export 'dht_insert_remove.dart';

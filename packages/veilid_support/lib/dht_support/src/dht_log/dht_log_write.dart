@@ -17,7 +17,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
     }
     final lookup = await _spine.lookupPosition(pos);
     if (lookup == null) {
-      throw StateError("can't write to dht log");
+      throw StateError("can't lookup position in write to dht log");
     }
 
     // Write item to the segment
@@ -26,7 +26,47 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
   }
 
   @override
-  Future<bool> tryAddItem(Uint8List value) async {
+  Future<void> swap(int aPos, int bPos) async {
+    if (aPos < 0 || aPos >= _spine.length) {
+      throw IndexError.withLength(aPos, _spine.length);
+    }
+    if (bPos < 0 || bPos >= _spine.length) {
+      throw IndexError.withLength(bPos, _spine.length);
+    }
+    final aLookup = await _spine.lookupPosition(aPos);
+    if (aLookup == null) {
+      throw StateError("can't lookup position a in swap of dht log");
+    }
+    final bLookup = await _spine.lookupPosition(bPos);
+    if (bLookup == null) {
+      throw StateError("can't lookup position b in swap of dht log");
+    }
+
+    // Swap items in the segments
+    if (aLookup.shortArray == bLookup.shortArray) {
+      await aLookup.scope((sa) => sa.operateWriteEventual((aWrite) async {
+            await aWrite.swap(aLookup.pos, bLookup.pos);
+            return true;
+          }));
+    } else {
+      final bItem = Output<Uint8List>();
+      await aLookup.scope(
+          (sa) => bLookup.scope((sb) => sa.operateWriteEventual((aWrite) async {
+                if (bItem.value == null) {
+                  final aItem = await aWrite.get(aLookup.pos);
+                  if (aItem == null) {
+                    throw StateError("can't get item for position a in swap");
+                  }
+                  await sb.operateWriteEventual((bWrite) async =>
+                      bWrite.tryWriteItem(bLookup.pos, aItem, output: bItem));
+                }
+                return aWrite.tryWriteItem(aLookup.pos, bItem.value!);
+              })));
+    }
+  }
+
+  @override
+  Future<bool> tryAdd(Uint8List value) async {
     // Allocate empty index at the end of the list
     final insertPos = _spine.length;
     _spine.allocateTail(1);
@@ -44,12 +84,12 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
             // We should always be appending at the length
             throw StateError('appending should be at the end');
           }
-          return write.tryAddItem(value);
+          return write.tryAdd(value);
         }));
   }
 
   @override
-  Future<bool> tryAddItems(List<Uint8List> values) async {
+  Future<bool> tryAddAll(List<Uint8List> values) async {
     // Allocate empty index at the end of the list
     final insertPos = _spine.length;
     _spine.allocateTail(values.length);
@@ -79,7 +119,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
                 // We should always be appending at the length
                 throw StateError('appending should be at the end');
               }
-              return write.tryAddItems(sublistValues);
+              return write.tryAddAll(sublistValues);
             }));
         if (!ok) {
           success = false;

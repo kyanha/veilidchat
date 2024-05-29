@@ -172,7 +172,7 @@ const Message$json = {
     {'1': 'moderation', '3': 11, '4': 1, '5': 11, '6': '.veilidchat.Message.ControlModeration', '9': 0, '10': 'moderation'},
     {'1': 'signature', '3': 12, '4': 1, '5': 11, '6': '.veilid.Signature', '10': 'signature'},
   ],
-  '3': [Message_Text$json, Message_Secret$json, Message_ControlDelete$json, Message_ControlErase$json, Message_ControlSettings$json, Message_ControlPermissions$json, Message_ControlMembership$json, Message_ControlModeration$json],
+  '3': [Message_Text$json, Message_Secret$json, Message_ControlDelete$json, Message_ControlErase$json, Message_ControlSettings$json, Message_ControlPermissions$json, Message_ControlMembership$json, Message_ControlModeration$json, Message_ControlReadReceipt$json],
   '8': [
     {'1': 'kind'},
   ],
@@ -208,7 +208,7 @@ const Message_Secret$json = {
 const Message_ControlDelete$json = {
   '1': 'ControlDelete',
   '2': [
-    {'1': 'ids', '3': 1, '4': 3, '5': 11, '6': '.veilid.TypedKey', '10': 'ids'},
+    {'1': 'ids', '3': 1, '4': 3, '5': 12, '10': 'ids'},
   ],
 };
 
@@ -248,8 +248,16 @@ const Message_ControlMembership$json = {
 const Message_ControlModeration$json = {
   '1': 'ControlModeration',
   '2': [
-    {'1': 'accepted_ids', '3': 1, '4': 3, '5': 11, '6': '.veilid.TypedKey', '10': 'acceptedIds'},
-    {'1': 'rejected_ids', '3': 2, '4': 3, '5': 11, '6': '.veilid.TypedKey', '10': 'rejectedIds'},
+    {'1': 'accepted_ids', '3': 1, '4': 3, '5': 12, '10': 'acceptedIds'},
+    {'1': 'rejected_ids', '3': 2, '4': 3, '5': 12, '10': 'rejectedIds'},
+  ],
+};
+
+@$core.Deprecated('Use messageDescriptor instead')
+const Message_ControlReadReceipt$json = {
+  '1': 'ControlReadReceipt',
+  '2': [
+    {'1': 'read_ids', '3': 1, '4': 3, '5': 12, '10': 'readIds'},
   ],
 };
 
@@ -272,15 +280,15 @@ final $typed_data.Uint8List messageDescriptor = $convert.base64Decode(
     'HQoKdmlld19saW1pdBgFIAEoDVIJdmlld0xpbWl0EjgKC2F0dGFjaG1lbnRzGAYgAygLMhYudm'
     'VpbGlkY2hhdC5BdHRhY2htZW50UgthdHRhY2htZW50c0IICgZfdG9waWNCCwoJX3JlcGx5X2lk'
     'GkgKBlNlY3JldBIeCgpjaXBoZXJ0ZXh0GAEgASgMUgpjaXBoZXJ0ZXh0Eh4KCmV4cGlyYXRpb2'
-    '4YAiABKARSCmV4cGlyYXRpb24aMwoNQ29udHJvbERlbGV0ZRIiCgNpZHMYASADKAsyEC52ZWls'
-    'aWQuVHlwZWRLZXlSA2lkcxosCgxDb250cm9sRXJhc2USHAoJdGltZXN0YW1wGAEgASgEUgl0aW'
-    '1lc3RhbXAaRwoPQ29udHJvbFNldHRpbmdzEjQKCHNldHRpbmdzGAEgASgLMhgudmVpbGlkY2hh'
-    'dC5DaGF0U2V0dGluZ3NSCHNldHRpbmdzGk8KEkNvbnRyb2xQZXJtaXNzaW9ucxI5CgtwZXJtaX'
-    'NzaW9ucxgBIAEoCzIXLnZlaWxpZGNoYXQuUGVybWlzc2lvbnNSC3Blcm1pc3Npb25zGksKEUNv'
-    'bnRyb2xNZW1iZXJzaGlwEjYKCm1lbWJlcnNoaXAYASABKAsyFi52ZWlsaWRjaGF0Lk1lbWJlcn'
-    'NoaXBSCm1lbWJlcnNoaXAafQoRQ29udHJvbE1vZGVyYXRpb24SMwoMYWNjZXB0ZWRfaWRzGAEg'
-    'AygLMhAudmVpbGlkLlR5cGVkS2V5UgthY2NlcHRlZElkcxIzCgxyZWplY3RlZF9pZHMYAiADKA'
-    'syEC52ZWlsaWQuVHlwZWRLZXlSC3JlamVjdGVkSWRzQgYKBGtpbmQ=');
+    '4YAiABKARSCmV4cGlyYXRpb24aIQoNQ29udHJvbERlbGV0ZRIQCgNpZHMYASADKAxSA2lkcxos'
+    'CgxDb250cm9sRXJhc2USHAoJdGltZXN0YW1wGAEgASgEUgl0aW1lc3RhbXAaRwoPQ29udHJvbF'
+    'NldHRpbmdzEjQKCHNldHRpbmdzGAEgASgLMhgudmVpbGlkY2hhdC5DaGF0U2V0dGluZ3NSCHNl'
+    'dHRpbmdzGk8KEkNvbnRyb2xQZXJtaXNzaW9ucxI5CgtwZXJtaXNzaW9ucxgBIAEoCzIXLnZlaW'
+    'xpZGNoYXQuUGVybWlzc2lvbnNSC3Blcm1pc3Npb25zGksKEUNvbnRyb2xNZW1iZXJzaGlwEjYK'
+    'Cm1lbWJlcnNoaXAYASABKAsyFi52ZWlsaWRjaGF0Lk1lbWJlcnNoaXBSCm1lbWJlcnNoaXAaWQ'
+    'oRQ29udHJvbE1vZGVyYXRpb24SIQoMYWNjZXB0ZWRfaWRzGAEgAygMUgthY2NlcHRlZElkcxIh'
+    'CgxyZWplY3RlZF9pZHMYAiADKAxSC3JlamVjdGVkSWRzGi8KEkNvbnRyb2xSZWFkUmVjZWlwdB'
+    'IZCghyZWFkX2lkcxgBIAMoDFIHcmVhZElkc0IGCgRraW5k');
 
 @$core.Deprecated('Use reconciledMessageDescriptor instead')
 const ReconciledMessage$json = {

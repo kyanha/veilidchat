@@ -14,7 +14,7 @@ abstract class DHTInsertRemove {
   /// Throws an IndexError if the position removed exceeds the length of
   /// the container.
   /// Throws a StateError if the container exceeds its maximum size.
-  Future<bool> tryInsertItem(int pos, Uint8List value);
+  Future<bool> tryInsert(int pos, Uint8List value);
 
   /// Try to insert items at position 'pos' of the DHT container.
   /// Return true if the elements were successfully inserted, and false if the
@@ -23,38 +23,33 @@ abstract class DHTInsertRemove {
   /// Throws an IndexError if the position removed exceeds the length of
   /// the container.
   /// Throws a StateError if the container exceeds its maximum size.
-  Future<bool> tryInsertItems(int pos, List<Uint8List> values);
-
-  /// Swap items at position 'aPos' and 'bPos' in the DHTArray.
-  /// Throws an IndexError if either of the positions swapped exceeds the length
-  /// of the container
-  Future<void> swapItem(int aPos, int bPos);
+  Future<bool> tryInsertAll(int pos, List<Uint8List> values);
 
   /// Remove an item at position 'pos' in the DHT container.
   /// If the remove was successful this returns:
   ///   * outValue will return the prior contents of the element
   /// Throws an IndexError if the position removed exceeds the length of
   /// the container.
-  Future<void> removeItem(int pos, {Output<Uint8List>? output});
+  Future<void> remove(int pos, {Output<Uint8List>? output});
 }
 
 extension DHTInsertRemoveExt on DHTInsertRemove {
   /// Convenience function:
-  /// Like removeItem but also parses the returned element as JSON
-  Future<void> removeItemJson<T>(T Function(dynamic) fromJson, int pos,
+  /// Like remove but also parses the returned element as JSON
+  Future<void> removeJson<T>(T Function(dynamic) fromJson, int pos,
       {Output<T>? output}) async {
     final outValueBytes = output == null ? null : Output<Uint8List>();
-    await removeItem(pos, output: outValueBytes);
+    await remove(pos, output: outValueBytes);
     output.mapSave(outValueBytes, (b) => jsonDecodeBytes(fromJson, b));
   }
 
   /// Convenience function:
-  /// Like removeItem but also parses the returned element as JSON
-  Future<void> removeItemProtobuf<T extends GeneratedMessage>(
+  /// Like remove but also parses the returned element as JSON
+  Future<void> removeProtobuf<T extends GeneratedMessage>(
       T Function(List<int>) fromBuffer, int pos,
       {Output<T>? output}) async {
     final outValueBytes = output == null ? null : Output<Uint8List>();
-    await removeItem(pos, output: outValueBytes);
+    await remove(pos, output: outValueBytes);
     output.mapSave(outValueBytes, fromBuffer);
   }
 }

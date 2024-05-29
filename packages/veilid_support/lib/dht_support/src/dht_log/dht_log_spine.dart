@@ -3,16 +3,15 @@ part of 'dht_log.dart';
 class _DHTLogPosition extends DHTCloseable<_DHTLogPosition, DHTShortArray> {
   _DHTLogPosition._({
     required _DHTLogSpine dhtLogSpine,
-    required DHTShortArray shortArray,
+    required this.shortArray,
     required this.pos,
     required int segmentNumber,
-  })  : _segmentShortArray = shortArray,
-        _dhtLogSpine = dhtLogSpine,
+  })  : _dhtLogSpine = dhtLogSpine,
         _segmentNumber = segmentNumber;
   final int pos;
 
   final _DHTLogSpine _dhtLogSpine;
-  final DHTShortArray _segmentShortArray;
+  final DHTShortArray shortArray;
   var _openCount = 1;
   final int _segmentNumber;
   final Mutex _mutex = Mutex();
@@ -23,7 +22,7 @@ class _DHTLogPosition extends DHTCloseable<_DHTLogPosition, DHTShortArray> {
 
   /// The type of the openable scope
   @override
-  FutureOr<DHTShortArray> scoped() => _segmentShortArray;
+  FutureOr<DHTShortArray> scoped() => shortArray;
 
   /// Add a reference to this log
   @override

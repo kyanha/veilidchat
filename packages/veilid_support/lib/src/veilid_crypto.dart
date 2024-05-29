@@ -13,16 +13,16 @@ abstract class VeilidCrypto {
 class VeilidCryptoPrivate implements VeilidCrypto {
   VeilidCryptoPrivate._(VeilidCryptoSystem cryptoSystem, SharedSecret secretKey)
       : _cryptoSystem = cryptoSystem,
-        _secretKey = secretKey;
+        _secret = secretKey;
   final VeilidCryptoSystem _cryptoSystem;
-  final SharedSecret _secretKey;
+  final SharedSecret _secret;
 
   static Future<VeilidCryptoPrivate> fromTypedKey(
-      TypedKey typedKey, String domain) async {
-    final cryptoSystem = await Veilid.instance.getCryptoSystem(typedKey.kind);
-    final keyMaterial = Uint8List(0)
-      ..addAll(typedKey.value.decode())
-      ..addAll(utf8.encode(domain));
+      TypedKey typedSecret, String domain) async {
+    final cryptoSystem =
+        await Veilid.instance.getCryptoSystem(typedSecret.kind);
+    final keyMaterial = Uint8List.fromList(
+        [...typedSecret.value.decode(), ...utf8.encode(domain)]);
     final secretKey = await cryptoSystem.generateHash(keyMaterial);
     return VeilidCryptoPrivate._(cryptoSystem, secretKey);
   }
@@ -35,18 +35,18 @@ class VeilidCryptoPrivate implements VeilidCrypto {
   }
 
   static Future<VeilidCryptoPrivate> fromSharedSecret(
-      CryptoKind kind, SharedSecret secretKey) async {
+      CryptoKind kind, SharedSecret sharedSecret) async {
     final cryptoSystem = await Veilid.instance.getCryptoSystem(kind);
-    return VeilidCryptoPrivate._(cryptoSystem, secretKey);
+    return VeilidCryptoPrivate._(cryptoSystem, sharedSecret);
   }
 
   @override
   Future<Uint8List> encrypt(Uint8List data) =>
-      _cryptoSystem.encryptNoAuthWithNonce(data, _secretKey);
+      _cryptoSystem.encryptNoAuthWithNonce(data, _secret);
 
   @override
   Future<Uint8List> decrypt(Uint8List data) =>
-      _cryptoSystem.decryptNoAuthWithNonce(data, _secretKey);
+      _cryptoSystem.decryptNoAuthWithNonce(data, _secret);
 }
 
 ////////////////////////////////////

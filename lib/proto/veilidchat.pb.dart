@@ -486,7 +486,7 @@ class Message_ControlDelete extends $pb.GeneratedMessage {
   factory Message_ControlDelete.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Message.ControlDelete', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
-    ..pc<$0.TypedKey>(1, _omitFieldNames ? '' : 'ids', $pb.PbFieldType.PM, subBuilder: $0.TypedKey.create)
+    ..p<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'ids', $pb.PbFieldType.PY)
     ..hasRequiredFields = false
   ;
 
@@ -512,7 +512,7 @@ class Message_ControlDelete extends $pb.GeneratedMessage {
   static Message_ControlDelete? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.List<$0.TypedKey> get ids => $_getList(0);
+  $core.List<$core.List<$core.int>> get ids => $_getList(0);
 }
 
 class Message_ControlErase extends $pb.GeneratedMessage {
@@ -696,8 +696,8 @@ class Message_ControlModeration extends $pb.GeneratedMessage {
   factory Message_ControlModeration.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Message.ControlModeration', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
-    ..pc<$0.TypedKey>(1, _omitFieldNames ? '' : 'acceptedIds', $pb.PbFieldType.PM, subBuilder: $0.TypedKey.create)
-    ..pc<$0.TypedKey>(2, _omitFieldNames ? '' : 'rejectedIds', $pb.PbFieldType.PM, subBuilder: $0.TypedKey.create)
+    ..p<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'acceptedIds', $pb.PbFieldType.PY)
+    ..p<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'rejectedIds', $pb.PbFieldType.PY)
     ..hasRequiredFields = false
   ;
 
@@ -723,10 +723,46 @@ class Message_ControlModeration extends $pb.GeneratedMessage {
   static Message_ControlModeration? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.List<$0.TypedKey> get acceptedIds => $_getList(0);
+  $core.List<$core.List<$core.int>> get acceptedIds => $_getList(0);
 
   @$pb.TagNumber(2)
-  $core.List<$0.TypedKey> get rejectedIds => $_getList(1);
+  $core.List<$core.List<$core.int>> get rejectedIds => $_getList(1);
+}
+
+class Message_ControlReadReceipt extends $pb.GeneratedMessage {
+  factory Message_ControlReadReceipt() => create();
+  Message_ControlReadReceipt._() : super();
+  factory Message_ControlReadReceipt.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory Message_ControlReadReceipt.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Message.ControlReadReceipt', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
+    ..p<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'readIds', $pb.PbFieldType.PY)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  Message_ControlReadReceipt clone() => Message_ControlReadReceipt()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  Message_ControlReadReceipt copyWith(void Function(Message_ControlReadReceipt) updates) => super.copyWith((message) => updates(message as Message_ControlReadReceipt)) as Message_ControlReadReceipt;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Message_ControlReadReceipt create() => Message_ControlReadReceipt._();
+  Message_ControlReadReceipt createEmptyInstance() => create();
+  static $pb.PbList<Message_ControlReadReceipt> createRepeated() => $pb.PbList<Message_ControlReadReceipt>();
+  @$core.pragma('dart2js:noInline')
+  static Message_ControlReadReceipt getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Message_ControlReadReceipt>(create);
+  static Message_ControlReadReceipt? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<$core.List<$core.int>> get readIds => $_getList(0);
 }
 
 enum Message_Kind {

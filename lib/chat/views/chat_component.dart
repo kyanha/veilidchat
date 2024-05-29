@@ -162,7 +162,7 @@ class ChatComponent extends StatelessWidget {
       ..viewLimit = viewLimit ?? 0;
     protoMessageText.attachments.addAll(attachments);
 
-    _messagesCubit.addTextMessage(messageText: protoMessageText);
+    _messagesCubit.sendTextMessage(messageText: protoMessageText);
   }
 
   void _handleSendPressed(types.PartialText message) {

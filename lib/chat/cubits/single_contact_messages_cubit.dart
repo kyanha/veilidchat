@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -15,7 +17,6 @@ class RenderStateElement {
       {required this.message,
       required this.isLocal,
       this.reconciled = false,
-      this.reconciledOffline = false,
       this.sent = false,
       this.sentOffline = false});
 
@@ -27,7 +28,7 @@ class RenderStateElement {
     if (sent && !sentOffline) {
       return MessageSendState.delivered;
     }
-    if (reconciled && !reconciledOffline) {
+    if (reconciled) {
       return MessageSendState.sent;
     }
     return MessageSendState.sending;
@@ -36,7 +37,6 @@ class RenderStateElement {
   proto.Message message;
   bool isLocal;
   bool reconciled;
-  bool reconciledOffline;
   bool sent;
   bool sentOffline;
 }
@@ -96,7 +96,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     );
 
     // Make crypto
-    await _initMessagesCrypto();
+    await _initCrypto();
 
     // Reconciled messages key
     await _initReconciledMessagesCubit();
@@ -109,9 +109,13 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   // Make crypto
-  Future<void> _initMessagesCrypto() async {
+  Future<void> _initCrypto() async {
     _messagesCrypto = await _activeAccountInfo
         .makeConversationCrypto(_remoteIdentityPublicKey);
+    _localMessagesCryptoSystem =
+        await Veilid.instance.getCryptoSystem(_localMessagesRecordKey.kind);
+    _identityCryptoSystem =
+        await _activeAccountInfo.localAccount.identityMaster.identityCrypto;
   }
 
   // Open local messages key
@@ -144,13 +148,16 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _updateRcvdMessagesState(_rcvdMessagesCubit!.state);
   }
 
+  Future<VeilidCrypto> _makeLocalMessagesCrypto() async =>
+      VeilidCryptoPrivate.fromTypedKey(
+          _activeAccountInfo.userLogin.identitySecret, 'tabledb');
+
   // Open reconciled chat record key
   Future<void> _initReconciledMessagesCubit() async {
     final tableName = _localConversationRecordKey.toString();
 
-  xxx whats the right encryption for reconciled messages cubit?
+    final crypto = await _makeLocalMessagesCrypto();
 
-    final crypto = VeilidCryptoPrivate.fromTypedKey(kind, secretKey);
     _reconciledMessagesCubit = TableDBArrayCubit(
         open: () async => TableDBArray.make(table: tableName, crypto: crypto),
         decodeElement: proto.Message.fromBuffer);
@@ -183,8 +190,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     if (sentMessages == null) {
       return;
     }
-    // Don't reconcile, the sending machine will have already added
-    // to the reconciliation queue on that machine
+
+    await _reconcileMessages(sentMessages, _sentMessagesCubit);
 
     // Update the view
     _renderState();
@@ -197,16 +204,18 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       return;
     }
 
+    await _reconcileMessages(rcvdMessages, _rcvdMessagesCubit);
+
     singleFuture(_rcvdMessagesCubit!, () async {
       // Get the timestamp of our most recent reconciled message
       final lastReconciledMessageTs =
-          await _reconciledMessagesCubit!.operate((r) async {
-        final len = r.length;
+          await _reconciledMessagesCubit!.operate((arr) async {
+        final len = arr.length;
         if (len == 0) {
           return null;
         } else {
           final lastMessage =
-              await r.getItemProtobuf(proto.Message.fromBuffer, len - 1);
+              await arr.getProtobuf(proto.Message.fromBuffer, len - 1);
           if (lastMessage == null) {
             throw StateError('should have gotten last message');
           }
@@ -232,11 +241,9 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     });
   }
 
-  // Called when the reconciled messages list gets a change
-  // This can happen when multiple clients for the same identity are
-  // reading and reconciling the same remote chat
+  // Called when the reconciled messages window gets a change
   void _updateReconciledMessagesState(
-      DHTLogBusyState<proto.Message> avmessages) {
+      TableDBArrayBusyState<proto.Message> avmessages) {
     // Update the view
     _renderState();
   }
@@ -252,10 +259,62 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // });
   }
 
+  Future<Uint8List> _hashSignature(proto.Signature signature) async =>
+      (await _localMessagesCryptoSystem
+              .generateHash(signature.toVeilid().decode()))
+          .decode();
+
+  Future<void> _signMessage(proto.Message message) async {
+    // Generate data to sign
+    final data = Uint8List.fromList(utf8.encode(message.writeToJson()));
+
+    // Sign with our identity
+    final signature = await _identityCryptoSystem.sign(
+        _activeAccountInfo.localAccount.identityMaster.identityPublicKey,
+        _activeAccountInfo.userLogin.identitySecret.value,
+        data);
+
+    // Add to the message
+    message.signature = signature.toProto();
+  }
+
+  Future<void> _processMessageToSend(
+      proto.Message message, proto.Message? previousMessage) async {
+    // Get the previous message if we don't have one
+    previousMessage ??= await _sentMessagesCubit!.operate((r) async =>
+        r.length == 0
+            ? null
+            : await r.getProtobuf(proto.Message.fromBuffer, r.length - 1));
+
+    if (previousMessage == null) {
+      // If there's no last sent message,
+      // we start at a hash of the identity public key
+      message.id = (await _localMessagesCryptoSystem.generateHash(
+              _activeAccountInfo.localAccount.identityMaster.identityPublicKey
+                  .decode()))
+          .decode();
+    } else {
+      // If there is a last message, we generate the hash
+      // of the last message's signature and use it as our next id
+      message.id = await _hashSignature(previousMessage.signature);
+    }
+
+    // Now sign it
+    await _signMessage(message);
+  }
+
   // Async process to send messages in the background
   Future<void> _processSendingMessages(IList<proto.Message> messages) async {
+    // Go through and assign ids to all the messages in order
+    proto.Message? previousMessage;
+    final processedMessages = messages.toList();
+    for (final message in processedMessages) {
+      await _processMessageToSend(message, previousMessage);
+      previousMessage = message;
+    }
+
     await _sentMessagesCubit!.operateAppendEventual((writer) =>
-        writer.tryAddItems(messages.map((m) => m.writeToBuffer()).toList()));
+        writer.tryAddAll(messages.map((m) => m.writeToBuffer()).toList()));
   }
 
   Future<void> _reconcileMessagesInner(
@@ -345,9 +404,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       keyMapper: (x) => x.value.timestamp,
       values: sentMessages.elements,
     );
-    final reconciledMessagesMap =
-        IMap<Int64, DHTLogElementState<proto.Message>>.fromValues(
-      keyMapper: (x) => x.value.timestamp,
+    final reconciledMessagesMap = IMap<Int64, proto.Message>.fromValues(
+      keyMapper: (x) => x.timestamp,
       values: reconciledMessages.elements,
     );
     final sendingMessagesMap = IMap<Int64, proto.Message>.fromValues(
@@ -416,7 +474,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     emit(AsyncValue.data(renderedState));
   }
 
-  void addTextMessage({required proto.Message_Text messageText}) {
+  void sendTextMessage({required proto.Message_Text messageText}) {
     final message = proto.Message()
       ..id = generateNextId()
       ..author = _activeAccountInfo.localAccount.identityMaster
@@ -425,7 +483,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       ..timestamp = Veilid.instance.now().toInt64()
       ..text = messageText;
 
-    _unreconciledMessagesQueue.addSync(message);
     _sendingMessagesQueue.addSync(message);
 
     // Update the view
@@ -456,15 +513,18 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   final TypedKey _remoteMessagesRecordKey;
 
   late final VeilidCrypto _messagesCrypto;
+  late final VeilidCryptoSystem _localMessagesCryptoSystem;
+  late final VeilidCryptoSystem _identityCryptoSystem;
 
   DHTLogCubit<proto.Message>? _sentMessagesCubit;
   DHTLogCubit<proto.Message>? _rcvdMessagesCubit;
   TableDBArrayCubit<proto.Message>? _reconciledMessagesCubit;
 
-  late final PersistentQueue<proto.Message> _unreconciledMessagesQueue;
+  late final PersistentQueue<proto.Message> _unreconciledMessagesQueue; xxx can we eliminate this? and make rcvd messages cubit listener work like sent?
   late final PersistentQueue<proto.Message> _sendingMessagesQueue;
 
   StreamSubscription<DHTLogBusyState<proto.Message>>? _sentSubscription;
   StreamSubscription<DHTLogBusyState<proto.Message>>? _rcvdSubscription;
-  StreamSubscription<DHTLogBusyState<proto.Message>>? _reconciledSubscription;
+  StreamSubscription<TableDBArrayBusyState<proto.Message>>?
+      _reconciledSubscription;
 }

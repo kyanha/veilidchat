@@ -146,7 +146,7 @@ message Message {
     // A 'delete' control message
     // Deletes a set of messages by their ids
     message ControlDelete {
-        repeated veilid.TypedKey ids = 1;
+        repeated bytes ids = 1;
     } 
     // An 'erase' control message
     // Deletes a set of messages from before some timestamp
@@ -175,8 +175,13 @@ message Message {
     // A 'moderation' control message
     // Accepts or rejects a set of messages
     message ControlModeration {
-        repeated veilid.TypedKey accepted_ids = 1;
-        repeated veilid.TypedKey rejected_ids = 2;
+        repeated bytes accepted_ids = 1;
+        repeated bytes rejected_ids = 2;
+    }
+
+    // A 'read receipt' control message
+    message ControlReadReceipt {
+        repeated bytes read_ids = 1;
     }
 
     //////////////////////////////////////////////////////////////////////////

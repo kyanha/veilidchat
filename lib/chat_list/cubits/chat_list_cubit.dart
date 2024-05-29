@@ -65,7 +65,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     await operateWrite((writer) async {
       // See if we have added this chat already
       for (var i = 0; i < writer.length; i++) {
-        final cbuf = await writer.getItem(i);
+        final cbuf = await writer.get(i);
         if (cbuf == null) {
           throw Exception('Failed to get chat');
         }
@@ -84,7 +84,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
         ..remoteConversationRecordKey = remoteConversationRecordKey.toProto();
 
       // Add chat
-      final added = await writer.tryAddItem(chat.writeToBuffer());
+      final added = await writer.tryAdd(chat.writeToBuffer());
       if (!added) {
         throw Exception('Failed to add chat');
       }
@@ -106,15 +106,14 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
                 activeChatCubit.setActiveChat(null);
               }
               for (var i = 0; i < writer.length; i++) {
-                final c =
-                    await writer.getItemProtobuf(proto.Chat.fromBuffer, i);
+                final c = await writer.getProtobuf(proto.Chat.fromBuffer, i);
                 if (c == null) {
                   throw Exception('Failed to get chat');
                 }
                 if (c.localConversationRecordKey ==
                     localConversationRecordKeyProto) {
                   // Found the right chat
-                  await writer.removeItem(i);
+                  await writer.remove(i);
                   return c;
                 }
               }

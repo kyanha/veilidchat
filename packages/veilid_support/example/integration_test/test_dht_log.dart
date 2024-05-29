@@ -64,7 +64,7 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
           const chunk = 25;
           for (var n = 0; n < dataset.length; n += chunk) {
             print('$n-${n + chunk - 1} ');
-            final success = await w.tryAddItems(dataset.sublist(n, n + chunk));
+            final success = await w.tryAddAll(dataset.sublist(n, n + chunk));
             expect(success, isTrue);
           }
         });
@@ -73,22 +73,22 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
 
       print('get all\n');
       {
-        final dataset2 = await dlog.operate((r) async => r.getItemRange(0));
+        final dataset2 = await dlog.operate((r) async => r.getRange(0));
         expect(dataset2, equals(dataset));
       }
       {
         final dataset3 =
-            await dlog.operate((r) async => r.getItemRange(64, length: 128));
+            await dlog.operate((r) async => r.getRange(64, length: 128));
         expect(dataset3, equals(dataset.sublist(64, 64 + 128)));
       }
       {
         final dataset4 =
-            await dlog.operate((r) async => r.getItemRange(0, length: 1000));
+            await dlog.operate((r) async => r.getRange(0, length: 1000));
         expect(dataset4, equals(dataset.sublist(0, 1000)));
       }
       {
         final dataset5 =
-            await dlog.operate((r) async => r.getItemRange(500, length: 499));
+            await dlog.operate((r) async => r.getRange(500, length: 499));
         expect(dataset5, equals(dataset.sublist(500, 999)));
       }
       print('truncate\n');
@@ -96,8 +96,8 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
         await dlog.operateAppend((w) async => w.truncate(w.length - 5));
       }
       {
-        final dataset6 = await dlog
-            .operate((r) async => r.getItemRange(500 - 5, length: 499));
+        final dataset6 =
+            await dlog.operate((r) async => r.getRange(500 - 5, length: 499));
         expect(dataset6, equals(dataset.sublist(500, 999)));
       }
       print('truncate 2\n');
@@ -105,8 +105,8 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
         await dlog.operateAppend((w) async => w.truncate(w.length - 251));
       }
       {
-        final dataset7 = await dlog
-            .operate((r) async => r.getItemRange(500 - 256, length: 499));
+        final dataset7 =
+            await dlog.operate((r) async => r.getRange(500 - 256, length: 499));
         expect(dataset7, equals(dataset.sublist(500, 999)));
       }
       print('clear\n');
@@ -115,7 +115,7 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
       }
       print('get all\n');
       {
-        final dataset8 = await dlog.operate((r) async => r.getItemRange(0));
+        final dataset8 = await dlog.operate((r) async => r.getRange(0));
         expect(dataset8, isEmpty);
       }
       print('delete and close\n');

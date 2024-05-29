@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
 import '../../proto/proto.dart' as proto;
-import '../interfaces/dht_append.dart';
+import '../interfaces/dht_add.dart';
 
 part 'dht_log_spine.dart';
 part 'dht_log_read.dart';

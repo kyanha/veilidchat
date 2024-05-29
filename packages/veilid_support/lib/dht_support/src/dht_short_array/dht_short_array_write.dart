@@ -16,15 +16,14 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
   _DHTShortArrayWrite._(super.head) : super._();
 
   @override
-  Future<bool> tryAddItem(Uint8List value) =>
-      tryInsertItem(_head.length, value);
+  Future<bool> tryAdd(Uint8List value) => tryInsert(_head.length, value);
 
   @override
-  Future<bool> tryAddItems(List<Uint8List> values) =>
-      tryInsertItems(_head.length, values);
+  Future<bool> tryAddAll(List<Uint8List> values) =>
+      tryInsertAll(_head.length, values);
 
   @override
-  Future<bool> tryInsertItem(int pos, Uint8List value) async {
+  Future<bool> tryInsert(int pos, Uint8List value) async {
     if (pos < 0 || pos > _head.length) {
       throw IndexError.withLength(pos, _head.length);
     }
@@ -44,7 +43,7 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
   }
 
   @override
-  Future<bool> tryInsertItems(int pos, List<Uint8List> values) async {
+  Future<bool> tryInsertAll(int pos, List<Uint8List> values) async {
     if (pos < 0 || pos > _head.length) {
       throw IndexError.withLength(pos, _head.length);
     }
@@ -100,7 +99,7 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
   }
 
   @override
-  Future<void> swapItem(int aPos, int bPos) async {
+  Future<void> swap(int aPos, int bPos) async {
     if (aPos < 0 || aPos >= _head.length) {
       throw IndexError.withLength(aPos, _head.length);
     }
@@ -112,7 +111,7 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
   }
 
   @override
-  Future<void> removeItem(int pos, {Output<Uint8List>? output}) async {
+  Future<void> remove(int pos, {Output<Uint8List>? output}) async {
     if (pos < 0 || pos >= _head.length) {
       throw IndexError.withLength(pos, _head.length);
     }

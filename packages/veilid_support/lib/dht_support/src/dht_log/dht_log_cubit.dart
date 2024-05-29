@@ -92,7 +92,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
 
   Future<void> _refreshInner(void Function(AsyncValue<DHTLogStateData<T>>) emit,
       {bool forceRefresh = false}) async {
-    final avElements = await _loadElements(_tail, _count);
+    final avElements = await loadElements(_tail, _count);
     final err = avElements.asError;
     if (err != null) {
       emit(AsyncValue.error(err.error, err.stackTrace));
@@ -108,9 +108,10 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
         elements: elements, tail: _tail, count: _count, follow: _follow)));
   }
 
-  Future<AsyncValue<IList<DHTLogElementState<T>>>> _loadElements(
+  Future<AsyncValue<IList<DHTLogElementState<T>>>> loadElements(
       int tail, int count,
       {bool forceRefresh = false}) async {
+    await _initWait();
     try {
       final allItems = await _log.operate((reader) async {
         final length = reader.length;
@@ -118,7 +119,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
         final start = (count < end) ? end - count : 0;
 
         final offlinePositions = await reader.getOfflinePositions();
-        final allItems = (await reader.getItemRange(start,
+        final allItems = (await reader.getRange(start,
                 length: end - start, forceRefresh: forceRefresh))
             ?.indexed
             .map((x) => DHTLogElementState(
