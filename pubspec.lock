@@ -1219,6 +1219,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  sorted_list:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: main
+      resolved-ref: "090eb9be48ab85ff064a0a1d8175b4a72d79b139"
+      url: "https://gitlab.com/veilid/dart-sorted-list-improved.git"
+    source: git
+    version: "1.0.0"
   source_gen:
     dependency: transitive
     description:

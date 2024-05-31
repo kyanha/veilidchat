@@ -23,4 +23,7 @@ extension MessageExt on proto.Message {
   }
 
   String get uniqueIdString => base64UrlNoPadEncode(uniqueIdBytes);
+
+  static int compareTimestamp(proto.Message a, proto.Message b) =>
+      a.timestamp.compareTo(b.timestamp);
 }

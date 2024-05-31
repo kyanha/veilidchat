@@ -662,4 +662,46 @@ extension TableDBArrayExt on TableDBArray {
           T Function(List<int>) fromBuffer, int start, [int? end]) =>
       getRange(start, end ?? _length)
           .then((out) => out.map(fromBuffer).toList());
+
+  /// Convenience function:
+  /// Like add but for a JSON value
+  Future<void> addJson<T>(T value) async => add(jsonEncodeBytes(value));
+
+  /// Convenience function:
+  /// Like add but for a Protobuf value
+  Future<void> addProtobuf<T extends GeneratedMessage>(T value) =>
+      add(value.writeToBuffer());
+
+  /// Convenience function:
+  /// Like addAll but for a JSON value
+  Future<void> addAllJson<T>(List<T> values) async =>
+      addAll(values.map(jsonEncodeBytes).toList());
+
+  /// Convenience function:
+  /// Like addAll but for a Protobuf value
+  Future<void> addAllProtobuf<T extends GeneratedMessage>(
+          List<T> values) async =>
+      addAll(values.map((x) => x.writeToBuffer()).toList());
+
+  /// Convenience function:
+  /// Like insert but for a JSON value
+  Future<void> insertJson<T>(int pos, T value) async =>
+      insert(pos, jsonEncodeBytes(value));
+
+  /// Convenience function:
+  /// Like insert but for a Protobuf value
+  Future<void> insertProtobuf<T extends GeneratedMessage>(
+          int pos, T value) async =>
+      insert(pos, value.writeToBuffer());
+
+  /// Convenience function:
+  /// Like insertAll but for a JSON value
+  Future<void> insertAllJson<T>(int pos, List<T> values) async =>
+      insertAll(pos, values.map(jsonEncodeBytes).toList());
+
+  /// Convenience function:
+  /// Like insertAll but for a Protobuf value
+  Future<void> insertAllProtobuf<T extends GeneratedMessage>(
+          int pos, List<T> values) async =>
+      insertAll(pos, values.map((x) => x.writeToBuffer()).toList());
 }

@@ -209,8 +209,7 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
   OwnedDHTRecordPointer get recordPointer => _spine.recordPointer;
 
   /// Runs a closure allowing read-only access to the log
-  Future<T?> operate<T>(
-      Future<T?> Function(DHTLogReadOperations) closure) async {
+  Future<T> operate<T>(Future<T> Function(DHTLogReadOperations) closure) async {
     if (!isOpen) {
       throw StateError('log is not open"');
     }

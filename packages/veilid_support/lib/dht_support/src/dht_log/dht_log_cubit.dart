@@ -108,6 +108,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
         elements: elements, tail: _tail, count: _count, follow: _follow)));
   }
 
+  // Tail is one past the last element to load
   Future<AsyncValue<IList<DHTLogElementState<T>>>> loadElements(
       int tail, int count,
       {bool forceRefresh = false}) async {
@@ -184,8 +185,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     await super.close();
   }
 
-  Future<R?> operate<R>(
-      Future<R?> Function(DHTLogReadOperations) closure) async {
+  Future<R> operate<R>(Future<R> Function(DHTLogReadOperations) closure) async {
     await _initWait();
     return _log.operate(closure);
   }
