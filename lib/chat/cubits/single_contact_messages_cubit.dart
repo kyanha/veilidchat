@@ -143,7 +143,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Open reconciled chat record key
   Future<void> _initReconciledMessagesCubit() async {
-    final tableName = _localConversationRecordKey.toString();
+    final tableName =
+        _localConversationRecordKey.toString().replaceAll(':', '_');
 
     final crypto = await _makeLocalMessagesCrypto();
 

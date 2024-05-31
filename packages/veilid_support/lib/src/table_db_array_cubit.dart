@@ -105,6 +105,9 @@ class TableDBArrayCubit<T> extends Cubit<TableDBArrayBusyState<T>>
   ) async {
     try {
       final length = _array.length;
+      if (length == 0) {
+        return AsyncValue.data(IList<T>.empty());
+      }
       final end = ((tail - 1) % length) + 1;
       final start = (count < end) ? end - count : 0;
       final allItems =
