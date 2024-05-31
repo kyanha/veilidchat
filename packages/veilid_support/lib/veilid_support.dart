@@ -10,6 +10,7 @@ export 'src/config.dart';
 export 'src/identity.dart';
 export 'src/json_tools.dart';
 export 'src/memory_tools.dart';
+export 'src/online_element_state.dart';
 export 'src/output.dart';
 export 'src/persistent_queue.dart';
 export 'src/protobuf_tools.dart';

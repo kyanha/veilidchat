@@ -10,16 +10,6 @@ import 'package:meta/meta.dart';
 import '../../../veilid_support.dart';
 
 @immutable
-class DHTLogElementState<T> extends Equatable {
-  const DHTLogElementState({required this.value, required this.isOffline});
-  final T value;
-  final bool isOffline;
-
-  @override
-  List<Object?> get props => [value, isOffline];
-}
-
-@immutable
 class DHTLogStateData<T> extends Equatable {
   const DHTLogStateData(
       {required this.elements,
@@ -28,7 +18,7 @@ class DHTLogStateData<T> extends Equatable {
       required this.follow});
   // The view of the elements in the dhtlog
   // Span is from [tail-length, tail)
-  final IList<DHTLogElementState<T>> elements;
+  final IList<OnlineElementState<T>> elements;
   // One past the end of the last element
   final int tail;
   // The total number of elements to try to keep in 'elements'
@@ -92,7 +82,8 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
 
   Future<void> _refreshInner(void Function(AsyncValue<DHTLogStateData<T>>) emit,
       {bool forceRefresh = false}) async {
-    final avElements = await loadElements(_tail, _count);
+    final avElements = await operate(
+        (reader) => loadElementsFromReader(reader, _tail, _count));
     final err = avElements.asError;
     if (err != null) {
       emit(AsyncValue.error(err.error, err.stackTrace));
@@ -109,26 +100,22 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   }
 
   // Tail is one past the last element to load
-  Future<AsyncValue<IList<DHTLogElementState<T>>>> loadElements(
-      int tail, int count,
+  Future<AsyncValue<IList<OnlineElementState<T>>>> loadElementsFromReader(
+      DHTLogReadOperations reader, int tail, int count,
       {bool forceRefresh = false}) async {
-    await _initWait();
     try {
-      final allItems = await _log.operate((reader) async {
-        final length = reader.length;
-        final end = ((tail - 1) % length) + 1;
-        final start = (count < end) ? end - count : 0;
+      final length = reader.length;
+      final end = ((tail - 1) % length) + 1;
+      final start = (count < end) ? end - count : 0;
 
-        final offlinePositions = await reader.getOfflinePositions();
-        final allItems = (await reader.getRange(start,
-                length: end - start, forceRefresh: forceRefresh))
-            ?.indexed
-            .map((x) => DHTLogElementState(
-                value: _decodeElement(x.$2),
-                isOffline: offlinePositions.contains(x.$1)))
-            .toIList();
-        return allItems;
-      });
+      final offlinePositions = await reader.getOfflinePositions();
+      final allItems = (await reader.getRange(start,
+              length: end - start, forceRefresh: forceRefresh))
+          ?.indexed
+          .map((x) => OnlineElementState(
+              value: _decodeElement(x.$2),
+              isOffline: offlinePositions.contains(x.$1)))
+          .toIList();
       if (allItems == null) {
         return const AsyncValue.loading();
       }

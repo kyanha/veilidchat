@@ -127,7 +127,7 @@ class ChatComponent extends StatelessWidget {
             author: isLocal ? _localUser : _remoteUser,
             createdAt:
                 (message.sentTimestamp.value ~/ BigInt.from(1000)).toInt(),
-            id: message.content.uniqueIdString,
+            id: message.content.authorUniqueIdString,
             text: contextText.text,
             showStatus: status != null,
             status: status);

@@ -21,14 +21,14 @@ class MessageReconciliation {
 
   void reconcileMessages(
       TypedKey author,
-      DHTLogStateData<proto.Message> inputMessages,
+      DHTLogStateData<proto.Message> inputMessagesCubitState,
       DHTLogCubit<proto.Message> inputMessagesCubit) {
-    if (inputMessages.elements.isEmpty) {
+    if (inputMessagesCubitState.elements.isEmpty) {
       return;
     }
 
-    _inputSources[author] =
-        AuthorInputSource(messages: inputMessages, cubit: inputMessagesCubit);
+    _inputSources[author] = AuthorInputSource.fromCubit(
+        cubitState: inputMessagesCubitState, cubit: inputMessagesCubit);
 
     singleFuture(this, onError: _onError, () async {
       // Take entire list of input sources we have currently and process them
@@ -63,14 +63,15 @@ class MessageReconciliation {
       {required TypedKey author,
       required AuthorInputSource inputSource}) async {
     // Get the position of our most recent reconciled message from this author
-    final lastReconciledMessage =
-        await _findNewestReconciledMessage(author: author);
+    final outputPosition = await _findLastOutputPosition(author: author);
 
     // Find oldest message we have not yet reconciled
-    final inputQueue = await _buildAuthorInputQueue(
-        author: author,
-        inputSource: inputSource,
-        lastOutputPosition: lastReconciledMessage);
+    final inputQueue = await AuthorInputQueue.create(
+      author: author,
+      inputSource: inputSource,
+      outputPosition: outputPosition,
+      onError: _onError,
+    );
     return inputQueue;
   }
 
@@ -78,7 +79,7 @@ class MessageReconciliation {
   // reconciled message from this author
   // XXX: For a group chat, this should find when the author
   // was added to the membership so we don't just go back in time forever
-  Future<OutputPosition?> _findNewestReconciledMessage(
+  Future<OutputPosition?> _findLastOutputPosition(
           {required TypedKey author}) async =>
       _outputCubit.operate((arr) async {
         var pos = arr.length - 1;
@@ -95,26 +96,6 @@ class MessageReconciliation {
         return null;
       });
 
-  // Find oldest message we have not yet reconciled and build a queue forward
-  // from that position
-  Future<AuthorInputQueue?> _buildAuthorInputQueue(
-      {required TypedKey author,
-      required AuthorInputSource inputSource,
-      required OutputPosition? lastOutputPosition}) async {
-    // Make an author input queue
-    final authorInputQueue = AuthorInputQueue(
-        author: author,
-        inputSource: inputSource,
-        lastOutputPosition: lastOutputPosition,
-        onError: _onError);
-
-    if (!await authorInputQueue.prepareInputQueue()) {
-      return null;
-    }
-
-    return authorInputQueue;
-  }
-
   // Process a list of author input queues and insert their messages
   // into the output array, performing validation steps along the way
   Future<void> _reconcileInputQueues({
@@ -130,8 +111,8 @@ class MessageReconciliation {
     // Sort queues from earliest to latest and then by author
     // to ensure a deterministic insert order
     inputQueues.sort((a, b) {
-      final acmp = a.lastOutputPosition?.pos ?? -1;
-      final bcmp = b.lastOutputPosition?.pos ?? -1;
+      final acmp = a.outputPosition?.pos ?? -1;
+      final bcmp = b.outputPosition?.pos ?? -1;
       if (acmp == bcmp) {
         return a.author.toString().compareTo(b.author.toString());
       }
@@ -139,7 +120,7 @@ class MessageReconciliation {
     });
 
     // Start at the earliest position we know about in all the queues
-    final firstOutputPos = inputQueues.first.lastOutputPosition?.pos;
+    final firstOutputPos = inputQueues.first.outputPosition?.pos;
     // Get the timestamp for this output position
     var currentOutputMessage = firstOutputPos == null
         ? null
@@ -167,7 +148,7 @@ class MessageReconciliation {
             added = true;
 
             // Advance this queue
-            if (!inputQueue.consume()) {
+            if (!await inputQueue.consume()) {
               // Queue is empty now, run a queue purge
               someQueueEmpty = true;
             }

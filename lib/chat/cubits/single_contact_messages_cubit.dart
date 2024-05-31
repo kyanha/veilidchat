@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -10,7 +8,7 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import '../models/models.dart';
-import 'message_reconciliation.dart';
+import 'reconciliation/reconciliation.dart';
 
 class RenderStateElement {
   RenderStateElement(
@@ -102,12 +100,11 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Make crypto
   Future<void> _initCrypto() async {
-    _messagesCrypto = await _activeAccountInfo
+    _conversationCrypto = await _activeAccountInfo
         .makeConversationCrypto(_remoteIdentityPublicKey);
-    _localMessagesCryptoSystem =
-        await Veilid.instance.getCryptoSystem(_localMessagesRecordKey.kind);
-    _identityCryptoSystem =
-        await _activeAccountInfo.localAccount.identityMaster.identityCrypto;
+    _senderMessageIntegrity = await MessageIntegrity.create(
+        author: _activeAccountInfo.localAccount.identityMaster
+            .identityPublicTypedKey());
   }
 
   // Open local messages key
@@ -119,7 +116,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
             debugName: 'SingleContactMessagesCubit::_initSentMessagesCubit::'
                 'SentMessages',
             parent: _localConversationRecordKey,
-            crypto: _messagesCrypto),
+            crypto: _conversationCrypto),
         decodeElement: proto.Message.fromBuffer);
     _sentSubscription =
         _sentMessagesCubit!.stream.listen(_updateSentMessagesState);
@@ -133,7 +130,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
             debugName: 'SingleContactMessagesCubit::_initRcvdMessagesCubit::'
                 'RcvdMessages',
             parent: _remoteConversationRecordKey,
-            crypto: _messagesCrypto),
+            crypto: _conversationCrypto),
         decodeElement: proto.Message.fromBuffer);
     _rcvdSubscription =
         _rcvdMessagesCubit!.stream.listen(_updateRcvdMessagesState);
@@ -222,31 +219,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _renderState();
   }
 
-  Future<Uint8List> _hashSignature(proto.Signature signature) async =>
-      (await _localMessagesCryptoSystem
-              .generateHash(signature.toVeilid().decode()))
-          .decode();
-
-  Future<void> _signMessage(proto.Message message) async {
-    // Generate data to sign
-    final data = Uint8List.fromList(utf8.encode(message.writeToJson()));
-
-    // Sign with our identity
-    final signature = await _identityCryptoSystem.sign(
-        _activeAccountInfo.localAccount.identityMaster.identityPublicKey,
-        _activeAccountInfo.userLogin.identitySecret.value,
-        data);
-
-    // Add to the message
-    message.signature = signature.toProto();
-  }
-
-  Future<Uint8List> _generateInitialId(
-          {required PublicKey identityPublicKey}) async =>
-      (await _localMessagesCryptoSystem
-              .generateHash(identityPublicKey.decode()))
-          .decode();
-
   Future<void> _processMessageToSend(
       proto.Message message, proto.Message? previousMessage) async {
     // Get the previous message if we don't have one
@@ -255,20 +227,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
             ? null
             : await r.getProtobuf(proto.Message.fromBuffer, r.length - 1));
 
-    if (previousMessage == null) {
-      // If there's no last sent message,
-      // we start at a hash of the identity public key
-      message.id = await _generateInitialId(
-          identityPublicKey:
-              _activeAccountInfo.localAccount.identityMaster.identityPublicKey);
-    } else {
-      // If there is a last message, we generate the hash
-      // of the last message's signature and use it as our next id
-      message.id = await _hashSignature(previousMessage.signature);
-    }
+    message.id =
+        await _senderMessageIntegrity.generateMessageId(previousMessage);
 
     // Now sign it
-    await _signMessage(message);
+    await _senderMessageIntegrity.signMessage(
+        message, _activeAccountInfo.userLogin.identitySecret.value);
   }
 
   // Async process to send messages in the background
@@ -303,17 +267,17 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     // Generate state for each message
     final sentMessagesMap =
-        IMap<String, DHTLogElementState<proto.Message>>.fromValues(
-      keyMapper: (x) => x.value.uniqueIdString,
+        IMap<String, OnlineElementState<proto.Message>>.fromValues(
+      keyMapper: (x) => x.value.authorUniqueIdString,
       values: sentMessages.elements,
     );
     final reconciledMessagesMap =
         IMap<String, proto.ReconciledMessage>.fromValues(
-      keyMapper: (x) => x.content.uniqueIdString,
+      keyMapper: (x) => x.content.authorUniqueIdString,
       values: reconciledMessages.elements,
     );
     final sendingMessagesMap = IMap<String, proto.Message>.fromValues(
-      keyMapper: (x) => x.uniqueIdString,
+      keyMapper: (x) => x.authorUniqueIdString,
       values: sendingMessages,
     );
 
@@ -405,9 +369,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   final TypedKey _remoteConversationRecordKey;
   final TypedKey _remoteMessagesRecordKey;
 
-  late final VeilidCrypto _messagesCrypto;
-  late final VeilidCryptoSystem _localMessagesCryptoSystem;
-  late final VeilidCryptoSystem _identityCryptoSystem;
+  late final VeilidCrypto _conversationCrypto;
+  late final MessageIntegrity _senderMessageIntegrity;
 
   DHTLogCubit<proto.Message>? _sentMessagesCubit;
   DHTLogCubit<proto.Message>? _rcvdMessagesCubit;

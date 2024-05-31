@@ -16,13 +16,15 @@ Map<String, dynamic> reconciledMessageToJson(proto.ReconciledMessage m) =>
     m.writeToJsonMap();
 
 extension MessageExt on proto.Message {
-  Uint8List get uniqueIdBytes {
+  Uint8List get idBytes => Uint8List.fromList(id);
+
+  Uint8List get authorUniqueIdBytes {
     final author = this.author.toVeilid().decode();
     final id = this.id;
     return Uint8List.fromList([...author, ...id]);
   }
 
-  String get uniqueIdString => base64UrlNoPadEncode(uniqueIdBytes);
+  String get authorUniqueIdString => base64UrlNoPadEncode(authorUniqueIdBytes);
 
   static int compareTimestamp(proto.Message a, proto.Message b) =>
       a.timestamp.compareTo(b.timestamp);
