@@ -44,7 +44,7 @@ current_version=$(get_current_version)
 echo "Current Version: $current_version"
 
 # Bump the major, minor, or patch version using bump2version
-bump2version $PART
+bump2version --current-version $current_version $PART
 
 # Get the new version after bump2version
 new_version=$(get_current_version)
