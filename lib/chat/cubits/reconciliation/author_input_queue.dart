@@ -109,7 +109,7 @@ class AuthorInputQueue {
   // Internal implementation
 
   // Walk backward from the tail of the input queue to find the first
-  // message newer than our last reconcicled message from this author
+  // message newer than our last reconciled message from this author
   // Returns false if no work is needed
   Future<bool> _findStartOfWork() async {
     // Iterate windows over the inputSource
@@ -121,10 +121,14 @@ class AuthorInputQueue {
           i--, _currentPosition--) {
         final elem = _inputSource.currentWindow.elements[i];
 
-        // If we've found an input element that is older than our last
-        // reconciled message for this author, then we stop
+        // If we've found an input element that is older or same time as our
+        // last reconciled message for this author, or we find the message
+        // itself then we stop
         if (_lastMessage != null) {
-          if (elem.value.timestamp < _lastMessage!.timestamp) {
+          if (elem.value.authorUniqueIdBytes
+                      .compare(_lastMessage!.authorUniqueIdBytes) ==
+                  0 ||
+              elem.value.timestamp <= _lastMessage!.timestamp) {
             break outer;
           }
         }

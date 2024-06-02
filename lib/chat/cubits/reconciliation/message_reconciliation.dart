@@ -75,8 +75,7 @@ class MessageReconciliation {
     return inputQueue;
   }
 
-  // Get the position of our most recent
-  // reconciled message from this author
+  // Get the position of our most recent reconciled message from this author
   // XXX: For a group chat, this should find when the author
   // was added to the membership so we don't just go back in time forever
   Future<OutputPosition?> _findLastOutputPosition(
@@ -85,9 +84,6 @@ class MessageReconciliation {
         var pos = arr.length - 1;
         while (pos >= 0) {
           final message = await arr.get(pos);
-          if (message == null) {
-            throw StateError('should have gotten last message');
-          }
           if (message.content.author.toVeilid() == author) {
             return OutputPosition(message, pos);
           }
@@ -120,13 +116,7 @@ class MessageReconciliation {
     });
 
     // Start at the earliest position we know about in all the queues
-    final firstOutputPos = inputQueues.first.outputPosition?.pos;
-    // Get the timestamp for this output position
-    var currentOutputMessage = firstOutputPos == null
-        ? null
-        : await reconciledArray.get(firstOutputPos);
-
-    var currentOutputPos = firstOutputPos ?? 0;
+    var currentOutputPosition = inputQueues.first.outputPosition;
 
     final toInsert =
         SortedList<proto.Message>(proto.MessageExt.compareTimestamp);
@@ -141,8 +131,9 @@ class MessageReconciliation {
         var someQueueEmpty = false;
         for (final inputQueue in inputQueues) {
           final inputCurrent = inputQueue.current!;
-          if (currentOutputMessage == null ||
-              inputCurrent.timestamp < currentOutputMessage.content.timestamp) {
+          if (currentOutputPosition == null ||
+              inputCurrent.timestamp <
+                  currentOutputPosition.message.content.timestamp) {
             toInsert.add(inputCurrent);
             added = true;
 
@@ -174,15 +165,22 @@ class MessageReconciliation {
               ..content = message)
             .toList();
 
-        await reconciledArray.insertAll(currentOutputPos, reconciledInserts);
+        await reconciledArray.insertAll(
+            currentOutputPosition?.pos ?? reconciledArray.length,
+            reconciledInserts);
 
         toInsert.clear();
       } else {
         // If there's nothing to insert at this position move to the next one
-        currentOutputPos++;
-        currentOutputMessage = (currentOutputPos == reconciledArray.length)
-            ? null
-            : await reconciledArray.get(currentOutputPos);
+        final nextOutputPos = (currentOutputPosition != null)
+            ? currentOutputPosition.pos + 1
+            : reconciledArray.length;
+        if (nextOutputPos == reconciledArray.length) {
+          currentOutputPosition = null;
+        } else {
+          currentOutputPosition = OutputPosition(
+              await reconciledArray.get(nextOutputPos), nextOutputPos);
+        }
       }
     }
   }

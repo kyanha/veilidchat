@@ -710,10 +710,10 @@ class TableDBArrayJson<T> extends _TableDBArrayBase {
   Future<void> insertAll(int pos, List<T> values) async =>
       _insertAll(pos, values.map(jsonEncodeBytes).toList());
 
-  Future<T?> get(
+  Future<T> get(
     int pos,
   ) =>
-      _get(pos).then((out) => jsonDecodeOptBytes(_fromJson, out));
+      _get(pos).then((out) => jsonDecodeBytes(_fromJson, out));
 
   Future<List<T>> getRange(int start, [int? end]) =>
       _getRange(start, end).then((out) => out.map(_fromJson).toList());
@@ -773,7 +773,7 @@ class TableDBArrayProtobuf<T extends GeneratedMessage>
   Future<void> insertAll(int pos, List<T> values) async =>
       _insertAll(pos, values.map((x) => x.writeToBuffer()).toList());
 
-  Future<T?> get(
+  Future<T> get(
     int pos,
   ) =>
       _get(pos).then(_fromBuffer);

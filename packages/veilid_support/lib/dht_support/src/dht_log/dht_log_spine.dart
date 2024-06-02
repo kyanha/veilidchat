@@ -200,8 +200,12 @@ class _DHTLogSpine {
                 throw TimeoutException('timeout reached');
               }
             }
-            if (await closure(this)) {
-              break;
+            try {
+              if (await closure(this)) {
+                break;
+              }
+            } on DHTExceptionTryAgain {
+              //
             }
             // Failed to write in closure resets state
             _head = oldHead;
