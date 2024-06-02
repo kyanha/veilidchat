@@ -28,7 +28,7 @@ increment_buildcode() {
 
 # Function to get the current version from pubspec.yaml
 get_current_version() {
-    grep -oP '(?<=version: ).*' pubspec.yaml
+    awk '/^version: / { print $2 }' pubspec.yaml
 }
 
 # Function to update the version in pubspec.yaml
