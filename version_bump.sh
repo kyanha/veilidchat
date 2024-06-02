@@ -34,7 +34,13 @@ get_current_version() {
 # Function to update the version in pubspec.yaml
 update_version() {
     local new_version=$1
-    sed -i "s/version: .*/version: ${new_version}/" pubspec.yaml
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        SED_CMD="sed -i ''"
+    else
+        SED_CMD="sed -i"
+    fi
+    eval "$SED_CMD 's/version: .*/version: ${new_version}/' pubspec.yaml"
 }
 
 # I pray none of this errors! - I think it should popup an error should that happen..
