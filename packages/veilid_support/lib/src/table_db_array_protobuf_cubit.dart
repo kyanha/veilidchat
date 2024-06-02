@@ -6,12 +6,14 @@ import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
+import 'package:protobuf/protobuf.dart';
 
 import '../../../veilid_support.dart';
 
 @immutable
-class TableDBArrayStateData<T> extends Equatable {
-  const TableDBArrayStateData(
+class TableDBArrayProtobufStateData<T extends GeneratedMessage>
+    extends Equatable {
+  const TableDBArrayProtobufStateData(
       {required this.elements,
       required this.tail,
       required this.count,
@@ -30,16 +32,17 @@ class TableDBArrayStateData<T> extends Equatable {
   List<Object?> get props => [elements, tail, count, follow];
 }
 
-typedef TableDBArrayState<T> = AsyncValue<TableDBArrayStateData<T>>;
-typedef TableDBArrayBusyState<T> = BlocBusyState<TableDBArrayState<T>>;
+typedef TableDBArrayProtobufState<T extends GeneratedMessage>
+    = AsyncValue<TableDBArrayProtobufStateData<T>>;
+typedef TableDBArrayProtobufBusyState<T extends GeneratedMessage>
+    = BlocBusyState<TableDBArrayProtobufState<T>>;
 
-class TableDBArrayCubit<T> extends Cubit<TableDBArrayBusyState<T>>
-    with BlocBusyWrapper<TableDBArrayState<T>> {
-  TableDBArrayCubit({
-    required Future<TableDBArray> Function() open,
-    required T Function(List<int> data) decodeElement,
-  })  : _decodeElement = decodeElement,
-        super(const BlocBusyState(AsyncValue.loading())) {
+class TableDBArrayProtobufCubit<T extends GeneratedMessage>
+    extends Cubit<TableDBArrayProtobufBusyState<T>>
+    with BlocBusyWrapper<TableDBArrayProtobufState<T>> {
+  TableDBArrayProtobufCubit({
+    required Future<TableDBArrayProtobuf<T>> Function() open,
+  }) : super(const BlocBusyState(AsyncValue.loading())) {
     _initWait.add(() async {
       // Open table db array
       _array = await open();
@@ -81,7 +84,7 @@ class TableDBArrayCubit<T> extends Cubit<TableDBArrayBusyState<T>>
       busy((emit) async => _refreshInner(emit, forceRefresh: forceRefresh));
 
   Future<void> _refreshInner(
-      void Function(AsyncValue<TableDBArrayStateData<T>>) emit,
+      void Function(AsyncValue<TableDBArrayProtobufStateData<T>>) emit,
       {bool forceRefresh = false}) async {
     final avElements = await _loadElements(_tail, _count);
     final err = avElements.asError;
@@ -95,7 +98,7 @@ class TableDBArrayCubit<T> extends Cubit<TableDBArrayBusyState<T>>
       return;
     }
     final elements = avElements.asData!.value;
-    emit(AsyncValue.data(TableDBArrayStateData(
+    emit(AsyncValue.data(TableDBArrayProtobufStateData(
         elements: elements, tail: _tail, count: _count, follow: _follow)));
   }
 
@@ -110,8 +113,7 @@ class TableDBArrayCubit<T> extends Cubit<TableDBArrayBusyState<T>>
       }
       final end = ((tail - 1) % length) + 1;
       final start = (count < end) ? end - count : 0;
-      final allItems =
-          (await _array.getRange(start, end)).map(_decodeElement).toIList();
+      final allItems = (await _array.getRange(start, end)).toIList();
       return AsyncValue.data(allItems);
     } on Exception catch (e, st) {
       return AsyncValue.error(e, st);
@@ -128,7 +130,7 @@ class TableDBArrayCubit<T> extends Cubit<TableDBArrayBusyState<T>>
     _headDelta += upd.headDelta;
     _tailDelta += upd.tailDelta;
 
-    _sspUpdate.busyUpdate<T, TableDBArrayState<T>>(busy, (emit) async {
+    _sspUpdate.busyUpdate<T, TableDBArrayProtobufState<T>>(busy, (emit) async {
       // apply follow
       if (_follow) {
         if (_tail <= 0) {
@@ -165,14 +167,14 @@ class TableDBArrayCubit<T> extends Cubit<TableDBArrayBusyState<T>>
     await super.close();
   }
 
-  Future<R?> operate<R>(Future<R?> Function(TableDBArray) closure) async {
+  Future<R?> operate<R>(
+      Future<R?> Function(TableDBArrayProtobuf<T>) closure) async {
     await _initWait();
     return closure(_array);
   }
 
   final WaitSet<void> _initWait = WaitSet();
-  late final TableDBArray _array;
-  final T Function(List<int> data) _decodeElement;
+  late final TableDBArrayProtobuf<T> _array;
   StreamSubscription<void>? _subscription;
   bool _wantsCloseArray = false;
   final _sspUpdate = SingleStatelessProcessor();

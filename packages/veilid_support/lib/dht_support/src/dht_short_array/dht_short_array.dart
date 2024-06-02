@@ -185,6 +185,17 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
   /// Get the record pointer foir this shortarray
   OwnedDHTRecordPointer get recordPointer => _head.recordPointer;
 
+  /// Refresh this DHTShortArray
+  /// Useful if you aren't 'watching' the array and want to poll for an update
+  Future<void> refresh() async {
+    if (!isOpen) {
+      throw StateError('short array is not open"');
+    }
+    await _head.operate((head) async {
+      await head._loadHead();
+    });
+  }
+
   /// Runs a closure allowing read-only access to the shortarray
   Future<T> operate<T>(
       Future<T> Function(DHTShortArrayReadOperations) closure) async {

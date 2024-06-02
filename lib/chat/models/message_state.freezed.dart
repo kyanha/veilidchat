@@ -21,7 +21,7 @@ MessageState _$MessageStateFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$MessageState {
 // Content of the message
-  @JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+  @JsonKey(fromJson: messageFromJson, toJson: messageToJson)
   proto.Message get content =>
       throw _privateConstructorUsedError; // Sent timestamp
   Timestamp get sentTimestamp =>
@@ -43,7 +43,7 @@ abstract class $MessageStateCopyWith<$Res> {
       _$MessageStateCopyWithImpl<$Res, MessageState>;
   @useResult
   $Res call(
-      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
       proto.Message content,
       Timestamp sentTimestamp,
       Timestamp? reconciledTimestamp,
@@ -98,7 +98,7 @@ abstract class _$$MessageStateImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
       proto.Message content,
       Timestamp sentTimestamp,
       Timestamp? reconciledTimestamp,
@@ -146,7 +146,7 @@ class __$$MessageStateImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
   const _$MessageStateImpl(
-      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
       required this.content,
       required this.sentTimestamp,
       required this.reconciledTimestamp,
@@ -157,7 +157,7 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
 
 // Content of the message
   @override
-  @JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+  @JsonKey(fromJson: messageFromJson, toJson: messageToJson)
   final proto.Message content;
 // Sent timestamp
   @override
@@ -220,7 +220,7 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
 
 abstract class _MessageState implements MessageState {
   const factory _MessageState(
-      {@JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
       required final proto.Message content,
       required final Timestamp sentTimestamp,
       required final Timestamp? reconciledTimestamp,
@@ -230,7 +230,7 @@ abstract class _MessageState implements MessageState {
       _$MessageStateImpl.fromJson;
 
   @override // Content of the message
-  @JsonKey(fromJson: proto.messageFromJson, toJson: proto.messageToJson)
+  @JsonKey(fromJson: messageFromJson, toJson: messageToJson)
   proto.Message get content;
   @override // Sent timestamp
   Timestamp get sentTimestamp;

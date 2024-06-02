@@ -69,7 +69,7 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
     final activeChatLocalConversationKey =
         context.watch<ActiveChatCubit>().state;
     if (activeChatLocalConversationKey == null) {
-      return const EmptyChatWidget();
+      return const NoConversationWidget();
     }
     return ChatComponent.builder(
         localConversationRecordKey: activeChatLocalConversationKey);

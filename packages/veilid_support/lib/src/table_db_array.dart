@@ -23,8 +23,8 @@ class TableDBArrayUpdate extends Equatable {
   List<Object?> get props => [headDelta, tailDelta, length];
 }
 
-class TableDBArray {
-  TableDBArray({
+class _TableDBArrayBase {
+  _TableDBArrayBase({
     required String table,
     required VeilidCrypto crypto,
   })  : _table = table,
@@ -32,14 +32,14 @@ class TableDBArray {
     _initWait.add(_init);
   }
 
-  static Future<TableDBArray> make({
-    required String table,
-    required VeilidCrypto crypto,
-  }) async {
-    final out = TableDBArray(table: table, crypto: crypto);
-    await out._initWait();
-    return out;
-  }
+  // static Future<TableDBArray> make({
+  //   required String table,
+  //   required VeilidCrypto crypto,
+  // }) async {
+  //   final out = TableDBArray(table: table, crypto: crypto);
+  //   await out._initWait();
+  //   return out;
+  // }
 
   Future<void> initWait() async {
     await _initWait();
@@ -99,27 +99,27 @@ class TableDBArray {
 
   bool get isOpen => _open;
 
-  Future<void> add(Uint8List value) async {
+  Future<void> _add(Uint8List value) async {
     await _initWait();
     return _writeTransaction((t) async => _addInner(t, value));
   }
 
-  Future<void> addAll(List<Uint8List> values) async {
+  Future<void> _addAll(List<Uint8List> values) async {
     await _initWait();
     return _writeTransaction((t) async => _addAllInner(t, values));
   }
 
-  Future<void> insert(int pos, Uint8List value) async {
+  Future<void> _insert(int pos, Uint8List value) async {
     await _initWait();
     return _writeTransaction((t) async => _insertInner(t, pos, value));
   }
 
-  Future<void> insertAll(int pos, List<Uint8List> values) async {
+  Future<void> _insertAll(int pos, List<Uint8List> values) async {
     await _initWait();
     return _writeTransaction((t) async => _insertAllInner(t, pos, values));
   }
 
-  Future<Uint8List> get(int pos) async {
+  Future<Uint8List> _get(int pos) async {
     await _initWait();
     return _mutex.protect(() async {
       if (!_open) {
@@ -129,7 +129,7 @@ class TableDBArray {
     });
   }
 
-  Future<List<Uint8List>> getRange(int start, [int? end]) async {
+  Future<List<Uint8List>> _getRange(int start, [int? end]) async {
     await _initWait();
     return _mutex.protect(() async {
       if (!_open) {
@@ -139,12 +139,12 @@ class TableDBArray {
     });
   }
 
-  Future<void> remove(int pos, {Output<Uint8List>? out}) async {
+  Future<void> _remove(int pos, {Output<Uint8List>? out}) async {
     await _initWait();
     return _writeTransaction((t) async => _removeInner(t, pos, out: out));
   }
 
-  Future<void> removeRange(int start, int end,
+  Future<void> _removeRange(int start, int end,
       {Output<List<Uint8List>>? out}) async {
     await _initWait();
     return _writeTransaction(
@@ -374,7 +374,9 @@ class TableDBArray {
 
   Future<Uint8List?> _loadEntry(int entry) async {
     final encryptedValue = await _tableDB.load(0, _entryKey(entry));
-    return (encryptedValue == null) ? null : _crypto.decrypt(encryptedValue);
+    return (encryptedValue == null)
+        ? null
+        : await _crypto.decrypt(encryptedValue);
   }
 
   Future<int> _getIndexEntry(int pos) async {
@@ -631,77 +633,170 @@ class TableDBArray {
       StreamController.broadcast();
 }
 
-extension TableDBArrayExt on TableDBArray {
-  /// Convenience function:
-  /// Like get but also parses the returned element as JSON
-  Future<T?> getJson<T>(
-    T Function(dynamic) fromJson,
+//////////////////////////////////////////////////////////////////////////////
+
+class TableDBArray extends _TableDBArrayBase {
+  TableDBArray({
+    required super.table,
+    required super.crypto,
+  });
+
+  static Future<TableDBArray> make({
+    required String table,
+    required VeilidCrypto crypto,
+  }) async {
+    final out = TableDBArray(table: table, crypto: crypto);
+    await out._initWait();
+    return out;
+  }
+
+  ////////////////////////////////////////////////////////////
+  // Public interface
+
+  Future<void> add(Uint8List value) => _add(value);
+
+  Future<void> addAll(List<Uint8List> values) => _addAll(values);
+
+  Future<void> insert(int pos, Uint8List value) => _insert(pos, value);
+
+  Future<void> insertAll(int pos, List<Uint8List> values) =>
+      _insertAll(pos, values);
+
+  Future<Uint8List?> get(
     int pos,
   ) =>
-      get(
-        pos,
-      ).then((out) => jsonDecodeOptBytes(fromJson, out));
+      _get(pos);
 
-  /// Convenience function:
-  /// Like getRange but also parses the returned elements as JSON
-  Future<List<T>?> getRangeJson<T>(T Function(dynamic) fromJson, int start,
-          [int? end]) =>
-      getRange(start, end ?? _length).then((out) => out.map(fromJson).toList());
+  Future<List<Uint8List>> getRange(int start, [int? end]) =>
+      _getRange(start, end);
 
-  /// Convenience function:
-  /// Like get but also parses the returned element as a protobuf object
-  Future<T?> getProtobuf<T extends GeneratedMessage>(
-    T Function(List<int>) fromBuffer,
+  Future<void> remove(int pos, {Output<Uint8List>? out}) =>
+      _remove(pos, out: out);
+
+  Future<void> removeRange(int start, int end,
+          {Output<List<Uint8List>>? out}) =>
+      _removeRange(start, end, out: out);
+}
+//////////////////////////////////////////////////////////////////////////////
+
+class TableDBArrayJson<T> extends _TableDBArrayBase {
+  TableDBArrayJson(
+      {required super.table,
+      required super.crypto,
+      required T Function(dynamic) fromJson})
+      : _fromJson = fromJson;
+
+  static Future<TableDBArrayJson<T>> make<T>(
+      {required String table,
+      required VeilidCrypto crypto,
+      required T Function(dynamic) fromJson}) async {
+    final out =
+        TableDBArrayJson<T>(table: table, crypto: crypto, fromJson: fromJson);
+    await out._initWait();
+    return out;
+  }
+
+  ////////////////////////////////////////////////////////////
+  // Public interface
+
+  Future<void> add(T value) => _add(jsonEncodeBytes(value));
+
+  Future<void> addAll(List<T> values) async =>
+      _addAll(values.map(jsonEncodeBytes).toList());
+
+  Future<void> insert(int pos, T value) async =>
+      _insert(pos, jsonEncodeBytes(value));
+
+  Future<void> insertAll(int pos, List<T> values) async =>
+      _insertAll(pos, values.map(jsonEncodeBytes).toList());
+
+  Future<T?> get(
     int pos,
   ) =>
-      get(pos).then(fromBuffer);
+      _get(pos).then((out) => jsonDecodeOptBytes(_fromJson, out));
 
-  /// Convenience function:
-  /// Like getRange but also parses the returned elements as protobuf objects
-  Future<List<T>?> getRangeProtobuf<T extends GeneratedMessage>(
-          T Function(List<int>) fromBuffer, int start, [int? end]) =>
-      getRange(start, end ?? _length)
-          .then((out) => out.map(fromBuffer).toList());
+  Future<List<T>> getRange(int start, [int? end]) =>
+      _getRange(start, end).then((out) => out.map(_fromJson).toList());
 
-  /// Convenience function:
-  /// Like add but for a JSON value
-  Future<void> addJson<T>(T value) async => add(jsonEncodeBytes(value));
+  Future<void> remove(int pos, {Output<T>? out}) async {
+    final outJson = (out != null) ? Output<Uint8List>() : null;
+    await _remove(pos, out: outJson);
+    if (outJson != null && outJson.value != null) {
+      out!.save(jsonDecodeBytes(_fromJson, outJson.value!));
+    }
+  }
 
-  /// Convenience function:
-  /// Like add but for a Protobuf value
-  Future<void> addProtobuf<T extends GeneratedMessage>(T value) =>
-      add(value.writeToBuffer());
+  Future<void> removeRange(int start, int end, {Output<List<T>>? out}) async {
+    final outJson = (out != null) ? Output<List<Uint8List>>() : null;
+    await _removeRange(start, end, out: outJson);
+    if (outJson != null && outJson.value != null) {
+      out!.save(
+          outJson.value!.map((x) => jsonDecodeBytes(_fromJson, x)).toList());
+    }
+  }
 
-  /// Convenience function:
-  /// Like addAll but for a JSON value
-  Future<void> addAllJson<T>(List<T> values) async =>
-      addAll(values.map(jsonEncodeBytes).toList());
+  ////////////////////////////////////////////////////////////////////////////
+  final T Function(dynamic) _fromJson;
+}
 
-  /// Convenience function:
-  /// Like addAll but for a Protobuf value
-  Future<void> addAllProtobuf<T extends GeneratedMessage>(
-          List<T> values) async =>
-      addAll(values.map((x) => x.writeToBuffer()).toList());
+//////////////////////////////////////////////////////////////////////////////
 
-  /// Convenience function:
-  /// Like insert but for a JSON value
-  Future<void> insertJson<T>(int pos, T value) async =>
-      insert(pos, jsonEncodeBytes(value));
+class TableDBArrayProtobuf<T extends GeneratedMessage>
+    extends _TableDBArrayBase {
+  TableDBArrayProtobuf(
+      {required super.table,
+      required super.crypto,
+      required T Function(List<int>) fromBuffer})
+      : _fromBuffer = fromBuffer;
 
-  /// Convenience function:
-  /// Like insert but for a Protobuf value
-  Future<void> insertProtobuf<T extends GeneratedMessage>(
-          int pos, T value) async =>
-      insert(pos, value.writeToBuffer());
+  static Future<TableDBArrayProtobuf<T>> make<T extends GeneratedMessage>(
+      {required String table,
+      required VeilidCrypto crypto,
+      required T Function(List<int>) fromBuffer}) async {
+    final out = TableDBArrayProtobuf<T>(
+        table: table, crypto: crypto, fromBuffer: fromBuffer);
+    await out._initWait();
+    return out;
+  }
 
-  /// Convenience function:
-  /// Like insertAll but for a JSON value
-  Future<void> insertAllJson<T>(int pos, List<T> values) async =>
-      insertAll(pos, values.map(jsonEncodeBytes).toList());
+  ////////////////////////////////////////////////////////////
+  // Public interface
 
-  /// Convenience function:
-  /// Like insertAll but for a Protobuf value
-  Future<void> insertAllProtobuf<T extends GeneratedMessage>(
-          int pos, List<T> values) async =>
-      insertAll(pos, values.map((x) => x.writeToBuffer()).toList());
+  Future<void> add(T value) => _add(value.writeToBuffer());
+
+  Future<void> addAll(List<T> values) async =>
+      _addAll(values.map((x) => x.writeToBuffer()).toList());
+
+  Future<void> insert(int pos, T value) async =>
+      _insert(pos, value.writeToBuffer());
+
+  Future<void> insertAll(int pos, List<T> values) async =>
+      _insertAll(pos, values.map((x) => x.writeToBuffer()).toList());
+
+  Future<T?> get(
+    int pos,
+  ) =>
+      _get(pos).then(_fromBuffer);
+
+  Future<List<T>> getRange(int start, [int? end]) =>
+      _getRange(start, end).then((out) => out.map(_fromBuffer).toList());
+
+  Future<void> remove(int pos, {Output<T>? out}) async {
+    final outProto = (out != null) ? Output<Uint8List>() : null;
+    await _remove(pos, out: outProto);
+    if (outProto != null && outProto.value != null) {
+      out!.save(_fromBuffer(outProto.value!));
+    }
+  }
+
+  Future<void> removeRange(int start, int end, {Output<List<T>>? out}) async {
+    final outProto = (out != null) ? Output<List<Uint8List>>() : null;
+    await _removeRange(start, end, out: outProto);
+    if (outProto != null && outProto.value != null) {
+      out!.save(outProto.value!.map(_fromBuffer).toList());
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  final T Function(List<int>) _fromBuffer;
 }

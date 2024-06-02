@@ -12,22 +12,25 @@ import '../../../veilid_support.dart';
 @immutable
 class DHTLogStateData<T> extends Equatable {
   const DHTLogStateData(
-      {required this.elements,
-      required this.tail,
-      required this.count,
+      {required this.length,
+      required this.window,
+      required this.windowTail,
+      required this.windowSize,
       required this.follow});
-  // The view of the elements in the dhtlog
-  // Span is from [tail-length, tail)
-  final IList<OnlineElementState<T>> elements;
-  // One past the end of the last element
-  final int tail;
-  // The total number of elements to try to keep in 'elements'
-  final int count;
-  // If we should have the tail following the log
+  // The total number of elements in the whole log
+  final int length;
+  // The view window of the elements in the dhtlog
+  // Span is from [tail - window.length, tail)
+  final IList<OnlineElementState<T>> window;
+  // The position of the view window, one past the last element
+  final int windowTail;
+  // The total number of elements to try to keep in the window
+  final int windowSize;
+  // If we have the window following the log
   final bool follow;
 
   @override
-  List<Object?> get props => [elements, tail, count, follow];
+  List<Object?> get props => [length, window, windowTail, windowSize, follow];
 }
 
 typedef DHTLogState<T> = AsyncValue<DHTLogStateData<T>>;
@@ -58,13 +61,16 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   // If tail is positive, the position is absolute from the head of the log
   // If follow is enabled, the tail offset will update when the log changes
   Future<void> setWindow(
-      {int? tail, int? count, bool? follow, bool forceRefresh = false}) async {
+      {int? windowTail,
+      int? windowSize,
+      bool? follow,
+      bool forceRefresh = false}) async {
     await _initWait();
-    if (tail != null) {
-      _tail = tail;
+    if (windowTail != null) {
+      _windowTail = windowTail;
     }
-    if (count != null) {
-      _count = count;
+    if (windowSize != null) {
+      _windowSize = windowSize;
     }
     if (follow != null) {
       _follow = follow;
@@ -82,8 +88,13 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
 
   Future<void> _refreshInner(void Function(AsyncValue<DHTLogStateData<T>>) emit,
       {bool forceRefresh = false}) async {
-    final avElements = await operate(
-        (reader) => loadElementsFromReader(reader, _tail, _count));
+    late final AsyncValue<IList<OnlineElementState<T>>> avElements;
+    late final int length;
+    await _log.operate((reader) async {
+      length = reader.length;
+      avElements =
+          await loadElementsFromReader(reader, _windowTail, _windowSize);
+    });
     final err = avElements.asError;
     if (err != null) {
       emit(AsyncValue.error(err.error, err.stackTrace));
@@ -94,9 +105,13 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
       emit(const AsyncValue.loading());
       return;
     }
-    final elements = avElements.asData!.value;
+    final window = avElements.asData!.value;
     emit(AsyncValue.data(DHTLogStateData(
-        elements: elements, tail: _tail, count: _count, follow: _follow)));
+        length: length,
+        window: window,
+        windowTail: _windowTail,
+        windowSize: _windowSize,
+        follow: _follow)));
   }
 
   // Tail is one past the last element to load
@@ -105,6 +120,9 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
       {bool forceRefresh = false}) async {
     try {
       final length = reader.length;
+      if (length == 0) {
+        return const AsyncValue.data(IList.empty());
+      }
       final end = ((tail - 1) % length) + 1;
       final start = (count < end) ? end - count : 0;
 
@@ -138,18 +156,18 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     _sspUpdate.busyUpdate<T, DHTLogState<T>>(busy, (emit) async {
       // apply follow
       if (_follow) {
-        if (_tail <= 0) {
+        if (_windowTail <= 0) {
           // Negative tail is already following tail changes
         } else {
           // Positive tail is measured from the head, so apply deltas
-          _tail = (_tail + _tailDelta - _headDelta) % upd.length;
+          _windowTail = (_windowTail + _tailDelta - _headDelta) % upd.length;
         }
       } else {
-        if (_tail <= 0) {
+        if (_windowTail <= 0) {
           // Negative tail is following tail changes so apply deltas
-          var posTail = _tail + upd.length;
+          var posTail = _windowTail + upd.length;
           posTail = (posTail + _tailDelta - _headDelta) % upd.length;
-          _tail = posTail - upd.length;
+          _windowTail = posTail - upd.length;
         } else {
           // Positive tail is measured from head so not following tail
         }
@@ -202,7 +220,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
   var _tailDelta = 0;
 
   // Cubit window into the DHTLog
-  var _tail = 0;
-  var _count = DHTShortArray.maxElements;
+  var _windowTail = 0;
+  var _windowSize = DHTShortArray.maxElements;
   var _follow = true;
 }

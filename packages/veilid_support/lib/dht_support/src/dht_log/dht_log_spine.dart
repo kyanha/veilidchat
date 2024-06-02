@@ -451,48 +451,53 @@ class _DHTLogSpine {
   ///////////////////////////////////////////
   // API for public interfaces
 
-  Future<_DHTLogPosition?> lookupPosition(int pos) async {
-    assert(_spineMutex.isLocked, 'should be locked');
-    return _spineCacheMutex.protect(() async {
-      // Check if our position is in bounds
-      final endPos = length;
-      if (pos < 0 || pos >= endPos) {
-        throw IndexError.withLength(pos, endPos);
-      }
+  Future<_DHTLogPosition?> lookupPositionBySegmentNumber(
+          int segmentNumber, int segmentPos) async =>
+      _spineCacheMutex.protect(() async {
+        // Get the segment shortArray
+        final openedSegment = _openedSegments[segmentNumber];
+        late final DHTShortArray shortArray;
+        if (openedSegment != null) {
+          openedSegment.openCount++;
+          shortArray = openedSegment.shortArray;
+        } else {
+          final newShortArray = (_spineRecord.writer == null)
+              ? await _openSegment(segmentNumber)
+              : await _openOrCreateSegment(segmentNumber);
+          if (newShortArray == null) {
+            return null;
+          }
 
-      // Calculate absolute position, ring-buffer style
-      final absolutePosition = (_head + pos) % _positionLimit;
+          _openedSegments[segmentNumber] =
+              _OpenedSegment._(shortArray: newShortArray);
 
-      // Determine the segment number and position within the segment
-      final segmentNumber = absolutePosition ~/ DHTShortArray.maxElements;
-      final segmentPos = absolutePosition % DHTShortArray.maxElements;
-
-      // Get the segment shortArray
-      final openedSegment = _openedSegments[segmentNumber];
-      late final DHTShortArray shortArray;
-      if (openedSegment != null) {
-        openedSegment.openCount++;
-        shortArray = openedSegment.shortArray;
-      } else {
-        final newShortArray = (_spineRecord.writer == null)
-            ? await _openSegment(segmentNumber)
-            : await _openOrCreateSegment(segmentNumber);
-        if (newShortArray == null) {
-          return null;
+          shortArray = newShortArray;
         }
 
-        _openedSegments[segmentNumber] =
-            _OpenedSegment._(shortArray: newShortArray);
+        return _DHTLogPosition._(
+            dhtLogSpine: this,
+            shortArray: shortArray,
+            pos: segmentPos,
+            segmentNumber: segmentNumber);
+      });
 
-        shortArray = newShortArray;
-      }
+  Future<_DHTLogPosition?> lookupPosition(int pos) async {
+    assert(_spineMutex.isLocked, 'should be locked');
 
-      return _DHTLogPosition._(
-          dhtLogSpine: this,
-          shortArray: shortArray,
-          pos: segmentPos,
-          segmentNumber: segmentNumber);
-    });
+    // Check if our position is in bounds
+    final endPos = length;
+    if (pos < 0 || pos >= endPos) {
+      throw IndexError.withLength(pos, endPos);
+    }
+
+    // Calculate absolute position, ring-buffer style
+    final absolutePosition = (_head + pos) % _positionLimit;
+
+    // Determine the segment number and position within the segment
+    final segmentNumber = absolutePosition ~/ DHTShortArray.maxElements;
+    final segmentPos = absolutePosition % DHTShortArray.maxElements;
+
+    return lookupPositionBySegmentNumber(segmentNumber, segmentPos);
   }
 
   Future<void> _segmentClosed(int segmentNumber) async {
@@ -660,6 +665,34 @@ class _DHTLogSpine {
       final oldHead = _head;
       final oldTail = _tail;
       await _updateHead(headData);
+
+      // Lookup tail position segments that have changed
+      // and force their short arrays to refresh their heads
+      final segmentsToRefresh = <_DHTLogPosition>[];
+      int? lastSegmentNumber;
+      for (var curTail = oldTail;
+          curTail != _tail;
+          curTail = (curTail + 1) % _positionLimit) {
+        final segmentNumber = curTail ~/ DHTShortArray.maxElements;
+        final segmentPos = curTail % DHTShortArray.maxElements;
+        if (segmentNumber == lastSegmentNumber) {
+          continue;
+        }
+        lastSegmentNumber = segmentNumber;
+        final dhtLogPosition =
+            await lookupPositionBySegmentNumber(segmentNumber, segmentPos);
+        if (dhtLogPosition == null) {
+          throw Exception('missing segment in dht log');
+        }
+        segmentsToRefresh.add(dhtLogPosition);
+      }
+
+      // Refresh the segments that have probably changed
+      await segmentsToRefresh.map((p) async {
+        await p.shortArray.refresh();
+        await p.close();
+      }).wait;
+
       sendUpdate(oldHead, oldTail);
     });
   }

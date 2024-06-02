@@ -12,7 +12,7 @@ import 'output_position.dart';
 
 class MessageReconciliation {
   MessageReconciliation(
-      {required TableDBArrayCubit<proto.ReconciledMessage> output,
+      {required TableDBArrayProtobufCubit<proto.ReconciledMessage> output,
       required void Function(Object, StackTrace?) onError})
       : _outputCubit = output,
         _onError = onError;
@@ -23,7 +23,7 @@ class MessageReconciliation {
       TypedKey author,
       DHTLogStateData<proto.Message> inputMessagesCubitState,
       DHTLogCubit<proto.Message> inputMessagesCubit) {
-    if (inputMessagesCubitState.elements.isEmpty) {
+    if (inputMessagesCubitState.window.isEmpty) {
       return;
     }
 
@@ -84,11 +84,11 @@ class MessageReconciliation {
       _outputCubit.operate((arr) async {
         var pos = arr.length - 1;
         while (pos >= 0) {
-          final message = await arr.getProtobuf(proto.Message.fromBuffer, pos);
+          final message = await arr.get(pos);
           if (message == null) {
             throw StateError('should have gotten last message');
           }
-          if (message.author.toVeilid() == author) {
+          if (message.content.author.toVeilid() == author) {
             return OutputPosition(message, pos);
           }
           pos--;
@@ -99,11 +99,11 @@ class MessageReconciliation {
   // Process a list of author input queues and insert their messages
   // into the output array, performing validation steps along the way
   Future<void> _reconcileInputQueues({
-    required TableDBArray reconciledArray,
+    required TableDBArrayProtobuf<proto.ReconciledMessage> reconciledArray,
     required List<AuthorInputQueue> inputQueues,
   }) async {
     // Ensure queues all have something to do
-    inputQueues.removeWhere((q) => q.isEmpty);
+    inputQueues.removeWhere((q) => q.isDone);
     if (inputQueues.isEmpty) {
       return;
     }
@@ -124,8 +124,7 @@ class MessageReconciliation {
     // Get the timestamp for this output position
     var currentOutputMessage = firstOutputPos == null
         ? null
-        : await reconciledArray.getProtobuf(
-            proto.Message.fromBuffer, firstOutputPos);
+        : await reconciledArray.get(firstOutputPos);
 
     var currentOutputPos = firstOutputPos ?? 0;
 
@@ -143,7 +142,7 @@ class MessageReconciliation {
         for (final inputQueue in inputQueues) {
           final inputCurrent = inputQueue.current!;
           if (currentOutputMessage == null ||
-              inputCurrent.timestamp <= currentOutputMessage.timestamp) {
+              inputCurrent.timestamp < currentOutputMessage.content.timestamp) {
             toInsert.add(inputCurrent);
             added = true;
 
@@ -156,7 +155,7 @@ class MessageReconciliation {
         }
         // Remove empty queues now that we're done iterating
         if (someQueueEmpty) {
-          inputQueues.removeWhere((q) => q.isEmpty);
+          inputQueues.removeWhere((q) => q.isDone);
         }
 
         if (toInsert.length >= _maxReconcileChunk) {
@@ -166,13 +165,24 @@ class MessageReconciliation {
 
       // Perform insertions in bulk
       if (toInsert.isNotEmpty) {
-        await reconciledArray.insertAllProtobuf(currentOutputPos, toInsert);
+        final reconciledTime = Veilid.instance.now().toInt64();
+
+        // Add reconciled timestamps
+        final reconciledInserts = toInsert
+            .map((message) => proto.ReconciledMessage()
+              ..reconciledTime = reconciledTime
+              ..content = message)
+            .toList();
+
+        await reconciledArray.insertAll(currentOutputPos, reconciledInserts);
+
         toInsert.clear();
       } else {
         // If there's nothing to insert at this position move to the next one
         currentOutputPos++;
-        currentOutputMessage = await reconciledArray.getProtobuf(
-            proto.Message.fromBuffer, currentOutputPos);
+        currentOutputMessage = (currentOutputPos == reconciledArray.length)
+            ? null
+            : await reconciledArray.get(currentOutputPos);
       }
     }
   }
@@ -180,7 +190,7 @@ class MessageReconciliation {
   ////////////////////////////////////////////////////////////////////////////
 
   Map<TypedKey, AuthorInputSource> _inputSources = {};
-  final TableDBArrayCubit<proto.ReconciledMessage> _outputCubit;
+  final TableDBArrayProtobufCubit<proto.ReconciledMessage> _outputCubit;
   final void Function(Object, StackTrace?) _onError;
 
   static const int _maxReconcileChunk = 65536;

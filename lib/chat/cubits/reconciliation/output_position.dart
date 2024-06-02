@@ -6,7 +6,7 @@ import '../../../proto/proto.dart' as proto;
 @immutable
 class OutputPosition extends Equatable {
   const OutputPosition(this.message, this.pos);
-  final proto.Message message;
+  final proto.ReconciledMessage message;
   final int pos;
   @override
   List<Object?> get props => [message, pos];

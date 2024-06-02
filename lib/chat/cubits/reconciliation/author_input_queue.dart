@@ -18,7 +18,7 @@ class AuthorInputQueue {
         _onError = onError,
         _inputSource = inputSource,
         _outputPosition = outputPosition,
-        _lastMessage = outputPosition?.message,
+        _lastMessage = outputPosition?.message.content,
         _messageIntegrity = messageIntegrity,
         _currentPosition = inputSource.currentWindow.last;
 
@@ -43,8 +43,8 @@ class AuthorInputQueue {
   ////////////////////////////////////////////////////////////////////////////
   // Public interface
 
-  // Check if there are no messages in this queue to reconcile
-  bool get isEmpty => _currentMessage == null;
+  // Check if there are no messages left in this queue to reconcile
+  bool get isDone => _isDone;
 
   // Get the current message that needs reconciliation
   proto.Message? get current => _currentMessage;
@@ -58,6 +58,9 @@ class AuthorInputQueue {
   // Remove a reconciled message and move to the next message
   // Returns true if there is more work to do
   Future<bool> consume() async {
+    if (_isDone) {
+      return false;
+    }
     while (true) {
       _lastMessage = _currentMessage;
 
@@ -66,6 +69,7 @@ class AuthorInputQueue {
       // Get more window if we need to
       if (!await _updateWindow()) {
         // Window is not available so this queue can't work right now
+        _isDone = true;
         return false;
       }
       final nextMessage = _inputSource.currentWindow
@@ -73,9 +77,9 @@ class AuthorInputQueue {
 
       // Drop the 'offline' elements because we don't reconcile
       // anything until it has been confirmed to be committed to the DHT
-      if (nextMessage.isOffline) {
-        continue;
-      }
+      // if (nextMessage.isOffline) {
+      //   continue;
+      // }
 
       if (_lastMessage != null) {
         // Ensure the timestamp is not moving backward
@@ -112,7 +116,7 @@ class AuthorInputQueue {
     outer:
     while (true) {
       // Iterate through current window backward
-      for (var i = _inputSource.currentWindow.elements.length;
+      for (var i = _inputSource.currentWindow.elements.length - 1;
           i >= 0 && _currentPosition >= 0;
           i--, _currentPosition--) {
         final elem = _inputSource.currentWindow.elements[i];
@@ -134,13 +138,24 @@ class AuthorInputQueue {
       if (!await _updateWindow()) {
         // Window is not available or things are empty so this
         // queue can't work right now
+        _isDone = true;
         return false;
       }
     }
 
-    // The current position should be equal to the first message to process
-    // and the current window to process should not be empty
-    return _inputSource.currentWindow.elements.isNotEmpty;
+    // _currentPosition points to either before the input source starts
+    // or the position of the previous element. We still need to set the
+    // _currentMessage to the previous element so consume() can compare
+    // against it if we can.
+    if (_currentPosition >= 0) {
+      _currentMessage = _inputSource.currentWindow
+          .elements[_currentPosition - _inputSource.currentWindow.first].value;
+    }
+
+    // After this consume(), the currentPosition and _currentMessage should
+    // be equal to the first message to process and the current window to
+    // process should not be empty
+    return consume();
   }
 
   // Slide the window toward the current position and load the batch around it
@@ -186,6 +201,9 @@ class AuthorInputQueue {
   int _currentPosition;
   // The current message we're looking at
   proto.Message? _currentMessage;
+  // If we have reached the end
+  bool _isDone = false;
+
   // Desired maximum window length
   static const int _maxWindowLength = 256;
 }

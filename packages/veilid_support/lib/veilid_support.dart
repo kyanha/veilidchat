@@ -16,6 +16,6 @@ export 'src/persistent_queue.dart';
 export 'src/protobuf_tools.dart';
 export 'src/table_db.dart';
 export 'src/table_db_array.dart';
-export 'src/table_db_array_cubit.dart';
+export 'src/table_db_array_protobuf_cubit.dart';
 export 'src/veilid_crypto.dart';
 export 'src/veilid_log.dart' hide veilidLoggy;

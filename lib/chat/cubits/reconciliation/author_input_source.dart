@@ -21,9 +21,10 @@ class AuthorInputSource {
       {required DHTLogStateData<proto.Message> cubitState,
       required this.cubit}) {
     _currentWindow = InputWindow(
-        elements: cubitState.elements,
-        first: cubitState.tail - cubitState.elements.length,
-        last: cubitState.tail - 1);
+        elements: cubitState.window,
+        first: (cubitState.windowTail - cubitState.window.length) %
+            cubitState.length,
+        last: (cubitState.windowTail - 1) % cubitState.length);
   }
 
   ////////////////////////////////////////////////////////////////////////////
