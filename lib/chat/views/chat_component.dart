@@ -1,8 +1,9 @@
-import 'dart:typed_data';
+import 'dart:math';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fixnum/fixnum.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
@@ -166,8 +167,9 @@ class ChatComponent extends StatelessWidget {
     _messagesCubit.sendTextMessage(messageText: protoMessageText);
   }
 
-  void _handleSendPressed(types.PartialText message) {
+  void _sendMessage(types.PartialText message) {
     final text = message.text;
+
     final replyId = (message.repliedMessage != null)
         ? base64UrlNoPadDecode(message.repliedMessage!.id)
         : null;
@@ -200,6 +202,17 @@ class ChatComponent extends StatelessWidget {
         attachments: attachments ?? []);
   }
 
+  void _handleSendPressed(types.PartialText message) {
+    final text = message.text;
+
+    if (text.startsWith('/')) {
+      _messagesCubit.runCommand(text);
+      return;
+    }
+
+    _sendMessage(message);
+  }
+
   // void _handleAttachmentPressed() async {
   //   //
   // }
@@ -211,15 +224,15 @@ class ChatComponent extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final chatTheme = makeChatTheme(scale, textTheme);
 
-    final messages = _messagesState.asData?.value;
-    if (messages == null) {
+    final messagesState = _messagesState.asData?.value;
+    if (messagesState == null) {
       return _messagesState.buildNotData();
     }
 
     // Convert protobuf messages to chat messages
     final chatMessages = <types.Message>[];
     final tsSet = <String>{};
-    for (final message in messages) {
+    for (final message in messagesState.windowMessages) {
       final chatMessage = messageStateToChatMessage(message);
       if (chatMessage == null) {
         continue;
@@ -228,11 +241,16 @@ class ChatComponent extends StatelessWidget {
       if (!tsSet.add(chatMessage.id)) {
         // ignore: avoid_print
         print('duplicate id found: ${chatMessage.id}:\n'
-            'Messages:\n$messages\n'
+            'Messages:\n${messagesState.windowMessages}\n'
             'ChatMessages:\n$chatMessages');
         assert(false, 'should not have duplicate id');
       }
     }
+
+    final isLastPage =
+        (messagesState.windowTail - messagesState.windowMessages.length) <= 0;
+    final follow = messagesState.windowTail == 0 ||
+        messagesState.windowTail == messagesState.length; xxx finish calculating pagination and get scroll position here somehow
 
     return DefaultTextStyle(
         style: textTheme.bodySmall!,
@@ -272,9 +290,17 @@ class ChatComponent extends StatelessWidget {
                       decoration: const BoxDecoration(),
                       child: Chat(
                           theme: chatTheme,
-                          // emojiEnlargementBehavior:
-                          //     EmojiEnlargementBehavior.multi,
                           messages: chatMessages,
+                          onEndReached: () async {
+                            final tail = await _messagesCubit.setWindow(
+                                tail: max(
+                                    0,
+                                    (messagesState.windowTail -
+                                        (messagesState.windowCount ~/ 2))),
+                                count: messagesState.windowCount,
+                                follow: follow);
+                          },
+                          isLastPage: isLastPage,
                           //onAttachmentPressed: _handleAttachmentPressed,
                           //onMessageTap: _handleMessageTap,
                           //onPreviewDataFetched: _handlePreviewDataFetched,

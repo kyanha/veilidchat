@@ -14,22 +14,25 @@ import '../../../veilid_support.dart';
 class TableDBArrayProtobufStateData<T extends GeneratedMessage>
     extends Equatable {
   const TableDBArrayProtobufStateData(
-      {required this.elements,
-      required this.tail,
-      required this.count,
+      {required this.windowElements,
+      required this.length,
+      required this.windowTail,
+      required this.windowCount,
       required this.follow});
   // The view of the elements in the dhtlog
   // Span is from [tail-length, tail)
-  final IList<T> elements;
+  final IList<T> windowElements;
+  // The length of the entire array
+  final int length;
   // One past the end of the last element
-  final int tail;
+  final int windowTail;
   // The total number of elements to try to keep in 'elements'
-  final int count;
+  final int windowCount;
   // If we should have the tail following the array
   final bool follow;
 
   @override
-  List<Object?> get props => [elements, tail, count, follow];
+  List<Object?> get props => [windowElements, windowTail, windowCount, follow];
 }
 
 typedef TableDBArrayProtobufState<T extends GeneratedMessage>
@@ -99,7 +102,10 @@ class TableDBArrayProtobufCubit<T extends GeneratedMessage>
     }
     final elements = avElements.asData!.value;
     emit(AsyncValue.data(TableDBArrayProtobufStateData(
-        elements: elements, tail: _tail, count: _count, follow: _follow)));
+        windowElements: elements,
+        windowTail: _tail,
+        windowCount: _count,
+        follow: _follow)));
   }
 
   Future<AsyncValue<IList<T>>> _loadElements(
