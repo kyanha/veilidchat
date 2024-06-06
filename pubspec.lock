@@ -102,7 +102,7 @@ packages:
       path: "../bloc_advanced_tools"
       relative: true
     source: path
-    version: "0.1.1"
+    version: "0.1.2"
   blurry_modal_progress_hud:
     dependency: "direct main"
     description:
