@@ -34,7 +34,7 @@ dependencies:
   flutter_chat_types: ^3.6.2
   flutter_chat_ui:
     git:
-      url: https://gitlab.com/veilid/flutter_chat_ui.git
+      url: https://gitlab.com/veilid/flutter-chat-ui.git
       ref: main
   flutter_form_builder: ^9.3.0
   flutter_hooks: ^0.20.5
