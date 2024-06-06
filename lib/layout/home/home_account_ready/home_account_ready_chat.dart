@@ -33,8 +33,9 @@ class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
     if (activeChatLocalConversationKey == null) {
       return const NoConversationWidget();
     }
-    return ChatComponent.builder(
-        localConversationRecordKey: activeChatLocalConversationKey);
+    return ChatComponentWidget.builder(
+        localConversationRecordKey: activeChatLocalConversationKey,
+        key: ValueKey(activeChatLocalConversationKey));
   }
 
   @override

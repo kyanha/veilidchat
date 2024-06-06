@@ -44,7 +44,7 @@ class RenderStateElement {
   bool sentOffline;
 }
 
-typedef SingleContactMessagesState = AsyncValue<MessagesState>;
+typedef SingleContactMessagesState = AsyncValue<WindowState<MessageState>>;
 
 // Cubit that processes single-contact chats
 // Builds the reconciled chat record from the local and remote conversation keys
@@ -189,6 +189,9 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   Future<void> setWindow(
       {int? tail, int? count, bool? follow, bool forceRefresh = false}) async {
     await _initWait();
+
+    print('setWindow: tail=$tail count=$count, follow=$follow');
+
     await _reconciledMessagesCubit!.setWindow(
         tail: tail, count: count, follow: follow, forceRefresh: forceRefresh);
   }
@@ -358,8 +361,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         .toIList();
 
     // Emit the rendered state
-    emit(AsyncValue.data(MessagesState(
-        windowMessages: messages,
+    emit(AsyncValue.data(WindowState<MessageState>(
+        window: messages,
         length: reconciledMessages.length,
         windowTail: reconciledMessages.windowTail,
         windowCount: reconciledMessages.windowCount,

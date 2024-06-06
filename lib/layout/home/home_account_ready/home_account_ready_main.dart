@@ -40,12 +40,10 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
                 color: scale.secondaryScale.borderText,
                 constraints: const BoxConstraints.expand(height: 64, width: 64),
                 style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
-                        scale.primaryScale.hoverBorder),
-                    shape: MaterialStateProperty.all(
-                        const RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(16))))),
+                    backgroundColor:
+                        WidgetStateProperty.all(scale.primaryScale.hoverBorder),
+                    shape: WidgetStateProperty.all(const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(16))))),
                 tooltip: translate('app_bar.settings_tooltip'),
                 onPressed: () async {
                   await GoRouterHelper(context).push('/settings');
@@ -71,8 +69,9 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
     if (activeChatLocalConversationKey == null) {
       return const NoConversationWidget();
     }
-    return ChatComponent.builder(
-        localConversationRecordKey: activeChatLocalConversationKey);
+    return ChatComponentWidget.builder(
+      localConversationRecordKey: activeChatLocalConversationKey,
+    );
   }
 
   // ignore: prefer_expression_function_bodies

@@ -10,7 +10,9 @@ const Map<String, LogLevel> _blocChangeLogLevels = {
   'TableDBArrayProtobufCubit<ReconciledMessage>': LogLevel.off,
   'DHTLogCubit<Message>': LogLevel.off,
   'SingleContactMessagesCubit': LogLevel.off,
+  'ChatComponentCubit': LogLevel.off,
 };
+
 const Map<String, LogLevel> _blocCreateCloseLogLevels = {};
 const Map<String, LogLevel> _blocErrorLogLevels = {};
 

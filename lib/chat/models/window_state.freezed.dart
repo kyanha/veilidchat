@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'messages_state.dart';
+part of 'window_state.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -14,37 +14,32 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
-MessagesState _$MessagesStateFromJson(Map<String, dynamic> json) {
-  return _MessagesState.fromJson(json);
-}
-
 /// @nodoc
-mixin _$MessagesState {
-// List of messages in the window
-  IList<MessageState> get windowMessages =>
-      throw _privateConstructorUsedError; // Total number of messages
+mixin _$WindowState<T> {
+// List of objects in the window
+  IList<T> get window =>
+      throw _privateConstructorUsedError; // Total number of objects (windowTail max)
   int get length =>
       throw _privateConstructorUsedError; // One past the end of the last element
   int get windowTail =>
-      throw _privateConstructorUsedError; // The total number of elements to try to keep in 'messages'
+      throw _privateConstructorUsedError; // The total number of elements to try to keep in the window
   int get windowCount =>
       throw _privateConstructorUsedError; // If we should have the tail following the array
   bool get follow => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
-  $MessagesStateCopyWith<MessagesState> get copyWith =>
+  $WindowStateCopyWith<T, WindowState<T>> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $MessagesStateCopyWith<$Res> {
-  factory $MessagesStateCopyWith(
-          MessagesState value, $Res Function(MessagesState) then) =
-      _$MessagesStateCopyWithImpl<$Res, MessagesState>;
+abstract class $WindowStateCopyWith<T, $Res> {
+  factory $WindowStateCopyWith(
+          WindowState<T> value, $Res Function(WindowState<T>) then) =
+      _$WindowStateCopyWithImpl<T, $Res, WindowState<T>>;
   @useResult
   $Res call(
-      {IList<MessageState> windowMessages,
+      {IList<T> window,
       int length,
       int windowTail,
       int windowCount,
@@ -52,9 +47,9 @@ abstract class $MessagesStateCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$MessagesStateCopyWithImpl<$Res, $Val extends MessagesState>
-    implements $MessagesStateCopyWith<$Res> {
-  _$MessagesStateCopyWithImpl(this._value, this._then);
+class _$WindowStateCopyWithImpl<T, $Res, $Val extends WindowState<T>>
+    implements $WindowStateCopyWith<T, $Res> {
+  _$WindowStateCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
@@ -64,17 +59,17 @@ class _$MessagesStateCopyWithImpl<$Res, $Val extends MessagesState>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? windowMessages = null,
+    Object? window = null,
     Object? length = null,
     Object? windowTail = null,
     Object? windowCount = null,
     Object? follow = null,
   }) {
     return _then(_value.copyWith(
-      windowMessages: null == windowMessages
-          ? _value.windowMessages
-          : windowMessages // ignore: cast_nullable_to_non_nullable
-              as IList<MessageState>,
+      window: null == window
+          ? _value.window
+          : window // ignore: cast_nullable_to_non_nullable
+              as IList<T>,
       length: null == length
           ? _value.length
           : length // ignore: cast_nullable_to_non_nullable
@@ -96,15 +91,15 @@ class _$MessagesStateCopyWithImpl<$Res, $Val extends MessagesState>
 }
 
 /// @nodoc
-abstract class _$$MessagesStateImplCopyWith<$Res>
-    implements $MessagesStateCopyWith<$Res> {
-  factory _$$MessagesStateImplCopyWith(
-          _$MessagesStateImpl value, $Res Function(_$MessagesStateImpl) then) =
-      __$$MessagesStateImplCopyWithImpl<$Res>;
+abstract class _$$WindowStateImplCopyWith<T, $Res>
+    implements $WindowStateCopyWith<T, $Res> {
+  factory _$$WindowStateImplCopyWith(_$WindowStateImpl<T> value,
+          $Res Function(_$WindowStateImpl<T>) then) =
+      __$$WindowStateImplCopyWithImpl<T, $Res>;
   @override
   @useResult
   $Res call(
-      {IList<MessageState> windowMessages,
+      {IList<T> window,
       int length,
       int windowTail,
       int windowCount,
@@ -112,27 +107,27 @@ abstract class _$$MessagesStateImplCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$MessagesStateImplCopyWithImpl<$Res>
-    extends _$MessagesStateCopyWithImpl<$Res, _$MessagesStateImpl>
-    implements _$$MessagesStateImplCopyWith<$Res> {
-  __$$MessagesStateImplCopyWithImpl(
-      _$MessagesStateImpl _value, $Res Function(_$MessagesStateImpl) _then)
+class __$$WindowStateImplCopyWithImpl<T, $Res>
+    extends _$WindowStateCopyWithImpl<T, $Res, _$WindowStateImpl<T>>
+    implements _$$WindowStateImplCopyWith<T, $Res> {
+  __$$WindowStateImplCopyWithImpl(
+      _$WindowStateImpl<T> _value, $Res Function(_$WindowStateImpl<T>) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? windowMessages = null,
+    Object? window = null,
     Object? length = null,
     Object? windowTail = null,
     Object? windowCount = null,
     Object? follow = null,
   }) {
-    return _then(_$MessagesStateImpl(
-      windowMessages: null == windowMessages
-          ? _value.windowMessages
-          : windowMessages // ignore: cast_nullable_to_non_nullable
-              as IList<MessageState>,
+    return _then(_$WindowStateImpl<T>(
+      window: null == window
+          ? _value.window
+          : window // ignore: cast_nullable_to_non_nullable
+              as IList<T>,
       length: null == length
           ? _value.length
           : length // ignore: cast_nullable_to_non_nullable
@@ -154,30 +149,27 @@ class __$$MessagesStateImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$MessagesStateImpl
+
+class _$WindowStateImpl<T>
     with DiagnosticableTreeMixin
-    implements _MessagesState {
-  const _$MessagesStateImpl(
-      {required this.windowMessages,
+    implements _WindowState<T> {
+  const _$WindowStateImpl(
+      {required this.window,
       required this.length,
       required this.windowTail,
       required this.windowCount,
       required this.follow});
 
-  factory _$MessagesStateImpl.fromJson(Map<String, dynamic> json) =>
-      _$$MessagesStateImplFromJson(json);
-
-// List of messages in the window
+// List of objects in the window
   @override
-  final IList<MessageState> windowMessages;
-// Total number of messages
+  final IList<T> window;
+// Total number of objects (windowTail max)
   @override
   final int length;
 // One past the end of the last element
   @override
   final int windowTail;
-// The total number of elements to try to keep in 'messages'
+// The total number of elements to try to keep in the window
   @override
   final int windowCount;
 // If we should have the tail following the array
@@ -186,15 +178,15 @@ class _$MessagesStateImpl
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'MessagesState(windowMessages: $windowMessages, length: $length, windowTail: $windowTail, windowCount: $windowCount, follow: $follow)';
+    return 'WindowState<$T>(window: $window, length: $length, windowTail: $windowTail, windowCount: $windowCount, follow: $follow)';
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty('type', 'MessagesState'))
-      ..add(DiagnosticsProperty('windowMessages', windowMessages))
+      ..add(DiagnosticsProperty('type', 'WindowState<$T>'))
+      ..add(DiagnosticsProperty('window', window))
       ..add(DiagnosticsProperty('length', length))
       ..add(DiagnosticsProperty('windowTail', windowTail))
       ..add(DiagnosticsProperty('windowCount', windowCount))
@@ -205,9 +197,8 @@ class _$MessagesStateImpl
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$MessagesStateImpl &&
-            const DeepCollectionEquality()
-                .equals(other.windowMessages, windowMessages) &&
+            other is _$WindowStateImpl<T> &&
+            const DeepCollectionEquality().equals(other.window, window) &&
             (identical(other.length, length) || other.length == length) &&
             (identical(other.windowTail, windowTail) ||
                 other.windowTail == windowTail) &&
@@ -216,11 +207,10 @@ class _$MessagesStateImpl
             (identical(other.follow, follow) || other.follow == follow));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
-      const DeepCollectionEquality().hash(windowMessages),
+      const DeepCollectionEquality().hash(window),
       length,
       windowTail,
       windowCount,
@@ -229,40 +219,31 @@ class _$MessagesStateImpl
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$MessagesStateImplCopyWith<_$MessagesStateImpl> get copyWith =>
-      __$$MessagesStateImplCopyWithImpl<_$MessagesStateImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$MessagesStateImplToJson(
-      this,
-    );
-  }
+  _$$WindowStateImplCopyWith<T, _$WindowStateImpl<T>> get copyWith =>
+      __$$WindowStateImplCopyWithImpl<T, _$WindowStateImpl<T>>(
+          this, _$identity);
 }
 
-abstract class _MessagesState implements MessagesState {
-  const factory _MessagesState(
-      {required final IList<MessageState> windowMessages,
+abstract class _WindowState<T> implements WindowState<T> {
+  const factory _WindowState(
+      {required final IList<T> window,
       required final int length,
       required final int windowTail,
       required final int windowCount,
-      required final bool follow}) = _$MessagesStateImpl;
+      required final bool follow}) = _$WindowStateImpl<T>;
 
-  factory _MessagesState.fromJson(Map<String, dynamic> json) =
-      _$MessagesStateImpl.fromJson;
-
-  @override // List of messages in the window
-  IList<MessageState> get windowMessages;
-  @override // Total number of messages
+  @override // List of objects in the window
+  IList<T> get window;
+  @override // Total number of objects (windowTail max)
   int get length;
   @override // One past the end of the last element
   int get windowTail;
-  @override // The total number of elements to try to keep in 'messages'
+  @override // The total number of elements to try to keep in the window
   int get windowCount;
   @override // If we should have the tail following the array
   bool get follow;
   @override
   @JsonKey(ignore: true)
-  _$$MessagesStateImplCopyWith<_$MessagesStateImpl> get copyWith =>
+  _$$WindowStateImplCopyWith<T, _$WindowStateImpl<T>> get copyWith =>
       throw _privateConstructorUsedError;
 }

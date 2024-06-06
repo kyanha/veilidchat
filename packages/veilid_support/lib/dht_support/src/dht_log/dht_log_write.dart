@@ -39,11 +39,13 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
     }
     final bLookup = await _spine.lookupPosition(bPos);
     if (bLookup == null) {
+      await aLookup.close();
       throw StateError("can't lookup position b in swap of dht log");
     }
 
     // Swap items in the segments
     if (aLookup.shortArray == bLookup.shortArray) {
+      await bLookup.close();
       await aLookup.scope((sa) => sa.operateWriteEventual((aWrite) async {
             await aWrite.swap(aLookup.pos, bLookup.pos);
             return true;
@@ -76,7 +78,9 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
     }
 
     // Write item to the segment
-    return lookup.scope((sa) => sa.operateWrite((write) async {
+    return lookup.scope((sa) async {
+      try {
+        return sa.operateWrite((write) async {
           // If this a new segment, then clear it in case we have wrapped around
           if (lookup.pos == 0) {
             await write.clear();
@@ -85,7 +89,11 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
             throw StateError('appending should be at the end');
           }
           return write.tryAdd(value);
-        }));
+        });
+      } on DHTExceptionTryAgain {
+        return false;
+      }
+    });
   }
 
   @override
@@ -110,7 +118,9 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
       final sublistValues = values.sublist(valueIdx, valueIdx + sacount);
 
       dws.add(() async {
-        final ok = await lookup.scope((sa) => sa.operateWrite((write) async {
+        final ok = await lookup.scope((sa) async {
+          try {
+            return sa.operateWrite((write) async {
               // If this a new segment, then clear it in
               // case we have wrapped around
               if (lookup.pos == 0) {
@@ -120,7 +130,11 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
                 throw StateError('appending should be at the end');
               }
               return write.tryAddAll(sublistValues);
-            }));
+            });
+          } on DHTExceptionTryAgain {
+            return false;
+          }
+        });
         if (!ok) {
           success = false;
         }

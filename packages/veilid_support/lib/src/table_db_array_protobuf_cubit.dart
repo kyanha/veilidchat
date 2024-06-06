@@ -103,6 +103,7 @@ class TableDBArrayProtobufCubit<T extends GeneratedMessage>
     final elements = avElements.asData!.value;
     emit(AsyncValue.data(TableDBArrayProtobufStateData(
         windowElements: elements,
+        length: _array.length,
         windowTail: _tail,
         windowCount: _count,
         follow: _follow)));
