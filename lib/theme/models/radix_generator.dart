@@ -609,6 +609,29 @@ ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
   final themeData = ThemeData.from(
       colorScheme: colorScheme, textTheme: textTheme, useMaterial3: true);
   return themeData.copyWith(
+      scrollbarTheme: themeData.scrollbarTheme.copyWith(
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.pressed)) {
+          return scaleScheme.primaryScale.border;
+        } else if (states.contains(WidgetState.hovered)) {
+          return scaleScheme.primaryScale.hoverBorder;
+        }
+        return scaleScheme.primaryScale.subtleBorder;
+      }), trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.pressed)) {
+          return scaleScheme.primaryScale.activeElementBackground;
+        } else if (states.contains(WidgetState.hovered)) {
+          return scaleScheme.primaryScale.hoverElementBackground;
+        }
+        return scaleScheme.primaryScale.elementBackground;
+      }), trackBorderColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.pressed)) {
+          return scaleScheme.primaryScale.subtleBorder;
+        } else if (states.contains(WidgetState.hovered)) {
+          return scaleScheme.primaryScale.subtleBorder;
+        }
+        return scaleScheme.primaryScale.subtleBorder;
+      })),
       bottomSheetTheme: themeData.bottomSheetTheme.copyWith(
           elevation: 0,
           modalElevation: 0,

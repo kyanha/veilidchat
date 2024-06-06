@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 import 'app.dart';
 import 'settings/preferences_repository.dart';
@@ -52,7 +53,8 @@ void main() async {
 
   if (kDebugMode) {
     // In debug mode, run the app without catching exceptions for debugging
-    await mainFunc();
+    // but do a much deeper async stack trace capture
+    await Chain.capture(mainFunc);
   } else {
     // Catch errors in production without killing the app
     await runZonedGuarded(mainFunc, (error, stackTrace) {

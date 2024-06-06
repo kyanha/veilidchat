@@ -60,11 +60,39 @@ final $typed_data.Uint8List dHTShortArrayDescriptor = $convert.base64Decode(
     'Cg1ESFRTaG9ydEFycmF5EiQKBGtleXMYASADKAsyEC52ZWlsaWQuVHlwZWRLZXlSBGtleXMSFA'
     'oFaW5kZXgYAiABKAxSBWluZGV4EhIKBHNlcXMYAyADKA1SBHNlcXM=');
 
+@$core.Deprecated('Use dHTDataReferenceDescriptor instead')
+const DHTDataReference$json = {
+  '1': 'DHTDataReference',
+  '2': [
+    {'1': 'dht_data', '3': 1, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'dhtData'},
+    {'1': 'hash', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'hash'},
+  ],
+};
+
+/// Descriptor for `DHTDataReference`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List dHTDataReferenceDescriptor = $convert.base64Decode(
+    'ChBESFREYXRhUmVmZXJlbmNlEisKCGRodF9kYXRhGAEgASgLMhAudmVpbGlkLlR5cGVkS2V5Ug'
+    'dkaHREYXRhEiQKBGhhc2gYAiABKAsyEC52ZWlsaWQuVHlwZWRLZXlSBGhhc2g=');
+
+@$core.Deprecated('Use blockStoreDataReferenceDescriptor instead')
+const BlockStoreDataReference$json = {
+  '1': 'BlockStoreDataReference',
+  '2': [
+    {'1': 'block', '3': 1, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'block'},
+  ],
+};
+
+/// Descriptor for `BlockStoreDataReference`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List blockStoreDataReferenceDescriptor = $convert.base64Decode(
+    'ChdCbG9ja1N0b3JlRGF0YVJlZmVyZW5jZRImCgVibG9jaxgBIAEoCzIQLnZlaWxpZC5UeXBlZE'
+    'tleVIFYmxvY2s=');
+
 @$core.Deprecated('Use dataReferenceDescriptor instead')
 const DataReference$json = {
   '1': 'DataReference',
   '2': [
-    {'1': 'dht_data', '3': 1, '4': 1, '5': 11, '6': '.veilid.TypedKey', '9': 0, '10': 'dhtData'},
+    {'1': 'dht_data', '3': 1, '4': 1, '5': 11, '6': '.dht.DHTDataReference', '9': 0, '10': 'dhtData'},
+    {'1': 'block_store_data', '3': 2, '4': 1, '5': 11, '6': '.dht.BlockStoreDataReference', '9': 0, '10': 'blockStoreData'},
   ],
   '8': [
     {'1': 'kind'},
@@ -73,8 +101,9 @@ const DataReference$json = {
 
 /// Descriptor for `DataReference`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List dataReferenceDescriptor = $convert.base64Decode(
-    'Cg1EYXRhUmVmZXJlbmNlEi0KCGRodF9kYXRhGAEgASgLMhAudmVpbGlkLlR5cGVkS2V5SABSB2'
-    'RodERhdGFCBgoEa2luZA==');
+    'Cg1EYXRhUmVmZXJlbmNlEjIKCGRodF9kYXRhGAEgASgLMhUuZGh0LkRIVERhdGFSZWZlcmVuY2'
+    'VIAFIHZGh0RGF0YRJIChBibG9ja19zdG9yZV9kYXRhGAIgASgLMhwuZGh0LkJsb2NrU3RvcmVE'
+    'YXRhUmVmZXJlbmNlSABSDmJsb2NrU3RvcmVEYXRhQgYKBGtpbmQ=');
 
 @$core.Deprecated('Use ownedDHTRecordPointerDescriptor instead')
 const OwnedDHTRecordPointer$json = {

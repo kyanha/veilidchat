@@ -24,9 +24,9 @@ class ChatSingleContactItemWidget extends StatelessWidget {
     BuildContext context,
   ) {
     final activeChatCubit = context.watch<ActiveChatCubit>();
-    final remoteConversationRecordKey =
-        _contact.remoteConversationRecordKey.toVeilid();
-    final selected = activeChatCubit.state == remoteConversationRecordKey;
+    final localConversationRecordKey =
+        _contact.localConversationRecordKey.toVeilid();
+    final selected = activeChatCubit.state == localConversationRecordKey;
 
     return SliderTile(
       key: ObjectKey(_contact),
@@ -38,7 +38,7 @@ class ChatSingleContactItemWidget extends StatelessWidget {
       icon: Icons.chat,
       onTap: () {
         singleFuture(activeChatCubit, () async {
-          activeChatCubit.setActiveChat(remoteConversationRecordKey);
+          activeChatCubit.setActiveChat(localConversationRecordKey);
         });
       },
       endActions: [
@@ -49,7 +49,7 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             onPressed: (context) async {
               final chatListCubit = context.read<ChatListCubit>();
               await chatListCubit.deleteChat(
-                  remoteConversationRecordKey: remoteConversationRecordKey);
+                  localConversationRecordKey: localConversationRecordKey);
             })
       ],
     );

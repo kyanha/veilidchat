@@ -9,11 +9,11 @@ import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
 import '../../proto/proto.dart' as proto;
-import '../interfaces/dht_append_truncate.dart';
+import '../interfaces/dht_add.dart';
 
 part 'dht_log_spine.dart';
 part 'dht_log_read.dart';
-part 'dht_log_append.dart';
+part 'dht_log_write.dart';
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -60,7 +60,7 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
       int stride = DHTShortArray.maxElements,
       VeilidRoutingContext? routingContext,
       TypedKey? parent,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       KeyPair? writer}) async {
     assert(stride <= DHTShortArray.maxElements, 'stride too long');
     final pool = DHTRecordPool.instance;
@@ -102,7 +102,7 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
       {required String debugName,
       VeilidRoutingContext? routingContext,
       TypedKey? parent,
-      DHTRecordCrypto? crypto}) async {
+      VeilidCrypto? crypto}) async {
     final spineRecord = await DHTRecordPool.instance.openRecordRead(
         logRecordKey,
         debugName: debugName,
@@ -125,7 +125,7 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
     required String debugName,
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) async {
     final spineRecord = await DHTRecordPool.instance.openRecordWrite(
         logRecordKey, writer,
@@ -148,7 +148,7 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
     required String debugName,
     required TypedKey parent,
     VeilidRoutingContext? routingContext,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) =>
       openWrite(
         ownedLogRecordPointer.recordKey,
@@ -209,7 +209,7 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
   OwnedDHTRecordPointer get recordPointer => _spine.recordPointer;
 
   /// Runs a closure allowing read-only access to the log
-  Future<T?> operate<T>(Future<T?> Function(DHTRandomRead) closure) async {
+  Future<T> operate<T>(Future<T> Function(DHTLogReadOperations) closure) async {
     if (!isOpen) {
       throw StateError('log is not open"');
     }
@@ -226,13 +226,13 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
   /// Throws DHTOperateException if the write could not be performed
   /// at this time
   Future<T> operateAppend<T>(
-      Future<T> Function(DHTAppendTruncateRandomRead) closure) async {
+      Future<T> Function(DHTLogWriteOperations) closure) async {
     if (!isOpen) {
       throw StateError('log is not open"');
     }
 
     return _spine.operateAppend((spine) async {
-      final writer = _DHTLogAppend._(spine);
+      final writer = _DHTLogWrite._(spine);
       return closure(writer);
     });
   }
@@ -244,14 +244,14 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
   /// succeeded, returning false will trigger another eventual consistency
   /// attempt.
   Future<void> operateAppendEventual(
-      Future<bool> Function(DHTAppendTruncateRandomRead) closure,
+      Future<bool> Function(DHTLogWriteOperations) closure,
       {Duration? timeout}) async {
     if (!isOpen) {
       throw StateError('log is not open"');
     }
 
     return _spine.operateAppendEventual((spine) async {
-      final writer = _DHTLogAppend._(spine);
+      final writer = _DHTLogWrite._(spine);
       return closure(writer);
     }, timeout: timeout);
   }

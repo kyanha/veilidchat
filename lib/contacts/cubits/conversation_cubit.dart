@@ -285,13 +285,13 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     required ActiveAccountInfo activeAccountInfo,
     required TypedKey remoteIdentityPublicKey,
     required TypedKey localConversationKey,
-    required FutureOr<T> Function(DHTShortArray) callback,
+    required FutureOr<T> Function(DHTLog) callback,
   }) async {
     final crypto =
         await activeAccountInfo.makeConversationCrypto(remoteIdentityPublicKey);
     final writer = activeAccountInfo.conversationWriter;
 
-    return (await DHTShortArray.create(
+    return (await DHTLog.create(
             debugName: 'ConversationCubit::initLocalMessages::LocalMessages',
             parent: localConversationKey,
             crypto: crypto,
@@ -327,7 +327,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     return update;
   }
 
-  Future<DHTRecordCrypto> _cachedConversationCrypto() async {
+  Future<VeilidCrypto> _cachedConversationCrypto() async {
     var conversationCrypto = _conversationCrypto;
     if (conversationCrypto != null) {
       return conversationCrypto;
@@ -350,6 +350,6 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   ConversationState _incrementalState = const ConversationState(
       localConversation: null, remoteConversation: null);
   //
-  DHTRecordCrypto? _conversationCrypto;
+  VeilidCrypto? _conversationCrypto;
   final WaitSet<void> _initWait = WaitSet();
 }

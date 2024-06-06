@@ -31,7 +31,7 @@ typedef ActiveConversationCubit = TransformerCubit<
 typedef ActiveConversationsBlocMapState
     = BlocMapState<TypedKey, AsyncValue<ActiveConversationState>>;
 
-// Map of remoteConversationRecordKey to ActiveConversationCubit
+// Map of localConversationRecordKey to ActiveConversationCubit
 // Wraps a conversation cubit to only expose completely built conversations
 // Automatically follows the state of a ChatListCubit.
 // Even though 'conversations' are per-contact and not per-chat
@@ -49,7 +49,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
   // Add an active conversation to be tracked for changes
   Future<void> _addConversation({required proto.Contact contact}) async =>
       add(() => MapEntry(
-          contact.remoteConversationRecordKey.toVeilid(),
+          contact.localConversationRecordKey.toVeilid(),
           TransformerCubit(
               ConversationCubit(
                 activeAccountInfo: _activeAccountInfo,
@@ -86,7 +86,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
       return;
     }
     final contactIndex = contactList.indexWhere(
-        (c) => c.value.remoteConversationRecordKey.toVeilid() == key);
+        (c) => c.value.localConversationRecordKey.toVeilid() == key);
     if (contactIndex == -1) {
       await addState(key, AsyncValue.error('Contact not found'));
       return;

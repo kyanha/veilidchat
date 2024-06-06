@@ -20,9 +20,14 @@ MessageState _$MessageStateFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$MessageState {
-  Typed<FixedEncodedString43> get author => throw _privateConstructorUsedError;
-  Timestamp get timestamp => throw _privateConstructorUsedError;
-  String get text => throw _privateConstructorUsedError;
+// Content of the message
+  @JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+  proto.Message get content =>
+      throw _privateConstructorUsedError; // Sent timestamp
+  Timestamp get sentTimestamp =>
+      throw _privateConstructorUsedError; // Reconciled timestamp
+  Timestamp? get reconciledTimestamp =>
+      throw _privateConstructorUsedError; // The state of the message
   MessageSendState? get sendState => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -38,9 +43,10 @@ abstract class $MessageStateCopyWith<$Res> {
       _$MessageStateCopyWithImpl<$Res, MessageState>;
   @useResult
   $Res call(
-      {Typed<FixedEncodedString43> author,
-      Timestamp timestamp,
-      String text,
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+      proto.Message content,
+      Timestamp sentTimestamp,
+      Timestamp? reconciledTimestamp,
       MessageSendState? sendState});
 }
 
@@ -57,24 +63,24 @@ class _$MessageStateCopyWithImpl<$Res, $Val extends MessageState>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? author = null,
-    Object? timestamp = null,
-    Object? text = null,
+    Object? content = null,
+    Object? sentTimestamp = null,
+    Object? reconciledTimestamp = freezed,
     Object? sendState = freezed,
   }) {
     return _then(_value.copyWith(
-      author: null == author
-          ? _value.author
-          : author // ignore: cast_nullable_to_non_nullable
-              as Typed<FixedEncodedString43>,
-      timestamp: null == timestamp
-          ? _value.timestamp
-          : timestamp // ignore: cast_nullable_to_non_nullable
+      content: null == content
+          ? _value.content
+          : content // ignore: cast_nullable_to_non_nullable
+              as proto.Message,
+      sentTimestamp: null == sentTimestamp
+          ? _value.sentTimestamp
+          : sentTimestamp // ignore: cast_nullable_to_non_nullable
               as Timestamp,
-      text: null == text
-          ? _value.text
-          : text // ignore: cast_nullable_to_non_nullable
-              as String,
+      reconciledTimestamp: freezed == reconciledTimestamp
+          ? _value.reconciledTimestamp
+          : reconciledTimestamp // ignore: cast_nullable_to_non_nullable
+              as Timestamp?,
       sendState: freezed == sendState
           ? _value.sendState
           : sendState // ignore: cast_nullable_to_non_nullable
@@ -92,9 +98,10 @@ abstract class _$$MessageStateImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {Typed<FixedEncodedString43> author,
-      Timestamp timestamp,
-      String text,
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+      proto.Message content,
+      Timestamp sentTimestamp,
+      Timestamp? reconciledTimestamp,
       MessageSendState? sendState});
 }
 
@@ -109,24 +116,24 @@ class __$$MessageStateImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? author = null,
-    Object? timestamp = null,
-    Object? text = null,
+    Object? content = null,
+    Object? sentTimestamp = null,
+    Object? reconciledTimestamp = freezed,
     Object? sendState = freezed,
   }) {
     return _then(_$MessageStateImpl(
-      author: null == author
-          ? _value.author
-          : author // ignore: cast_nullable_to_non_nullable
-              as Typed<FixedEncodedString43>,
-      timestamp: null == timestamp
-          ? _value.timestamp
-          : timestamp // ignore: cast_nullable_to_non_nullable
+      content: null == content
+          ? _value.content
+          : content // ignore: cast_nullable_to_non_nullable
+              as proto.Message,
+      sentTimestamp: null == sentTimestamp
+          ? _value.sentTimestamp
+          : sentTimestamp // ignore: cast_nullable_to_non_nullable
               as Timestamp,
-      text: null == text
-          ? _value.text
-          : text // ignore: cast_nullable_to_non_nullable
-              as String,
+      reconciledTimestamp: freezed == reconciledTimestamp
+          ? _value.reconciledTimestamp
+          : reconciledTimestamp // ignore: cast_nullable_to_non_nullable
+              as Timestamp?,
       sendState: freezed == sendState
           ? _value.sendState
           : sendState // ignore: cast_nullable_to_non_nullable
@@ -139,26 +146,32 @@ class __$$MessageStateImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
   const _$MessageStateImpl(
-      {required this.author,
-      required this.timestamp,
-      required this.text,
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+      required this.content,
+      required this.sentTimestamp,
+      required this.reconciledTimestamp,
       required this.sendState});
 
   factory _$MessageStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$MessageStateImplFromJson(json);
 
+// Content of the message
   @override
-  final Typed<FixedEncodedString43> author;
+  @JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+  final proto.Message content;
+// Sent timestamp
   @override
-  final Timestamp timestamp;
+  final Timestamp sentTimestamp;
+// Reconciled timestamp
   @override
-  final String text;
+  final Timestamp? reconciledTimestamp;
+// The state of the message
   @override
   final MessageSendState? sendState;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'MessageState(author: $author, timestamp: $timestamp, text: $text, sendState: $sendState)';
+    return 'MessageState(content: $content, sentTimestamp: $sentTimestamp, reconciledTimestamp: $reconciledTimestamp, sendState: $sendState)';
   }
 
   @override
@@ -166,9 +179,9 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'MessageState'))
-      ..add(DiagnosticsProperty('author', author))
-      ..add(DiagnosticsProperty('timestamp', timestamp))
-      ..add(DiagnosticsProperty('text', text))
+      ..add(DiagnosticsProperty('content', content))
+      ..add(DiagnosticsProperty('sentTimestamp', sentTimestamp))
+      ..add(DiagnosticsProperty('reconciledTimestamp', reconciledTimestamp))
       ..add(DiagnosticsProperty('sendState', sendState));
   }
 
@@ -177,18 +190,19 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$MessageStateImpl &&
-            (identical(other.author, author) || other.author == author) &&
-            (identical(other.timestamp, timestamp) ||
-                other.timestamp == timestamp) &&
-            (identical(other.text, text) || other.text == text) &&
+            (identical(other.content, content) || other.content == content) &&
+            (identical(other.sentTimestamp, sentTimestamp) ||
+                other.sentTimestamp == sentTimestamp) &&
+            (identical(other.reconciledTimestamp, reconciledTimestamp) ||
+                other.reconciledTimestamp == reconciledTimestamp) &&
             (identical(other.sendState, sendState) ||
                 other.sendState == sendState));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, author, timestamp, text, sendState);
+  int get hashCode => Object.hash(
+      runtimeType, content, sentTimestamp, reconciledTimestamp, sendState);
 
   @JsonKey(ignore: true)
   @override
@@ -206,21 +220,23 @@ class _$MessageStateImpl with DiagnosticableTreeMixin implements _MessageState {
 
 abstract class _MessageState implements MessageState {
   const factory _MessageState(
-      {required final Typed<FixedEncodedString43> author,
-      required final Timestamp timestamp,
-      required final String text,
+      {@JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+      required final proto.Message content,
+      required final Timestamp sentTimestamp,
+      required final Timestamp? reconciledTimestamp,
       required final MessageSendState? sendState}) = _$MessageStateImpl;
 
   factory _MessageState.fromJson(Map<String, dynamic> json) =
       _$MessageStateImpl.fromJson;
 
-  @override
-  Typed<FixedEncodedString43> get author;
-  @override
-  Timestamp get timestamp;
-  @override
-  String get text;
-  @override
+  @override // Content of the message
+  @JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+  proto.Message get content;
+  @override // Sent timestamp
+  Timestamp get sentTimestamp;
+  @override // Reconciled timestamp
+  Timestamp? get reconciledTimestamp;
+  @override // The state of the message
   MessageSendState? get sendState;
   @override
   @JsonKey(ignore: true)

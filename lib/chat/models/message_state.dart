@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../proto/proto.dart' as proto;
+import '../../proto/proto.dart' show messageFromJson, messageToJson;
+
 part 'message_state.freezed.dart';
 part 'message_state.g.dart';
 
@@ -23,9 +26,14 @@ enum MessageSendState {
 @freezed
 class MessageState with _$MessageState {
   const factory MessageState({
-    required TypedKey author,
-    required Timestamp timestamp,
-    required String text,
+    // Content of the message
+    @JsonKey(fromJson: messageFromJson, toJson: messageToJson)
+    required proto.Message content,
+    // Sent timestamp
+    required Timestamp sentTimestamp,
+    // Reconciled timestamp
+    required Timestamp? reconciledTimestamp,
+    // The state of the message
     required MessageSendState? sendState,
   }) = _MessageState;
 

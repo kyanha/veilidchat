@@ -42,7 +42,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
       required SharedDHTRecordData sharedDHTRecordData,
       required int defaultSubkey,
       required KeyPair? writer,
-      required DHTRecordCrypto crypto,
+      required VeilidCrypto crypto,
       required this.debugName})
       : _crypto = crypto,
         _routingContext = routingContext,
@@ -104,7 +104,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   int get subkeyCount =>
       _sharedDHTRecordData.recordDescriptor.schema.subkeyCount();
   KeyPair? get writer => _writer;
-  DHTRecordCrypto get crypto => _crypto;
+  VeilidCrypto get crypto => _crypto;
   OwnedDHTRecordPointer get ownedDHTRecordPointer =>
       OwnedDHTRecordPointer(recordKey: key, owner: ownerKeyPair!);
   int subkeyOrDefault(int subkey) => (subkey == -1) ? _defaultSubkey : subkey;
@@ -118,7 +118,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   ///   returned if one was returned.
   Future<Uint8List?> get(
       {int subkey = -1,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
@@ -146,7 +146,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
       return null;
     }
     // If we're returning a value, decrypt it
-    final out = (crypto ?? _crypto).decrypt(valueData.data, subkey);
+    final out = (crypto ?? _crypto).decrypt(valueData.data);
     if (outSeqNum != null) {
       outSeqNum.save(valueData.seq);
     }
@@ -163,7 +163,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   ///   returned if one was returned.
   Future<T?> getJson<T>(T Function(dynamic) fromJson,
       {int subkey = -1,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
       Output<int>? outSeqNum}) async {
     final data = await get(
@@ -189,7 +189,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   Future<T?> getProtobuf<T extends GeneratedMessage>(
       T Function(List<int> i) fromBuffer,
       {int subkey = -1,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       DHTRecordRefreshMode refreshMode = DHTRecordRefreshMode.cached,
       Output<int>? outSeqNum}) async {
     final data = await get(
@@ -208,13 +208,12 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   /// If the value was succesfully written, null is returned
   Future<Uint8List?> tryWriteBytes(Uint8List newValue,
       {int subkey = -1,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       KeyPair? writer,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
     final lastSeq = await _localSubkeySeq(subkey);
-    final encryptedNewValue =
-        await (crypto ?? _crypto).encrypt(newValue, subkey);
+    final encryptedNewValue = await (crypto ?? _crypto).encrypt(newValue);
 
     // Set the new data if possible
     var newValueData = await _routingContext
@@ -246,7 +245,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
 
     // Decrypt value to return it
     final decryptedNewValue =
-        await (crypto ?? _crypto).decrypt(newValueData.data, subkey);
+        await (crypto ?? _crypto).decrypt(newValueData.data);
     if (isUpdated) {
       DHTRecordPool.instance
           .processLocalValueChange(key, decryptedNewValue, subkey);
@@ -259,13 +258,12 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   /// will be made to write the subkey until this succeeds
   Future<void> eventualWriteBytes(Uint8List newValue,
       {int subkey = -1,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       KeyPair? writer,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
     final lastSeq = await _localSubkeySeq(subkey);
-    final encryptedNewValue =
-        await (crypto ?? _crypto).encrypt(newValue, subkey);
+    final encryptedNewValue = await (crypto ?? _crypto).encrypt(newValue);
 
     ValueData? newValueData;
     do {
@@ -309,7 +307,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   Future<void> eventualUpdateBytes(
       Future<Uint8List> Function(Uint8List? oldValue) update,
       {int subkey = -1,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       KeyPair? writer,
       Output<int>? outSeqNum}) async {
     subkey = subkeyOrDefault(subkey);
@@ -334,7 +332,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   /// Like 'tryWriteBytes' but with JSON marshal/unmarshal of the value
   Future<T?> tryWriteJson<T>(T Function(dynamic) fromJson, T newValue,
           {int subkey = -1,
-          DHTRecordCrypto? crypto,
+          VeilidCrypto? crypto,
           KeyPair? writer,
           Output<int>? outSeqNum}) =>
       tryWriteBytes(jsonEncodeBytes(newValue),
@@ -353,7 +351,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   Future<T?> tryWriteProtobuf<T extends GeneratedMessage>(
           T Function(List<int>) fromBuffer, T newValue,
           {int subkey = -1,
-          DHTRecordCrypto? crypto,
+          VeilidCrypto? crypto,
           KeyPair? writer,
           Output<int>? outSeqNum}) =>
       tryWriteBytes(newValue.writeToBuffer(),
@@ -371,7 +369,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   /// Like 'eventualWriteBytes' but with JSON marshal/unmarshal of the value
   Future<void> eventualWriteJson<T>(T newValue,
           {int subkey = -1,
-          DHTRecordCrypto? crypto,
+          VeilidCrypto? crypto,
           KeyPair? writer,
           Output<int>? outSeqNum}) =>
       eventualWriteBytes(jsonEncodeBytes(newValue),
@@ -380,7 +378,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   /// Like 'eventualWriteBytes' but with protobuf marshal/unmarshal of the value
   Future<void> eventualWriteProtobuf<T extends GeneratedMessage>(T newValue,
           {int subkey = -1,
-          DHTRecordCrypto? crypto,
+          VeilidCrypto? crypto,
           KeyPair? writer,
           Output<int>? outSeqNum}) =>
       eventualWriteBytes(newValue.writeToBuffer(),
@@ -390,7 +388,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   Future<void> eventualUpdateJson<T>(
           T Function(dynamic) fromJson, Future<T> Function(T?) update,
           {int subkey = -1,
-          DHTRecordCrypto? crypto,
+          VeilidCrypto? crypto,
           KeyPair? writer,
           Output<int>? outSeqNum}) =>
       eventualUpdateBytes(jsonUpdate(fromJson, update),
@@ -400,7 +398,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   Future<void> eventualUpdateProtobuf<T extends GeneratedMessage>(
           T Function(List<int>) fromBuffer, Future<T> Function(T?) update,
           {int subkey = -1,
-          DHTRecordCrypto? crypto,
+          VeilidCrypto? crypto,
           KeyPair? writer,
           Output<int>? outSeqNum}) =>
       eventualUpdateBytes(protobufUpdate(fromBuffer, update),
@@ -433,7 +431,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
             DHTRecord record, Uint8List? data, List<ValueSubkeyRange> subkeys)
         onUpdate, {
     bool localChanges = true,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) async {
     // Set up watch requirements
     _watchController ??=
@@ -457,8 +455,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
               final changeData = change.data;
               data = changeData == null
                   ? null
-                  : await (crypto ?? _crypto)
-                      .decrypt(changeData, change.subkeys.first.low);
+                  : await (crypto ?? _crypto).decrypt(changeData);
             }
             await onUpdate(this, data, change.subkeys);
           });
@@ -544,7 +541,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
   final VeilidRoutingContext _routingContext;
   final int _defaultSubkey;
   final KeyPair? _writer;
-  final DHTRecordCrypto _crypto;
+  final VeilidCrypto _crypto;
   final String debugName;
   final _mutex = Mutex();
   int _openCount;

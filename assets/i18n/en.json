@@ -67,6 +67,7 @@
         "new_chat": "New Chat"
     },
     "chat": {
+        "start_a_conversation": "Start A Conversation",
         "say_something": "Say Something"
     },
     "create_invitation_dialog": {

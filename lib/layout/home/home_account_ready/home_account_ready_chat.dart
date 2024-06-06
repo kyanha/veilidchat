@@ -28,13 +28,14 @@ class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
   }
 
   Widget buildChatComponent(BuildContext context) {
-    final activeChatRemoteConversationKey =
+    final activeChatLocalConversationKey =
         context.watch<ActiveChatCubit>().state;
-    if (activeChatRemoteConversationKey == null) {
-      return const EmptyChatWidget();
+    if (activeChatLocalConversationKey == null) {
+      return const NoConversationWidget();
     }
-    return ChatComponent.builder(
-        remoteConversationRecordKey: activeChatRemoteConversationKey);
+    return ChatComponentWidget.builder(
+        localConversationRecordKey: activeChatLocalConversationKey,
+        key: ValueKey(activeChatLocalConversationKey));
   }
 
   @override

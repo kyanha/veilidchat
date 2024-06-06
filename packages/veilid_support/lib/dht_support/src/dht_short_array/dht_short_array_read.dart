@@ -3,14 +3,16 @@ part of 'dht_short_array.dart';
 ////////////////////////////////////////////////////////////////////////////
 // Reader-only implementation
 
-class _DHTShortArrayRead implements DHTRandomRead {
+abstract class DHTShortArrayReadOperations implements DHTRandomRead {}
+
+class _DHTShortArrayRead implements DHTShortArrayReadOperations {
   _DHTShortArrayRead._(_DHTShortArrayHead head) : _head = head;
 
   @override
   int get length => _head.length;
 
   @override
-  Future<Uint8List?> getItem(int pos, {bool forceRefresh = false}) async {
+  Future<Uint8List?> get(int pos, {bool forceRefresh = false}) async {
     if (pos < 0 || pos >= length) {
       throw IndexError.withLength(pos, length);
     }
@@ -47,14 +49,14 @@ class _DHTShortArrayRead implements DHTRandomRead {
   }
 
   @override
-  Future<List<Uint8List>?> getItemRange(int start,
+  Future<List<Uint8List>?> getRange(int start,
       {int? length, bool forceRefresh = false}) async {
     final out = <Uint8List>[];
     (start, length) = _clampStartLen(start, length);
 
     final chunks = Iterable<int>.generate(length).slices(maxDHTConcurrency).map(
-        (chunk) => chunk
-            .map((pos) => getItem(pos + start, forceRefresh: forceRefresh)));
+        (chunk) =>
+            chunk.map((pos) => get(pos + start, forceRefresh: forceRefresh)));
 
     for (final chunk in chunks) {
       final elems = await chunk.wait;

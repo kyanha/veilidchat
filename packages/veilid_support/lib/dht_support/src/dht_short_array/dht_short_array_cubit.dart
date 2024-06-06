@@ -54,13 +54,12 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     try {
       final newState = await _shortArray.operate((reader) async {
         final offlinePositions = await reader.getOfflinePositions();
-        final allItems =
-            (await reader.getItemRange(0, forceRefresh: forceRefresh))
-                ?.indexed
-                .map((x) => DHTShortArrayElementState(
-                    value: _decodeElement(x.$2),
-                    isOffline: offlinePositions.contains(x.$1)))
-                .toIList();
+        final allItems = (await reader.getRange(0, forceRefresh: forceRefresh))
+            ?.indexed
+            .map((x) => DHTShortArrayElementState(
+                value: _decodeElement(x.$2),
+                isOffline: offlinePositions.contains(x.$1)))
+            .toIList();
         return allItems;
       });
       if (newState != null) {
@@ -91,19 +90,20 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     await super.close();
   }
 
-  Future<R> operate<R>(Future<R> Function(DHTRandomRead) closure) async {
+  Future<R> operate<R>(
+      Future<R> Function(DHTShortArrayReadOperations) closure) async {
     await _initWait();
     return _shortArray.operate(closure);
   }
 
   Future<R> operateWrite<R>(
-      Future<R> Function(DHTRandomReadWrite) closure) async {
+      Future<R> Function(DHTShortArrayWriteOperations) closure) async {
     await _initWait();
     return _shortArray.operateWrite(closure);
   }
 
   Future<void> operateWriteEventual(
-      Future<bool> Function(DHTRandomReadWrite) closure,
+      Future<bool> Function(DHTShortArrayWriteOperations) closure,
       {Duration? timeout}) async {
     await _initWait();
     return _shortArray.operateWriteEventual(closure, timeout: timeout);

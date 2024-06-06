@@ -3,14 +3,16 @@ part of 'dht_log.dart';
 ////////////////////////////////////////////////////////////////////////////
 // Reader-only implementation
 
-class _DHTLogRead implements DHTRandomRead {
+abstract class DHTLogReadOperations implements DHTRandomRead {}
+
+class _DHTLogRead implements DHTLogReadOperations {
   _DHTLogRead._(_DHTLogSpine spine) : _spine = spine;
 
   @override
   int get length => _spine.length;
 
   @override
-  Future<Uint8List?> getItem(int pos, {bool forceRefresh = false}) async {
+  Future<Uint8List?> get(int pos, {bool forceRefresh = false}) async {
     if (pos < 0 || pos >= length) {
       throw IndexError.withLength(pos, length);
     }
@@ -19,8 +21,8 @@ class _DHTLogRead implements DHTRandomRead {
       return null;
     }
 
-    return lookup.scope((sa) => sa.operate(
-        (read) => read.getItem(lookup.pos, forceRefresh: forceRefresh)));
+    return lookup.scope((sa) =>
+        sa.operate((read) => read.get(lookup.pos, forceRefresh: forceRefresh)));
   }
 
   (int, int) _clampStartLen(int start, int? len) {
@@ -38,14 +40,14 @@ class _DHTLogRead implements DHTRandomRead {
   }
 
   @override
-  Future<List<Uint8List>?> getItemRange(int start,
+  Future<List<Uint8List>?> getRange(int start,
       {int? length, bool forceRefresh = false}) async {
     final out = <Uint8List>[];
     (start, length) = _clampStartLen(start, length);
 
     final chunks = Iterable<int>.generate(length).slices(maxDHTConcurrency).map(
-        (chunk) => chunk
-            .map((pos) => getItem(pos + start, forceRefresh: forceRefresh)));
+        (chunk) =>
+            chunk.map((pos) => get(pos + start, forceRefresh: forceRefresh)));
 
     for (final chunk in chunks) {
       final elems = await chunk.wait;

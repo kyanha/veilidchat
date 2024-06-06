@@ -62,13 +62,24 @@ message DHTShortArray {
     // calculated through iteration
 }
 
+// Reference to data on the DHT
+message DHTDataReference {
+    veilid.TypedKey dht_data = 1;
+    veilid.TypedKey hash = 2;
+}
+
+// Reference to data on the BlockStore
+message BlockStoreDataReference {
+    veilid.TypedKey block = 1;
+}
+
 // DataReference
 // Pointer to data somewhere in Veilid
 // Abstraction over DHTData and BlockStore
 message DataReference {
     oneof kind {
-        veilid.TypedKey dht_data = 1;
-        // TypedKey block = 2;
+        DHTDataReference dht_data = 1;
+        BlockStoreDataReference block_store_data = 2;
     }
 }
 

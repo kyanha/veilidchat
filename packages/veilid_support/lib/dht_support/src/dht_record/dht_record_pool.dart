@@ -27,6 +27,9 @@ const int watchRenewalDenominator = 5;
 // Maximum number of concurrent DHT operations to perform on the network
 const int maxDHTConcurrency = 8;
 
+// DHT crypto domain
+const String cryptoDomainDHT = 'dht';
+
 typedef DHTRecordPoolLogger = void Function(String message);
 
 /// Record pool that managed DHTRecords and allows for tagged deletion
@@ -526,7 +529,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     TypedKey? parent,
     DHTSchema schema = const DHTSchema.dflt(oCnt: 1),
     int defaultSubkey = 0,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
     KeyPair? writer,
   }) async =>
       _mutex.protect(() async {
@@ -547,9 +550,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             writer: writer ??
                 openedRecordInfo.shared.recordDescriptor.ownerKeyPair(),
             crypto: crypto ??
-                await DHTRecordCryptoPrivate.fromTypedKeyPair(openedRecordInfo
+                await privateCryptoFromTypedSecret(openedRecordInfo
                     .shared.recordDescriptor
-                    .ownerTypedKeyPair()!));
+                    .ownerTypedSecret()!));
 
         openedRecordInfo.records.add(rec);
 
@@ -562,7 +565,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           VeilidRoutingContext? routingContext,
           TypedKey? parent,
           int defaultSubkey = 0,
-          DHTRecordCrypto? crypto}) async =>
+          VeilidCrypto? crypto}) async =>
       _mutex.protect(() async {
         final dhtctx = routingContext ?? _routingContext;
 
@@ -578,7 +581,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             defaultSubkey: defaultSubkey,
             sharedDHTRecordData: openedRecordInfo.shared,
             writer: null,
-            crypto: crypto ?? const DHTRecordCryptoPublic());
+            crypto: crypto ?? const VeilidCryptoPublic());
 
         openedRecordInfo.records.add(rec);
 
@@ -593,7 +596,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
     int defaultSubkey = 0,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) async =>
       _mutex.protect(() async {
         final dhtctx = routingContext ?? _routingContext;
@@ -612,8 +615,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             writer: writer,
             sharedDHTRecordData: openedRecordInfo.shared,
             crypto: crypto ??
-                await DHTRecordCryptoPrivate.fromTypedKeyPair(
-                    TypedKeyPair.fromKeyPair(recordKey.kind, writer)));
+                await privateCryptoFromTypedSecret(
+                    TypedKey(kind: recordKey.kind, value: writer.secret)));
 
         openedRecordInfo.records.add(rec);
 
@@ -632,7 +635,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     required TypedKey parent,
     VeilidRoutingContext? routingContext,
     int defaultSubkey = 0,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) =>
       openRecordWrite(
         ownedDHTRecordPointer.recordKey,
@@ -662,6 +665,11 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       }
     }
   }
+
+  /// Generate default VeilidCrypto for a writer
+  static Future<VeilidCrypto> privateCryptoFromTypedSecret(
+          TypedKey typedSecret) async =>
+      VeilidCryptoPrivate.fromTypedKey(typedSecret, cryptoDomainDHT);
 
   /// Handle the DHT record updates coming from Veilid
   void processRemoteValueChange(VeilidUpdateValueChange updateValueChange) {

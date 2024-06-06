@@ -8,9 +8,11 @@ part of 'message_state.dart';
 
 _$MessageStateImpl _$$MessageStateImplFromJson(Map<String, dynamic> json) =>
     _$MessageStateImpl(
-      author: Typed<FixedEncodedString43>.fromJson(json['author']),
-      timestamp: Timestamp.fromJson(json['timestamp']),
-      text: json['text'] as String,
+      content: messageFromJson(json['content'] as Map<String, dynamic>),
+      sentTimestamp: Timestamp.fromJson(json['sent_timestamp']),
+      reconciledTimestamp: json['reconciled_timestamp'] == null
+          ? null
+          : Timestamp.fromJson(json['reconciled_timestamp']),
       sendState: json['send_state'] == null
           ? null
           : MessageSendState.fromJson(json['send_state']),
@@ -18,8 +20,8 @@ _$MessageStateImpl _$$MessageStateImplFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$$MessageStateImplToJson(_$MessageStateImpl instance) =>
     <String, dynamic>{
-      'author': instance.author.toJson(),
-      'timestamp': instance.timestamp.toJson(),
-      'text': instance.text,
+      'content': messageToJson(instance.content),
+      'sent_timestamp': instance.sentTimestamp.toJson(),
+      'reconciled_timestamp': instance.reconciledTimestamp?.toJson(),
       'send_state': instance.sendState?.toJson(),
     };

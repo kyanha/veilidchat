@@ -12,17 +12,17 @@ While this is still in development, you must have a clone of the Veilid source c
 
 ### For Linux Systems:
 ```
-./setup_linux.sh
+./dev-setup/setup_linux.sh
 ```
 
 ### For Mac Systems:
 ```
-./setup_macos.sh
+./dev-setup/setup_macos.sh
 ```
 
 ## Updating Code
 
 ### To update the WASM binary from `veilid-wasm`:
-* Debug WASM: run `./wasm_update.sh`
-* Release WASM: run `/wasm_update.sh release`
+* Debug WASM: run `./dev-setup/wasm_update.sh`
+* Release WASM: run `./dev-setup/wasm_update.sh release`
 

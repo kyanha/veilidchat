@@ -11,7 +11,6 @@ class ActiveAccountInfo {
   const ActiveAccountInfo({
     required this.localAccount,
     required this.userLogin,
-    //required this.accountRecord,
   });
   //
 
@@ -24,7 +23,7 @@ class ActiveAccountInfo {
     return KeyPair(key: identityKey, secret: identitySecret.value);
   }
 
-  Future<DHTRecordCrypto> makeConversationCrypto(
+  Future<VeilidCrypto> makeConversationCrypto(
       TypedKey remoteIdentityPublicKey) async {
     final identitySecret = userLogin.identitySecret;
     final cs = await Veilid.instance.getCryptoSystem(identitySecret.kind);
@@ -33,7 +32,7 @@ class ActiveAccountInfo {
         identitySecret.value,
         utf8.encode('VeilidChat Conversation'));
 
-    final messagesCrypto = await DHTRecordCryptoPrivate.fromSecret(
+    final messagesCrypto = await VeilidCryptoPrivate.fromSharedSecret(
         identitySecret.kind, sharedSecret);
     return messagesCrypto;
   }
@@ -41,5 +40,4 @@ class ActiveAccountInfo {
   //
   final LocalAccount localAccount;
   final UserLogin userLogin;
-  //final DHTRecord accountRecord;
 }

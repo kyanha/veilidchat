@@ -27,12 +27,12 @@ class ContactInvitationItemWidget extends StatelessWidget {
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
-    // final remoteConversationKey =
-    //     contact.remoteConversationRecordKey.toVeilid();
+    // final localConversationKey =
+    //     contact.localConversationRecordKey.toVeilid();
 
     const selected =
         false; // xxx: eventually when we have selectable invitations:
-    // activeContactCubit.state == remoteConversationRecordKey;
+    // activeContactCubit.state == localConversationRecordKey;
 
     final tileDisabled =
         disabled || context.watch<ContactInvitationListCubit>().isBusy;

@@ -33,7 +33,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
       int stride = maxElements,
       VeilidRoutingContext? routingContext,
       TypedKey? parent,
-      DHTRecordCrypto? crypto,
+      VeilidCrypto? crypto,
       KeyPair? writer}) async {
     assert(stride <= maxElements, 'stride too long');
     final pool = DHTRecordPool.instance;
@@ -79,7 +79,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
       {required String debugName,
       VeilidRoutingContext? routingContext,
       TypedKey? parent,
-      DHTRecordCrypto? crypto}) async {
+      VeilidCrypto? crypto}) async {
     final dhtRecord = await DHTRecordPool.instance.openRecordRead(headRecordKey,
         debugName: debugName,
         parent: parent,
@@ -101,7 +101,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
     required String debugName,
     VeilidRoutingContext? routingContext,
     TypedKey? parent,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) async {
     final dhtRecord = await DHTRecordPool.instance.openRecordWrite(
         headRecordKey, writer,
@@ -124,7 +124,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
     required String debugName,
     required TypedKey parent,
     VeilidRoutingContext? routingContext,
-    DHTRecordCrypto? crypto,
+    VeilidCrypto? crypto,
   }) =>
       openWrite(
         ownedShortArrayRecordPointer.recordKey,
@@ -185,8 +185,20 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
   /// Get the record pointer foir this shortarray
   OwnedDHTRecordPointer get recordPointer => _head.recordPointer;
 
+  /// Refresh this DHTShortArray
+  /// Useful if you aren't 'watching' the array and want to poll for an update
+  Future<void> refresh() async {
+    if (!isOpen) {
+      throw StateError('short array is not open"');
+    }
+    await _head.operate((head) async {
+      await head._loadHead();
+    });
+  }
+
   /// Runs a closure allowing read-only access to the shortarray
-  Future<T> operate<T>(Future<T> Function(DHTRandomRead) closure) async {
+  Future<T> operate<T>(
+      Future<T> Function(DHTShortArrayReadOperations) closure) async {
     if (!isOpen) {
       throw StateError('short array is not open"');
     }
@@ -203,7 +215,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
   /// Throws DHTOperateException if the write could not be performed
   /// at this time
   Future<T> operateWrite<T>(
-      Future<T> Function(DHTRandomReadWrite) closure) async {
+      Future<T> Function(DHTShortArrayWriteOperations) closure) async {
     if (!isOpen) {
       throw StateError('short array is not open"');
     }
@@ -221,7 +233,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
   /// succeeded, returning false will trigger another eventual consistency
   /// attempt.
   Future<void> operateWriteEventual(
-      Future<bool> Function(DHTRandomReadWrite) closure,
+      Future<bool> Function(DHTShortArrayWriteOperations) closure,
       {Duration? timeout}) async {
     if (!isOpen) {
       throw StateError('short array is not open"');
