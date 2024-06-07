@@ -114,13 +114,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _conversationCrypto = await _activeAccountInfo
         .makeConversationCrypto(_remoteIdentityPublicKey);
     _senderMessageIntegrity = await MessageIntegrity.create(
-        author: _activeAccountInfo.localAccount.identityMaster
-            .identityPublicTypedKey());
+        author: _activeAccountInfo.identityTypedPublicKey);
   }
 
   // Open local messages key
   Future<void> _initSentMessagesCubit() async {
-    final writer = _activeAccountInfo.conversationWriter;
+    final writer = _activeAccountInfo.identityWriter;
 
     _sentMessagesCubit = DHTLogCubit(
         open: () async => DHTLog.openWrite(_localMessagesRecordKey, writer,
@@ -190,7 +189,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       {int? tail, int? count, bool? follow, bool forceRefresh = false}) async {
     await _initWait();
 
-    print('setWindow: tail=$tail count=$count, follow=$follow');
+    // print('setWindow: tail=$tail count=$count, follow=$follow');
 
     await _reconciledMessagesCubit!.setWindow(
         tail: tail, count: count, follow: follow, forceRefresh: forceRefresh);
@@ -241,10 +240,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       return;
     }
 
-    _reconciliation.reconcileMessages(
-        _activeAccountInfo.localAccount.identityMaster.identityPublicTypedKey(),
-        sentMessages,
-        _sentMessagesCubit!);
+    _reconciliation.reconcileMessages(_activeAccountInfo.identityTypedPublicKey,
+        sentMessages, _sentMessagesCubit!);
 
     // Update the view
     _renderState();
@@ -281,7 +278,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     // Now sign it
     await _senderMessageIntegrity.signMessage(
-        message, _activeAccountInfo.userLogin.identitySecret.value);
+        message, _activeAccountInfo.identitySecretKey);
   }
 
   // Async process to send messages in the background
@@ -334,8 +331,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     for (final m in reconciledMessages.windowElements) {
       final isLocal = m.content.author.toVeilid() ==
-          _activeAccountInfo.localAccount.identityMaster
-              .identityPublicTypedKey();
+          _activeAccountInfo.identityTypedPublicKey;
       final reconciledTimestamp = Timestamp.fromInt64(m.reconciledTime);
       final sm =
           isLocal ? sentMessagesMap[m.content.authorUniqueIdString] : null;
@@ -373,9 +369,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // Add common fields
     // id and signature will get set by _processMessageToSend
     message
-      ..author = _activeAccountInfo.localAccount.identityMaster
-          .identityPublicTypedKey()
-          .toProto()
+      ..author = _activeAccountInfo.identityTypedPublicKey.toProto()
       ..timestamp = Veilid.instance.now().toInt64();
 
     // Put in the queue

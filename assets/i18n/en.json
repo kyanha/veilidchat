@@ -31,7 +31,8 @@
         "cancel": "Cancel",
         "delete": "Delete",
         "accept": "Accept",
-        "reject": "Reject"
+        "reject": "Reject",
+        "waiting_for_network": "Waiting For Network"
     },
     "toast": {
         "error": "Error",

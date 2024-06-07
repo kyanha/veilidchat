@@ -36,7 +36,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
   Future<void> createContact({
     required proto.Profile remoteProfile,
-    required IdentityMaster remoteIdentity,
+    required SuperIdentity remoteSuperIdentity,
     required TypedKey remoteConversationRecordKey,
     required TypedKey localConversationRecordKey,
   }) async {
@@ -44,11 +44,9 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     final contact = proto.Contact()
       ..editedProfile = remoteProfile
       ..remoteProfile = remoteProfile
-      ..identityMasterJson = jsonEncode(remoteIdentity.toJson())
-      ..identityPublicKey = TypedKey(
-              kind: remoteIdentity.identityRecordKey.kind,
-              value: remoteIdentity.identityPublicKey)
-          .toProto()
+      ..superIdentityJson = jsonEncode(remoteSuperIdentity.toJson())
+      ..identityPublicKey =
+          remoteSuperIdentity.currentInstance.typedPublicKey.toProto()
       ..remoteConversationRecordKey = remoteConversationRecordKey.toProto()
       ..localConversationRecordKey = localConversationRecordKey.toProto()
       ..showAvailability = false;

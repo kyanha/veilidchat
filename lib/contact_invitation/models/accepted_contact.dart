@@ -14,7 +14,7 @@ class AcceptedContact extends Equatable {
   });
 
   final proto.Profile remoteProfile;
-  final IdentityMaster remoteIdentity;
+  final SuperIdentity remoteIdentity;
   final TypedKey remoteConversationRecordKey;
   final TypedKey localConversationRecordKey;
 

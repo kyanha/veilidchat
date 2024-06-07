@@ -47,7 +47,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
           // Open local record key if it is specified
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
-          final writer = _activeAccountInfo.conversationWriter;
+          final writer = _activeAccountInfo.identityWriter;
           final record = await pool.openRecordWrite(
               _localConversationRecordKey!, writer,
               debugName: 'ConversationCubit::LocalConversation',
@@ -221,7 +221,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     final crypto = await _cachedConversationCrypto();
-    final writer = _activeAccountInfo.conversationWriter;
+    final writer = _activeAccountInfo.identityWriter;
 
     // Open with SMPL scheme for identity writer
     late final DHTRecord localConversationRecord;
@@ -254,8 +254,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
             // Create initial local conversation key contents
             final conversation = proto.Conversation()
               ..profile = profile
-              ..identityMasterJson = jsonEncode(
-                  _activeAccountInfo.localAccount.identityMaster.toJson())
+              ..superIdentityJson = jsonEncode(
+                  _activeAccountInfo.localAccount.superIdentity.toJson())
               ..messages = messages.recordKey.toProto();
 
             // Write initial conversation to record
@@ -289,7 +289,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   }) async {
     final crypto =
         await activeAccountInfo.makeConversationCrypto(remoteIdentityPublicKey);
-    final writer = activeAccountInfo.conversationWriter;
+    final writer = activeAccountInfo.identityWriter;
 
     return (await DHTLog.create(
             debugName: 'ConversationCubit::initLocalMessages::LocalMessages',

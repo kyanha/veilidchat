@@ -7,12 +7,13 @@ part 'user_login.g.dart';
 
 // Represents a currently logged in account
 // User logins are stored in the user_logins tablestore table
-// indexed by the accountMasterKey
+// indexed by the accountSuperIdentityRecordKey
 @freezed
 class UserLogin with _$UserLogin {
   const factory UserLogin({
-    // Master record key for the user used to index the local accounts table
-    required TypedKey accountMasterRecordKey,
+    // SuperIdentity record key for the user
+    // used to index the local accounts table
+    required TypedKey superIdentityRecordKey,
     // The identity secret as unlocked from the local accounts table
     required TypedSecret identitySecret,
     // The account record key, owner key and secret pulled from the identity

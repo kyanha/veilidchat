@@ -14,14 +14,18 @@ class ActiveAccountInfo {
   });
   //
 
+  TypedKey get superIdentityRecordKey => localAccount.superIdentity.recordKey;
   TypedKey get accountRecordKey =>
       userLogin.accountRecordInfo.accountRecord.recordKey;
-
-  KeyPair get conversationWriter {
-    final identityKey = localAccount.identityMaster.identityPublicKey;
-    final identitySecret = userLogin.identitySecret;
-    return KeyPair(key: identityKey, secret: identitySecret.value);
-  }
+  TypedKey get identityTypedPublicKey =>
+      localAccount.superIdentity.currentInstance.typedPublicKey;
+  PublicKey get identityPublicKey =>
+      localAccount.superIdentity.currentInstance.publicKey;
+  SecretKey get identitySecretKey => userLogin.identitySecret.value;
+  KeyPair get identityWriter =>
+      KeyPair(key: identityPublicKey, secret: identitySecretKey);
+  Future<VeilidCryptoSystem> get identityCryptoSystem =>
+      localAccount.superIdentity.currentInstance.cryptoSystem;
 
   Future<VeilidCrypto> makeConversationCrypto(
       TypedKey remoteIdentityPublicKey) async {

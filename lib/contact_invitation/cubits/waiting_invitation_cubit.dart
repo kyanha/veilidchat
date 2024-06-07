@@ -43,23 +43,21 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     if (signedContactResponse == null) {
       return const AsyncValue.loading();
     }
-    final pool = DHTRecordPool.instance;
     final contactResponseBytes =
         Uint8List.fromList(signedContactResponse.contactResponse);
     final contactResponse =
         proto.ContactResponse.fromBuffer(contactResponseBytes);
     final contactIdentityMasterRecordKey =
-        contactResponse.identityMasterRecordKey.toVeilid();
-    final cs =
-        await pool.veilid.getCryptoSystem(contactIdentityMasterRecordKey.kind);
+        contactResponse.superIdentityRecordKey.toVeilid();
 
     // Fetch the remote contact's account master
-    final contactIdentityMaster = await openIdentityMaster(
-        identityMasterRecordKey: contactIdentityMasterRecordKey);
+    final contactSuperIdentity = await SuperIdentity.open(
+        superRecordKey: contactIdentityMasterRecordKey);
 
     // Verify
+    final idcs = await contactSuperIdentity.currentInstance.cryptoSystem;
     final signature = signedContactResponse.identitySignature.toVeilid();
-    await cs.verify(contactIdentityMaster.identityPublicKey,
+    await idcs.verify(contactSuperIdentity.currentInstance.publicKey,
         contactResponseBytes, signature);
 
     // Check for rejection
@@ -74,7 +72,8 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
 
     final conversation = ConversationCubit(
         activeAccountInfo: activeAccountInfo,
-        remoteIdentityPublicKey: contactIdentityMaster.identityPublicTypedKey(),
+        remoteIdentityPublicKey:
+            contactSuperIdentity.currentInstance.typedPublicKey,
         remoteConversationRecordKey: remoteConversationRecordKey);
 
     // wait for remote conversation for up to 20 seconds
@@ -106,7 +105,7 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
           return AsyncValue.data(InvitationStatus(
               acceptedContact: AcceptedContact(
                   remoteProfile: remoteProfile,
-                  remoteIdentity: contactIdentityMaster,
+                  remoteIdentity: contactSuperIdentity,
                   remoteConversationRecordKey: remoteConversationRecordKey,
                   localConversationRecordKey: localConversationRecordKey)));
         });

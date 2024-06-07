@@ -20,9 +20,10 @@ LocalAccount _$LocalAccountFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$LocalAccount {
-// The master key record for the account, containing the identityPublicKey
-  IdentityMaster get identityMaster =>
-      throw _privateConstructorUsedError; // The encrypted identity secret that goes with
+// The super identity key record for the account,
+// containing the publicKey in the currentIdentity
+  SuperIdentity get superIdentity =>
+      throw _privateConstructorUsedError; // The encrypted currentIdentity secret that goes with
 // the identityPublicKey with appended salt
   @Uint8ListJsonConverter()
   Uint8List get identitySecretBytes =>
@@ -49,14 +50,14 @@ abstract class $LocalAccountCopyWith<$Res> {
       _$LocalAccountCopyWithImpl<$Res, LocalAccount>;
   @useResult
   $Res call(
-      {IdentityMaster identityMaster,
+      {SuperIdentity superIdentity,
       @Uint8ListJsonConverter() Uint8List identitySecretBytes,
       EncryptionKeyType encryptionKeyType,
       bool biometricsEnabled,
       bool hiddenAccount,
       String name});
 
-  $IdentityMasterCopyWith<$Res> get identityMaster;
+  $SuperIdentityCopyWith<$Res> get superIdentity;
 }
 
 /// @nodoc
@@ -72,7 +73,7 @@ class _$LocalAccountCopyWithImpl<$Res, $Val extends LocalAccount>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? identityMaster = null,
+    Object? superIdentity = null,
     Object? identitySecretBytes = null,
     Object? encryptionKeyType = null,
     Object? biometricsEnabled = null,
@@ -80,10 +81,10 @@ class _$LocalAccountCopyWithImpl<$Res, $Val extends LocalAccount>
     Object? name = null,
   }) {
     return _then(_value.copyWith(
-      identityMaster: null == identityMaster
-          ? _value.identityMaster
-          : identityMaster // ignore: cast_nullable_to_non_nullable
-              as IdentityMaster,
+      superIdentity: null == superIdentity
+          ? _value.superIdentity
+          : superIdentity // ignore: cast_nullable_to_non_nullable
+              as SuperIdentity,
       identitySecretBytes: null == identitySecretBytes
           ? _value.identitySecretBytes
           : identitySecretBytes // ignore: cast_nullable_to_non_nullable
@@ -109,9 +110,9 @@ class _$LocalAccountCopyWithImpl<$Res, $Val extends LocalAccount>
 
   @override
   @pragma('vm:prefer-inline')
-  $IdentityMasterCopyWith<$Res> get identityMaster {
-    return $IdentityMasterCopyWith<$Res>(_value.identityMaster, (value) {
-      return _then(_value.copyWith(identityMaster: value) as $Val);
+  $SuperIdentityCopyWith<$Res> get superIdentity {
+    return $SuperIdentityCopyWith<$Res>(_value.superIdentity, (value) {
+      return _then(_value.copyWith(superIdentity: value) as $Val);
     });
   }
 }
@@ -125,7 +126,7 @@ abstract class _$$LocalAccountImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {IdentityMaster identityMaster,
+      {SuperIdentity superIdentity,
       @Uint8ListJsonConverter() Uint8List identitySecretBytes,
       EncryptionKeyType encryptionKeyType,
       bool biometricsEnabled,
@@ -133,7 +134,7 @@ abstract class _$$LocalAccountImplCopyWith<$Res>
       String name});
 
   @override
-  $IdentityMasterCopyWith<$Res> get identityMaster;
+  $SuperIdentityCopyWith<$Res> get superIdentity;
 }
 
 /// @nodoc
@@ -147,7 +148,7 @@ class __$$LocalAccountImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? identityMaster = null,
+    Object? superIdentity = null,
     Object? identitySecretBytes = null,
     Object? encryptionKeyType = null,
     Object? biometricsEnabled = null,
@@ -155,10 +156,10 @@ class __$$LocalAccountImplCopyWithImpl<$Res>
     Object? name = null,
   }) {
     return _then(_$LocalAccountImpl(
-      identityMaster: null == identityMaster
-          ? _value.identityMaster
-          : identityMaster // ignore: cast_nullable_to_non_nullable
-              as IdentityMaster,
+      superIdentity: null == superIdentity
+          ? _value.superIdentity
+          : superIdentity // ignore: cast_nullable_to_non_nullable
+              as SuperIdentity,
       identitySecretBytes: null == identitySecretBytes
           ? _value.identitySecretBytes
           : identitySecretBytes // ignore: cast_nullable_to_non_nullable
@@ -187,7 +188,7 @@ class __$$LocalAccountImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$LocalAccountImpl implements _LocalAccount {
   const _$LocalAccountImpl(
-      {required this.identityMaster,
+      {required this.superIdentity,
       @Uint8ListJsonConverter() required this.identitySecretBytes,
       required this.encryptionKeyType,
       required this.biometricsEnabled,
@@ -197,10 +198,11 @@ class _$LocalAccountImpl implements _LocalAccount {
   factory _$LocalAccountImpl.fromJson(Map<String, dynamic> json) =>
       _$$LocalAccountImplFromJson(json);
 
-// The master key record for the account, containing the identityPublicKey
+// The super identity key record for the account,
+// containing the publicKey in the currentIdentity
   @override
-  final IdentityMaster identityMaster;
-// The encrypted identity secret that goes with
+  final SuperIdentity superIdentity;
+// The encrypted currentIdentity secret that goes with
 // the identityPublicKey with appended salt
   @override
   @Uint8ListJsonConverter()
@@ -221,7 +223,7 @@ class _$LocalAccountImpl implements _LocalAccount {
 
   @override
   String toString() {
-    return 'LocalAccount(identityMaster: $identityMaster, identitySecretBytes: $identitySecretBytes, encryptionKeyType: $encryptionKeyType, biometricsEnabled: $biometricsEnabled, hiddenAccount: $hiddenAccount, name: $name)';
+    return 'LocalAccount(superIdentity: $superIdentity, identitySecretBytes: $identitySecretBytes, encryptionKeyType: $encryptionKeyType, biometricsEnabled: $biometricsEnabled, hiddenAccount: $hiddenAccount, name: $name)';
   }
 
   @override
@@ -229,8 +231,8 @@ class _$LocalAccountImpl implements _LocalAccount {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LocalAccountImpl &&
-            (identical(other.identityMaster, identityMaster) ||
-                other.identityMaster == identityMaster) &&
+            (identical(other.superIdentity, superIdentity) ||
+                other.superIdentity == superIdentity) &&
             const DeepCollectionEquality()
                 .equals(other.identitySecretBytes, identitySecretBytes) &&
             (identical(other.encryptionKeyType, encryptionKeyType) ||
@@ -246,7 +248,7 @@ class _$LocalAccountImpl implements _LocalAccount {
   @override
   int get hashCode => Object.hash(
       runtimeType,
-      identityMaster,
+      superIdentity,
       const DeepCollectionEquality().hash(identitySecretBytes),
       encryptionKeyType,
       biometricsEnabled,
@@ -269,7 +271,7 @@ class _$LocalAccountImpl implements _LocalAccount {
 
 abstract class _LocalAccount implements LocalAccount {
   const factory _LocalAccount(
-      {required final IdentityMaster identityMaster,
+      {required final SuperIdentity superIdentity,
       @Uint8ListJsonConverter() required final Uint8List identitySecretBytes,
       required final EncryptionKeyType encryptionKeyType,
       required final bool biometricsEnabled,
@@ -279,9 +281,10 @@ abstract class _LocalAccount implements LocalAccount {
   factory _LocalAccount.fromJson(Map<String, dynamic> json) =
       _$LocalAccountImpl.fromJson;
 
-  @override // The master key record for the account, containing the identityPublicKey
-  IdentityMaster get identityMaster;
-  @override // The encrypted identity secret that goes with
+  @override // The super identity key record for the account,
+// containing the publicKey in the currentIdentity
+  SuperIdentity get superIdentity;
+  @override // The encrypted currentIdentity secret that goes with
 // the identityPublicKey with appended salt
   @Uint8ListJsonConverter()
   Uint8List get identitySecretBytes;

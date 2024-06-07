@@ -86,13 +86,12 @@ class InvitationDialogState extends State<InvitationDialog> {
       if (acceptedContact != null) {
         // initiator when accept is received will create
         // contact in the case of a 'note to self'
-        final isSelf =
-            activeAccountInfo.localAccount.identityMaster.identityPublicKey ==
-                acceptedContact.remoteIdentity.identityPublicKey;
+        final isSelf = activeAccountInfo.identityPublicKey ==
+            acceptedContact.remoteIdentity.currentInstance.publicKey;
         if (!isSelf) {
           await contactList.createContact(
             remoteProfile: acceptedContact.remoteProfile,
-            remoteIdentity: acceptedContact.remoteIdentity,
+            remoteSuperIdentity: acceptedContact.remoteIdentity,
             remoteConversationRecordKey:
                 acceptedContact.remoteConversationRecordKey,
             localConversationRecordKey:

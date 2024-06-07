@@ -1,16 +1,17 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../layout/default_app_bar.dart';
-import '../../../theme/theme.dart';
-import '../../../tools/tools.dart';
-import '../../../veilid_processor/veilid_processor.dart';
-import '../../account_manager.dart';
+import '../../layout/default_app_bar.dart';
+import '../../theme/theme.dart';
+import '../../tools/tools.dart';
+import '../../veilid_processor/veilid_processor.dart';
+import '../account_manager.dart';
 
 class NewAccountPage extends StatefulWidget {
   const NewAccountPage({super.key});
@@ -36,63 +37,76 @@ class NewAccountPageState extends State<NewAccountPage> {
   }
 
   Widget _newAccountForm(BuildContext context,
-          {required Future<void> Function(GlobalKey<FormBuilderState>)
-              onSubmit}) =>
-      FormBuilder(
-        key: _formKey,
-        child: ListView(
-          children: [
-            Text(translate('new_account_page.header'))
-                .textStyle(context.headlineSmall)
-                .paddingSymmetric(vertical: 16),
-            FormBuilderTextField(
-              autofocus: true,
-              name: formFieldName,
-              decoration:
-                  InputDecoration(labelText: translate('account.form_name')),
-              maxLength: 64,
-              // The validator receives the text that the user has entered.
-              validator: FormBuilderValidators.compose([
-                FormBuilderValidators.required(),
-              ]),
-              textInputAction: TextInputAction.next,
-            ),
-            FormBuilderTextField(
-              name: formFieldPronouns,
-              maxLength: 64,
-              decoration: InputDecoration(
-                  labelText: translate('account.form_pronouns')),
-              textInputAction: TextInputAction.next,
-            ),
-            Row(children: [
-              const Spacer(),
-              Text(translate('new_account_page.instructions'))
-                  .toCenter()
-                  .flexible(flex: 6),
-              const Spacer(),
-            ]).paddingSymmetric(vertical: 4),
-            ElevatedButton(
-              onPressed: () async {
-                if (_formKey.currentState?.saveAndValidate() ?? false) {
-                  setState(() {
-                    isInAsyncCall = true;
-                  });
-                  try {
-                    await onSubmit(_formKey);
-                  } finally {
-                    if (mounted) {
+      {required Future<void> Function(GlobalKey<FormBuilderState>) onSubmit}) {
+    final networkReady = context
+            .watch<ConnectionStateCubit>()
+            .state
+            .asData
+            ?.value
+            .isPublicInternetReady ??
+        false;
+    final canSubmit = networkReady;
+
+    return FormBuilder(
+      key: _formKey,
+      child: ListView(
+        children: [
+          Text(translate('new_account_page.header'))
+              .textStyle(context.headlineSmall)
+              .paddingSymmetric(vertical: 16),
+          FormBuilderTextField(
+            autofocus: true,
+            name: formFieldName,
+            decoration:
+                InputDecoration(labelText: translate('account.form_name')),
+            maxLength: 64,
+            // The validator receives the text that the user has entered.
+            validator: FormBuilderValidators.compose([
+              FormBuilderValidators.required(),
+            ]),
+            textInputAction: TextInputAction.next,
+          ),
+          FormBuilderTextField(
+            name: formFieldPronouns,
+            maxLength: 64,
+            decoration:
+                InputDecoration(labelText: translate('account.form_pronouns')),
+            textInputAction: TextInputAction.next,
+          ),
+          Row(children: [
+            const Spacer(),
+            Text(translate('new_account_page.instructions'))
+                .toCenter()
+                .flexible(flex: 6),
+            const Spacer(),
+          ]).paddingSymmetric(vertical: 4),
+          ElevatedButton(
+            onPressed: !canSubmit
+                ? null
+                : () async {
+                    if (_formKey.currentState?.saveAndValidate() ?? false) {
                       setState(() {
-                        isInAsyncCall = false;
+                        isInAsyncCall = true;
                       });
+                      try {
+                        await onSubmit(_formKey);
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            isInAsyncCall = false;
+                          });
+                        }
+                      }
                     }
-                  }
-                }
-              },
-              child: Text(translate('new_account_page.create')),
-            ).paddingSymmetric(vertical: 4).alignAtCenterRight(),
-          ],
-        ),
-      );
+                  },
+            child: Text(translate(!networkReady
+                ? 'button.waiting_for_network'
+                : 'new_account_page.create')),
+          ).paddingSymmetric(vertical: 4).alignAtCenterRight(),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +141,7 @@ class NewAccountPageState extends State<NewAccountPage> {
                 NewProfileSpec(name: name, pronouns: pronouns);
 
             await AccountRepository.instance
-                .createWithNewMasterIdentity(newProfileSpec);
+                .createWithNewSuperIdentity(newProfileSpec);
           } on Exception catch (e) {
             if (context.mounted) {
               await showErrorModal(context, translate('new_account_page.error'),
