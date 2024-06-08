@@ -36,7 +36,7 @@ enum DHTRecordRefreshMode {
 
 /////////////////////////////////////////////////
 
-class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
+class DHTRecord implements DHTDeleteable<DHTRecord> {
   DHTRecord._(
       {required VeilidRoutingContext routingContext,
       required SharedDHTRecordData sharedDHTRecordData,
@@ -64,25 +64,25 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
 
   /// Add a reference to this DHTRecord
   @override
-  Future<DHTRecord> ref() async => _mutex.protect(() async {
+  Future<void> ref() async => _mutex.protect(() async {
         _openCount++;
-        return this;
       });
 
   /// Free all resources for the DHTRecord
   @override
-  Future<void> close() async => _mutex.protect(() async {
+  Future<bool> close() async => _mutex.protect(() async {
         if (_openCount == 0) {
           throw StateError('already closed');
         }
         _openCount--;
         if (_openCount != 0) {
-          return;
+          return false;
         }
 
         await _watchController?.close();
         _watchController = null;
         await DHTRecordPool.instance._recordClosed(this);
+        return true;
       });
 
   /// Free all resources for the DHTRecord and delete it from the DHT

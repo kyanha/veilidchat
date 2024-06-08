@@ -9,7 +9,6 @@ import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
 import '../../proto/proto.dart' as proto;
-import '../interfaces/dht_add.dart';
 
 part 'dht_log_spine.dart';
 part 'dht_log_read.dart';
@@ -42,7 +41,7 @@ class DHTLogUpdate extends Equatable {
 ///  * The head and tail position of the log
 ///    - subkeyIdx = pos / recordsPerSubkey
 ///    - recordIdx = pos % recordsPerSubkey
-class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
+class DHTLog implements DHTDeleteable<DHTLog> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
@@ -172,24 +171,24 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
 
   /// Add a reference to this log
   @override
-  Future<DHTLog> ref() async => _mutex.protect(() async {
+  Future<void> ref() async => _mutex.protect(() async {
         _openCount++;
-        return this;
       });
 
   /// Free all resources for the DHTLog
   @override
-  Future<void> close() async => _mutex.protect(() async {
+  Future<bool> close() async => _mutex.protect(() async {
         if (_openCount == 0) {
           throw StateError('already closed');
         }
         _openCount--;
         if (_openCount != 0) {
-          return;
+          return false;
         }
         await _watchController?.close();
         _watchController = null;
         await _spine.close();
+        return true;
       });
 
   /// Free all resources for the DHTLog and delete it from the DHT

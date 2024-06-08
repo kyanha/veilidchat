@@ -2,19 +2,23 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 
-abstract class DHTCloseable<C, D> {
+abstract class DHTCloseable<D> {
+  // Public interface
+  Future<void> ref();
+  Future<bool> close();
+
+  // Internal implementation
+  @protected
   bool get isOpen;
   @protected
   FutureOr<D> scoped();
-  Future<C> ref();
-  Future<void> close();
 }
 
-abstract class DHTDeleteable<C, D> extends DHTCloseable<C, D> {
+abstract class DHTDeleteable<D> extends DHTCloseable<D> {
   Future<void> delete();
 }
 
-extension DHTCloseableExt<C, D> on DHTCloseable<C, D> {
+extension DHTCloseableExt<D> on DHTCloseable<D> {
   /// Runs a closure that guarantees the DHTCloseable
   /// will be closed upon exit, even if an uncaught exception is thrown
   Future<T> scope<T>(Future<T> Function(D) scopeFunction) async {
@@ -29,7 +33,7 @@ extension DHTCloseableExt<C, D> on DHTCloseable<C, D> {
   }
 }
 
-extension DHTDeletableExt<C, D> on DHTDeleteable<C, D> {
+extension DHTDeletableExt<D> on DHTDeleteable<D> {
   /// Runs a closure that guarantees the DHTCloseable
   /// will be closed upon exit, and deleted if an an
   /// uncaught exception is thrown

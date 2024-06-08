@@ -13,7 +13,7 @@ part 'dht_short_array_write.dart';
 
 ///////////////////////////////////////////////////////////////////////
 
-class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
+class DHTShortArray implements DHTDeleteable<DHTShortArray> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
@@ -148,25 +148,25 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
 
   /// Add a reference to this shortarray
   @override
-  Future<DHTShortArray> ref() async => _mutex.protect(() async {
+  Future<void> ref() async => _mutex.protect(() async {
         _openCount++;
-        return this;
       });
 
   /// Free all resources for the DHTShortArray
   @override
-  Future<void> close() async => _mutex.protect(() async {
+  Future<bool> close() async => _mutex.protect(() async {
         if (_openCount == 0) {
           throw StateError('already closed');
         }
         _openCount--;
         if (_openCount != 0) {
-          return;
+          return false;
         }
 
         await _watchController?.close();
         _watchController = null;
         await _head.close();
+        return true;
       });
 
   /// Free all resources for the DHTShortArray and delete it from the DHT
