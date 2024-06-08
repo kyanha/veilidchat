@@ -61,48 +61,39 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
 
       print('adding singles\n');
       {
-        final res = await arr.operateWrite((w) async {
-          for (var n = 4; n < 8; n++) {
+        for (var n = 4; n < 8; n++) {
+          await arr.operateWriteEventual((w) async {
             print('$n ');
-            final success = await w.tryAdd(dataset[n]);
-            expect(success, isTrue);
-          }
-        });
-        expect(res, isNull);
+            return w.tryAdd(dataset[n]);
+          });
+        }
       }
 
       print('adding batch\n');
       {
-        final res = await arr.operateWrite((w) async {
+        await arr.operateWriteEventual((w) async {
           print('${dataset.length ~/ 2}-${dataset.length}');
-          final success = await w
+          return w
               .tryAddAll(dataset.sublist(dataset.length ~/ 2, dataset.length));
-          expect(success, isTrue);
         });
-        expect(res, isNull);
       }
 
       print('inserting singles\n');
       {
-        final res = await arr.operateWrite((w) async {
-          for (var n = 0; n < 4; n++) {
+        for (var n = 0; n < 4; n++) {
+          await arr.operateWriteEventual((w) async {
             print('$n ');
-            final success = await w.tryInsert(n, dataset[n]);
-            expect(success, isTrue);
-          }
-        });
-        expect(res, isNull);
+            return w.tryInsert(n, dataset[n]);
+          });
+        }
       }
 
       print('inserting batch\n');
       {
-        final res = await arr.operateWrite((w) async {
+        await arr.operateWriteEventual((w) async {
           print('8-${dataset.length ~/ 2}');
-          final success =
-              await w.tryInsertAll(8, dataset.sublist(8, dataset.length ~/ 2));
-          expect(success, isTrue);
+          return w.tryInsertAll(8, dataset.sublist(8, dataset.length ~/ 2));
         });
-        expect(res, isNull);
       }
 
       //print('get all\n');
