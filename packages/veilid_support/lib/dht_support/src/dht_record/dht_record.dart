@@ -16,7 +16,7 @@ class DHTRecordWatchChange extends Equatable {
 /// Refresh mode for DHT record 'get'
 enum DHTRecordRefreshMode {
   /// Return existing subkey values if they exist locally already
-  /// And then check the network for a newer value
+  /// If not, check the network for a value
   /// This is the default refresh mode
   cached,
 

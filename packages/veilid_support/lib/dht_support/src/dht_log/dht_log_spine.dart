@@ -354,13 +354,24 @@ class _DHTLogSpine {
     final subkey = l.subkey;
     final segment = l.segment;
 
-    final subkeyData = await _spineRecord.get(subkey: subkey);
-    if (subkeyData == null) {
-      return null;
+    // See if we have the segment key locally
+    TypedKey? segmentKey;
+    var subkeyData = await _spineRecord.get(
+        subkey: subkey, refreshMode: DHTRecordRefreshMode.local);
+    if (subkeyData != null) {
+      segmentKey = _getSegmentKey(subkeyData, segment);
     }
-    final segmentKey = _getSegmentKey(subkeyData, segment);
     if (segmentKey == null) {
-      return null;
+      // If not, try from the network
+      subkeyData = await _spineRecord.get(
+          subkey: subkey, refreshMode: DHTRecordRefreshMode.network);
+      if (subkeyData == null) {
+        return null;
+      }
+      segmentKey = _getSegmentKey(subkeyData, segment);
+      if (segmentKey == null) {
+        return null;
+      }
     }
 
     // Open a shortarray segment

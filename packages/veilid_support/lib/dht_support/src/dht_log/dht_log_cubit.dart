@@ -126,13 +126,22 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
       final end = ((tail - 1) % length) + 1;
       final start = (count < end) ? end - count : 0;
 
-      final offlinePositions = await reader.getOfflinePositions();
+      // If this is writeable get the offline positions
+      Set<int>? offlinePositions;
+      if (_log.writer != null) {
+        offlinePositions = await reader.getOfflinePositions();
+        if (offlinePositions == null) {
+          return const AsyncValue.loading();
+        }
+      }
+
+      // Get the items
       final allItems = (await reader.getRange(start,
               length: end - start, forceRefresh: forceRefresh))
           ?.indexed
           .map((x) => OnlineElementState(
               value: _decodeElement(x.$2),
-              isOffline: offlinePositions.contains(x.$1)))
+              isOffline: offlinePositions?.contains(x.$1) ?? false))
           .toIList();
       if (allItems == null) {
         return const AsyncValue.loading();

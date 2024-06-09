@@ -182,6 +182,9 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
   /// Get the record key for this shortarray
   TypedKey get recordKey => _head.recordKey;
 
+  /// Get the writer for the log
+  KeyPair? get writer => _head._headRecord.writer;
+
   /// Get the record pointer foir this shortarray
   OwnedDHTRecordPointer get recordPointer => _head.recordPointer;
 

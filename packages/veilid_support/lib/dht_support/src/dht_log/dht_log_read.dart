@@ -61,20 +61,23 @@ class _DHTLogRead implements DHTLogReadOperations {
   }
 
   @override
-  Future<Set<int>> getOfflinePositions() async {
+  Future<Set<int>?> getOfflinePositions() async {
     final positionOffline = <int>{};
 
     // Iterate positions backward from most recent
     for (var pos = _spine.length - 1; pos >= 0; pos--) {
       final lookup = await _spine.lookupPosition(pos);
       if (lookup == null) {
-        throw StateError('Unable to look up position');
+        return null;
       }
 
       // Check each segment for offline positions
       var foundOffline = false;
-      await lookup.scope((sa) => sa.operate((read) async {
+      final success = await lookup.scope((sa) => sa.operate((read) async {
             final segmentOffline = await read.getOfflinePositions();
+            if (segmentOffline == null) {
+              return false;
+            }
 
             // For each shortarray segment go through their segment positions
             // in reverse order and see if they are offline
@@ -88,8 +91,11 @@ class _DHTLogRead implements DHTLogReadOperations {
                 foundOffline = true;
               }
             }
+            return true;
           }));
-
+      if (!success) {
+        return null;
+      }
       // If we found nothing offline in this segment then we can stop
       if (!foundOffline) {
         break;

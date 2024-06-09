@@ -204,6 +204,9 @@ class DHTLog implements DHTDeleteable<DHTLog> {
   /// Get the record key for this log
   TypedKey get recordKey => _spine.recordKey;
 
+  /// Get the writer for the log
+  KeyPair? get writer => _spine._spineRecord.writer;
+
   /// Get the record pointer foir this log
   OwnedDHTRecordPointer get recordPointer => _spine.recordPointer;
 

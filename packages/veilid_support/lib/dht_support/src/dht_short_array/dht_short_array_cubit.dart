@@ -53,12 +53,21 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
       {bool forceRefresh = false}) async {
     try {
       final newState = await _shortArray.operate((reader) async {
-        final offlinePositions = await reader.getOfflinePositions();
+        // If this is writeable get the offline positions
+        Set<int>? offlinePositions;
+        if (_shortArray.writer != null) {
+          offlinePositions = await reader.getOfflinePositions();
+          if (offlinePositions == null) {
+            return null;
+          }
+        }
+
+        // Get the items
         final allItems = (await reader.getRange(0, forceRefresh: forceRefresh))
             ?.indexed
             .map((x) => DHTShortArrayElementState(
                 value: _decodeElement(x.$2),
-                isOffline: offlinePositions.contains(x.$1)))
+                isOffline: offlinePositions?.contains(x.$1) ?? false))
             .toIList();
         return allItems;
       });
