@@ -242,11 +242,11 @@ class DHTLog implements DHTDeleteable<DHTLog> {
   /// Runs a closure allowing append/truncate access to the log
   /// Will execute the closure multiple times if a consistent write to the DHT
   /// is not achieved. Timeout if specified will be thrown as a
-  /// TimeoutException. The closure should return true if its changes also
-  /// succeeded, returning false will trigger another eventual consistency
-  /// attempt.
-  Future<void> operateAppendEventual(
-      Future<bool> Function(DHTLogWriteOperations) closure,
+  /// TimeoutException. The closure should return a value if its changes also
+  /// succeeded, and throw DHTExceptionTryAgain to trigger another
+  /// eventual consistency pass.
+  Future<T> operateAppendEventual<T>(
+      Future<T> Function(DHTLogWriteOperations) closure,
       {Duration? timeout}) async {
     if (!isOpen) {
       throw StateError('log is not open"');

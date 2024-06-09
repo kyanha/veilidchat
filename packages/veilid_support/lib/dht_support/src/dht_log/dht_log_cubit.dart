@@ -210,8 +210,8 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
     return _log.operateAppend(closure);
   }
 
-  Future<void> operateAppendEventual(
-      Future<bool> Function(DHTLogWriteOperations) closure,
+  Future<R> operateAppendEventual<R>(
+      Future<R> Function(DHTLogWriteOperations) closure,
       {Duration? timeout}) async {
     await _initWait();
     return _log.operateAppendEventual(closure, timeout: timeout);

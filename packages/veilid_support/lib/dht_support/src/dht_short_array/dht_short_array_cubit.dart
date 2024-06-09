@@ -111,8 +111,8 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     return _shortArray.operateWrite(closure);
   }
 
-  Future<void> operateWriteEventual(
-      Future<bool> Function(DHTShortArrayWriteOperations) closure,
+  Future<R> operateWriteEventual<R>(
+      Future<R> Function(DHTShortArrayWriteOperations) closure,
       {Duration? timeout}) async {
     await _initWait();
     return _shortArray.operateWriteEventual(closure, timeout: timeout);

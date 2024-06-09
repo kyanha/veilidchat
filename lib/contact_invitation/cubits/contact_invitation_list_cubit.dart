@@ -160,9 +160,7 @@ class ContactInvitationListCubit
         // Add ContactInvitationRecord to account's list
         // if this fails, don't keep retrying, user can try again later
         await operateWrite((writer) async {
-          if (await writer.tryAdd(cinvrec.writeToBuffer()) == false) {
-            throw Exception('Failed to add contact invitation record');
-          }
+          await writer.add(cinvrec.writeToBuffer());
         });
       });
     });

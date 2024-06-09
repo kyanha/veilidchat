@@ -292,7 +292,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     }
 
     await _sentMessagesCubit!.operateAppendEventual((writer) =>
-        writer.tryAddAll(messages.map((m) => m.writeToBuffer()).toList()));
+        writer.addAll(messages.map((m) => m.writeToBuffer()).toList()));
   }
 
   // Produce a state for this cubit from the input cubits and queues

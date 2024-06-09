@@ -152,17 +152,16 @@ class _DHTLogSpine {
         }
       });
 
-  Future<void> operateAppendEventual(
-      Future<bool> Function(_DHTLogSpine) closure,
+  Future<T> operateAppendEventual<T>(Future<T> Function(_DHTLogSpine) closure,
       {Duration? timeout}) async {
     final timeoutTs = timeout == null
         ? null
         : Veilid.instance.now().offset(TimestampDuration.fromDuration(timeout));
 
-    await _spineMutex.protect(() async {
+    return _spineMutex.protect(() async {
       late int oldHead;
       late int oldTail;
-
+      late T out;
       try {
         // Iterate until we have a successful element and head write
         do {
@@ -180,17 +179,19 @@ class _DHTLogSpine {
               }
             }
             try {
-              if (await closure(this)) {
-                break;
-              }
+              out = await closure(this);
+              break;
             } on DHTExceptionTryAgain {
-              //
+              // Failed to write in closure resets state
+              _head = oldHead;
+              _tail = oldTail;
+            } on Exception {
+              // Failed to write in closure resets state
+              _head = oldHead;
+              _tail = oldTail;
+              rethrow;
             }
-            // Failed to write in closure resets state
-            _head = oldHead;
-            _tail = oldTail;
           }
-
           // Try to do the head write
         } while (!await writeSpineHead(old: (oldHead, oldTail)));
       } on Exception {
@@ -199,6 +200,8 @@ class _DHTLogSpine {
         _tail = oldTail;
         rethrow;
       }
+
+      return out;
     });
   }
 

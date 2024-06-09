@@ -64,7 +64,7 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
         for (var n = 4; n < 8; n++) {
           await arr.operateWriteEventual((w) async {
             print('$n ');
-            return w.tryAdd(dataset[n]);
+            await w.add(dataset[n]);
           });
         }
       }
@@ -73,8 +73,7 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
       {
         await arr.operateWriteEventual((w) async {
           print('${dataset.length ~/ 2}-${dataset.length}');
-          return w
-              .tryAddAll(dataset.sublist(dataset.length ~/ 2, dataset.length));
+          await w.addAll(dataset.sublist(dataset.length ~/ 2, dataset.length));
         });
       }
 
@@ -83,7 +82,7 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
         for (var n = 0; n < 4; n++) {
           await arr.operateWriteEventual((w) async {
             print('$n ');
-            return w.tryInsert(n, dataset[n]);
+            await w.insert(n, dataset[n]);
           });
         }
       }
@@ -92,7 +91,7 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
       {
         await arr.operateWriteEventual((w) async {
           print('8-${dataset.length ~/ 2}');
-          return w.tryInsertAll(8, dataset.sublist(8, dataset.length ~/ 2));
+          await w.insertAll(8, dataset.sublist(8, dataset.length ~/ 2));
         });
       }
 
@@ -111,7 +110,6 @@ Future<void> Function() makeTestDHTShortArrayAdd({required int stride}) =>
       {
         await arr.operateWriteEventual((w) async {
           await w.clear();
-          return true;
         });
       }
 

@@ -1,5 +1,7 @@
 part of 'dht_record_pool.dart';
 
+const _sfListen = 'listen';
+
 @immutable
 class DHTRecordWatchChange extends Equatable {
   const DHTRecordWatchChange(
@@ -79,6 +81,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           return false;
         }
 
+        await serialFuturePause((this, _sfListen));
         await _watchController?.close();
         _watchController = null;
         await DHTRecordPool.instance._recordClosed(this);
@@ -445,7 +448,8 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           if (change.local && !localChanges) {
             return;
           }
-          Future.delayed(Duration.zero, () async {
+
+          serialFuture((this, _sfListen), () async {
             final Uint8List? data;
             if (change.local) {
               // local changes are not encrypted

@@ -54,9 +54,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     // Add Contact to account's list
     // if this fails, don't keep retrying, user can try again later
     await operateWrite((writer) async {
-      if (!await writer.tryAdd(contact.writeToBuffer())) {
-        throw Exception('Failed to add contact record');
-      }
+      await writer.add(contact.writeToBuffer());
     });
   }
 
