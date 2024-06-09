@@ -68,14 +68,16 @@ class ContactInvitationListCubit
     final pool = DHTRecordPool.instance;
 
     // Generate writer keypair to share with new contact
-    final cs = await pool.veilid.bestCryptoSystem();
-    final contactRequestWriter = await cs.generateKeyPair();
-    final conversationWriter = _activeAccountInfo.conversationWriter;
+    final crcs = await pool.veilid.bestCryptoSystem();
+    final contactRequestWriter = await crcs.generateKeyPair();
+
+    final idcs = await _activeAccountInfo.identityCryptoSystem;
+    final identityWriter = _activeAccountInfo.identityWriter;
 
     // Encrypt the writer secret with the encryption key
     final encryptedSecret = await encryptionKeyType.encryptSecretToBytes(
       secret: contactRequestWriter.secret,
-      cryptoKind: cs.kind(),
+      cryptoKind: crcs.kind(),
       encryptionKey: encryptionKey,
     );
 
@@ -89,21 +91,21 @@ class ContactInvitationListCubit
             debugName: 'ContactInvitationListCubit::createInvitation::'
                 'LocalConversation',
             parent: _activeAccountInfo.accountRecordKey,
-            schema: DHTSchema.smpl(oCnt: 0, members: [
-              DHTSchemaMember(mKey: conversationWriter.key, mCnt: 1)
-            ])))
+            schema: DHTSchema.smpl(
+                oCnt: 0,
+                members: [DHTSchemaMember(mKey: identityWriter.key, mCnt: 1)])))
         .deleteScope((localConversation) async {
       // dont bother reopening localConversation with writer
       // Make ContactRequestPrivate and encrypt with the writer secret
       final crpriv = proto.ContactRequestPrivate()
         ..writerKey = contactRequestWriter.key.toProto()
         ..profile = _account.profile
-        ..identityMasterRecordKey =
-            _activeAccountInfo.userLogin.accountMasterRecordKey.toProto()
+        ..superIdentityRecordKey =
+            _activeAccountInfo.userLogin.superIdentityRecordKey.toProto()
         ..chatRecordKey = localConversation.key.toProto()
         ..expiration = expiration?.toInt64() ?? Int64.ZERO;
       final crprivbytes = crpriv.writeToBuffer();
-      final encryptedContactRequestPrivate = await cs.encryptAeadWithNonce(
+      final encryptedContactRequestPrivate = await crcs.encryptAeadWithNonce(
           crprivbytes, contactRequestWriter.secret);
 
       // Create ContactRequest and embed contactrequestprivate
@@ -140,9 +142,8 @@ class ContactInvitationListCubit
         final cinvbytes = cinv.writeToBuffer();
         final scinv = proto.SignedContactInvitation()
           ..contactInvitation = cinvbytes
-          ..identitySignature = (await cs.sign(
-                  conversationWriter.key, conversationWriter.secret, cinvbytes))
-              .toProto();
+          ..identitySignature =
+              (await idcs.signWithKeyPair(identityWriter, cinvbytes)).toProto();
         signedContactInvitationBytes = scinv.writeToBuffer();
 
         // Create ContactInvitationRecord
@@ -159,9 +160,7 @@ class ContactInvitationListCubit
         // Add ContactInvitationRecord to account's list
         // if this fails, don't keep retrying, user can try again later
         await operateWrite((writer) async {
-          if (await writer.tryAdd(cinvrec.writeToBuffer()) == false) {
-            throw Exception('Failed to add contact invitation record');
-          }
+          await writer.add(cinvrec.writeToBuffer());
         });
       });
     });
@@ -237,8 +236,6 @@ class ContactInvitationListCubit
 
     ValidContactInvitation? out;
 
-    final cs = await pool.veilid.getCryptoSystem(contactRequestInboxKey.kind);
-
     // Compare the invitation's contact request
     // inbox with our list of extant invitations
     // If we're chatting to ourselves,
@@ -256,6 +253,8 @@ class ContactInvitationListCubit
       //
       final contactRequest = await contactRequestInbox
           .getProtobuf(proto.ContactRequest.fromBuffer);
+
+      final cs = await pool.veilid.getCryptoSystem(contactRequestInboxKey.kind);
 
       // Decrypt contact request private
       final encryptionKeyType =
@@ -276,16 +275,17 @@ class ContactInvitationListCubit
 
       final contactRequestPrivate =
           proto.ContactRequestPrivate.fromBuffer(contactRequestPrivateBytes);
-      final contactIdentityMasterRecordKey =
-          contactRequestPrivate.identityMasterRecordKey.toVeilid();
+      final contactSuperIdentityRecordKey =
+          contactRequestPrivate.superIdentityRecordKey.toVeilid();
 
       // Fetch the account master
-      final contactIdentityMaster = await openIdentityMaster(
-          identityMasterRecordKey: contactIdentityMasterRecordKey);
+      final contactSuperIdentity = await SuperIdentity.open(
+          superRecordKey: contactSuperIdentityRecordKey);
 
       // Verify
+      final idcs = await contactSuperIdentity.currentInstance.cryptoSystem;
       final signature = signedContactInvitation.identitySignature.toVeilid();
-      await cs.verify(contactIdentityMaster.identityPublicKey,
+      await idcs.verify(contactSuperIdentity.currentInstance.publicKey,
           contactInvitationBytes, signature);
 
       final writer = KeyPair(
@@ -297,7 +297,7 @@ class ContactInvitationListCubit
           account: _account,
           contactRequestInboxKey: contactRequestInboxKey,
           contactRequestPrivate: contactRequestPrivate,
-          contactIdentityMaster: contactIdentityMaster,
+          contactSuperIdentity: contactSuperIdentity,
           writer: writer);
     });
 

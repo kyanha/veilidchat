@@ -84,10 +84,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
         ..remoteConversationRecordKey = remoteConversationRecordKey.toProto();
 
       // Add chat
-      final added = await writer.tryAdd(chat.writeToBuffer());
-      if (!added) {
-        throw Exception('Failed to add chat');
-      }
+      await writer.add(chat.writeToBuffer());
     });
   }
 

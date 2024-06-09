@@ -36,7 +36,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
   Future<void> createContact({
     required proto.Profile remoteProfile,
-    required IdentityMaster remoteIdentity,
+    required SuperIdentity remoteSuperIdentity,
     required TypedKey remoteConversationRecordKey,
     required TypedKey localConversationRecordKey,
   }) async {
@@ -44,11 +44,9 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     final contact = proto.Contact()
       ..editedProfile = remoteProfile
       ..remoteProfile = remoteProfile
-      ..identityMasterJson = jsonEncode(remoteIdentity.toJson())
-      ..identityPublicKey = TypedKey(
-              kind: remoteIdentity.identityRecordKey.kind,
-              value: remoteIdentity.identityPublicKey)
-          .toProto()
+      ..superIdentityJson = jsonEncode(remoteSuperIdentity.toJson())
+      ..identityPublicKey =
+          remoteSuperIdentity.currentInstance.typedPublicKey.toProto()
       ..remoteConversationRecordKey = remoteConversationRecordKey.toProto()
       ..localConversationRecordKey = localConversationRecordKey.toProto()
       ..showAvailability = false;
@@ -56,9 +54,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     // Add Contact to account's list
     // if this fails, don't keep retrying, user can try again later
     await operateWrite((writer) async {
-      if (!await writer.tryAdd(contact.writeToBuffer())) {
-        throw Exception('Failed to add contact record');
-      }
+      await writer.add(contact.writeToBuffer());
     });
   }
 

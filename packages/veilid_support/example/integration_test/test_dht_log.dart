@@ -64,8 +64,7 @@ Future<void> Function() makeTestDHTLogAddTruncate({required int stride}) =>
           const chunk = 25;
           for (var n = 0; n < dataset.length; n += chunk) {
             print('$n-${n + chunk - 1} ');
-            final success = await w.tryAddAll(dataset.sublist(n, n + chunk));
-            expect(success, isTrue);
+            await w.addAll(dataset.sublist(n, n + chunk));
           }
         });
         expect(res, isNull);

@@ -17,13 +17,13 @@ class ValidContactInvitation {
       required proto.Account account,
       required TypedKey contactRequestInboxKey,
       required proto.ContactRequestPrivate contactRequestPrivate,
-      required IdentityMaster contactIdentityMaster,
+      required SuperIdentity contactSuperIdentity,
       required KeyPair writer})
       : _activeAccountInfo = activeAccountInfo,
         _account = account,
         _contactRequestInboxKey = contactRequestInboxKey,
         _contactRequestPrivate = contactRequestPrivate,
-        _contactIdentityMaster = contactIdentityMaster,
+        _contactSuperIdentity = contactSuperIdentity,
         _writer = writer;
 
   proto.Profile get remoteProfile => _contactRequestPrivate.profile;
@@ -33,8 +33,8 @@ class ValidContactInvitation {
     try {
       // Ensure we don't delete this if we're trying to chat to self
       // The initiating side will delete the records in deleteInvitation()
-      final isSelf = _contactIdentityMaster.identityPublicKey ==
-          _activeAccountInfo.localAccount.identityMaster.identityPublicKey;
+      final isSelf = _contactSuperIdentity.currentInstance.publicKey ==
+          _activeAccountInfo.identityPublicKey;
       final accountRecordKey = _activeAccountInfo.accountRecordKey;
 
       return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
@@ -48,24 +48,23 @@ class ValidContactInvitation {
         final conversation = ConversationCubit(
             activeAccountInfo: _activeAccountInfo,
             remoteIdentityPublicKey:
-                _contactIdentityMaster.identityPublicTypedKey());
+                _contactSuperIdentity.currentInstance.typedPublicKey);
         return conversation.initLocalConversation(
             profile: _account.profile,
             callback: (localConversation) async {
               final contactResponse = proto.ContactResponse()
                 ..accept = true
                 ..remoteConversationRecordKey = localConversation.key.toProto()
-                ..identityMasterRecordKey = _activeAccountInfo
-                    .localAccount.identityMaster.masterRecordKey
-                    .toProto();
+                ..superIdentityRecordKey =
+                    _activeAccountInfo.superIdentityRecordKey.toProto();
               final contactResponseBytes = contactResponse.writeToBuffer();
 
               final cs = await pool.veilid
                   .getCryptoSystem(_contactRequestInboxKey.kind);
 
               final identitySignature = await cs.sign(
-                  _activeAccountInfo.conversationWriter.key,
-                  _activeAccountInfo.conversationWriter.secret,
+                  _activeAccountInfo.identityWriter.key,
+                  _activeAccountInfo.identityWriter.secret,
                   contactResponseBytes);
 
               final signedContactResponse = proto.SignedContactResponse()
@@ -78,7 +77,7 @@ class ValidContactInvitation {
 
               return AcceptedContact(
                 remoteProfile: _contactRequestPrivate.profile,
-                remoteIdentity: _contactIdentityMaster,
+                remoteIdentity: _contactSuperIdentity,
                 remoteConversationRecordKey:
                     _contactRequestPrivate.chatRecordKey.toVeilid(),
                 localConversationRecordKey: localConversation.key,
@@ -95,10 +94,9 @@ class ValidContactInvitation {
     final pool = DHTRecordPool.instance;
 
     // Ensure we don't delete this if we're trying to chat to self
-    final isSelf = _contactIdentityMaster.identityPublicKey ==
-        _activeAccountInfo.localAccount.identityMaster.identityPublicKey;
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
+    final isSelf = _contactSuperIdentity.currentInstance.publicKey ==
+        _activeAccountInfo.identityPublicKey;
+    final accountRecordKey = _activeAccountInfo.accountRecordKey;
 
     return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
             debugName: 'ValidContactInvitation::reject::'
@@ -110,14 +108,13 @@ class ValidContactInvitation {
 
       final contactResponse = proto.ContactResponse()
         ..accept = false
-        ..identityMasterRecordKey = _activeAccountInfo
-            .localAccount.identityMaster.masterRecordKey
-            .toProto();
+        ..superIdentityRecordKey =
+            _activeAccountInfo.superIdentityRecordKey.toProto();
       final contactResponseBytes = contactResponse.writeToBuffer();
 
       final identitySignature = await cs.sign(
-          _activeAccountInfo.conversationWriter.key,
-          _activeAccountInfo.conversationWriter.secret,
+          _activeAccountInfo.identityWriter.key,
+          _activeAccountInfo.identityWriter.secret,
           contactResponseBytes);
 
       final signedContactResponse = proto.SignedContactResponse()
@@ -135,7 +132,7 @@ class ValidContactInvitation {
   final ActiveAccountInfo _activeAccountInfo;
   final proto.Account _account;
   final TypedKey _contactRequestInboxKey;
-  final IdentityMaster _contactIdentityMaster;
+  final SuperIdentity _contactSuperIdentity;
   final KeyPair _writer;
   final proto.ContactRequestPrivate _contactRequestPrivate;
 }

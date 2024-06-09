@@ -13,7 +13,7 @@ part 'dht_short_array_write.dart';
 
 ///////////////////////////////////////////////////////////////////////
 
-class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
+class DHTShortArray implements DHTDeleteable<DHTShortArray> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
@@ -148,25 +148,25 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
 
   /// Add a reference to this shortarray
   @override
-  Future<DHTShortArray> ref() async => _mutex.protect(() async {
+  Future<void> ref() async => _mutex.protect(() async {
         _openCount++;
-        return this;
       });
 
   /// Free all resources for the DHTShortArray
   @override
-  Future<void> close() async => _mutex.protect(() async {
+  Future<bool> close() async => _mutex.protect(() async {
         if (_openCount == 0) {
           throw StateError('already closed');
         }
         _openCount--;
         if (_openCount != 0) {
-          return;
+          return false;
         }
 
         await _watchController?.close();
         _watchController = null;
         await _head.close();
+        return true;
       });
 
   /// Free all resources for the DHTShortArray and delete it from the DHT
@@ -181,6 +181,9 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
 
   /// Get the record key for this shortarray
   TypedKey get recordKey => _head.recordKey;
+
+  /// Get the writer for the log
+  KeyPair? get writer => _head._headRecord.writer;
 
   /// Get the record pointer foir this shortarray
   OwnedDHTRecordPointer get recordPointer => _head.recordPointer;
@@ -229,11 +232,11 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray, DHTShortArray> {
   /// Runs a closure allowing read-write access to the shortarray
   /// Will execute the closure multiple times if a consistent write to the DHT
   /// is not achieved. Timeout if specified will be thrown as a
-  /// TimeoutException. The closure should return true if its changes also
-  /// succeeded, returning false will trigger another eventual consistency
-  /// attempt.
-  Future<void> operateWriteEventual(
-      Future<bool> Function(DHTShortArrayWriteOperations) closure,
+  /// TimeoutException. The closure should return a value if its changes also
+  /// succeeded, and throw DHTExceptionTryAgain to trigger another
+  /// eventual consistency pass.
+  Future<T> operateWriteEventual<T>(
+      Future<T> Function(DHTShortArrayWriteOperations) closure,
       {Duration? timeout}) async {
     if (!isOpen) {
       throw StateError('short array is not open"');

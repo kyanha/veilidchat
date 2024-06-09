@@ -26,7 +26,7 @@ abstract class DHTRandomRead {
       {int? length, bool forceRefresh = false});
 
   /// Get a list of the positions that were written offline and not flushed yet
-  Future<Set<int>> getOfflinePositions();
+  Future<Set<int>?> getOfflinePositions();
 }
 
 extension DHTRandomReadExt on DHTRandomRead {

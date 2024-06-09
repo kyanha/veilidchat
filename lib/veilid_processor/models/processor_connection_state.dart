@@ -15,5 +15,7 @@ class ProcessorConnectionState with _$ProcessorConnectionState {
       attachment.state == AttachmentState.detaching ||
       attachment.state == AttachmentState.attaching);
 
+  bool get isDetached => attachment.state == AttachmentState.detached;
+
   bool get isPublicInternetReady => attachment.publicInternetReady;
 }

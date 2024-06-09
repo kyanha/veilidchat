@@ -20,8 +20,9 @@ UserLogin _$UserLoginFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$UserLogin {
-// Master record key for the user used to index the local accounts table
-  Typed<FixedEncodedString43> get accountMasterRecordKey =>
+// SuperIdentity record key for the user
+// used to index the local accounts table
+  Typed<FixedEncodedString43> get superIdentityRecordKey =>
       throw _privateConstructorUsedError; // The identity secret as unlocked from the local accounts table
   Typed<FixedEncodedString43> get identitySecret =>
       throw _privateConstructorUsedError; // The account record key, owner key and secret pulled from the identity
@@ -41,7 +42,7 @@ abstract class $UserLoginCopyWith<$Res> {
       _$UserLoginCopyWithImpl<$Res, UserLogin>;
   @useResult
   $Res call(
-      {Typed<FixedEncodedString43> accountMasterRecordKey,
+      {Typed<FixedEncodedString43> superIdentityRecordKey,
       Typed<FixedEncodedString43> identitySecret,
       AccountRecordInfo accountRecordInfo,
       Timestamp lastActive});
@@ -62,15 +63,15 @@ class _$UserLoginCopyWithImpl<$Res, $Val extends UserLogin>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? accountMasterRecordKey = null,
+    Object? superIdentityRecordKey = null,
     Object? identitySecret = null,
     Object? accountRecordInfo = null,
     Object? lastActive = null,
   }) {
     return _then(_value.copyWith(
-      accountMasterRecordKey: null == accountMasterRecordKey
-          ? _value.accountMasterRecordKey
-          : accountMasterRecordKey // ignore: cast_nullable_to_non_nullable
+      superIdentityRecordKey: null == superIdentityRecordKey
+          ? _value.superIdentityRecordKey
+          : superIdentityRecordKey // ignore: cast_nullable_to_non_nullable
               as Typed<FixedEncodedString43>,
       identitySecret: null == identitySecret
           ? _value.identitySecret
@@ -105,7 +106,7 @@ abstract class _$$UserLoginImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {Typed<FixedEncodedString43> accountMasterRecordKey,
+      {Typed<FixedEncodedString43> superIdentityRecordKey,
       Typed<FixedEncodedString43> identitySecret,
       AccountRecordInfo accountRecordInfo,
       Timestamp lastActive});
@@ -125,15 +126,15 @@ class __$$UserLoginImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? accountMasterRecordKey = null,
+    Object? superIdentityRecordKey = null,
     Object? identitySecret = null,
     Object? accountRecordInfo = null,
     Object? lastActive = null,
   }) {
     return _then(_$UserLoginImpl(
-      accountMasterRecordKey: null == accountMasterRecordKey
-          ? _value.accountMasterRecordKey
-          : accountMasterRecordKey // ignore: cast_nullable_to_non_nullable
+      superIdentityRecordKey: null == superIdentityRecordKey
+          ? _value.superIdentityRecordKey
+          : superIdentityRecordKey // ignore: cast_nullable_to_non_nullable
               as Typed<FixedEncodedString43>,
       identitySecret: null == identitySecret
           ? _value.identitySecret
@@ -155,7 +156,7 @@ class __$$UserLoginImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$UserLoginImpl implements _UserLogin {
   const _$UserLoginImpl(
-      {required this.accountMasterRecordKey,
+      {required this.superIdentityRecordKey,
       required this.identitySecret,
       required this.accountRecordInfo,
       required this.lastActive});
@@ -163,9 +164,10 @@ class _$UserLoginImpl implements _UserLogin {
   factory _$UserLoginImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserLoginImplFromJson(json);
 
-// Master record key for the user used to index the local accounts table
+// SuperIdentity record key for the user
+// used to index the local accounts table
   @override
-  final Typed<FixedEncodedString43> accountMasterRecordKey;
+  final Typed<FixedEncodedString43> superIdentityRecordKey;
 // The identity secret as unlocked from the local accounts table
   @override
   final Typed<FixedEncodedString43> identitySecret;
@@ -178,7 +180,7 @@ class _$UserLoginImpl implements _UserLogin {
 
   @override
   String toString() {
-    return 'UserLogin(accountMasterRecordKey: $accountMasterRecordKey, identitySecret: $identitySecret, accountRecordInfo: $accountRecordInfo, lastActive: $lastActive)';
+    return 'UserLogin(superIdentityRecordKey: $superIdentityRecordKey, identitySecret: $identitySecret, accountRecordInfo: $accountRecordInfo, lastActive: $lastActive)';
   }
 
   @override
@@ -186,8 +188,8 @@ class _$UserLoginImpl implements _UserLogin {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$UserLoginImpl &&
-            (identical(other.accountMasterRecordKey, accountMasterRecordKey) ||
-                other.accountMasterRecordKey == accountMasterRecordKey) &&
+            (identical(other.superIdentityRecordKey, superIdentityRecordKey) ||
+                other.superIdentityRecordKey == superIdentityRecordKey) &&
             (identical(other.identitySecret, identitySecret) ||
                 other.identitySecret == identitySecret) &&
             (identical(other.accountRecordInfo, accountRecordInfo) ||
@@ -198,7 +200,7 @@ class _$UserLoginImpl implements _UserLogin {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, accountMasterRecordKey,
+  int get hashCode => Object.hash(runtimeType, superIdentityRecordKey,
       identitySecret, accountRecordInfo, lastActive);
 
   @JsonKey(ignore: true)
@@ -217,7 +219,7 @@ class _$UserLoginImpl implements _UserLogin {
 
 abstract class _UserLogin implements UserLogin {
   const factory _UserLogin(
-      {required final Typed<FixedEncodedString43> accountMasterRecordKey,
+      {required final Typed<FixedEncodedString43> superIdentityRecordKey,
       required final Typed<FixedEncodedString43> identitySecret,
       required final AccountRecordInfo accountRecordInfo,
       required final Timestamp lastActive}) = _$UserLoginImpl;
@@ -225,8 +227,9 @@ abstract class _UserLogin implements UserLogin {
   factory _UserLogin.fromJson(Map<String, dynamic> json) =
       _$UserLoginImpl.fromJson;
 
-  @override // Master record key for the user used to index the local accounts table
-  Typed<FixedEncodedString43> get accountMasterRecordKey;
+  @override // SuperIdentity record key for the user
+// used to index the local accounts table
+  Typed<FixedEncodedString43> get superIdentityRecordKey;
   @override // The identity secret as unlocked from the local accounts table
   Typed<FixedEncodedString43> get identitySecret;
   @override // The account record key, owner key and secret pulled from the identity

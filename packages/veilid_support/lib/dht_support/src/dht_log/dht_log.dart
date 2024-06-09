@@ -9,7 +9,6 @@ import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
 import '../../proto/proto.dart' as proto;
-import '../interfaces/dht_add.dart';
 
 part 'dht_log_spine.dart';
 part 'dht_log_read.dart';
@@ -42,7 +41,7 @@ class DHTLogUpdate extends Equatable {
 ///  * The head and tail position of the log
 ///    - subkeyIdx = pos / recordsPerSubkey
 ///    - recordIdx = pos % recordsPerSubkey
-class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
+class DHTLog implements DHTDeleteable<DHTLog> {
   ////////////////////////////////////////////////////////////////
   // Constructors
 
@@ -172,24 +171,24 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
 
   /// Add a reference to this log
   @override
-  Future<DHTLog> ref() async => _mutex.protect(() async {
+  Future<void> ref() async => _mutex.protect(() async {
         _openCount++;
-        return this;
       });
 
   /// Free all resources for the DHTLog
   @override
-  Future<void> close() async => _mutex.protect(() async {
+  Future<bool> close() async => _mutex.protect(() async {
         if (_openCount == 0) {
           throw StateError('already closed');
         }
         _openCount--;
         if (_openCount != 0) {
-          return;
+          return false;
         }
         await _watchController?.close();
         _watchController = null;
         await _spine.close();
+        return true;
       });
 
   /// Free all resources for the DHTLog and delete it from the DHT
@@ -204,6 +203,9 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
 
   /// Get the record key for this log
   TypedKey get recordKey => _spine.recordKey;
+
+  /// Get the writer for the log
+  KeyPair? get writer => _spine._spineRecord.writer;
 
   /// Get the record pointer foir this log
   OwnedDHTRecordPointer get recordPointer => _spine.recordPointer;
@@ -240,11 +242,11 @@ class DHTLog implements DHTDeleteable<DHTLog, DHTLog> {
   /// Runs a closure allowing append/truncate access to the log
   /// Will execute the closure multiple times if a consistent write to the DHT
   /// is not achieved. Timeout if specified will be thrown as a
-  /// TimeoutException. The closure should return true if its changes also
-  /// succeeded, returning false will trigger another eventual consistency
-  /// attempt.
-  Future<void> operateAppendEventual(
-      Future<bool> Function(DHTLogWriteOperations) closure,
+  /// TimeoutException. The closure should return a value if its changes also
+  /// succeeded, and throw DHTExceptionTryAgain to trigger another
+  /// eventual consistency pass.
+  Future<T> operateAppendEventual<T>(
+      Future<T> Function(DHTLogWriteOperations) closure,
       {Duration? timeout}) async {
     if (!isOpen) {
       throw StateError('log is not open"');

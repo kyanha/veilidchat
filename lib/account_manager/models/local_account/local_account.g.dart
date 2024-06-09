@@ -8,7 +8,7 @@ part of 'local_account.dart';
 
 _$LocalAccountImpl _$$LocalAccountImplFromJson(Map<String, dynamic> json) =>
     _$LocalAccountImpl(
-      identityMaster: IdentityMaster.fromJson(json['identity_master']),
+      superIdentity: SuperIdentity.fromJson(json['super_identity']),
       identitySecretBytes: const Uint8ListJsonConverter()
           .fromJson(json['identity_secret_bytes']),
       encryptionKeyType:
@@ -20,7 +20,7 @@ _$LocalAccountImpl _$$LocalAccountImplFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$$LocalAccountImplToJson(_$LocalAccountImpl instance) =>
     <String, dynamic>{
-      'identity_master': instance.identityMaster.toJson(),
+      'super_identity': instance.superIdentity.toJson(),
       'identity_secret_bytes':
           const Uint8ListJsonConverter().toJson(instance.identitySecretBytes),
       'encryption_key_type': instance.encryptionKeyType.toJson(),

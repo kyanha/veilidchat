@@ -49,8 +49,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
       required ActiveConversationState activeConversationState,
       required SingleContactMessagesCubit messagesCubit}) {
     // Make local 'User'
-    final localUserIdentityKey =
-        activeAccountInfo.localAccount.identityMaster.identityPublicTypedKey();
+    final localUserIdentityKey = activeAccountInfo.identityTypedPublicKey;
     final localUser = types.User(
         id: localUserIdentityKey.toString(),
         firstName: accountRecordInfo.profile.name,

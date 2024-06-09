@@ -6,8 +6,8 @@ library veilid_support;
 export 'package:veilid/veilid.dart';
 
 export 'dht_support/dht_support.dart';
+export 'identity_support/identity_support.dart';
 export 'src/config.dart';
-export 'src/identity.dart';
 export 'src/json_tools.dart';
 export 'src/memory_tools.dart';
 export 'src/online_element_state.dart';

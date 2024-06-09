@@ -87,30 +87,30 @@ class AccountRepository {
         : fetchUserLogin(activeLocalAccount);
   }
 
-  LocalAccount? fetchLocalAccount(TypedKey accountMasterRecordKey) {
+  LocalAccount? fetchLocalAccount(TypedKey accountSuperIdentityRecordKey) {
     final localAccounts = _localAccounts.value;
     final idx = localAccounts.indexWhere(
-        (e) => e.identityMaster.masterRecordKey == accountMasterRecordKey);
+        (e) => e.superIdentity.recordKey == accountSuperIdentityRecordKey);
     if (idx == -1) {
       return null;
     }
     return localAccounts[idx];
   }
 
-  UserLogin? fetchUserLogin(TypedKey accountMasterRecordKey) {
+  UserLogin? fetchUserLogin(TypedKey superIdentityRecordKey) {
     final userLogins = _userLogins.value;
     final idx = userLogins
-        .indexWhere((e) => e.accountMasterRecordKey == accountMasterRecordKey);
+        .indexWhere((e) => e.superIdentityRecordKey == superIdentityRecordKey);
     if (idx == -1) {
       return null;
     }
     return userLogins[idx];
   }
 
-  AccountInfo getAccountInfo(TypedKey? accountMasterRecordKey) {
+  AccountInfo getAccountInfo(TypedKey? superIdentityRecordKey) {
     // Get active account if we have one
     final activeLocalAccount = getActiveLocalAccount();
-    if (accountMasterRecordKey == null) {
+    if (superIdentityRecordKey == null) {
       if (activeLocalAccount == null) {
         // No user logged in
         return const AccountInfo(
@@ -118,12 +118,12 @@ class AccountRepository {
             active: false,
             activeAccountInfo: null);
       }
-      accountMasterRecordKey = activeLocalAccount;
+      superIdentityRecordKey = activeLocalAccount;
     }
-    final active = accountMasterRecordKey == activeLocalAccount;
+    final active = superIdentityRecordKey == activeLocalAccount;
 
     // Get which local account we want to fetch the profile for
-    final localAccount = fetchLocalAccount(accountMasterRecordKey);
+    final localAccount = fetchLocalAccount(superIdentityRecordKey);
     if (localAccount == null) {
       // account does not exist
       return AccountInfo(
@@ -133,7 +133,7 @@ class AccountRepository {
     }
 
     // See if we've logged into this account or if it is locked
-    final userLogin = fetchUserLogin(accountMasterRecordKey);
+    final userLogin = fetchUserLogin(superIdentityRecordKey);
     if (userLogin == null) {
       // Account was locked
       return AccountInfo(
@@ -165,33 +165,32 @@ class AccountRepository {
     _streamController.add(AccountRepositoryChange.localAccounts);
   }
 
-  /// Creates a new master identity, an account associated with the master
-  /// identity, stores the account in the identity key and then logs into
-  /// that account with no password set at this time
-  Future<void> createWithNewMasterIdentity(
-      NewProfileSpec newProfileSpec) async {
-    log.debug('Creating master identity');
-    final imws = await IdentityMasterWithSecrets.create();
+  /// Creates a new super identity, an identity instance, an account associated
+  /// with the identity instance, stores the account in the identity key and
+  /// then logs into that account with no password set at this time
+  Future<void> createWithNewSuperIdentity(NewProfileSpec newProfileSpec) async {
+    log.debug('Creating super identity');
+    final wsi = await WritableSuperIdentity.create();
     try {
       final localAccount = await _newLocalAccount(
-          identityMaster: imws.identityMaster,
-          identitySecret: imws.identitySecret,
+          superIdentity: wsi.superIdentity,
+          identitySecret: wsi.identitySecret,
           newProfileSpec: newProfileSpec);
 
       // Log in the new account by default with no pin
-      final ok = await login(localAccount.identityMaster.masterRecordKey,
-          EncryptionKeyType.none, '');
+      final ok = await login(
+          localAccount.superIdentity.recordKey, EncryptionKeyType.none, '');
       assert(ok, 'login with none should never fail');
     } on Exception catch (_) {
-      await imws.delete();
+      await wsi.delete();
       rethrow;
     }
   }
 
-  /// Creates a new Account associated with master identity
+  /// Creates a new Account associated with the current instance of the identity
   /// Adds a logged-out LocalAccount to track its existence on this device
   Future<LocalAccount> _newLocalAccount(
-      {required IdentityMaster identityMaster,
+      {required SuperIdentity superIdentity,
       required SecretKey identitySecret,
       required NewProfileSpec newProfileSpec,
       EncryptionKeyType encryptionKeyType = EncryptionKeyType.none,
@@ -201,8 +200,9 @@ class AccountRepository {
     final localAccounts = await _localAccounts.get();
 
     // Add account with profile to DHT
-    await identityMaster.addAccountToIdentity(
-        identitySecret: identitySecret,
+    await superIdentity.currentInstance.addAccount(
+        superRecordKey: superIdentity.recordKey,
+        secretKey: identitySecret,
         accountKey: veilidChatAccountKey,
         createAccountCallback: (parent) async {
           // Make empty contact list
@@ -235,13 +235,13 @@ class AccountRepository {
             ..contactList = contactList.toProto()
             ..contactInvitationRecords = contactInvitationRecords.toProto()
             ..chatList = chatRecords.toProto();
-          return account;
+          return account.writeToBuffer();
         });
 
     // Encrypt identitySecret with key
     final identitySecretBytes = await encryptionKeyType.encryptSecretToBytes(
       secret: identitySecret,
-      cryptoKind: identityMaster.identityRecordKey.kind,
+      cryptoKind: superIdentity.currentInstance.recordKey.kind,
       encryptionKey: encryptionKey,
     );
 
@@ -250,7 +250,7 @@ class AccountRepository {
     // as that is not to be persisted, and only pulled from the identity key
     // and optionally decrypted with the unlock password
     final localAccount = LocalAccount(
-      identityMaster: identityMaster,
+      superIdentity: superIdentity,
       identitySecretBytes: identitySecretBytes,
       encryptionKeyType: encryptionKeyType,
       biometricsEnabled: false,
@@ -269,12 +269,12 @@ class AccountRepository {
   }
 
   /// Remove an account and wipe the messages for this account from this device
-  Future<bool> deleteLocalAccount(TypedKey accountMasterRecordKey) async {
-    await logout(accountMasterRecordKey);
+  Future<bool> deleteLocalAccount(TypedKey superIdentityRecordKey) async {
+    await logout(superIdentityRecordKey);
 
     final localAccounts = await _localAccounts.get();
     final newLocalAccounts = localAccounts.removeWhere(
-        (la) => la.identityMaster.masterRecordKey == accountMasterRecordKey);
+        (la) => la.superIdentity.recordKey == superIdentityRecordKey);
 
     await _localAccounts.set(newLocalAccounts);
     _streamController.add(AccountRepositoryChange.localAccounts);
@@ -290,31 +290,35 @@ class AccountRepository {
 
   /// Delete an account from all devices
 
-  Future<void> switchToAccount(TypedKey? accountMasterRecordKey) async {
+  Future<void> switchToAccount(TypedKey? superIdentityRecordKey) async {
     final activeLocalAccount = await _activeLocalAccount.get();
 
-    if (activeLocalAccount == accountMasterRecordKey) {
+    if (activeLocalAccount == superIdentityRecordKey) {
       // Nothing to do
       return;
     }
 
-    if (accountMasterRecordKey != null) {
+    if (superIdentityRecordKey != null) {
       // Assert the specified record key can be found, will throw if not
       final _ = _userLogins.value.firstWhere(
-          (ul) => ul.accountMasterRecordKey == accountMasterRecordKey);
+          (ul) => ul.superIdentityRecordKey == superIdentityRecordKey);
     }
-    await _activeLocalAccount.set(accountMasterRecordKey);
+    await _activeLocalAccount.set(superIdentityRecordKey);
     _streamController.add(AccountRepositoryChange.activeLocalAccount);
   }
 
   Future<bool> _decryptedLogin(
-      IdentityMaster identityMaster, SecretKey identitySecret) async {
+      SuperIdentity superIdentity, SecretKey identitySecret) async {
     // Verify identity secret works and return the valid cryptosystem
-    final cs = await identityMaster.validateIdentitySecret(identitySecret);
+    final cs = await superIdentity.currentInstance
+        .validateIdentitySecret(identitySecret);
 
     // Read the identity key to get the account keys
-    final accountRecordInfoList = await identityMaster.readAccountsFromIdentity(
-        identitySecret: identitySecret, accountKey: veilidChatAccountKey);
+    final accountRecordInfoList = await superIdentity.currentInstance
+        .readAccount(
+            superRecordKey: superIdentity.recordKey,
+            secretKey: identitySecret,
+            accountKey: veilidChatAccountKey);
     if (accountRecordInfoList.length > 1) {
       throw IdentityException.limitExceeded;
     } else if (accountRecordInfoList.isEmpty) {
@@ -326,11 +330,11 @@ class AccountRepository {
     final userLogins = await _userLogins.get();
     final now = Veilid.instance.now();
     final newUserLogins = userLogins.replaceFirstWhere(
-        (ul) => ul.accountMasterRecordKey == identityMaster.masterRecordKey,
+        (ul) => ul.superIdentityRecordKey == superIdentity.recordKey,
         (ul) => ul != null
             ? ul.copyWith(lastActive: now)
             : UserLogin(
-                accountMasterRecordKey: identityMaster.masterRecordKey,
+                superIdentityRecordKey: superIdentity.recordKey,
                 identitySecret:
                     TypedSecret(kind: cs.kind(), value: identitySecret),
                 accountRecordInfo: accountRecordInfo,
@@ -338,7 +342,7 @@ class AccountRepository {
         addIfNotFound: true);
 
     await _userLogins.set(newUserLogins);
-    await _activeLocalAccount.set(identityMaster.masterRecordKey);
+    await _activeLocalAccount.set(superIdentity.recordKey);
 
     _streamController
       ..add(AccountRepositoryChange.userLogins)
@@ -347,13 +351,13 @@ class AccountRepository {
     return true;
   }
 
-  Future<bool> login(TypedKey accountMasterRecordKey,
+  Future<bool> login(TypedKey accountSuperRecordKey,
       EncryptionKeyType encryptionKeyType, String encryptionKey) async {
     final localAccounts = await _localAccounts.get();
 
     // Get account, throws if not found
     final localAccount = localAccounts.firstWhere(
-        (la) => la.identityMaster.masterRecordKey == accountMasterRecordKey);
+        (la) => la.superIdentity.recordKey == accountSuperRecordKey);
 
     // Log in with this local account
 
@@ -365,12 +369,12 @@ class AccountRepository {
     final identitySecret =
         await localAccount.encryptionKeyType.decryptSecretFromBytes(
       secretBytes: localAccount.identitySecretBytes,
-      cryptoKind: localAccount.identityMaster.identityRecordKey.kind,
+      cryptoKind: localAccount.superIdentity.currentInstance.recordKey.kind,
       encryptionKey: encryptionKey,
     );
 
     // Validate this secret with the identity public key and log in
-    return _decryptedLogin(localAccount.identityMaster, identitySecret);
+    return _decryptedLogin(localAccount.superIdentity, identitySecret);
   }
 
   Future<void> logout(TypedKey? accountMasterRecordKey) async {
@@ -390,20 +394,20 @@ class AccountRepository {
 
     // Remove user from active logins list
     final newUserLogins = (await _userLogins.get())
-        .removeWhere((ul) => ul.accountMasterRecordKey == logoutUser);
+        .removeWhere((ul) => ul.superIdentityRecordKey == logoutUser);
     await _userLogins.set(newUserLogins);
     _streamController.add(AccountRepositoryChange.userLogins);
   }
 
   Future<DHTRecord> openAccountRecord(UserLogin userLogin) async {
-    final localAccount = fetchLocalAccount(userLogin.accountMasterRecordKey)!;
+    final localAccount = fetchLocalAccount(userLogin.superIdentityRecordKey)!;
 
     // Record not yet open, do it
     final pool = DHTRecordPool.instance;
     final record = await pool.openRecordOwned(
         userLogin.accountRecordInfo.accountRecord,
         debugName: 'AccountRepository::openAccountRecord::AccountRecord',
-        parent: localAccount.identityMaster.identityRecordKey);
+        parent: localAccount.superIdentity.currentInstance.recordKey);
 
     return record;
   }

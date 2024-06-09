@@ -1,5 +1,7 @@
 part of 'dht_record_pool.dart';
 
+const _sfListen = 'listen';
+
 @immutable
 class DHTRecordWatchChange extends Equatable {
   const DHTRecordWatchChange(
@@ -16,7 +18,7 @@ class DHTRecordWatchChange extends Equatable {
 /// Refresh mode for DHT record 'get'
 enum DHTRecordRefreshMode {
   /// Return existing subkey values if they exist locally already
-  /// And then check the network for a newer value
+  /// If not, check the network for a value
   /// This is the default refresh mode
   cached,
 
@@ -36,7 +38,7 @@ enum DHTRecordRefreshMode {
 
 /////////////////////////////////////////////////
 
-class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
+class DHTRecord implements DHTDeleteable<DHTRecord> {
   DHTRecord._(
       {required VeilidRoutingContext routingContext,
       required SharedDHTRecordData sharedDHTRecordData,
@@ -64,25 +66,26 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
 
   /// Add a reference to this DHTRecord
   @override
-  Future<DHTRecord> ref() async => _mutex.protect(() async {
+  Future<void> ref() async => _mutex.protect(() async {
         _openCount++;
-        return this;
       });
 
   /// Free all resources for the DHTRecord
   @override
-  Future<void> close() async => _mutex.protect(() async {
+  Future<bool> close() async => _mutex.protect(() async {
         if (_openCount == 0) {
           throw StateError('already closed');
         }
         _openCount--;
         if (_openCount != 0) {
-          return;
+          return false;
         }
 
+        await serialFuturePause((this, _sfListen));
         await _watchController?.close();
         _watchController = null;
         await DHTRecordPool.instance._recordClosed(this);
+        return true;
       });
 
   /// Free all resources for the DHTRecord and delete it from the DHT
@@ -445,7 +448,8 @@ class DHTRecord implements DHTDeleteable<DHTRecord, DHTRecord> {
           if (change.local && !localChanges) {
             return;
           }
-          Future.delayed(Duration.zero, () async {
+
+          serialFuture((this, _sfListen), () async {
             final Uint8List? data;
             if (change.local) {
               // local changes are not encrypted

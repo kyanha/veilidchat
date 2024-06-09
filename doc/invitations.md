@@ -16,27 +16,27 @@
 2. Get the ContactRequest record unicastinbox DHT record owner subkey from the network
 3. Decrypt the writer secret with the password if necessary
 4. Decrypt the ContactRequestPrivate chunk with the writer secret
-5. Get the contact's AccountMaster record key
+5. Get the contact's SuperIdentity record key
 6. Verify identity signature on the SignedContactInvitation
 7. Verify expiration
 8. Display the profile and ask if the user wants to accept or reject the invitation
 
 ## Accepting an invitation
 1. Create a Local Chat DHT record (no content yet, will be encrypted with DH of contact identity key)
-2. Create ContactResponse with chat dht record and account master
+2. Create ContactResponse with chat dht record and superidentity
 3. Create SignedContactResponse with accept=true signed with identity
 4. Set ContactRequest unicastinbox DHT record writer subkey with SignedContactResponse, encrypted with writer secret
 5. Add a local contact with the remote chat dht record, updating from the remote profile in it
 
 ## Rejecting an invitation
-1. Create ContactResponse with account master
+1. Create ContactResponse with superidentity
 2. Create SignedContactResponse with accept=false signed with identity
 3. Set ContactRequest unicastinbox DHT record writer subkey with SignedContactResponse, encrypted with writer secret
 
 ## Receiving an accept/reject
 1. Open and get SignedContactResponse from ContactRequest unicastinbox DHT record
 2. Decrypt with writer secret
-3. Get DHT record for contact's AccountMaster
+3. Get DHT record for contact's SuperIdentity
 4. Validate the SignedContactResponse signature
    
 If accept == false:

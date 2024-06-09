@@ -309,7 +309,7 @@ const Conversation$json = {
   '1': 'Conversation',
   '2': [
     {'1': 'profile', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'profile'},
-    {'1': 'identity_master_json', '3': 2, '4': 1, '5': 9, '10': 'identityMasterJson'},
+    {'1': 'super_identity_json', '3': 2, '4': 1, '5': 9, '10': 'superIdentityJson'},
     {'1': 'messages', '3': 3, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'messages'},
   ],
 };
@@ -317,8 +317,8 @@ const Conversation$json = {
 /// Descriptor for `Conversation`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List conversationDescriptor = $convert.base64Decode(
     'CgxDb252ZXJzYXRpb24SLQoHcHJvZmlsZRgBIAEoCzITLnZlaWxpZGNoYXQuUHJvZmlsZVIHcH'
-    'JvZmlsZRIwChRpZGVudGl0eV9tYXN0ZXJfanNvbhgCIAEoCVISaWRlbnRpdHlNYXN0ZXJKc29u'
-    'EiwKCG1lc3NhZ2VzGAMgASgLMhAudmVpbGlkLlR5cGVkS2V5UghtZXNzYWdlcw==');
+    'JvZmlsZRIuChNzdXBlcl9pZGVudGl0eV9qc29uGAIgASgJUhFzdXBlcklkZW50aXR5SnNvbhIs'
+    'CghtZXNzYWdlcxgDIAEoCzIQLnZlaWxpZC5UeXBlZEtleVIIbWVzc2FnZXM=');
 
 @$core.Deprecated('Use chatDescriptor instead')
 const Chat$json = {
@@ -411,7 +411,7 @@ const Contact$json = {
   '2': [
     {'1': 'edited_profile', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'editedProfile'},
     {'1': 'remote_profile', '3': 2, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'remoteProfile'},
-    {'1': 'identity_master_json', '3': 3, '4': 1, '5': 9, '10': 'identityMasterJson'},
+    {'1': 'super_identity_json', '3': 3, '4': 1, '5': 9, '10': 'superIdentityJson'},
     {'1': 'identity_public_key', '3': 4, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'identityPublicKey'},
     {'1': 'remote_conversation_record_key', '3': 5, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'remoteConversationRecordKey'},
     {'1': 'local_conversation_record_key', '3': 6, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'localConversationRecordKey'},
@@ -423,13 +423,13 @@ const Contact$json = {
 final $typed_data.Uint8List contactDescriptor = $convert.base64Decode(
     'CgdDb250YWN0EjoKDmVkaXRlZF9wcm9maWxlGAEgASgLMhMudmVpbGlkY2hhdC5Qcm9maWxlUg'
     '1lZGl0ZWRQcm9maWxlEjoKDnJlbW90ZV9wcm9maWxlGAIgASgLMhMudmVpbGlkY2hhdC5Qcm9m'
-    'aWxlUg1yZW1vdGVQcm9maWxlEjAKFGlkZW50aXR5X21hc3Rlcl9qc29uGAMgASgJUhJpZGVudG'
-    'l0eU1hc3Rlckpzb24SQAoTaWRlbnRpdHlfcHVibGljX2tleRgEIAEoCzIQLnZlaWxpZC5UeXBl'
-    'ZEtleVIRaWRlbnRpdHlQdWJsaWNLZXkSVQoecmVtb3RlX2NvbnZlcnNhdGlvbl9yZWNvcmRfa2'
-    'V5GAUgASgLMhAudmVpbGlkLlR5cGVkS2V5UhtyZW1vdGVDb252ZXJzYXRpb25SZWNvcmRLZXkS'
-    'UwodbG9jYWxfY29udmVyc2F0aW9uX3JlY29yZF9rZXkYBiABKAsyEC52ZWlsaWQuVHlwZWRLZX'
-    'lSGmxvY2FsQ29udmVyc2F0aW9uUmVjb3JkS2V5EisKEXNob3dfYXZhaWxhYmlsaXR5GAcgASgI'
-    'UhBzaG93QXZhaWxhYmlsaXR5');
+    'aWxlUg1yZW1vdGVQcm9maWxlEi4KE3N1cGVyX2lkZW50aXR5X2pzb24YAyABKAlSEXN1cGVySW'
+    'RlbnRpdHlKc29uEkAKE2lkZW50aXR5X3B1YmxpY19rZXkYBCABKAsyEC52ZWlsaWQuVHlwZWRL'
+    'ZXlSEWlkZW50aXR5UHVibGljS2V5ElUKHnJlbW90ZV9jb252ZXJzYXRpb25fcmVjb3JkX2tleR'
+    'gFIAEoCzIQLnZlaWxpZC5UeXBlZEtleVIbcmVtb3RlQ29udmVyc2F0aW9uUmVjb3JkS2V5ElMK'
+    'HWxvY2FsX2NvbnZlcnNhdGlvbl9yZWNvcmRfa2V5GAYgASgLMhAudmVpbGlkLlR5cGVkS2V5Uh'
+    'psb2NhbENvbnZlcnNhdGlvblJlY29yZEtleRIrChFzaG93X2F2YWlsYWJpbGl0eRgHIAEoCFIQ'
+    'c2hvd0F2YWlsYWJpbGl0eQ==');
 
 @$core.Deprecated('Use contactInvitationDescriptor instead')
 const ContactInvitation$json = {
@@ -482,7 +482,7 @@ const ContactRequestPrivate$json = {
   '2': [
     {'1': 'writer_key', '3': 1, '4': 1, '5': 11, '6': '.veilid.CryptoKey', '10': 'writerKey'},
     {'1': 'profile', '3': 2, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'profile'},
-    {'1': 'identity_master_record_key', '3': 3, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'identityMasterRecordKey'},
+    {'1': 'super_identity_record_key', '3': 3, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'superIdentityRecordKey'},
     {'1': 'chat_record_key', '3': 4, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'chatRecordKey'},
     {'1': 'expiration', '3': 5, '4': 1, '5': 4, '10': 'expiration'},
   ],
@@ -492,27 +492,27 @@ const ContactRequestPrivate$json = {
 final $typed_data.Uint8List contactRequestPrivateDescriptor = $convert.base64Decode(
     'ChVDb250YWN0UmVxdWVzdFByaXZhdGUSMAoKd3JpdGVyX2tleRgBIAEoCzIRLnZlaWxpZC5Dcn'
     'lwdG9LZXlSCXdyaXRlcktleRItCgdwcm9maWxlGAIgASgLMhMudmVpbGlkY2hhdC5Qcm9maWxl'
-    'Ugdwcm9maWxlEk0KGmlkZW50aXR5X21hc3Rlcl9yZWNvcmRfa2V5GAMgASgLMhAudmVpbGlkLl'
-    'R5cGVkS2V5UhdpZGVudGl0eU1hc3RlclJlY29yZEtleRI4Cg9jaGF0X3JlY29yZF9rZXkYBCAB'
-    'KAsyEC52ZWlsaWQuVHlwZWRLZXlSDWNoYXRSZWNvcmRLZXkSHgoKZXhwaXJhdGlvbhgFIAEoBF'
-    'IKZXhwaXJhdGlvbg==');
+    'Ugdwcm9maWxlEksKGXN1cGVyX2lkZW50aXR5X3JlY29yZF9rZXkYAyABKAsyEC52ZWlsaWQuVH'
+    'lwZWRLZXlSFnN1cGVySWRlbnRpdHlSZWNvcmRLZXkSOAoPY2hhdF9yZWNvcmRfa2V5GAQgASgL'
+    'MhAudmVpbGlkLlR5cGVkS2V5Ug1jaGF0UmVjb3JkS2V5Eh4KCmV4cGlyYXRpb24YBSABKARSCm'
+    'V4cGlyYXRpb24=');
 
 @$core.Deprecated('Use contactResponseDescriptor instead')
 const ContactResponse$json = {
   '1': 'ContactResponse',
   '2': [
     {'1': 'accept', '3': 1, '4': 1, '5': 8, '10': 'accept'},
-    {'1': 'identity_master_record_key', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'identityMasterRecordKey'},
+    {'1': 'super_identity_record_key', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'superIdentityRecordKey'},
     {'1': 'remote_conversation_record_key', '3': 3, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'remoteConversationRecordKey'},
   ],
 };
 
 /// Descriptor for `ContactResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List contactResponseDescriptor = $convert.base64Decode(
-    'Cg9Db250YWN0UmVzcG9uc2USFgoGYWNjZXB0GAEgASgIUgZhY2NlcHQSTQoaaWRlbnRpdHlfbW'
-    'FzdGVyX3JlY29yZF9rZXkYAiABKAsyEC52ZWlsaWQuVHlwZWRLZXlSF2lkZW50aXR5TWFzdGVy'
-    'UmVjb3JkS2V5ElUKHnJlbW90ZV9jb252ZXJzYXRpb25fcmVjb3JkX2tleRgDIAEoCzIQLnZlaW'
-    'xpZC5UeXBlZEtleVIbcmVtb3RlQ29udmVyc2F0aW9uUmVjb3JkS2V5');
+    'Cg9Db250YWN0UmVzcG9uc2USFgoGYWNjZXB0GAEgASgIUgZhY2NlcHQSSwoZc3VwZXJfaWRlbn'
+    'RpdHlfcmVjb3JkX2tleRgCIAEoCzIQLnZlaWxpZC5UeXBlZEtleVIWc3VwZXJJZGVudGl0eVJl'
+    'Y29yZEtleRJVCh5yZW1vdGVfY29udmVyc2F0aW9uX3JlY29yZF9rZXkYAyABKAsyEC52ZWlsaW'
+    'QuVHlwZWRLZXlSG3JlbW90ZUNvbnZlcnNhdGlvblJlY29yZEtleQ==');
 
 @$core.Deprecated('Use signedContactResponseDescriptor instead')
 const SignedContactResponse$json = {

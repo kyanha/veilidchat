@@ -91,7 +91,7 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
           // Accept
           await contactListCubit.createContact(
             remoteProfile: acceptedContact.remoteProfile,
-            remoteIdentity: acceptedContact.remoteIdentity,
+            remoteSuperIdentity: acceptedContact.remoteIdentity,
             remoteConversationRecordKey:
                 acceptedContact.remoteConversationRecordKey,
             localConversationRecordKey:

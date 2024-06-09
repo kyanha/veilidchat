@@ -107,19 +107,20 @@ class _DHTShortArrayHead {
         }
       });
 
-  Future<void> operateWriteEventual(
-      Future<bool> Function(_DHTShortArrayHead) closure,
+  Future<T> operateWriteEventual<T>(
+      Future<T> Function(_DHTShortArrayHead) closure,
       {Duration? timeout}) async {
     final timeoutTs = timeout == null
         ? null
         : Veilid.instance.now().offset(TimestampDuration.fromDuration(timeout));
 
-    await _headMutex.protect(() async {
+    return _headMutex.protect(() async {
       late List<DHTRecord> oldLinkedRecords;
       late List<int> oldIndex;
       late List<int> oldFree;
       late List<int> oldSeqs;
 
+      late T out;
       try {
         // Iterate until we have a successful element and head write
 
@@ -140,20 +141,23 @@ class _DHTShortArrayHead {
               }
             }
             try {
-              if (await closure(this)) {
-                break;
-              }
+              out = await closure(this);
+              break;
             } on DHTExceptionTryAgain {
-              //
+              // Failed to write in closure resets state
+              _linkedRecords = List.of(oldLinkedRecords);
+              _index = List.of(oldIndex);
+              _free = List.of(oldFree);
+              _seqs = List.of(oldSeqs);
+            } on Exception {
+              // Failed to write in closure resets state
+              _linkedRecords = List.of(oldLinkedRecords);
+              _index = List.of(oldIndex);
+              _free = List.of(oldFree);
+              _seqs = List.of(oldSeqs);
+              rethrow;
             }
-
-            // Failed to write in closure resets state
-            _linkedRecords = List.of(oldLinkedRecords);
-            _index = List.of(oldIndex);
-            _free = List.of(oldFree);
-            _seqs = List.of(oldSeqs);
           }
-
           // Try to do the head write
         } while (!await _writeHead());
 
@@ -167,6 +171,7 @@ class _DHTShortArrayHead {
 
         rethrow;
       }
+      return out;
     });
   }
 

@@ -8,22 +8,22 @@ import '../../../veilid_support.dart';
 // Insert/Remove interface
 abstract class DHTInsertRemove {
   /// Try to insert an item as position 'pos' of the DHT container.
-  /// Return true if the element was successfully inserted, and false if the
-  /// state changed before the element could be inserted or a newer value was
-  /// found on the network.
+  /// Return if the element was successfully inserted
+  /// Throws DHTExceptionTryAgain if the state changed before the element could
+  /// be inserted or a newer value was found on the network.
   /// Throws an IndexError if the position removed exceeds the length of
   /// the container.
   /// Throws a StateError if the container exceeds its maximum size.
-  Future<bool> tryInsert(int pos, Uint8List value);
+  Future<void> insert(int pos, Uint8List value);
 
   /// Try to insert items at position 'pos' of the DHT container.
-  /// Return true if the elements were successfully inserted, and false if the
-  /// state changed before the elements could be inserted or a newer value was
-  /// found on the network.
+  /// Return if the elements were successfully inserted
+  /// Throws DHTExceptionTryAgain if the state changed before the elements could
+  /// be inserted or a newer value was found on the network.
   /// Throws an IndexError if the position removed exceeds the length of
   /// the container.
   /// Throws a StateError if the container exceeds its maximum size.
-  Future<bool> tryInsertAll(int pos, List<Uint8List> values);
+  Future<void> insertAll(int pos, List<Uint8List> values);
 
   /// Remove an item at position 'pos' in the DHT container.
   /// If the remove was successful this returns:

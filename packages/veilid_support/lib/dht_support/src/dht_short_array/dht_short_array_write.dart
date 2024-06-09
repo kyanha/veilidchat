@@ -16,14 +16,14 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
   _DHTShortArrayWrite._(super.head) : super._();
 
   @override
-  Future<bool> tryAdd(Uint8List value) => tryInsert(_head.length, value);
+  Future<void> add(Uint8List value) => insert(_head.length, value);
 
   @override
-  Future<bool> tryAddAll(List<Uint8List> values) =>
-      tryInsertAll(_head.length, values);
+  Future<void> addAll(List<Uint8List> values) =>
+      insertAll(_head.length, values);
 
   @override
-  Future<bool> tryInsert(int pos, Uint8List value) async {
+  Future<void> insert(int pos, Uint8List value) async {
     if (pos < 0 || pos > _head.length) {
       throw IndexError.withLength(pos, _head.length);
     }
@@ -39,11 +39,13 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
         _head.freeIndex(pos);
       }
     }
-    return true;
+    if (!success) {
+      throw DHTExceptionTryAgain();
+    }
   }
 
   @override
-  Future<bool> tryInsertAll(int pos, List<Uint8List> values) async {
+  Future<void> insertAll(int pos, List<Uint8List> values) async {
     if (pos < 0 || pos > _head.length) {
       throw IndexError.withLength(pos, _head.length);
     }
@@ -94,8 +96,9 @@ class _DHTShortArrayWrite extends _DHTShortArrayRead
         }
       }
     }
-
-    return success;
+    if (!success) {
+      throw DHTExceptionTryAgain();
+    }
   }
 
   @override

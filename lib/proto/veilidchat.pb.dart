@@ -1026,7 +1026,7 @@ class Conversation extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Conversation', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOM<Profile>(1, _omitFieldNames ? '' : 'profile', subBuilder: Profile.create)
-    ..aOS(2, _omitFieldNames ? '' : 'identityMasterJson')
+    ..aOS(2, _omitFieldNames ? '' : 'superIdentityJson')
     ..aOM<$0.TypedKey>(3, _omitFieldNames ? '' : 'messages', subBuilder: $0.TypedKey.create)
     ..hasRequiredFields = false
   ;
@@ -1064,13 +1064,13 @@ class Conversation extends $pb.GeneratedMessage {
   Profile ensureProfile() => $_ensure(0);
 
   @$pb.TagNumber(2)
-  $core.String get identityMasterJson => $_getSZ(1);
+  $core.String get superIdentityJson => $_getSZ(1);
   @$pb.TagNumber(2)
-  set identityMasterJson($core.String v) { $_setString(1, v); }
+  set superIdentityJson($core.String v) { $_setString(1, v); }
   @$pb.TagNumber(2)
-  $core.bool hasIdentityMasterJson() => $_has(1);
+  $core.bool hasSuperIdentityJson() => $_has(1);
   @$pb.TagNumber(2)
-  void clearIdentityMasterJson() => clearField(2);
+  void clearSuperIdentityJson() => clearField(2);
 
   @$pb.TagNumber(3)
   $0.TypedKey get messages => $_getN(2);
@@ -1427,7 +1427,7 @@ class Contact extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Contact', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOM<Profile>(1, _omitFieldNames ? '' : 'editedProfile', subBuilder: Profile.create)
     ..aOM<Profile>(2, _omitFieldNames ? '' : 'remoteProfile', subBuilder: Profile.create)
-    ..aOS(3, _omitFieldNames ? '' : 'identityMasterJson')
+    ..aOS(3, _omitFieldNames ? '' : 'superIdentityJson')
     ..aOM<$0.TypedKey>(4, _omitFieldNames ? '' : 'identityPublicKey', subBuilder: $0.TypedKey.create)
     ..aOM<$0.TypedKey>(5, _omitFieldNames ? '' : 'remoteConversationRecordKey', subBuilder: $0.TypedKey.create)
     ..aOM<$0.TypedKey>(6, _omitFieldNames ? '' : 'localConversationRecordKey', subBuilder: $0.TypedKey.create)
@@ -1479,13 +1479,13 @@ class Contact extends $pb.GeneratedMessage {
   Profile ensureRemoteProfile() => $_ensure(1);
 
   @$pb.TagNumber(3)
-  $core.String get identityMasterJson => $_getSZ(2);
+  $core.String get superIdentityJson => $_getSZ(2);
   @$pb.TagNumber(3)
-  set identityMasterJson($core.String v) { $_setString(2, v); }
+  set superIdentityJson($core.String v) { $_setString(2, v); }
   @$pb.TagNumber(3)
-  $core.bool hasIdentityMasterJson() => $_has(2);
+  $core.bool hasSuperIdentityJson() => $_has(2);
   @$pb.TagNumber(3)
-  void clearIdentityMasterJson() => clearField(3);
+  void clearSuperIdentityJson() => clearField(3);
 
   @$pb.TagNumber(4)
   $0.TypedKey get identityPublicKey => $_getN(3);
@@ -1699,7 +1699,7 @@ class ContactRequestPrivate extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ContactRequestPrivate', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOM<$0.CryptoKey>(1, _omitFieldNames ? '' : 'writerKey', subBuilder: $0.CryptoKey.create)
     ..aOM<Profile>(2, _omitFieldNames ? '' : 'profile', subBuilder: Profile.create)
-    ..aOM<$0.TypedKey>(3, _omitFieldNames ? '' : 'identityMasterRecordKey', subBuilder: $0.TypedKey.create)
+    ..aOM<$0.TypedKey>(3, _omitFieldNames ? '' : 'superIdentityRecordKey', subBuilder: $0.TypedKey.create)
     ..aOM<$0.TypedKey>(4, _omitFieldNames ? '' : 'chatRecordKey', subBuilder: $0.TypedKey.create)
     ..a<$fixnum.Int64>(5, _omitFieldNames ? '' : 'expiration', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..hasRequiredFields = false
@@ -1749,15 +1749,15 @@ class ContactRequestPrivate extends $pb.GeneratedMessage {
   Profile ensureProfile() => $_ensure(1);
 
   @$pb.TagNumber(3)
-  $0.TypedKey get identityMasterRecordKey => $_getN(2);
+  $0.TypedKey get superIdentityRecordKey => $_getN(2);
   @$pb.TagNumber(3)
-  set identityMasterRecordKey($0.TypedKey v) { setField(3, v); }
+  set superIdentityRecordKey($0.TypedKey v) { setField(3, v); }
   @$pb.TagNumber(3)
-  $core.bool hasIdentityMasterRecordKey() => $_has(2);
+  $core.bool hasSuperIdentityRecordKey() => $_has(2);
   @$pb.TagNumber(3)
-  void clearIdentityMasterRecordKey() => clearField(3);
+  void clearSuperIdentityRecordKey() => clearField(3);
   @$pb.TagNumber(3)
-  $0.TypedKey ensureIdentityMasterRecordKey() => $_ensure(2);
+  $0.TypedKey ensureSuperIdentityRecordKey() => $_ensure(2);
 
   @$pb.TagNumber(4)
   $0.TypedKey get chatRecordKey => $_getN(3);
@@ -1788,7 +1788,7 @@ class ContactResponse extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ContactResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOB(1, _omitFieldNames ? '' : 'accept')
-    ..aOM<$0.TypedKey>(2, _omitFieldNames ? '' : 'identityMasterRecordKey', subBuilder: $0.TypedKey.create)
+    ..aOM<$0.TypedKey>(2, _omitFieldNames ? '' : 'superIdentityRecordKey', subBuilder: $0.TypedKey.create)
     ..aOM<$0.TypedKey>(3, _omitFieldNames ? '' : 'remoteConversationRecordKey', subBuilder: $0.TypedKey.create)
     ..hasRequiredFields = false
   ;
@@ -1824,15 +1824,15 @@ class ContactResponse extends $pb.GeneratedMessage {
   void clearAccept() => clearField(1);
 
   @$pb.TagNumber(2)
-  $0.TypedKey get identityMasterRecordKey => $_getN(1);
+  $0.TypedKey get superIdentityRecordKey => $_getN(1);
   @$pb.TagNumber(2)
-  set identityMasterRecordKey($0.TypedKey v) { setField(2, v); }
+  set superIdentityRecordKey($0.TypedKey v) { setField(2, v); }
   @$pb.TagNumber(2)
-  $core.bool hasIdentityMasterRecordKey() => $_has(1);
+  $core.bool hasSuperIdentityRecordKey() => $_has(1);
   @$pb.TagNumber(2)
-  void clearIdentityMasterRecordKey() => clearField(2);
+  void clearSuperIdentityRecordKey() => clearField(2);
   @$pb.TagNumber(2)
-  $0.TypedKey ensureIdentityMasterRecordKey() => $_ensure(1);
+  $0.TypedKey ensureSuperIdentityRecordKey() => $_ensure(1);
 
   @$pb.TagNumber(3)
   $0.TypedKey get remoteConversationRecordKey => $_getN(2);
