@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:stream_transform/stream_transform.dart';
+import 'package:veilid_support/veilid_support.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../layout/layout.dart';
@@ -84,6 +85,11 @@ class RouterCubit extends Cubit<RouterState> {
           builder: (context, state) => const NewAccountPage(),
         ),
         GoRoute(
+          path: '/new_account/recovery_key',
+          builder: (context, state) =>
+              ShowRecoveryKeyPage(secretKey: state.extra! as SecretKey),
+        ),
+        GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsPage(),
         ),
@@ -98,8 +104,6 @@ class RouterCubit extends Cubit<RouterState> {
     // No matter where we are, if there's not
 
     switch (goRouterState.matchedLocation) {
-      case '/new_account':
-        return state.hasAnyAccount ? '/' : null;
       case '/':
         if (!state.hasAnyAccount) {
           return '/new_account';
@@ -129,6 +133,10 @@ class RouterCubit extends Cubit<RouterState> {
         } else {
           return '/';
         }
+        return null;
+      case '/new_account':
+        return null;
+      case '/new_account/recovery_key':
         return null;
       case '/settings':
         return null;

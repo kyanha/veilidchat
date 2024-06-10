@@ -71,6 +71,12 @@ class _DHTLogSpine {
 
     // Write new spine head record to the network
     await spine.operate((spine) async {
+      // Write first empty subkey
+      final subkeyData = _makeEmptySubkey();
+      final existingSubkeyData =
+          await spineRecord.tryWriteBytes(subkeyData, subkey: 1);
+      assert(existingSubkeyData == null, 'Should never conflict on create');
+
       final success = await spine.writeSpineHead();
       assert(success, 'false return should never happen on create');
     });

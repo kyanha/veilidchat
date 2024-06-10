@@ -168,7 +168,8 @@ class AccountRepository {
   /// Creates a new super identity, an identity instance, an account associated
   /// with the identity instance, stores the account in the identity key and
   /// then logs into that account with no password set at this time
-  Future<void> createWithNewSuperIdentity(NewProfileSpec newProfileSpec) async {
+  Future<SecretKey> createWithNewSuperIdentity(
+      NewProfileSpec newProfileSpec) async {
     log.debug('Creating super identity');
     final wsi = await WritableSuperIdentity.create();
     try {
@@ -181,6 +182,8 @@ class AccountRepository {
       final ok = await login(
           localAccount.superIdentity.recordKey, EncryptionKeyType.none, '');
       assert(ok, 'login with none should never fail');
+
+      return wsi.superSecret;
     } on Exception catch (_) {
       await wsi.delete();
       rethrow;

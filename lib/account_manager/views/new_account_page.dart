@@ -140,8 +140,11 @@ class NewAccountPageState extends State<NewAccountPage> {
             final newProfileSpec =
                 NewProfileSpec(name: name, pronouns: pronouns);
 
-            await AccountRepository.instance
+            final superSecret = await AccountRepository.instance
                 .createWithNewSuperIdentity(newProfileSpec);
+
+            GoRouterHelper(context).pushReplacement('/new_account/recovery_key',
+                extra: superSecret);
           } on Exception catch (e) {
             if (context.mounted) {
               await showErrorModal(context, translate('new_account_page.error'),

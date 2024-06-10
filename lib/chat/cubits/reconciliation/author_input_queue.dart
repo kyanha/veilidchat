@@ -3,6 +3,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../../proto/proto.dart' as proto;
 
+import '../../../tools/tools.dart';
 import 'author_input_source.dart';
 import 'message_integrity.dart';
 import 'output_position.dart';
@@ -84,6 +85,8 @@ class AuthorInputQueue {
       if (_lastMessage != null) {
         // Ensure the timestamp is not moving backward
         if (nextMessage.value.timestamp < _lastMessage!.timestamp) {
+          log.warning('timestamp backward: ${nextMessage.value.timestamp}'
+              ' < ${_lastMessage!.timestamp}');
           continue;
         }
       }
@@ -91,11 +94,14 @@ class AuthorInputQueue {
       // Verify the id chain for the message
       final matchId = await _messageIntegrity.generateMessageId(_lastMessage);
       if (matchId.compare(nextMessage.value.idBytes) != 0) {
+        log.warning(
+            'id chain invalid: $matchId != ${nextMessage.value.idBytes}');
         continue;
       }
 
       // Verify the signature for the message
       if (!await _messageIntegrity.verifyMessage(nextMessage.value)) {
+        log.warning('invalid message signature: ${nextMessage.value}');
         continue;
       }
 
