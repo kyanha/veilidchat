@@ -4,7 +4,9 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../proto/proto.dart' as proto;
 
-class AccountRecordCubit extends DefaultDHTRecordCubit<proto.Account> {
+typedef AccountRecordState = proto.Account;
+
+class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
   AccountRecordCubit({
     required super.open,
   }) : super(decodeState: proto.Account.fromBuffer);

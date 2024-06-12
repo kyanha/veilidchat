@@ -129,7 +129,11 @@ class VeilidChatApp extends StatelessWidget {
                   BlocProvider<PreferencesCubit>(
                     create: (context) =>
                         PreferencesCubit(PreferencesRepository.instance),
-                  )
+                  ),
+                  BlocProvider<AccountRecordsBlocMapCubit>(
+                      create: (context) =>
+                          AccountRecordsBlocMapCubit(AccountRepository.instance)
+                            ..follow(context.read<UserLoginsCubit>())),
                 ],
                 child: BackgroundTicker(
                     child: _buildShortcuts(

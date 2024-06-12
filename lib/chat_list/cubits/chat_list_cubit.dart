@@ -140,5 +140,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
         valueMapper: (e) => e.value);
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+
   final ActiveChatCubit activeChatCubit;
 }

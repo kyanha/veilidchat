@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:intl/date_symbol_data_local.dart';
+
 import 'package:stack_trace/stack_trace.dart';
 
 import 'app.dart';
@@ -44,6 +45,9 @@ void main() async {
     final localizationDelegate = await LocalizationDelegate.create(
         fallbackLocale: 'en_US', supportedLocales: ['en_US']);
     await initializeDateFormatting();
+
+    // Get package info
+    await initPackageInfo();
 
     // Run the app
     // Hot reloads will only restart this part, not Veilid

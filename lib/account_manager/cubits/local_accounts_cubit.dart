@@ -4,7 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../models/models.dart';
-import '../repository/account_repository/account_repository.dart';
+import '../repository/account_repository.dart';
 
 class LocalAccountsCubit extends Cubit<IList<LocalAccount>> {
   LocalAccountsCubit(AccountRepository accountRepository)

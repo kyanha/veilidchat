@@ -1,3 +1,4 @@
+export 'drawer_menu/drawer_menu.dart';
 export 'home_account_invalid.dart';
 export 'home_account_locked.dart';
 export 'home_account_missing.dart';

@@ -1,0 +1,36 @@
+import 'package:async_tools/async_tools.dart';
+import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
+import 'package:veilid_support/veilid_support.dart';
+
+import '../../account_manager/account_manager.dart';
+
+typedef AccountRecordsBlocMapState
+    = BlocMapState<TypedKey, AsyncValue<AccountRecordState>>;
+
+// Map of the logged in user accounts to their account information
+class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
+        AsyncValue<AccountRecordState>, AccountRecordCubit>
+    with StateMapFollower<UserLoginsState, TypedKey, UserLogin> {
+  AccountRecordsBlocMapCubit(AccountRepository accountRepository)
+      : _accountRepository = accountRepository;
+
+  // Add account record cubit
+  Future<void> _addAccountRecordCubit({required UserLogin userLogin}) async =>
+      add(() => MapEntry(
+          userLogin.superIdentityRecordKey,
+          AccountRecordCubit(
+              open: () => _accountRepository.openAccountRecord(userLogin))));
+
+  /// StateFollower /////////////////////////
+
+  @override
+  Future<void> removeFromState(TypedKey key) => remove(key);
+
+  @override
+  Future<void> updateState(TypedKey key, UserLogin value) async {
+    await _addAccountRecordCubit(userLogin: value);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  final AccountRepository _accountRepository;
+}

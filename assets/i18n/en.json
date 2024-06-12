@@ -2,8 +2,9 @@
     "app": {
         "title": "VeilidChat"
     },
-    "app_bar": {
-        "settings_tooltip": "Settings"
+    "menu": {
+        "settings_tooltip": "Settings",
+        "add_account_tooltip": "Add Account"
     },
     "pager": {
         "chats": "Chats",
