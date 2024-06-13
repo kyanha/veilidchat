@@ -9,7 +9,7 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../chat_list/chat_list.dart';
+import '../../conversation/conversation.dart';
 import '../../theme/theme.dart';
 import '../chat.dart';
 
@@ -23,7 +23,7 @@ class ChatComponentWidget extends StatelessWidget {
           {required TypedKey localConversationRecordKey, Key? key}) =>
       Builder(builder: (context) {
         // Get all watched dependendies
-        final activeAccountInfo = context.watch<ActiveAccountInfo>();
+        final activeAccountInfo = context.watch<UnlockedAccountInfo>();
         final accountRecordInfo =
             context.watch<AccountRecordCubit>().state.asData?.value;
         if (accountRecordInfo == null) {

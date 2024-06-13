@@ -1,15 +1,14 @@
 import 'package:async_tools/async_tools.dart';
-import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:veilid_support/veilid_support.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../../chat/chat.dart';
 import '../../../chat_list/chat_list.dart';
 import '../../../contact_invitation/contact_invitation.dart';
 import '../../../contacts/contacts.dart';
+import '../../../conversation/conversation.dart';
 import '../../../router/router.dart';
 import '../../../theme/theme.dart';
 
@@ -18,20 +17,17 @@ class HomeAccountReadyShell extends StatefulWidget {
       {required BuildContext context, required Widget child, Key? key}) {
     // These must exist in order for the account to
     // be considered 'ready' for this widget subtree
-    final activeLocalAccount = context.read<ActiveLocalAccountCubit>().state!;
-    final activeAccountInfo = context.read<ActiveAccountInfo>();
+    final unlockedAccountInfo = context.watch<UnlockedAccountInfo>();
     final routerCubit = context.read<RouterCubit>();
 
     return HomeAccountReadyShell._(
-        activeLocalAccount: activeLocalAccount,
-        activeAccountInfo: activeAccountInfo,
+        unlockedAccountInfo: unlockedAccountInfo,
         routerCubit: routerCubit,
         key: key,
         child: child);
   }
   const HomeAccountReadyShell._(
-      {required this.activeLocalAccount,
-      required this.activeAccountInfo,
+      {required this.unlockedAccountInfo,
       required this.routerCubit,
       required this.child,
       super.key});
@@ -40,18 +36,15 @@ class HomeAccountReadyShell extends StatefulWidget {
   HomeAccountReadyShellState createState() => HomeAccountReadyShellState();
 
   final Widget child;
-  final TypedKey activeLocalAccount;
-  final ActiveAccountInfo activeAccountInfo;
+  final UnlockedAccountInfo unlockedAccountInfo;
   final RouterCubit routerCubit;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(DiagnosticsProperty<TypedKey>(
-          'activeLocalAccount', activeLocalAccount))
-      ..add(DiagnosticsProperty<ActiveAccountInfo>(
-          'activeAccountInfo', activeAccountInfo))
+      ..add(DiagnosticsProperty<UnlockedAccountInfo>(
+          'unlockedAccountInfo', unlockedAccountInfo))
       ..add(DiagnosticsProperty<RouterCubit>('routerCubit', routerCubit));
   }
 }
@@ -115,39 +108,41 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
     }
     return MultiBlocProvider(
         providers: [
+          // Contact Cubits
           BlocProvider(
               create: (context) => ContactInvitationListCubit(
-                  activeAccountInfo: widget.activeAccountInfo,
+                  unlockedAccountInfo: widget.unlockedAccountInfo,
                   account: account)),
           BlocProvider(
               create: (context) => ContactListCubit(
-                  activeAccountInfo: widget.activeAccountInfo,
+                  unlockedAccountInfo: widget.unlockedAccountInfo,
                   account: account)),
-          BlocProvider(
-              create: (context) => ActiveChatCubit(null)
-                ..withStateListen((event) {
-                  widget.routerCubit.setHasActiveChat(event != null);
-                })),
-          BlocProvider(
-              create: (context) => ChatListCubit(
-                  activeAccountInfo: widget.activeAccountInfo,
-                  activeChatCubit: context.read<ActiveChatCubit>(),
-                  account: account)),
-          BlocProvider(
-              create: (context) => ActiveConversationsBlocMapCubit(
-                  activeAccountInfo: widget.activeAccountInfo,
-                  contactListCubit: context.read<ContactListCubit>())
-                ..follow(context.read<ChatListCubit>())),
-          BlocProvider(
-              create: (context) => ActiveSingleContactChatBlocMapCubit(
-                  activeAccountInfo: widget.activeAccountInfo,
-                  contactListCubit: context.read<ContactListCubit>(),
-                  chatListCubit: context.read<ChatListCubit>())
-                ..follow(context.read<ActiveConversationsBlocMapCubit>())),
           BlocProvider(
               create: (context) => WaitingInvitationsBlocMapCubit(
-                  activeAccountInfo: widget.activeAccountInfo, account: account)
-                ..follow(context.read<ContactInvitationListCubit>()))
+                  unlockedAccountInfo: widget.unlockedAccountInfo,
+                  account: account)
+                ..follow(context.watch<ContactInvitationListCubit>())),
+          // Chat Cubits
+          BlocProvider(
+              create: (context) => ActiveChatCubit(null,
+                  routerCubit: context.watch<RouterCubit>())),
+          BlocProvider(
+              create: (context) => ChatListCubit(
+                  unlockedAccountInfo: widget.unlockedAccountInfo,
+                  activeChatCubit: context.watch<ActiveChatCubit>(),
+                  account: account)),
+          // Conversation Cubits
+          BlocProvider(
+              create: (context) => ActiveConversationsBlocMapCubit(
+                  unlockedAccountInfo: widget.unlockedAccountInfo,
+                  contactListCubit: context.watch<ContactListCubit>())
+                ..follow(context.watch<ChatListCubit>())),
+          BlocProvider(
+              create: (context) => ActiveSingleContactChatBlocMapCubit(
+                  unlockedAccountInfo: widget.unlockedAccountInfo,
+                  contactListCubit: context.watch<ContactListCubit>(),
+                  chatListCubit: context.watch<ChatListCubit>())
+                ..follow(context.watch<ActiveConversationsBlocMapCubit>())),
         ],
         child: MultiBlocListener(listeners: [
           BlocListener<WaitingInvitationsBlocMapCubit,

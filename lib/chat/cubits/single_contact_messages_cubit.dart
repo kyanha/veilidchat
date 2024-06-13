@@ -50,7 +50,7 @@ typedef SingleContactMessagesState = AsyncValue<WindowState<MessageState>>;
 // Builds the reconciled chat record from the local and remote conversation keys
 class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   SingleContactMessagesCubit({
-    required ActiveAccountInfo activeAccountInfo,
+    required UnlockedAccountInfo activeAccountInfo,
     required TypedKey remoteIdentityPublicKey,
     required TypedKey localConversationRecordKey,
     required TypedKey localMessagesRecordKey,
@@ -402,7 +402,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   /////////////////////////////////////////////////////////////////////////
 
   final WaitSet<void> _initWait = WaitSet();
-  final ActiveAccountInfo _activeAccountInfo;
+  final UnlockedAccountInfo _activeAccountInfo;
   final TypedKey _remoteIdentityPublicKey;
   final TypedKey _localConversationRecordKey;
   final TypedKey _localMessagesRecordKey;

@@ -13,15 +13,15 @@ import 'conversation_cubit.dart';
 
 class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   ContactListCubit({
-    required ActiveAccountInfo activeAccountInfo,
+    required UnlockedAccountInfo unlockedAccountInfo,
     required proto.Account account,
-  })  : _activeAccountInfo = activeAccountInfo,
+  })  : _activeAccountInfo = unlockedAccountInfo,
         super(
-            open: () => _open(activeAccountInfo, account),
+            open: () => _open(unlockedAccountInfo, account),
             decodeElement: proto.Contact.fromBuffer);
 
   static Future<DHTShortArray> _open(
-      ActiveAccountInfo activeAccountInfo, proto.Account account) async {
+      UnlockedAccountInfo activeAccountInfo, proto.Account account) async {
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
@@ -99,5 +99,5 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     }
   }
 
-  final ActiveAccountInfo _activeAccountInfo;
+  final UnlockedAccountInfo _activeAccountInfo;
 }

@@ -15,11 +15,13 @@ class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
       : _accountRepository = accountRepository;
 
   // Add account record cubit
-  Future<void> _addAccountRecordCubit({required UserLogin userLogin}) async =>
+  Future<void> _addAccountRecordCubit(
+          {required TypedKey superIdentityRecordKey}) async =>
       add(() => MapEntry(
-          userLogin.superIdentityRecordKey,
+          superIdentityRecordKey,
           AccountRecordCubit(
-              open: () => _accountRepository.openAccountRecord(userLogin))));
+              accountRepository: _accountRepository,
+              superIdentityRecordKey: superIdentityRecordKey)));
 
   /// StateFollower /////////////////////////
 
@@ -28,7 +30,8 @@ class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   @override
   Future<void> updateState(TypedKey key, UserLogin value) async {
-    await _addAccountRecordCubit(userLogin: value);
+    await _addAccountRecordCubit(
+        superIdentityRecordKey: value.superIdentityRecordKey);
   }
 
   ////////////////////////////////////////////////////////////////////////////

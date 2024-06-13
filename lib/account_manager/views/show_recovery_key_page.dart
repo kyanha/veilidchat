@@ -48,7 +48,7 @@ class ShowRecoveryKeyPageState extends State<ShowRecoveryKeyPage> {
               const SignalStrengthMeterWidget(),
               IconButton(
                   icon: const Icon(Icons.settings),
-                  tooltip: translate('app_bar.settings_tooltip'),
+                  tooltip: translate('menu.settings_tooltip'),
                   onPressed: () async {
                     await GoRouterHelper(context).push('/settings');
                   })

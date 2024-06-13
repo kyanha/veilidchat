@@ -48,6 +48,31 @@ enum Scope {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
+// Data
+////////////////////////////////////////////////////////////////////////////////////
+
+// Reference to data on the DHT
+message DHTDataReference {
+    veilid.TypedKey dht_data = 1;
+    veilid.TypedKey hash = 2;
+}
+
+// Reference to data on the BlockStore
+message BlockStoreDataReference {
+    veilid.TypedKey block = 1;
+}
+
+// DataReference
+// Pointer to data somewhere in Veilid
+// Abstraction over DHTData and BlockStore
+message DataReference {
+    oneof kind {
+        DHTDataReference dht_data = 1;
+        BlockStoreDataReference block_store_data = 2;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
 // Attachments
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -67,9 +92,8 @@ message AttachmentMedia {
     // Title or filename
     string name = 2;
     // Pointer to the data content
-    dht.DataReference content = 3;
+    DataReference content = 3;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Chat room controls
@@ -106,7 +130,7 @@ message ChatSettings {
     // Description for the chat 
     string description = 2;
     // Icon for the chat 
-    optional dht.DataReference icon = 3;
+    optional DataReference icon = 3;
     // Default message expiration duration (in us)
     uint64 default_expiration = 4;
 }
@@ -285,8 +309,8 @@ message Profile  {
     string status = 4;
     // Availability
     Availability availability = 5;
-    // Avatar DHTData
-    optional veilid.TypedKey avatar = 6;
+    // Avatar
+    optional DataReference avatar = 6;
 }
 
 // A record of an individual account

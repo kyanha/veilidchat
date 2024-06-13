@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../contacts/contacts.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 import '../models/accepted_contact.dart';
@@ -25,7 +25,7 @@ class InvitationStatus extends Equatable {
 class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     proto.SignedContactResponse?> {
   WaitingInvitationCubit(ContactRequestInboxCubit super.input,
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo activeAccountInfo,
       required proto.Account account,
       required proto.ContactInvitationRecord contactInvitationRecord})
       : super(
@@ -37,7 +37,7 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
 
   static Future<AsyncValue<InvitationStatus>> _transform(
       proto.SignedContactResponse? signedContactResponse,
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo activeAccountInfo,
       required proto.Account account,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
     if (signedContactResponse == null) {

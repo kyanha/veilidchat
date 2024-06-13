@@ -20,6 +20,177 @@ import 'veilidchat.pbenum.dart';
 
 export 'veilidchat.pbenum.dart';
 
+class DHTDataReference extends $pb.GeneratedMessage {
+  factory DHTDataReference() => create();
+  DHTDataReference._() : super();
+  factory DHTDataReference.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DHTDataReference.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DHTDataReference', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
+    ..aOM<$0.TypedKey>(1, _omitFieldNames ? '' : 'dhtData', subBuilder: $0.TypedKey.create)
+    ..aOM<$0.TypedKey>(2, _omitFieldNames ? '' : 'hash', subBuilder: $0.TypedKey.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DHTDataReference clone() => DHTDataReference()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DHTDataReference copyWith(void Function(DHTDataReference) updates) => super.copyWith((message) => updates(message as DHTDataReference)) as DHTDataReference;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DHTDataReference create() => DHTDataReference._();
+  DHTDataReference createEmptyInstance() => create();
+  static $pb.PbList<DHTDataReference> createRepeated() => $pb.PbList<DHTDataReference>();
+  @$core.pragma('dart2js:noInline')
+  static DHTDataReference getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DHTDataReference>(create);
+  static DHTDataReference? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $0.TypedKey get dhtData => $_getN(0);
+  @$pb.TagNumber(1)
+  set dhtData($0.TypedKey v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasDhtData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearDhtData() => clearField(1);
+  @$pb.TagNumber(1)
+  $0.TypedKey ensureDhtData() => $_ensure(0);
+
+  @$pb.TagNumber(2)
+  $0.TypedKey get hash => $_getN(1);
+  @$pb.TagNumber(2)
+  set hash($0.TypedKey v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasHash() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearHash() => clearField(2);
+  @$pb.TagNumber(2)
+  $0.TypedKey ensureHash() => $_ensure(1);
+}
+
+class BlockStoreDataReference extends $pb.GeneratedMessage {
+  factory BlockStoreDataReference() => create();
+  BlockStoreDataReference._() : super();
+  factory BlockStoreDataReference.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BlockStoreDataReference.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BlockStoreDataReference', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
+    ..aOM<$0.TypedKey>(1, _omitFieldNames ? '' : 'block', subBuilder: $0.TypedKey.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BlockStoreDataReference clone() => BlockStoreDataReference()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BlockStoreDataReference copyWith(void Function(BlockStoreDataReference) updates) => super.copyWith((message) => updates(message as BlockStoreDataReference)) as BlockStoreDataReference;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BlockStoreDataReference create() => BlockStoreDataReference._();
+  BlockStoreDataReference createEmptyInstance() => create();
+  static $pb.PbList<BlockStoreDataReference> createRepeated() => $pb.PbList<BlockStoreDataReference>();
+  @$core.pragma('dart2js:noInline')
+  static BlockStoreDataReference getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BlockStoreDataReference>(create);
+  static BlockStoreDataReference? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $0.TypedKey get block => $_getN(0);
+  @$pb.TagNumber(1)
+  set block($0.TypedKey v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasBlock() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearBlock() => clearField(1);
+  @$pb.TagNumber(1)
+  $0.TypedKey ensureBlock() => $_ensure(0);
+}
+
+enum DataReference_Kind {
+  dhtData, 
+  blockStoreData, 
+  notSet
+}
+
+class DataReference extends $pb.GeneratedMessage {
+  factory DataReference() => create();
+  DataReference._() : super();
+  factory DataReference.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DataReference.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static const $core.Map<$core.int, DataReference_Kind> _DataReference_KindByTag = {
+    1 : DataReference_Kind.dhtData,
+    2 : DataReference_Kind.blockStoreData,
+    0 : DataReference_Kind.notSet
+  };
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DataReference', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
+    ..oo(0, [1, 2])
+    ..aOM<DHTDataReference>(1, _omitFieldNames ? '' : 'dhtData', subBuilder: DHTDataReference.create)
+    ..aOM<BlockStoreDataReference>(2, _omitFieldNames ? '' : 'blockStoreData', subBuilder: BlockStoreDataReference.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DataReference clone() => DataReference()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DataReference copyWith(void Function(DataReference) updates) => super.copyWith((message) => updates(message as DataReference)) as DataReference;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DataReference create() => DataReference._();
+  DataReference createEmptyInstance() => create();
+  static $pb.PbList<DataReference> createRepeated() => $pb.PbList<DataReference>();
+  @$core.pragma('dart2js:noInline')
+  static DataReference getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DataReference>(create);
+  static DataReference? _defaultInstance;
+
+  DataReference_Kind whichKind() => _DataReference_KindByTag[$_whichOneof(0)]!;
+  void clearKind() => clearField($_whichOneof(0));
+
+  @$pb.TagNumber(1)
+  DHTDataReference get dhtData => $_getN(0);
+  @$pb.TagNumber(1)
+  set dhtData(DHTDataReference v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasDhtData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearDhtData() => clearField(1);
+  @$pb.TagNumber(1)
+  DHTDataReference ensureDhtData() => $_ensure(0);
+
+  @$pb.TagNumber(2)
+  BlockStoreDataReference get blockStoreData => $_getN(1);
+  @$pb.TagNumber(2)
+  set blockStoreData(BlockStoreDataReference v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasBlockStoreData() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearBlockStoreData() => clearField(2);
+  @$pb.TagNumber(2)
+  BlockStoreDataReference ensureBlockStoreData() => $_ensure(1);
+}
+
 enum Attachment_Kind {
   media, 
   notSet
@@ -98,7 +269,7 @@ class AttachmentMedia extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'AttachmentMedia', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'mime')
     ..aOS(2, _omitFieldNames ? '' : 'name')
-    ..aOM<$1.DataReference>(3, _omitFieldNames ? '' : 'content', subBuilder: $1.DataReference.create)
+    ..aOM<DataReference>(3, _omitFieldNames ? '' : 'content', subBuilder: DataReference.create)
     ..hasRequiredFields = false
   ;
 
@@ -142,15 +313,15 @@ class AttachmentMedia extends $pb.GeneratedMessage {
   void clearName() => clearField(2);
 
   @$pb.TagNumber(3)
-  $1.DataReference get content => $_getN(2);
+  DataReference get content => $_getN(2);
   @$pb.TagNumber(3)
-  set content($1.DataReference v) { setField(3, v); }
+  set content(DataReference v) { setField(3, v); }
   @$pb.TagNumber(3)
   $core.bool hasContent() => $_has(2);
   @$pb.TagNumber(3)
   void clearContent() => clearField(3);
   @$pb.TagNumber(3)
-  $1.DataReference ensureContent() => $_ensure(2);
+  DataReference ensureContent() => $_ensure(2);
 }
 
 class Permissions extends $pb.GeneratedMessage {
@@ -276,7 +447,7 @@ class ChatSettings extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ChatSettings', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'title')
     ..aOS(2, _omitFieldNames ? '' : 'description')
-    ..aOM<$1.DataReference>(3, _omitFieldNames ? '' : 'icon', subBuilder: $1.DataReference.create)
+    ..aOM<DataReference>(3, _omitFieldNames ? '' : 'icon', subBuilder: DataReference.create)
     ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'defaultExpiration', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..hasRequiredFields = false
   ;
@@ -321,15 +492,15 @@ class ChatSettings extends $pb.GeneratedMessage {
   void clearDescription() => clearField(2);
 
   @$pb.TagNumber(3)
-  $1.DataReference get icon => $_getN(2);
+  DataReference get icon => $_getN(2);
   @$pb.TagNumber(3)
-  set icon($1.DataReference v) { setField(3, v); }
+  set icon(DataReference v) { setField(3, v); }
   @$pb.TagNumber(3)
   $core.bool hasIcon() => $_has(2);
   @$pb.TagNumber(3)
   void clearIcon() => clearField(3);
   @$pb.TagNumber(3)
-  $1.DataReference ensureIcon() => $_ensure(2);
+  DataReference ensureIcon() => $_ensure(2);
 
   @$pb.TagNumber(4)
   $fixnum.Int64 get defaultExpiration => $_getI64(3);
@@ -1224,7 +1395,7 @@ class Profile extends $pb.GeneratedMessage {
     ..aOS(3, _omitFieldNames ? '' : 'about')
     ..aOS(4, _omitFieldNames ? '' : 'status')
     ..e<Availability>(5, _omitFieldNames ? '' : 'availability', $pb.PbFieldType.OE, defaultOrMaker: Availability.AVAILABILITY_UNSPECIFIED, valueOf: Availability.valueOf, enumValues: Availability.values)
-    ..aOM<$0.TypedKey>(6, _omitFieldNames ? '' : 'avatar', subBuilder: $0.TypedKey.create)
+    ..aOM<DataReference>(6, _omitFieldNames ? '' : 'avatar', subBuilder: DataReference.create)
     ..hasRequiredFields = false
   ;
 
@@ -1295,15 +1466,15 @@ class Profile extends $pb.GeneratedMessage {
   void clearAvailability() => clearField(5);
 
   @$pb.TagNumber(6)
-  $0.TypedKey get avatar => $_getN(5);
+  DataReference get avatar => $_getN(5);
   @$pb.TagNumber(6)
-  set avatar($0.TypedKey v) { setField(6, v); }
+  set avatar(DataReference v) { setField(6, v); }
   @$pb.TagNumber(6)
   $core.bool hasAvatar() => $_has(5);
   @$pb.TagNumber(6)
   void clearAvatar() => clearField(6);
   @$pb.TagNumber(6)
-  $0.TypedKey ensureAvatar() => $_ensure(5);
+  DataReference ensureAvatar() => $_ensure(5);
 }
 
 class Account extends $pb.GeneratedMessage {

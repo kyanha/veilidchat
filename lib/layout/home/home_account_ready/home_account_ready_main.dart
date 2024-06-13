@@ -44,7 +44,7 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
                         WidgetStateProperty.all(scale.primaryScale.hoverBorder),
                     shape: WidgetStateProperty.all(const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(16))))),
-                tooltip: translate('app_bar.settings_tooltip'),
+                tooltip: translate('menu.settings_tooltip'),
                 onPressed: () async {
                   final ctrl = context.read<ZoomDrawerController>();
                   await ctrl.toggle?.call();

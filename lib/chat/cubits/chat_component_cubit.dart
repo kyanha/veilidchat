@@ -12,7 +12,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../chat_list/chat_list.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../models/chat_component_state.dart';
 import '../models/message_state.dart';
@@ -44,7 +44,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
 
   // ignore: prefer_constructors_over_static_methods
   static ChatComponentCubit singleContact(
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo activeAccountInfo,
       required proto.Account accountRecordInfo,
       required ActiveConversationState activeConversationState,
       required SingleContactMessagesCubit messagesCubit}) {

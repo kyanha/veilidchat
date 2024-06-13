@@ -27,7 +27,7 @@ class MenuItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-      onPressed: () => callback,
+      onPressed: callback,
       style: TextButton.styleFrom(foregroundColor: foregroundColor).copyWith(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.hovered)) {

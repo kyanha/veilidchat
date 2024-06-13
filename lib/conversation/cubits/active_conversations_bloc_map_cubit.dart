@@ -6,6 +6,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../contacts/contacts.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import 'cubits.dart';
 
@@ -26,7 +27,9 @@ class ActiveConversationState extends Equatable {
 }
 
 typedef ActiveConversationCubit = TransformerCubit<
-    AsyncValue<ActiveConversationState>, AsyncValue<ConversationState>>;
+    AsyncValue<ActiveConversationState>,
+    AsyncValue<ConversationState>,
+    ConversationCubit>;
 
 typedef ActiveConversationsBlocMapState
     = BlocMapState<TypedKey, AsyncValue<ActiveConversationState>>;
@@ -41,10 +44,16 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<ActiveConversationState>, ActiveConversationCubit>
     with StateMapFollower<ChatListCubitState, TypedKey, proto.Chat> {
   ActiveConversationsBlocMapCubit(
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo unlockedAccountInfo,
       required ContactListCubit contactListCubit})
-      : _activeAccountInfo = activeAccountInfo,
+      : _activeAccountInfo = unlockedAccountInfo,
         _contactListCubit = contactListCubit;
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Public Interface
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Private Implementation
 
   // Add an active conversation to be tracked for changes
   Future<void> _addConversation({required proto.Contact contact}) async =>
@@ -97,6 +106,6 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   ////
 
-  final ActiveAccountInfo _activeAccountInfo;
+  final UnlockedAccountInfo _activeAccountInfo;
   final ContactListCubit _contactListCubit;
 }

@@ -1,30 +1,28 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../layout/default_app_bar.dart';
+import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import '../../veilid_processor/veilid_processor.dart';
 import '../account_manager.dart';
+import 'profile_edit_form.dart';
 
 class NewAccountPage extends StatefulWidget {
   const NewAccountPage({super.key});
 
   @override
-  NewAccountPageState createState() => NewAccountPageState();
+  State createState() => _NewAccountPageState();
 }
 
-class NewAccountPageState extends State<NewAccountPage> {
+class _NewAccountPageState extends State<NewAccountPage> {
   final _formKey = GlobalKey<FormBuilderState>();
-  late bool isInAsyncCall = false;
-  static const String formFieldName = 'name';
-  static const String formFieldPronouns = 'pronouns';
+  bool _isInAsyncCall = false;
 
   @override
   void initState() {
@@ -47,70 +45,17 @@ class NewAccountPageState extends State<NewAccountPage> {
         false;
     final canSubmit = networkReady;
 
-    return FormBuilder(
-      key: _formKey,
-      child: ListView(
-        children: [
-          Text(translate('new_account_page.header'))
-              .textStyle(context.headlineSmall)
-              .paddingSymmetric(vertical: 16),
-          FormBuilderTextField(
-            autofocus: true,
-            name: formFieldName,
-            decoration:
-                InputDecoration(labelText: translate('account.form_name')),
-            maxLength: 64,
-            // The validator receives the text that the user has entered.
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-            ]),
-            textInputAction: TextInputAction.next,
-          ),
-          FormBuilderTextField(
-            name: formFieldPronouns,
-            maxLength: 64,
-            decoration:
-                InputDecoration(labelText: translate('account.form_pronouns')),
-            textInputAction: TextInputAction.next,
-          ),
-          Row(children: [
-            const Spacer(),
-            Text(translate('new_account_page.instructions'))
-                .toCenter()
-                .flexible(flex: 6),
-            const Spacer(),
-          ]).paddingSymmetric(vertical: 4),
-          ElevatedButton(
-            onPressed: !canSubmit
-                ? null
-                : () async {
-                    if (_formKey.currentState?.saveAndValidate() ?? false) {
-                      setState(() {
-                        isInAsyncCall = true;
-                      });
-                      try {
-                        await onSubmit(_formKey);
-                      } finally {
-                        if (mounted) {
-                          setState(() {
-                            isInAsyncCall = false;
-                          });
-                        }
-                      }
-                    }
-                  },
-            child: Text(translate(!networkReady
-                ? 'button.waiting_for_network'
-                : 'new_account_page.create')),
-          ).paddingSymmetric(vertical: 4).alignAtCenterRight(),
-        ],
-      ),
-    );
+    return EditProfileForm(
+        header: translate('new_account_page.header'),
+        instructions: translate('new_account_page.instructions'),
+        submitText: translate('new_account_page.create'),
+        submitDisabledText: translate('button.waiting_for_network'),
+        onSubmit: !canSubmit ? null : onSubmit);
   }
 
   @override
   Widget build(BuildContext context) {
-    final displayModalHUD = isInAsyncCall;
+    final displayModalHUD = _isInAsyncCall;
 
     return Scaffold(
       // resizeToAvoidBottomInset: false,
@@ -120,7 +65,7 @@ class NewAccountPageState extends State<NewAccountPage> {
             const SignalStrengthMeterWidget(),
             IconButton(
                 icon: const Icon(Icons.settings),
-                tooltip: translate('app_bar.settings_tooltip'),
+                tooltip: translate('menu.settings_tooltip'),
                 onPressed: () async {
                   await GoRouterHelper(context).push('/settings');
                 })
@@ -132,19 +77,33 @@ class NewAccountPageState extends State<NewAccountPage> {
           FocusScope.of(context).unfocus();
 
           try {
-            final name =
-                _formKey.currentState!.fields[formFieldName]!.value as String;
-            final pronouns = _formKey.currentState!.fields[formFieldPronouns]!
+            final name = _formKey.currentState!
+                .fields[EditProfileForm.formFieldName]!.value as String;
+            final pronouns = _formKey
+                    .currentState!
+                    .fields[EditProfileForm.formFieldPronouns]!
                     .value as String? ??
                 '';
-            final newProfileSpec =
-                NewProfileSpec(name: name, pronouns: pronouns);
+            final newProfile = proto.Profile()
+              ..name = name
+              ..pronouns = pronouns;
 
-            final superSecret = await AccountRepository.instance
-                .createWithNewSuperIdentity(newProfileSpec);
-
-            GoRouterHelper(context).pushReplacement('/new_account/recovery_key',
-                extra: superSecret);
+            setState(() {
+              _isInAsyncCall = true;
+            });
+            try {
+              final superSecret = await AccountRepository.instance
+                  .createWithNewSuperIdentity(newProfile);
+              GoRouterHelper(context).pushReplacement(
+                  '/new_account/recovery_key',
+                  extra: superSecret);
+            } finally {
+              if (mounted) {
+                setState(() {
+                  _isInAsyncCall = false;
+                });
+              }
+            }
           } on Exception catch (e) {
             if (context.mounted) {
               await showErrorModal(context, translate('new_account_page.error'),
@@ -154,11 +113,5 @@ class NewAccountPageState extends State<NewAccountPage> {
         },
       ).paddingSymmetric(horizontal: 24, vertical: 8),
     ).withModalHUD(context, displayModalHUD);
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<bool>('isInAsyncCall', isInAsyncCall));
   }
 }

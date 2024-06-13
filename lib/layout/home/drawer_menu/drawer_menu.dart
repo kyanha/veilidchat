@@ -1,3 +1,4 @@
+import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +10,7 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../../account_manager/account_manager.dart';
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
+import '../../../veilid_processor/veilid_processor.dart';
 import 'menu_item_widget.dart';
 
 class DrawerMenu extends StatefulWidget {
@@ -29,8 +31,10 @@ class _DrawerMenuState extends State<DrawerMenu> {
     super.dispose();
   }
 
-  void _doLoginClick(TypedKey superIdentityRecordKey) {
-    //
+  void _doSwitchClick(TypedKey superIdentityRecordKey) {
+    singleFuture(this, () async {
+      await AccountRepository.instance.switchToAccount(superIdentityRecordKey);
+    });
   }
 
   void _doEditClick(TypedKey superIdentityRecordKey) {
@@ -47,10 +51,12 @@ class _DrawerMenuState extends State<DrawerMenu> {
 
   Widget _makeAccountWidget(
       {required String name,
+      required bool selected,
+      required ScaleColor scale,
       required bool loggedIn,
-      required void Function() clickHandler}) {
+      required void Function()? callback,
+      required void Function()? footerCallback}) {
     final theme = Theme.of(context);
-    final scale = theme.extension<ScaleScheme>()!.tertiaryScale;
     final abbrev = name.split(' ').map((s) => s.isEmpty ? '' : s[0]).join();
     late final String shortname;
     if (abbrev.length >= 3) {
@@ -65,30 +71,36 @@ class _DrawerMenuState extends State<DrawerMenu> {
         foregroundColor: loggedIn ? scale.primaryText : scale.subtleText,
         child: Text(shortname, style: theme.textTheme.titleLarge));
 
-    return MenuItemWidget(
-      title: name,
-      headerWidget: avatar,
-      titleStyle: theme.textTheme.titleLarge!,
-      foregroundColor: scale.primary,
-      backgroundColor: scale.elementBackground,
-      backgroundHoverColor: scale.hoverElementBackground,
-      backgroundFocusColor: scale.activeElementBackground,
-      borderColor: scale.border,
-      borderHoverColor: scale.hoverBorder,
-      borderFocusColor: scale.primary,
-      footerButtonIcon: loggedIn ? Icons.edit_outlined : Icons.login_outlined,
-      footerCallback: clickHandler,
-      footerButtonIconColor: scale.border,
-      footerButtonIconHoverColor: scale.hoverElementBackground,
-      footerButtonIconFocusColor: scale.activeElementBackground,
-    );
+    return AnimatedPadding(
+        padding: EdgeInsets.fromLTRB(selected ? 0 : 0, 0, selected ? 0 : 8, 0),
+        duration: const Duration(milliseconds: 50),
+        child: MenuItemWidget(
+          title: name,
+          headerWidget: avatar,
+          titleStyle: theme.textTheme.titleLarge!,
+          foregroundColor: scale.primary,
+          backgroundColor: selected
+              ? scale.activeElementBackground
+              : scale.elementBackground,
+          backgroundHoverColor: scale.hoverElementBackground,
+          backgroundFocusColor: scale.activeElementBackground,
+          borderColor: scale.border,
+          borderHoverColor: scale.hoverBorder,
+          borderFocusColor: scale.primary,
+          callback: callback,
+          footerButtonIcon: loggedIn ? Icons.edit_outlined : null,
+          footerCallback: footerCallback,
+          footerButtonIconColor: scale.border,
+          footerButtonIconHoverColor: scale.hoverElementBackground,
+          footerButtonIconFocusColor: scale.activeElementBackground,
+        ));
   }
 
   Widget _getAccountList(
       {required TypedKey? activeLocalAccount,
       required AccountRecordsBlocMapState accountRecords}) {
     final theme = Theme.of(context);
-    final scale = theme.extension<ScaleScheme>()!;
+    final scaleScheme = theme.extension<ScaleScheme>()!;
 
     final accountRepo = AccountRepository.instance;
     final localAccounts = accountRepo.getLocalAccounts();
@@ -104,28 +116,38 @@ class _DrawerMenuState extends State<DrawerMenu> {
       final acctRecord = accountRecords.get(superIdentityRecordKey);
       if (acctRecord != null) {
         // Account is logged in
+        final scale = theme.extension<ScaleScheme>()!.tertiaryScale;
         final loggedInAccount = acctRecord.when(
           data: (value) => _makeAccountWidget(
               name: value.profile.name,
+              scale: scale,
+              selected: superIdentityRecordKey == activeLocalAccount,
               loggedIn: true,
-              clickHandler: () {
+              callback: () {
+                _doSwitchClick(superIdentityRecordKey);
+              },
+              footerCallback: () {
                 _doEditClick(superIdentityRecordKey);
               }),
           loading: () => _wrapInBox(
               child: buildProgressIndicator(),
-              color: scale.grayScale.subtleBorder),
+              color: scaleScheme.grayScale.subtleBorder),
           error: (err, st) => _wrapInBox(
-              child: errorPage(err, st), color: scale.errorScale.subtleBorder),
+              child: errorPage(err, st),
+              color: scaleScheme.errorScale.subtleBorder),
         );
-        loggedInAccounts.add(loggedInAccount);
+        loggedInAccounts.add(loggedInAccount.paddingLTRB(0, 0, 0, 8));
       } else {
         // Account is not logged in
+        final scale = theme.extension<ScaleScheme>()!.grayScale;
         final loggedOutAccount = _makeAccountWidget(
-            name: la.name,
-            loggedIn: false,
-            clickHandler: () {
-              _doLoginClick(superIdentityRecordKey);
-            });
+          name: la.name,
+          scale: scale,
+          selected: superIdentityRecordKey == activeLocalAccount,
+          loggedIn: false,
+          callback: () => {_doSwitchClick(superIdentityRecordKey)},
+          footerCallback: null,
+        );
         loggedOutAccounts.add(loggedOutAccount);
       }
     }
@@ -208,7 +230,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
     final scale = theme.extension<ScaleScheme>()!;
     //final textTheme = theme.textTheme;
     final accountRecords = context.watch<AccountRecordsBlocMapCubit>().state;
-    final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
+    final activeLocalAccount = context.watch<ActiveAccountInfoCubit>().state;
     final gradient = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -249,13 +271,21 @@ class _DrawerMenuState extends State<DrawerMenu> {
             ])),
         const Spacer(),
         _getAccountList(
-            activeLocalAccount: activeLocalAccount,
+            activeLocalAccount:
+                activeLocalAccount.unlockedAccountInfo?.superIdentityRecordKey,
             accountRecords: accountRecords),
         _getBottomButtons(),
         const Spacer(),
-        Text('Version $packageInfoVersion',
-            style: theme.textTheme.labelMedium!
-                .copyWith(color: scale.tertiaryScale.hoverBorder))
+        Row(children: [
+          Text('Version $packageInfoVersion',
+              style: theme.textTheme.labelMedium!
+                  .copyWith(color: scale.tertiaryScale.hoverBorder)),
+          const Spacer(),
+          SignalStrengthMeterWidget(
+            color: scale.tertiaryScale.hoverBorder,
+            inactiveColor: scale.tertiaryScale.border,
+          ),
+        ])
       ]).paddingAll(16),
     );
   }

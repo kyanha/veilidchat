@@ -29,11 +29,11 @@ class ConversationState extends Equatable {
 
 class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   ConversationCubit(
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo activeAccountInfo,
       required TypedKey remoteIdentityPublicKey,
       TypedKey? localConversationRecordKey,
       TypedKey? remoteConversationRecordKey})
-      : _activeAccountInfo = activeAccountInfo,
+      : _unlockedAccountInfo = activeAccountInfo,
         _localConversationRecordKey = localConversationRecordKey,
         _remoteIdentityPublicKey = remoteIdentityPublicKey,
         _remoteConversationRecordKey = remoteConversationRecordKey,
@@ -41,13 +41,13 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     if (_localConversationRecordKey != null) {
       _initWait.add(() async {
         await _setLocalConversation(() async {
-          final accountRecordKey = _activeAccountInfo
+          final accountRecordKey = _unlockedAccountInfo
               .userLogin.accountRecordInfo.accountRecord.recordKey;
 
           // Open local record key if it is specified
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
-          final writer = _activeAccountInfo.identityWriter;
+          final writer = _unlockedAccountInfo.identityWriter;
           final record = await pool.openRecordWrite(
               _localConversationRecordKey!, writer,
               debugName: 'ConversationCubit::LocalConversation',
@@ -61,7 +61,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     if (_remoteConversationRecordKey != null) {
       _initWait.add(() async {
         await _setRemoteConversation(() async {
-          final accountRecordKey = _activeAccountInfo
+          final accountRecordKey = _unlockedAccountInfo
               .userLogin.accountRecordInfo.accountRecord.recordKey;
 
           // Open remote record key if it is specified
@@ -217,11 +217,11 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         'must not have a local conversation yet');
 
     final pool = DHTRecordPool.instance;
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
+    final accountRecordKey = _unlockedAccountInfo
+        .userLogin.accountRecordInfo.accountRecord.recordKey;
 
     final crypto = await _cachedConversationCrypto();
-    final writer = _activeAccountInfo.identityWriter;
+    final writer = _unlockedAccountInfo.identityWriter;
 
     // Open with SMPL scheme for identity writer
     late final DHTRecord localConversationRecord;
@@ -247,7 +247,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         .deleteScope((localConversation) async {
       // Make messages log
       return _initLocalMessages(
-          activeAccountInfo: _activeAccountInfo,
+          activeAccountInfo: _unlockedAccountInfo,
           remoteIdentityPublicKey: _remoteIdentityPublicKey,
           localConversationKey: localConversation.key,
           callback: (messages) async {
@@ -255,7 +255,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
             final conversation = proto.Conversation()
               ..profile = profile
               ..superIdentityJson = jsonEncode(
-                  _activeAccountInfo.localAccount.superIdentity.toJson())
+                  _unlockedAccountInfo.localAccount.superIdentity.toJson())
               ..messages = messages.recordKey.toProto();
 
             // Write initial conversation to record
@@ -282,7 +282,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
   // Initialize local messages
   Future<T> _initLocalMessages<T>({
-    required ActiveAccountInfo activeAccountInfo,
+    required UnlockedAccountInfo activeAccountInfo,
     required TypedKey remoteIdentityPublicKey,
     required TypedKey localConversationKey,
     required FutureOr<T> Function(DHTLog) callback,
@@ -332,14 +332,14 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     if (conversationCrypto != null) {
       return conversationCrypto;
     }
-    conversationCrypto = await _activeAccountInfo
+    conversationCrypto = await _unlockedAccountInfo
         .makeConversationCrypto(_remoteIdentityPublicKey);
 
     _conversationCrypto = conversationCrypto;
     return conversationCrypto;
   }
 
-  final ActiveAccountInfo _activeAccountInfo;
+  final UnlockedAccountInfo _unlockedAccountInfo;
   final TypedKey _remoteIdentityPublicKey;
   TypedKey? _localConversationRecordKey;
   final TypedKey? _remoteConversationRecordKey;

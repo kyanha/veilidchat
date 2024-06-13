@@ -23,7 +23,7 @@ class ContactRequestInboxCubit
   //     : super.value(decodeState: proto.SignedContactResponse.fromBuffer);
 
   static Future<DHTRecord> _open(
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo activeAccountInfo,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
     final pool = DHTRecordPool.instance;
     final accountRecordKey =
@@ -42,6 +42,6 @@ class ContactRequestInboxCubit
         defaultSubkey: 1);
   }
 
-  final ActiveAccountInfo activeAccountInfo;
+  final UnlockedAccountInfo activeAccountInfo;
   final proto.ContactInvitationRecord contactInvitationRecord;
 }

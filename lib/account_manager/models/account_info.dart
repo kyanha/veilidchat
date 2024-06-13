@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'active_account_info.dart';
+import 'unlocked_account_info.dart';
 
 enum AccountInfoStatus {
   noAccount,
@@ -14,10 +14,10 @@ class AccountInfo {
   const AccountInfo({
     required this.status,
     required this.active,
-    required this.activeAccountInfo,
+    required this.unlockedAccountInfo,
   });
 
   final AccountInfoStatus status;
   final bool active;
-  final ActiveAccountInfo? activeAccountInfo;
+  final UnlockedAccountInfo? unlockedAccountInfo;
 }

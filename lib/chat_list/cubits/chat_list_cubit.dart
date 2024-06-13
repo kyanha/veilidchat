@@ -19,15 +19,15 @@ typedef ChatListCubitState = DHTShortArrayBusyState<proto.Chat>;
 class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     with StateMapFollowable<ChatListCubitState, TypedKey, proto.Chat> {
   ChatListCubit({
-    required ActiveAccountInfo activeAccountInfo,
+    required UnlockedAccountInfo unlockedAccountInfo,
     required proto.Account account,
     required this.activeChatCubit,
   }) : super(
-            open: () => _open(activeAccountInfo, account),
+            open: () => _open(unlockedAccountInfo, account),
             decodeElement: proto.Chat.fromBuffer);
 
   static Future<DHTShortArray> _open(
-      ActiveAccountInfo activeAccountInfo, proto.Account account) async {
+      UnlockedAccountInfo activeAccountInfo, proto.Account account) async {
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 

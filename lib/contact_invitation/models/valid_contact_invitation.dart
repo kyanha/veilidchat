@@ -2,7 +2,7 @@ import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../contacts/contacts.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 import 'models.dart';
@@ -13,7 +13,7 @@ import 'models.dart';
 class ValidContactInvitation {
   @internal
   ValidContactInvitation(
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo activeAccountInfo,
       required proto.Account account,
       required TypedKey contactRequestInboxKey,
       required proto.ContactRequestPrivate contactRequestPrivate,
@@ -129,7 +129,7 @@ class ValidContactInvitation {
   }
 
   //
-  final ActiveAccountInfo _activeAccountInfo;
+  final UnlockedAccountInfo _activeAccountInfo;
   final proto.Account _account;
   final TypedKey _contactRequestInboxKey;
   final SuperIdentity _contactSuperIdentity;

@@ -27,6 +27,22 @@
         "name": "Name",
         "pronouns": "Pronouns"
     },
+    "edit_account_page": {
+        "titlebar": "Edit Account",
+        "header": "Account Profile",
+        "update": "Update",
+        "instructions": "This information will be shared with the people you invite to connect with you on VeilidChat.",
+        "error": "Account modification error",
+        "name": "Name",
+        "pronouns": "Pronouns",
+        "remove_account": "Remove Account",
+        "delete_identity": "Delete Identity",
+        "remove_account_confirm": "Confirm Account Removal?",
+        "remove_account_description": "Remove account from this device only",
+        "delete_identity_description": "Delete identity and all messages completely",
+        "delete_identity_confirm_message": "This action is PERMANENT, and your identity will no longer be recoverable with the recovery key. This will not remove your messages you have sent from other people's devices.",
+        "confirm_are_you_sure": "Are you sure you want to do this?"
+    },
     "show_recovery_key_page": {
         "titlebar": "Save Recovery Key",
         "instructions": "You must save this recovery key somewhere safe. This key is the ONLY way to recover your VeilidChat account in the event of a forgotton password or a lost, stolen, or compromised device.",

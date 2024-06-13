@@ -20,10 +20,10 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
         StateMapFollower<ActiveConversationsBlocMapState, TypedKey,
             AsyncValue<ActiveConversationState>> {
   ActiveSingleContactChatBlocMapCubit(
-      {required ActiveAccountInfo activeAccountInfo,
+      {required UnlockedAccountInfo unlockedAccountInfo,
       required ContactListCubit contactListCubit,
       required ChatListCubit chatListCubit})
-      : _activeAccountInfo = activeAccountInfo,
+      : _activeAccountInfo = unlockedAccountInfo,
         _contactListCubit = contactListCubit,
         _chatListCubit = chatListCubit;
 
@@ -95,7 +95,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
 
   ////
 
-  final ActiveAccountInfo _activeAccountInfo;
+  final UnlockedAccountInfo _activeAccountInfo;
   final ContactListCubit _contactListCubit;
   final ChatListCubit _chatListCubit;
 }

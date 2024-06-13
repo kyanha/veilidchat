@@ -74,7 +74,7 @@ class InvitationDialogState extends State<InvitationDialog> {
 
   Future<void> _onAccept() async {
     final navigator = Navigator.of(context);
-    final activeAccountInfo = widget.modalContext.read<ActiveAccountInfo>();
+    final activeAccountInfo = widget.modalContext.read<UnlockedAccountInfo>();
     final contactList = widget.modalContext.read<ContactListCubit>();
 
     setState(() {

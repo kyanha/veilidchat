@@ -18,7 +18,7 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
         StateMapFollower<DHTShortArrayBusyState<proto.ContactInvitationRecord>,
             TypedKey, proto.ContactInvitationRecord> {
   WaitingInvitationsBlocMapCubit(
-      {required this.activeAccountInfo, required this.account});
+      {required this.unlockedAccountInfo, required this.account});
 
   Future<void> _addWaitingInvitation(
           {required proto.ContactInvitationRecord
@@ -27,9 +27,9 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
           contactInvitationRecord.contactRequestInbox.recordKey.toVeilid(),
           WaitingInvitationCubit(
               ContactRequestInboxCubit(
-                  activeAccountInfo: activeAccountInfo,
+                  activeAccountInfo: unlockedAccountInfo,
                   contactInvitationRecord: contactInvitationRecord),
-              activeAccountInfo: activeAccountInfo,
+              activeAccountInfo: unlockedAccountInfo,
               account: account,
               contactInvitationRecord: contactInvitationRecord)));
 
@@ -43,6 +43,6 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
       _addWaitingInvitation(contactInvitationRecord: value);
 
   ////
-  final ActiveAccountInfo activeAccountInfo;
+  final UnlockedAccountInfo unlockedAccountInfo;
   final proto.Account account;
 }

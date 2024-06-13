@@ -1,8 +1,6 @@
 import 'dart:math';
 
-import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:provider/provider.dart';
 
@@ -35,17 +33,19 @@ class HomeShellState extends State<HomeShell> {
   }
 
   Widget buildWithLogin(BuildContext context) {
-    final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
+    final accountInfo = context.watch<ActiveAccountInfoCubit>().state;
     final accountRecordsCubit = context.watch<AccountRecordsBlocMapCubit>();
-    if (activeLocalAccount == null) {
+    if (!accountInfo.active) {
       // If no logged in user is active, show the loading panel
       return const HomeNoActive();
     }
 
-    final accountInfo =
-        AccountRepository.instance.getAccountInfo(activeLocalAccount);
-    final activeCubit =
-        accountRecordsCubit.tryOperate(activeLocalAccount, closure: (c) => c);
+    final superIdentityRecordKey =
+        accountInfo.unlockedAccountInfo?.superIdentityRecordKey;
+    final activeCubit = superIdentityRecordKey == null
+        ? null
+        : accountRecordsCubit.tryOperate(superIdentityRecordKey,
+            closure: (c) => c);
     if (activeCubit == null) {
       return waitingPage();
     }
@@ -59,8 +59,8 @@ class HomeShellState extends State<HomeShell> {
         return const HomeAccountLocked();
       case AccountInfoStatus.accountReady:
         return MultiProvider(providers: [
-          Provider<ActiveAccountInfo>.value(
-            value: accountInfo.activeAccountInfo!,
+          Provider<UnlockedAccountInfo>.value(
+            value: accountInfo.unlockedAccountInfo!,
           ),
           Provider<AccountRecordCubit>.value(value: activeCubit),
           Provider<ZoomDrawerController>.value(value: _zoomDrawerController),
@@ -101,6 +101,7 @@ class HomeShellState extends State<HomeShell> {
               // duration: const Duration(milliseconds: 250),
               // reverseDuration: const Duration(milliseconds: 250),
               menuScreenTapClose: true,
+              mainScreenTapClose: true,
               mainScreenScale: .25,
               slideWidth: min(360, MediaQuery.of(context).size.width * 0.9),
             )));

@@ -7,8 +7,8 @@ import 'local_account/local_account.dart';
 import 'user_login/user_login.dart';
 
 @immutable
-class ActiveAccountInfo {
-  const ActiveAccountInfo({
+class UnlockedAccountInfo {
+  const UnlockedAccountInfo({
     required this.localAccount,
     required this.userLogin,
   });

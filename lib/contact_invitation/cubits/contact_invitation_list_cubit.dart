@@ -36,16 +36,16 @@ class ContactInvitationListCubit
         StateMapFollowable<ContactInvitiationListState, TypedKey,
             proto.ContactInvitationRecord> {
   ContactInvitationListCubit({
-    required ActiveAccountInfo activeAccountInfo,
+    required UnlockedAccountInfo unlockedAccountInfo,
     required proto.Account account,
-  })  : _activeAccountInfo = activeAccountInfo,
+  })  : _activeAccountInfo = unlockedAccountInfo,
         _account = account,
         super(
-            open: () => _open(activeAccountInfo, account),
+            open: () => _open(unlockedAccountInfo, account),
             decodeElement: proto.ContactInvitationRecord.fromBuffer);
 
   static Future<DHTShortArray> _open(
-      ActiveAccountInfo activeAccountInfo, proto.Account account) async {
+      UnlockedAccountInfo activeAccountInfo, proto.Account account) async {
     final accountRecordKey =
         activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
@@ -318,6 +318,6 @@ class ContactInvitationListCubit
   }
 
   //
-  final ActiveAccountInfo _activeAccountInfo;
+  final UnlockedAccountInfo _activeAccountInfo;
   final proto.Account _account;
 }
