@@ -11,6 +11,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../layout/layout.dart';
+import '../../proto/proto.dart' as proto;
 import '../../settings/settings.dart';
 import '../../tools/tools.dart';
 import '../../veilid_processor/views/developer.dart';
@@ -20,6 +21,7 @@ part 'router_cubit.g.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavKey');
 final _homeNavKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavKey');
+final _activeNavKey = GlobalKey<NavigatorState>(debugLabel: 'activeNavKey');
 
 @freezed
 class RouterState with _$RouterState {
@@ -65,20 +67,33 @@ class RouterCubit extends Cubit<RouterState> {
   List<RouteBase> get routes => [
         ShellRoute(
           navigatorKey: _homeNavKey,
-          builder: (context, state, child) => HomeShell(
-              accountReadyBuilder: Builder(
-                  builder: (context) =>
-                      HomeAccountReadyShell(context: context, child: child))),
+          builder: (context, state, child) => HomeShell(child: child),
           routes: [
-            GoRoute(
-              path: '/',
-              builder: (context, state) => const HomeAccountReadyMain(),
-            ),
-            GoRoute(
-              path: '/chat',
-              builder: (context, state) => const HomeAccountReadyChat(),
-            ),
+            ShellRoute(
+                navigatorKey: _activeNavKey,
+                builder: (context, state, child) =>
+                    HomeAccountReadyShell(context: context, child: child),
+                routes: [
+                  GoRoute(
+                    path: '/',
+                    builder: (context, state) => const HomeAccountReadyMain(),
+                  ),
+                  GoRoute(
+                    path: '/chat',
+                    builder: (context, state) => const HomeAccountReadyChat(),
+                  ),
+                ]),
           ],
+        ),
+        GoRoute(
+          path: '/edit_account',
+          builder: (context, state) {
+            final extra = state.extra! as List<Object?>;
+            return EditAccountPage(
+              superIdentityRecordKey: extra[0]! as TypedKey,
+              existingProfile: extra[1]! as proto.Profile,
+            );
+          },
         ),
         GoRoute(
           path: '/new_account',

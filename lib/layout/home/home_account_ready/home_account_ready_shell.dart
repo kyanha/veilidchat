@@ -102,6 +102,9 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
 
   @override
   Widget build(BuildContext context) {
+    // XXX: Should probably eliminate this in favor
+    // of streaming changes into other cubits. Too much rebuilding!
+    // should not need to 'watch' all these cubits
     final account = context.watch<AccountRecordCubit>().state.asData?.value;
     if (account == null) {
       return waitingPage();
@@ -121,28 +124,29 @@ class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
               create: (context) => WaitingInvitationsBlocMapCubit(
                   unlockedAccountInfo: widget.unlockedAccountInfo,
                   account: account)
-                ..follow(context.watch<ContactInvitationListCubit>())),
+                ..follow(context.read<ContactInvitationListCubit>())),
           // Chat Cubits
           BlocProvider(
               create: (context) => ActiveChatCubit(null,
-                  routerCubit: context.watch<RouterCubit>())),
+                  routerCubit: context.read<RouterCubit>())),
           BlocProvider(
               create: (context) => ChatListCubit(
                   unlockedAccountInfo: widget.unlockedAccountInfo,
-                  activeChatCubit: context.watch<ActiveChatCubit>(),
+                  activeChatCubit: context.read<ActiveChatCubit>(),
                   account: account)),
           // Conversation Cubits
           BlocProvider(
               create: (context) => ActiveConversationsBlocMapCubit(
                   unlockedAccountInfo: widget.unlockedAccountInfo,
-                  contactListCubit: context.watch<ContactListCubit>())
-                ..follow(context.watch<ChatListCubit>())),
+                  contactListCubit: context.read<ContactListCubit>(),
+                  accountRecordCubit: context.read<AccountRecordCubit>())
+                ..follow(context.read<ChatListCubit>())),
           BlocProvider(
               create: (context) => ActiveSingleContactChatBlocMapCubit(
                   unlockedAccountInfo: widget.unlockedAccountInfo,
-                  contactListCubit: context.watch<ContactListCubit>(),
-                  chatListCubit: context.watch<ChatListCubit>())
-                ..follow(context.watch<ActiveConversationsBlocMapCubit>())),
+                  contactListCubit: context.read<ContactListCubit>(),
+                  chatListCubit: context.read<ChatListCubit>())
+                ..follow(context.read<ActiveConversationsBlocMapCubit>())),
         ],
         child: MultiBlocListener(listeners: [
           BlocListener<WaitingInvitationsBlocMapCubit,

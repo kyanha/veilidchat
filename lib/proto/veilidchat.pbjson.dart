@@ -411,6 +411,7 @@ const Profile$json = {
     {'1': 'status', '3': 4, '4': 1, '5': 9, '10': 'status'},
     {'1': 'availability', '3': 5, '4': 1, '5': 14, '6': '.veilidchat.Availability', '10': 'availability'},
     {'1': 'avatar', '3': 6, '4': 1, '5': 11, '6': '.veilidchat.DataReference', '9': 0, '10': 'avatar', '17': true},
+    {'1': 'timestamp', '3': 7, '4': 1, '5': 4, '10': 'timestamp'},
   ],
   '8': [
     {'1': '_avatar'},
@@ -422,8 +423,8 @@ final $typed_data.Uint8List profileDescriptor = $convert.base64Decode(
     'CgdQcm9maWxlEhIKBG5hbWUYASABKAlSBG5hbWUSGgoIcHJvbm91bnMYAiABKAlSCHByb25vdW'
     '5zEhQKBWFib3V0GAMgASgJUgVhYm91dBIWCgZzdGF0dXMYBCABKAlSBnN0YXR1cxI8CgxhdmFp'
     'bGFiaWxpdHkYBSABKA4yGC52ZWlsaWRjaGF0LkF2YWlsYWJpbGl0eVIMYXZhaWxhYmlsaXR5Ej'
-    'YKBmF2YXRhchgGIAEoCzIZLnZlaWxpZGNoYXQuRGF0YVJlZmVyZW5jZUgAUgZhdmF0YXKIAQFC'
-    'CQoHX2F2YXRhcg==');
+    'YKBmF2YXRhchgGIAEoCzIZLnZlaWxpZGNoYXQuRGF0YVJlZmVyZW5jZUgAUgZhdmF0YXKIAQES'
+    'HAoJdGltZXN0YW1wGAcgASgEUgl0aW1lc3RhbXBCCQoHX2F2YXRhcg==');
 
 @$core.Deprecated('Use accountDescriptor instead')
 const Account$json = {

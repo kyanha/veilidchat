@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../../account_manager/account_manager.dart';
+import '../../../proto/proto.dart' as proto;
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
 import '../../../veilid_processor/veilid_processor.dart';
@@ -37,8 +38,12 @@ class _DrawerMenuState extends State<DrawerMenu> {
     });
   }
 
-  void _doEditClick(TypedKey superIdentityRecordKey) {
-    //
+  void _doEditClick(
+      TypedKey superIdentityRecordKey, proto.Profile existingProfile) {
+    singleFuture(this, () async {
+      await GoRouterHelper(context).push('/edit_account',
+          extra: [superIdentityRecordKey, existingProfile]);
+    });
   }
 
   Widget _wrapInBox({required Widget child, required Color color}) =>
@@ -127,7 +132,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                 _doSwitchClick(superIdentityRecordKey);
               },
               footerCallback: () {
-                _doEditClick(superIdentityRecordKey);
+                _doEditClick(superIdentityRecordKey, value.profile);
               }),
           loading: () => _wrapInBox(
               child: buildProgressIndicator(),

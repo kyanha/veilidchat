@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:provider/provider.dart';
 
@@ -13,12 +14,12 @@ import 'home_account_missing.dart';
 import 'home_no_active.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({required this.accountReadyBuilder, super.key});
+  const HomeShell({required this.child, super.key});
 
   @override
   HomeShellState createState() => HomeShellState();
 
-  final Builder accountReadyBuilder;
+  final Widget child;
 }
 
 class HomeShellState extends State<HomeShell> {
@@ -58,13 +59,17 @@ class HomeShellState extends State<HomeShell> {
       case AccountInfoStatus.accountLocked:
         return const HomeAccountLocked();
       case AccountInfoStatus.accountReady:
-        return MultiProvider(providers: [
-          Provider<UnlockedAccountInfo>.value(
-            value: accountInfo.unlockedAccountInfo!,
-          ),
-          Provider<AccountRecordCubit>.value(value: activeCubit),
-          Provider<ZoomDrawerController>.value(value: _zoomDrawerController),
-        ], child: widget.accountReadyBuilder);
+        return MultiBlocProvider(
+            providers: [
+              BlocProvider<AccountRecordCubit>.value(value: activeCubit),
+            ],
+            child: MultiProvider(providers: [
+              Provider<UnlockedAccountInfo>.value(
+                value: accountInfo.unlockedAccountInfo!,
+              ),
+              Provider<ZoomDrawerController>.value(
+                  value: _zoomDrawerController),
+            ], child: widget.child));
     }
   }
 

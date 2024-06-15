@@ -21,7 +21,6 @@ class NewAccountPage extends StatefulWidget {
 }
 
 class _NewAccountPageState extends State<NewAccountPage> {
-  final _formKey = GlobalKey<FormBuilderState>();
   bool _isInAsyncCall = false;
 
   @override
@@ -61,6 +60,14 @@ class _NewAccountPageState extends State<NewAccountPage> {
       // resizeToAvoidBottomInset: false,
       appBar: DefaultAppBar(
           title: Text(translate('new_account_page.titlebar')),
+          leading: Navigator.canPop(context)
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                )
+              : null,
           actions: [
             const SignalStrengthMeterWidget(),
             IconButton(
@@ -77,9 +84,9 @@ class _NewAccountPageState extends State<NewAccountPage> {
           FocusScope.of(context).unfocus();
 
           try {
-            final name = _formKey.currentState!
+            final name = formKey.currentState!
                 .fields[EditProfileForm.formFieldName]!.value as String;
-            final pronouns = _formKey
+            final pronouns = formKey
                     .currentState!
                     .fields[EditProfileForm.formFieldPronouns]!
                     .value as String? ??

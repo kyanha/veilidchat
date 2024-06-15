@@ -1,18 +1,12 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../layout/default_app_bar.dart';
-import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import '../../veilid_processor/veilid_processor.dart';
-import '../account_manager.dart';
 
 class ShowRecoveryKeyPage extends StatefulWidget {
   const ShowRecoveryKeyPage({required SecretKey secretKey, super.key})
@@ -57,7 +51,11 @@ class ShowRecoveryKeyPageState extends State<ShowRecoveryKeyPage> {
           Text('ASS: $secretKey'),
           ElevatedButton(
               onPressed: () {
-                GoRouterHelper(context).go('/');
+                if (context.mounted) {
+                  Navigator.canPop(context)
+                      ? GoRouterHelper(context).pop()
+                      : GoRouterHelper(context).go('/');
+                }
               },
               child: Text(translate('button.finish')))
         ]).paddingSymmetric(horizontal: 24, vertical: 8));

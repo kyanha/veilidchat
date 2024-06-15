@@ -13,6 +13,7 @@ class EditProfileForm extends StatefulWidget {
     required this.submitDisabledText,
     super.key,
     this.onSubmit,
+    this.initialValueCallback,
   });
 
   @override
@@ -23,6 +24,7 @@ class EditProfileForm extends StatefulWidget {
   final Future<void> Function(GlobalKey<FormBuilderState>)? onSubmit;
   final String submitText;
   final String submitDisabledText;
+  final Object? Function(String key)? initialValueCallback;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -34,7 +36,9 @@ class EditProfileForm extends StatefulWidget {
           Future<void> Function(
               GlobalKey<FormBuilderState> p1)?>.has('onSubmit', onSubmit))
       ..add(StringProperty('submitText', submitText))
-      ..add(StringProperty('submitDisabledText', submitDisabledText));
+      ..add(StringProperty('submitDisabledText', submitDisabledText))
+      ..add(ObjectFlagProperty<Object? Function(String key)?>.has(
+          'initialValueCallback', initialValueCallback));
   }
 
   static const String formFieldName = 'name';
@@ -62,6 +66,8 @@ class _EditProfileFormState extends State<EditProfileForm> {
             FormBuilderTextField(
               autofocus: true,
               name: EditProfileForm.formFieldName,
+              initialValue: widget.initialValueCallback
+                  ?.call(EditProfileForm.formFieldName) as String?,
               decoration:
                   InputDecoration(labelText: translate('account.form_name')),
               maxLength: 64,
@@ -73,6 +79,8 @@ class _EditProfileFormState extends State<EditProfileForm> {
             ),
             FormBuilderTextField(
               name: EditProfileForm.formFieldPronouns,
+              initialValue: widget.initialValueCallback
+                  ?.call(EditProfileForm.formFieldPronouns) as String?,
               maxLength: 64,
               decoration: InputDecoration(
                   labelText: translate('account.form_pronouns')),

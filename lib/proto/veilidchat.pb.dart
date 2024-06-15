@@ -1396,6 +1396,7 @@ class Profile extends $pb.GeneratedMessage {
     ..aOS(4, _omitFieldNames ? '' : 'status')
     ..e<Availability>(5, _omitFieldNames ? '' : 'availability', $pb.PbFieldType.OE, defaultOrMaker: Availability.AVAILABILITY_UNSPECIFIED, valueOf: Availability.valueOf, enumValues: Availability.values)
     ..aOM<DataReference>(6, _omitFieldNames ? '' : 'avatar', subBuilder: DataReference.create)
+    ..a<$fixnum.Int64>(7, _omitFieldNames ? '' : 'timestamp', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..hasRequiredFields = false
   ;
 
@@ -1475,6 +1476,15 @@ class Profile extends $pb.GeneratedMessage {
   void clearAvatar() => clearField(6);
   @$pb.TagNumber(6)
   DataReference ensureAvatar() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  $fixnum.Int64 get timestamp => $_getI64(6);
+  @$pb.TagNumber(7)
+  set timestamp($fixnum.Int64 v) { $_setInt64(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasTimestamp() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearTimestamp() => clearField(7);
 }
 
 class Account extends $pb.GeneratedMessage {

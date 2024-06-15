@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:async_tools/async_tools.dart';
+import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
-import 'conversation_cubit.dart';
+import '../../conversation/cubits/conversation_cubit.dart';
 
 //////////////////////////////////////////////////
 // Mutable state for per-account contacts
@@ -32,6 +34,54 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         parent: accountRecordKey);
 
     return dhtRecord;
+  }
+
+  @override
+  Future<void> close() async {
+    await _contactProfileUpdateMap.close();
+    await super.close();
+  }
+  ////////////////////////////////////////////////////////////////////////////
+  // Public Interface
+
+  void followContactProfileChanges(TypedKey localConversationRecordKey,
+      Stream<proto.Profile?> profileStream, proto.Profile? profileState) {
+    _contactProfileUpdateMap
+        .follow(localConversationRecordKey, profileStream, profileState,
+            (remoteProfile) async {
+      if (remoteProfile == null) {
+        return;
+      }
+      return updateContactRemoteProfile(
+          localConversationRecordKey: localConversationRecordKey,
+          remoteProfile: remoteProfile);
+    });
+  }
+
+  Future<void> updateContactRemoteProfile({
+    required TypedKey localConversationRecordKey,
+    required proto.Profile remoteProfile,
+  }) async {
+    // Update contact's remoteProfile
+    await operateWriteEventual((writer) async {
+      for (var pos = 0; pos < writer.length; pos++) {
+        final c = await writer.getProtobuf(proto.Contact.fromBuffer, pos);
+        if (c != null &&
+            c.localConversationRecordKey.toVeilid() ==
+                localConversationRecordKey) {
+          if (c.remoteProfile == remoteProfile) {
+            // Unchanged
+            break;
+          }
+          final newContact = c.deepCopy()..remoteProfile = remoteProfile;
+          final updated = await writer.tryWriteItemProtobuf(
+              proto.Contact.fromBuffer, pos, newContact);
+          if (!updated) {
+            throw DHTExceptionTryAgain();
+          }
+        }
+      }
+    });
   }
 
   Future<void> createContact({
@@ -100,4 +150,6 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   }
 
   final UnlockedAccountInfo _activeAccountInfo;
+  final _contactProfileUpdateMap =
+      SingleStateProcessorMap<TypedKey, proto.Profile?>();
 }

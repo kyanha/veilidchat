@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../contacts/cubits/contact_list_cubit.dart';
-import '../../conversation/conversation.dart';
 import '../../layout/default_app_bar.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
@@ -41,7 +39,6 @@ class EditAccountPage extends StatefulWidget {
 }
 
 class _EditAccountPageState extends State<EditAccountPage> {
-  final _formKey = GlobalKey<FormBuilderState>();
   bool _isInAsyncCall = false;
 
   @override
@@ -58,24 +55,37 @@ class _EditAccountPageState extends State<EditAccountPage> {
           {required Future<void> Function(GlobalKey<FormBuilderState>)
               onSubmit}) =>
       EditProfileForm(
-          header: translate('edit_account_page.header'),
-          instructions: translate('edit_account_page.instructions'),
-          submitText: translate('edit_account_page.update'),
-          submitDisabledText: translate('button.waiting_for_network'),
-          onSubmit: onSubmit);
+        header: translate('edit_account_page.header'),
+        instructions: translate('edit_account_page.instructions'),
+        submitText: translate('edit_account_page.update'),
+        submitDisabledText: translate('button.waiting_for_network'),
+        onSubmit: onSubmit,
+        initialValueCallback: (key) => switch (key) {
+          EditProfileForm.formFieldName => widget.existingProfile.name,
+          EditProfileForm.formFieldPronouns => widget.existingProfile.pronouns,
+          String() => throw UnimplementedError(),
+        },
+      );
 
   @override
   Widget build(BuildContext context) {
     final displayModalHUD = _isInAsyncCall;
-    final accountRecordCubit = context.read<AccountRecordCubit>();
-    final activeConversationsBlocMapCubit =
-        context.read<ActiveConversationsBlocMapCubit>();
-    final contactListCubit = context.read<ContactListCubit>();
+    final accountRecordsCubit = context.watch<AccountRecordsBlocMapCubit>();
+    final accountRecordCubit = accountRecordsCubit
+        .operate(widget.superIdentityRecordKey, closure: (c) => c);
 
     return Scaffold(
       // resizeToAvoidBottomInset: false,
       appBar: DefaultAppBar(
           title: Text(translate('edit_account_page.titlebar')),
+          leading: Navigator.canPop(context)
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                )
+              : null,
           actions: [
             const SignalStrengthMeterWidget(),
             IconButton(
@@ -92,57 +102,35 @@ class _EditAccountPageState extends State<EditAccountPage> {
           FocusScope.of(context).unfocus();
 
           try {
-            final name = _formKey.currentState!
+            final name = formKey.currentState!
                 .fields[EditProfileForm.formFieldName]!.value as String;
-            final pronouns = _formKey
+            final pronouns = formKey
                     .currentState!
                     .fields[EditProfileForm.formFieldPronouns]!
                     .value as String? ??
                 '';
             final newProfile = widget.existingProfile.deepCopy()
               ..name = name
-              ..pronouns = pronouns;
+              ..pronouns = pronouns
+              ..timestamp = Veilid.instance.now().toInt64();
 
             setState(() {
               _isInAsyncCall = true;
             });
             try {
               // Update account profile DHT record
-              final newValue = await accountRecordCubit.record
-                  .tryWriteProtobuf(proto.Account.fromBuffer, newProfile);
-              if (newValue != null) {
-                if (context.mounted) {
-                  await showErrorModal(
-                      context,
-                      translate('edit_account_page.error'),
-                      'Failed to update profile online');
-                  return;
-                }
-              }
+              // This triggers ConversationCubits to update
+              await accountRecordCubit.updateProfile(newProfile);
 
               // Update local account profile
               await AccountRepository.instance.editAccountProfile(
                   widget.superIdentityRecordKey, newProfile);
 
-              // Update all conversations with new profile
-              final updates = <Future<void>>[];
-              for (final key in activeConversationsBlocMapCubit.state.keys) {
-                await activeConversationsBlocMapCubit.operateAsync(key,
-                    closure: (cubit) async {
-                  final newLocalConversation =
-                      cubit.state.asData?.value.localConversation.deepCopy();
-                  if (newLocalConversation != null) {
-                    newLocalConversation.profile = newProfile;
-                    updates.add(cubit.input.writeLocalConversation(
-                        conversation: newLocalConversation));
-                  }
-                });
+              if (context.mounted) {
+                Navigator.canPop(context)
+                    ? GoRouterHelper(context).pop()
+                    : GoRouterHelper(context).go('/');
               }
-
-              // Wait for updates
-              await updates.wait;
-
-              // XXX: how to do this for non-chat contacts?
             } finally {
               if (mounted) {
                 setState(() {

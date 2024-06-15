@@ -9,7 +9,7 @@ import '../../chat/chat.dart';
 import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import 'active_conversations_bloc_map_cubit.dart';
-import 'chat_list_cubit.dart';
+import '../../chat_list/cubits/chat_list_cubit.dart';
 
 // Map of localConversationRecordKey to MessagesCubit
 // Wraps a MessagesCubit to stream the latest messages to the state

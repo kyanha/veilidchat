@@ -308,7 +308,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   /// Each attempt to write the value calls an update function with the
   /// old value to determine what new value should be attempted for that write.
   Future<void> eventualUpdateBytes(
-      Future<Uint8List> Function(Uint8List? oldValue) update,
+      Future<Uint8List?> Function(Uint8List? oldValue) update,
       {int subkey = -1,
       VeilidCrypto? crypto,
       KeyPair? writer,
@@ -323,7 +323,10 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     do {
       // Update the data
       final updatedValue = await update(oldValue);
-
+      if (updatedValue == null) {
+        // If null is returned from the update, stop trying to do the update
+        break;
+      }
       // Try to write it back to the network
       oldValue = await tryWriteBytes(updatedValue,
           subkey: subkey, crypto: crypto, writer: writer, outSeqNum: outSeqNum);
@@ -389,7 +392,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
 
   /// Like 'eventualUpdateBytes' but with JSON marshal/unmarshal of the value
   Future<void> eventualUpdateJson<T>(
-          T Function(dynamic) fromJson, Future<T> Function(T?) update,
+          T Function(dynamic) fromJson, Future<T?> Function(T?) update,
           {int subkey = -1,
           VeilidCrypto? crypto,
           KeyPair? writer,
@@ -399,7 +402,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
 
   /// Like 'eventualUpdateBytes' but with protobuf marshal/unmarshal of the value
   Future<void> eventualUpdateProtobuf<T extends GeneratedMessage>(
-          T Function(List<int>) fromBuffer, Future<T> Function(T?) update,
+          T Function(List<int>) fromBuffer, Future<T?> Function(T?) update,
           {int subkey = -1,
           VeilidCrypto? crypto,
           KeyPair? writer,

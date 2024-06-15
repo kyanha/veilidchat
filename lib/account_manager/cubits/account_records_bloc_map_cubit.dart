@@ -7,7 +7,8 @@ import '../../account_manager/account_manager.dart';
 typedef AccountRecordsBlocMapState
     = BlocMapState<TypedKey, AsyncValue<AccountRecordState>>;
 
-// Map of the logged in user accounts to their account information
+/// Map of the logged in user accounts to their AccountRecordCubit
+/// Ensures there is an single account record cubit for each logged in account
 class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<AccountRecordState>, AccountRecordCubit>
     with StateMapFollower<UserLoginsState, TypedKey, UserLogin> {

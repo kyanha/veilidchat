@@ -311,6 +311,8 @@ message Profile  {
     Availability availability = 5;
     // Avatar
     optional DataReference avatar = 6;
+    // Timestamp of last change
+    uint64 timestamp = 7;
 }
 
 // A record of an individual account
