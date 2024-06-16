@@ -6,6 +6,7 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../../chat/chat.dart';
+import '../../../proto/proto.dart' as proto;
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
 import 'main_pager/main_pager.dart';
@@ -29,7 +30,8 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
   }
 
   Widget buildUserPanel() => Builder(builder: (context) {
-        final account = context.watch<AccountRecordCubit>().state;
+        final profile = context.select<AccountRecordCubit, proto.Profile>(
+            (c) => c.state.asData!.value.profile);
         final theme = Theme.of(context);
         final scale = theme.extension<ScaleScheme>()!;
 
@@ -50,9 +52,7 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
                   await ctrl.toggle?.call();
                   //await GoRouterHelper(context).push('/settings');
                 }).paddingLTRB(0, 0, 8, 0),
-            asyncValueBuilder(account,
-                    (_, account) => ProfileWidget(profile: account.profile))
-                .expanded(),
+            ProfileWidget(profile: profile).expanded(),
           ]).paddingAll(8),
           const MainPager().expanded()
         ]);
@@ -72,8 +72,8 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
       return const NoConversationWidget();
     }
     return ChatComponentWidget.builder(
-      localConversationRecordKey: activeChatLocalConversationKey,
-    );
+        localConversationRecordKey: activeChatLocalConversationKey,
+        key: ValueKey(activeChatLocalConversationKey));
   }
 
   // ignore: prefer_expression_function_bodies

@@ -22,24 +22,13 @@ class ChatComponentWidget extends StatelessWidget {
   static Widget builder(
           {required TypedKey localConversationRecordKey, Key? key}) =>
       Builder(builder: (context) {
-        // Get all watched dependendies
-        final activeAccountInfo = context.watch<UnlockedAccountInfo>();
-        final accountRecordInfo =
-            context.watch<AccountRecordCubit>().state.asData?.value;
-        if (accountRecordInfo == null) {
-          return debugPage('should always have an account record here');
-        }
-
-        final avconversation = context.select<ActiveConversationsBlocMapCubit,
-                AsyncValue<ActiveConversationState>?>(
-            (x) => x.state[localConversationRecordKey]);
-        if (avconversation == null) {
+        // Get the active conversation cubit
+        final activeConversationCubit = context
+            .select<ActiveConversationsBlocMapCubit, ActiveConversationCubit?>(
+                (x) => x.tryOperate(localConversationRecordKey,
+                    closure: (cubit) => cubit));
+        if (activeConversationCubit == null) {
           return waitingPage();
-        }
-
-        final activeConversationState = avconversation.asData?.value;
-        if (activeConversationState == null) {
-          return avconversation.buildNotData();
         }
 
         // Get the messages cubit
@@ -55,9 +44,8 @@ class ChatComponentWidget extends StatelessWidget {
         // Make chat component state
         return BlocProvider(
             create: (context) => ChatComponentCubit.singleContact(
-                  activeAccountInfo: activeAccountInfo,
-                  accountRecordInfo: accountRecordInfo,
-                  activeConversationState: activeConversationState,
+                  locator: context.read,
+                  activeConversationCubit: activeConversationCubit,
                   messagesCubit: messagesCubit,
                 ),
             child: ChatComponentWidget._(key: key));

@@ -1,8 +1,8 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import 'cubits.dart';
 
@@ -17,8 +17,12 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
     with
         StateMapFollower<DHTShortArrayBusyState<proto.ContactInvitationRecord>,
             TypedKey, proto.ContactInvitationRecord> {
-  WaitingInvitationsBlocMapCubit(
-      {required this.unlockedAccountInfo, required this.account});
+  WaitingInvitationsBlocMapCubit({
+    required Locator locator,
+  }) : _locator = locator {
+    // Follow the contact invitation list cubit
+    follow(locator<ContactInvitationListCubit>());
+  }
 
   Future<void> _addWaitingInvitation(
           {required proto.ContactInvitationRecord
@@ -27,10 +31,9 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
           contactInvitationRecord.contactRequestInbox.recordKey.toVeilid(),
           WaitingInvitationCubit(
               ContactRequestInboxCubit(
-                  activeAccountInfo: unlockedAccountInfo,
+                  locator: _locator,
                   contactInvitationRecord: contactInvitationRecord),
-              activeAccountInfo: unlockedAccountInfo,
-              account: account,
+              locator: _locator,
               contactInvitationRecord: contactInvitationRecord)));
 
   /// StateFollower /////////////////////////
@@ -43,6 +46,5 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
       _addWaitingInvitation(contactInvitationRecord: value);
 
   ////
-  final UnlockedAccountInfo unlockedAccountInfo;
-  final proto.Account account;
+  final Locator _locator;
 }

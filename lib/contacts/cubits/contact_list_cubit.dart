@@ -3,33 +3,29 @@ import 'dart:convert';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../account_manager/account_manager.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
-import '../../conversation/cubits/conversation_cubit.dart';
 
 //////////////////////////////////////////////////
 // Mutable state for per-account contacts
 
 class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   ContactListCubit({
-    required UnlockedAccountInfo unlockedAccountInfo,
-    required proto.Account account,
-  })  : _activeAccountInfo = unlockedAccountInfo,
+    required Locator locator,
+    required TypedKey accountRecordKey,
+    required OwnedDHTRecordPointer contactListRecordPointer,
+  })  : _locator = locator,
         super(
-            open: () => _open(unlockedAccountInfo, account),
+            open: () => _open(accountRecordKey, contactListRecordPointer),
             decodeElement: proto.Contact.fromBuffer);
 
-  static Future<DHTShortArray> _open(
-      UnlockedAccountInfo activeAccountInfo, proto.Account account) async {
-    final accountRecordKey =
-        activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-
-    final contactListRecordKey = account.contactList.toVeilid();
-
-    final dhtRecord = await DHTShortArray.openOwned(contactListRecordKey,
+  static Future<DHTShortArray> _open(TypedKey accountRecordKey,
+      OwnedDHTRecordPointer contactListRecordPointer) async {
+    final dhtRecord = await DHTShortArray.openOwned(contactListRecordPointer,
         debugName: 'ContactListCubit::_open::ContactList',
         parent: accountRecordKey);
 
@@ -52,15 +48,15 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
       if (remoteProfile == null) {
         return;
       }
-      return updateContactRemoteProfile(
+      return updateContactProfile(
           localConversationRecordKey: localConversationRecordKey,
-          remoteProfile: remoteProfile);
+          profile: remoteProfile);
     });
   }
 
-  Future<void> updateContactRemoteProfile({
+  Future<void> updateContactProfile({
     required TypedKey localConversationRecordKey,
-    required proto.Profile remoteProfile,
+    required proto.Profile profile,
   }) async {
     // Update contact's remoteProfile
     await operateWriteEventual((writer) async {
@@ -69,36 +65,36 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         if (c != null &&
             c.localConversationRecordKey.toVeilid() ==
                 localConversationRecordKey) {
-          if (c.remoteProfile == remoteProfile) {
+          if (c.profile == profile) {
             // Unchanged
             break;
           }
-          final newContact = c.deepCopy()..remoteProfile = remoteProfile;
+          final newContact = c.deepCopy()..profile = profile;
           final updated = await writer.tryWriteItemProtobuf(
               proto.Contact.fromBuffer, pos, newContact);
           if (!updated) {
             throw DHTExceptionTryAgain();
           }
+          break;
         }
       }
     });
   }
 
   Future<void> createContact({
-    required proto.Profile remoteProfile,
+    required proto.Profile profile,
     required SuperIdentity remoteSuperIdentity,
-    required TypedKey remoteConversationRecordKey,
     required TypedKey localConversationRecordKey,
+    required TypedKey remoteConversationRecordKey,
   }) async {
     // Create Contact
     final contact = proto.Contact()
-      ..editedProfile = remoteProfile
-      ..remoteProfile = remoteProfile
+      ..profile = profile
       ..superIdentityJson = jsonEncode(remoteSuperIdentity.toJson())
       ..identityPublicKey =
           remoteSuperIdentity.currentInstance.typedPublicKey.toProto()
-      ..remoteConversationRecordKey = remoteConversationRecordKey.toProto()
       ..localConversationRecordKey = localConversationRecordKey.toProto()
+      ..remoteConversationRecordKey = remoteConversationRecordKey.toProto()
       ..showAvailability = false;
 
     // Add Contact to account's list
@@ -108,13 +104,8 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     });
   }
 
-  Future<void> deleteContact({required proto.Contact contact}) async {
-    final remoteIdentityPublicKey = contact.identityPublicKey.toVeilid();
-    final localConversationRecordKey =
-        contact.localConversationRecordKey.toVeilid();
-    final remoteConversationRecordKey =
-        contact.remoteConversationRecordKey.toVeilid();
-
+  Future<void> deleteContact(
+      {required TypedKey localConversationRecordKey}) async {
     // Remove Contact from account's list
     final deletedItem = await operateWrite((writer) async {
       for (var i = 0; i < writer.length; i++) {
@@ -122,8 +113,8 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
         if (item == null) {
           throw Exception('Failed to get contact');
         }
-        if (item.localConversationRecordKey ==
-            contact.localConversationRecordKey) {
+        if (item.localConversationRecordKey.toVeilid() ==
+            localConversationRecordKey) {
           await writer.remove(i);
           return item;
         }
@@ -135,10 +126,12 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
       try {
         // Make a conversation cubit to manipulate the conversation
         final conversationCubit = ConversationCubit(
-          activeAccountInfo: _activeAccountInfo,
-          remoteIdentityPublicKey: remoteIdentityPublicKey,
-          localConversationRecordKey: localConversationRecordKey,
-          remoteConversationRecordKey: remoteConversationRecordKey,
+          locator: _locator,
+          remoteIdentityPublicKey: deletedItem.identityPublicKey.toVeilid(),
+          localConversationRecordKey:
+              deletedItem.localConversationRecordKey.toVeilid(),
+          remoteConversationRecordKey:
+              deletedItem.remoteConversationRecordKey.toVeilid(),
         );
 
         // Delete the local and remote conversation records
@@ -149,7 +142,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
     }
   }
 
-  final UnlockedAccountInfo _activeAccountInfo;
   final _contactProfileUpdateMap =
       SingleStateProcessorMap<TypedKey, proto.Profile?>();
+  final Locator _locator;
 }

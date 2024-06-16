@@ -1606,13 +1606,14 @@ class Contact extends $pb.GeneratedMessage {
   factory Contact.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Contact', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
-    ..aOM<Profile>(1, _omitFieldNames ? '' : 'editedProfile', subBuilder: Profile.create)
-    ..aOM<Profile>(2, _omitFieldNames ? '' : 'remoteProfile', subBuilder: Profile.create)
+    ..aOS(1, _omitFieldNames ? '' : 'nickname')
+    ..aOM<Profile>(2, _omitFieldNames ? '' : 'profile', subBuilder: Profile.create)
     ..aOS(3, _omitFieldNames ? '' : 'superIdentityJson')
     ..aOM<$0.TypedKey>(4, _omitFieldNames ? '' : 'identityPublicKey', subBuilder: $0.TypedKey.create)
     ..aOM<$0.TypedKey>(5, _omitFieldNames ? '' : 'remoteConversationRecordKey', subBuilder: $0.TypedKey.create)
     ..aOM<$0.TypedKey>(6, _omitFieldNames ? '' : 'localConversationRecordKey', subBuilder: $0.TypedKey.create)
     ..aOB(7, _omitFieldNames ? '' : 'showAvailability')
+    ..aOS(8, _omitFieldNames ? '' : 'notes')
     ..hasRequiredFields = false
   ;
 
@@ -1638,26 +1639,24 @@ class Contact extends $pb.GeneratedMessage {
   static Contact? _defaultInstance;
 
   @$pb.TagNumber(1)
-  Profile get editedProfile => $_getN(0);
+  $core.String get nickname => $_getSZ(0);
   @$pb.TagNumber(1)
-  set editedProfile(Profile v) { setField(1, v); }
+  set nickname($core.String v) { $_setString(0, v); }
   @$pb.TagNumber(1)
-  $core.bool hasEditedProfile() => $_has(0);
+  $core.bool hasNickname() => $_has(0);
   @$pb.TagNumber(1)
-  void clearEditedProfile() => clearField(1);
-  @$pb.TagNumber(1)
-  Profile ensureEditedProfile() => $_ensure(0);
+  void clearNickname() => clearField(1);
 
   @$pb.TagNumber(2)
-  Profile get remoteProfile => $_getN(1);
+  Profile get profile => $_getN(1);
   @$pb.TagNumber(2)
-  set remoteProfile(Profile v) { setField(2, v); }
+  set profile(Profile v) { setField(2, v); }
   @$pb.TagNumber(2)
-  $core.bool hasRemoteProfile() => $_has(1);
+  $core.bool hasProfile() => $_has(1);
   @$pb.TagNumber(2)
-  void clearRemoteProfile() => clearField(2);
+  void clearProfile() => clearField(2);
   @$pb.TagNumber(2)
-  Profile ensureRemoteProfile() => $_ensure(1);
+  Profile ensureProfile() => $_ensure(1);
 
   @$pb.TagNumber(3)
   $core.String get superIdentityJson => $_getSZ(2);
@@ -1709,6 +1708,15 @@ class Contact extends $pb.GeneratedMessage {
   $core.bool hasShowAvailability() => $_has(6);
   @$pb.TagNumber(7)
   void clearShowAvailability() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.String get notes => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set notes($core.String v) { $_setString(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasNotes() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearNotes() => clearField(8);
 }
 
 class ContactInvitation extends $pb.GeneratedMessage {

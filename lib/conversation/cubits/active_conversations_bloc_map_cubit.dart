@@ -2,6 +2,7 @@ import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -44,12 +45,11 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<ActiveConversationState>, ActiveConversationCubit>
     with StateMapFollower<ChatListCubitState, TypedKey, proto.Chat> {
   ActiveConversationsBlocMapCubit({
-    required UnlockedAccountInfo unlockedAccountInfo,
-    required ContactListCubit contactListCubit,
-    required AccountRecordCubit accountRecordCubit,
-  })  : _activeAccountInfo = unlockedAccountInfo,
-        _contactListCubit = contactListCubit,
-        _accountRecordCubit = accountRecordCubit;
+    required Locator locator,
+  }) : _locator = locator {
+    // Follow the chat list cubit
+    follow(locator<ChatListCubit>());
+  }
 
   ////////////////////////////////////////////////////////////////////////////
   // Public Interface
@@ -69,13 +69,20 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         // Conversation cubit the tracks the state between the local
         // and remote halves of a contact's relationship with this account
         final conversationCubit = ConversationCubit(
-          activeAccountInfo: _activeAccountInfo,
+          locator: _locator,
           remoteIdentityPublicKey: remoteIdentityPublicKey,
           localConversationRecordKey: localConversationRecordKey,
           remoteConversationRecordKey: remoteConversationRecordKey,
-        )..watchAccountChanges(
-            _accountRecordCubit.stream, _accountRecordCubit.state);
-        _contactListCubit.followContactProfileChanges(
+        );
+
+        // When our local account profile changes, send it to the conversation
+        final accountRecordCubit = _locator<AccountRecordCubit>();
+        conversationCubit.watchAccountChanges(
+            accountRecordCubit.stream, accountRecordCubit.state);
+
+        // When remote conversation changes its profile,
+        // update our local contact
+        _locator<ContactListCubit>().followContactProfileChanges(
             localConversationRecordKey,
             conversationCubit.stream.map((x) => x.map(
                 data: (d) => d.value.remoteConversation?.profile,
@@ -112,7 +119,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   @override
   Future<void> updateState(TypedKey key, proto.Chat value) async {
-    final contactList = _contactListCubit.state.state.asData?.value;
+    final contactList = _locator<ContactListCubit>().state.state.asData?.value;
     if (contactList == null) {
       await addState(key, const AsyncValue.loading());
       return;
@@ -129,7 +136,5 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   ////
 
-  final UnlockedAccountInfo _activeAccountInfo;
-  final ContactListCubit _contactListCubit;
-  final AccountRecordCubit _accountRecordCubit;
+  final Locator _locator;
 }

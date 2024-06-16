@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -7,12 +8,14 @@ import 'local_account/local_account.dart';
 import 'user_login/user_login.dart';
 
 @immutable
-class UnlockedAccountInfo {
+class UnlockedAccountInfo extends Equatable {
   const UnlockedAccountInfo({
     required this.localAccount,
     required this.userLogin,
   });
-  //
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Public Interface
 
   TypedKey get superIdentityRecordKey => localAccount.superIdentity.recordKey;
   TypedKey get accountRecordKey =>
@@ -41,7 +44,12 @@ class UnlockedAccountInfo {
     return messagesCrypto;
   }
 
-  //
+  ////////////////////////////////////////////////////////////////////////////
+  // Fields
+
   final LocalAccount localAccount;
   final UserLogin userLogin;
+
+  @override
+  List<Object?> get props => [localAccount, userLogin];
 }

@@ -53,10 +53,13 @@ class ChatSingleContactListWidget extends StatelessWidget {
                                 if (contact == null) {
                                   return false;
                                 }
-                                return contact.editedProfile.name
+                                return contact.nickname
                                         .toLowerCase()
                                         .contains(lowerValue) ||
-                                    contact.editedProfile.pronouns
+                                    contact.profile.name
+                                        .toLowerCase()
+                                        .contains(lowerValue) ||
+                                    contact.profile.pronouns
                                         .toLowerCase()
                                         .contains(lowerValue);
                               }).toList();

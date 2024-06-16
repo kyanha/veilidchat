@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -44,23 +45,28 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
 
   // ignore: prefer_constructors_over_static_methods
   static ChatComponentCubit singleContact(
-      {required UnlockedAccountInfo activeAccountInfo,
-      required proto.Account accountRecordInfo,
-      required ActiveConversationState activeConversationState,
+      {required Locator locator,
+      required ActiveConversationCubit activeConversationCubit,
       required SingleContactMessagesCubit messagesCubit}) {
+    // Get account info
+    final unlockedAccountInfo =
+        locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+    final account = locator<AccountRecordCubit>().state.asData!.value;
+
     // Make local 'User'
-    final localUserIdentityKey = activeAccountInfo.identityTypedPublicKey;
+    final localUserIdentityKey = unlockedAccountInfo.identityTypedPublicKey;
     final localUser = types.User(
         id: localUserIdentityKey.toString(),
-        firstName: accountRecordInfo.profile.name,
+        firstName: account.profile.name,
         metadata: {metadataKeyIdentityPublicKey: localUserIdentityKey});
+
     // Make remote 'User's
     final remoteUsers = {
       activeConversationState.contact.identityPublicKey.toVeilid(): types.User(
           id: activeConversationState.contact.identityPublicKey
               .toVeilid()
               .toString(),
-          firstName: activeConversationState.contact.editedProfile.name,
+          firstName: activeConversationState.contact.displayName,
           metadata: {
             metadataKeyIdentityPublicKey:
                 activeConversationState.contact.identityPublicKey.toVeilid()

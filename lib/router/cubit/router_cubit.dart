@@ -21,7 +21,6 @@ part 'router_cubit.g.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavKey');
 final _homeNavKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavKey');
-final _activeNavKey = GlobalKey<NavigatorState>(debugLabel: 'activeNavKey');
 
 @freezed
 class RouterState with _$RouterState {
@@ -69,20 +68,14 @@ class RouterCubit extends Cubit<RouterState> {
           navigatorKey: _homeNavKey,
           builder: (context, state, child) => HomeShell(child: child),
           routes: [
-            ShellRoute(
-                navigatorKey: _activeNavKey,
-                builder: (context, state, child) =>
-                    HomeAccountReadyShell(context: context, child: child),
-                routes: [
-                  GoRoute(
-                    path: '/',
-                    builder: (context, state) => const HomeAccountReadyMain(),
-                  ),
-                  GoRoute(
-                    path: '/chat',
-                    builder: (context, state) => const HomeAccountReadyChat(),
-                  ),
-                ]),
+            GoRoute(
+              path: '/',
+              builder: (context, state) => const HomeAccountReadyMain(),
+            ),
+            GoRoute(
+              path: '/chat',
+              builder: (context, state) => const HomeAccountReadyChat(),
+            ),
           ],
         ),
         GoRoute(

@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -13,14 +14,12 @@ import 'models.dart';
 class ValidContactInvitation {
   @internal
   ValidContactInvitation(
-      {required UnlockedAccountInfo activeAccountInfo,
-      required proto.Account account,
+      {required Locator locator,
       required TypedKey contactRequestInboxKey,
       required proto.ContactRequestPrivate contactRequestPrivate,
       required SuperIdentity contactSuperIdentity,
       required KeyPair writer})
-      : _activeAccountInfo = activeAccountInfo,
-        _account = account,
+      : _locator = locator,
         _contactRequestInboxKey = contactRequestInboxKey,
         _contactRequestPrivate = contactRequestPrivate,
         _contactSuperIdentity = contactSuperIdentity,
@@ -31,11 +30,15 @@ class ValidContactInvitation {
   Future<AcceptedContact?> accept() async {
     final pool = DHTRecordPool.instance;
     try {
+      final unlockedAccountInfo =
+          _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+      final accountRecordKey = unlockedAccountInfo.accountRecordKey;
+      final identityPublicKey = unlockedAccountInfo.identityPublicKey;
+
       // Ensure we don't delete this if we're trying to chat to self
       // The initiating side will delete the records in deleteInvitation()
-      final isSelf = _contactSuperIdentity.currentInstance.publicKey ==
-          _activeAccountInfo.identityPublicKey;
-      final accountRecordKey = _activeAccountInfo.accountRecordKey;
+      final isSelf =
+          _contactSuperIdentity.currentInstance.publicKey == identityPublicKey;
 
       return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
               debugName: 'ValidContactInvitation::accept::'
@@ -46,43 +49,42 @@ class ValidContactInvitation {
         // Create local conversation key for this
         // contact and send via contact response
         final conversation = ConversationCubit(
-            activeAccountInfo: _activeAccountInfo,
+            locator: _locator,
             remoteIdentityPublicKey:
                 _contactSuperIdentity.currentInstance.typedPublicKey);
         return conversation.initLocalConversation(
-            profile: _account.profile,
             callback: (localConversation) async {
-              final contactResponse = proto.ContactResponse()
-                ..accept = true
-                ..remoteConversationRecordKey = localConversation.key.toProto()
-                ..superIdentityRecordKey =
-                    _activeAccountInfo.superIdentityRecordKey.toProto();
-              final contactResponseBytes = contactResponse.writeToBuffer();
+          final contactResponse = proto.ContactResponse()
+            ..accept = true
+            ..remoteConversationRecordKey = localConversation.key.toProto()
+            ..superIdentityRecordKey =
+                unlockedAccountInfo.superIdentityRecordKey.toProto();
+          final contactResponseBytes = contactResponse.writeToBuffer();
 
-              final cs = await pool.veilid
-                  .getCryptoSystem(_contactRequestInboxKey.kind);
+          final cs =
+              await pool.veilid.getCryptoSystem(_contactRequestInboxKey.kind);
 
-              final identitySignature = await cs.sign(
-                  _activeAccountInfo.identityWriter.key,
-                  _activeAccountInfo.identityWriter.secret,
-                  contactResponseBytes);
+          final identitySignature = await cs.sign(
+              unlockedAccountInfo.identityWriter.key,
+              unlockedAccountInfo.identityWriter.secret,
+              contactResponseBytes);
 
-              final signedContactResponse = proto.SignedContactResponse()
-                ..contactResponse = contactResponseBytes
-                ..identitySignature = identitySignature.toProto();
+          final signedContactResponse = proto.SignedContactResponse()
+            ..contactResponse = contactResponseBytes
+            ..identitySignature = identitySignature.toProto();
 
-              // Write the acceptance to the inbox
-              await contactRequestInbox
-                  .eventualWriteProtobuf(signedContactResponse, subkey: 1);
+          // Write the acceptance to the inbox
+          await contactRequestInbox.eventualWriteProtobuf(signedContactResponse,
+              subkey: 1);
 
-              return AcceptedContact(
-                remoteProfile: _contactRequestPrivate.profile,
-                remoteIdentity: _contactSuperIdentity,
-                remoteConversationRecordKey:
-                    _contactRequestPrivate.chatRecordKey.toVeilid(),
-                localConversationRecordKey: localConversation.key,
-              );
-            });
+          return AcceptedContact(
+            remoteProfile: _contactRequestPrivate.profile,
+            remoteIdentity: _contactSuperIdentity,
+            remoteConversationRecordKey:
+                _contactRequestPrivate.chatRecordKey.toVeilid(),
+            localConversationRecordKey: localConversation.key,
+          );
+        });
       });
     } on Exception catch (e) {
       log.debug('exception: $e', e);
@@ -93,10 +95,14 @@ class ValidContactInvitation {
   Future<bool> reject() async {
     final pool = DHTRecordPool.instance;
 
+    final unlockedAccountInfo =
+        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+    final accountRecordKey = unlockedAccountInfo.accountRecordKey;
+    final identityPublicKey = unlockedAccountInfo.identityPublicKey;
+
     // Ensure we don't delete this if we're trying to chat to self
-    final isSelf = _contactSuperIdentity.currentInstance.publicKey ==
-        _activeAccountInfo.identityPublicKey;
-    final accountRecordKey = _activeAccountInfo.accountRecordKey;
+    final isSelf =
+        _contactSuperIdentity.currentInstance.publicKey == identityPublicKey;
 
     return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
             debugName: 'ValidContactInvitation::reject::'
@@ -109,12 +115,12 @@ class ValidContactInvitation {
       final contactResponse = proto.ContactResponse()
         ..accept = false
         ..superIdentityRecordKey =
-            _activeAccountInfo.superIdentityRecordKey.toProto();
+            unlockedAccountInfo.superIdentityRecordKey.toProto();
       final contactResponseBytes = contactResponse.writeToBuffer();
 
       final identitySignature = await cs.sign(
-          _activeAccountInfo.identityWriter.key,
-          _activeAccountInfo.identityWriter.secret,
+          unlockedAccountInfo.identityWriter.key,
+          unlockedAccountInfo.identityWriter.secret,
           contactResponseBytes);
 
       final signedContactResponse = proto.SignedContactResponse()
@@ -129,8 +135,7 @@ class ValidContactInvitation {
   }
 
   //
-  final UnlockedAccountInfo _activeAccountInfo;
-  final proto.Account _account;
+  final Locator _locator;
   final TypedKey _contactRequestInboxKey;
   final SuperIdentity _contactSuperIdentity;
   final KeyPair _writer;

@@ -1,5 +1,6 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -12,8 +13,12 @@ typedef AccountRecordsBlocMapState
 class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<AccountRecordState>, AccountRecordCubit>
     with StateMapFollower<UserLoginsState, TypedKey, UserLogin> {
-  AccountRecordsBlocMapCubit(AccountRepository accountRepository)
-      : _accountRepository = accountRepository;
+  AccountRecordsBlocMapCubit(
+      AccountRepository accountRepository, Locator locator)
+      : _accountRepository = accountRepository {
+    // Follow the user logins cubit
+    follow(locator<UserLoginsCubit>());
+  }
 
   // Add account record cubit
   Future<void> _addAccountRecordCubit(

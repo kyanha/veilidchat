@@ -29,3 +29,8 @@ extension MessageExt on proto.Message {
   static int compareTimestamp(proto.Message a, proto.Message b) =>
       a.timestamp.compareTo(b.timestamp);
 }
+
+extension ContactExt on proto.Contact {
+  String get displayName =>
+      nickname.isNotEmpty ? '$nickname (${profile.name})' : profile.name;
+}

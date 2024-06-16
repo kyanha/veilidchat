@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -15,13 +15,14 @@ import '../contact_invitation.dart';
 
 class InvitationDialog extends StatefulWidget {
   const InvitationDialog(
-      {required this.modalContext,
+      {required Locator locator,
       required this.onValidationCancelled,
       required this.onValidationSuccess,
       required this.onValidationFailed,
       required this.inviteControlIsValid,
       required this.buildInviteControl,
-      super.key});
+      super.key})
+      : _locator = locator;
 
   final void Function() onValidationCancelled;
   final void Function() onValidationSuccess;
@@ -32,7 +33,7 @@ class InvitationDialog extends StatefulWidget {
       InvitationDialogState dialogState,
       Future<void> Function({required Uint8List inviteData})
           validateInviteData) buildInviteControl;
-  final BuildContext modalContext;
+  final Locator _locator;
 
   @override
   InvitationDialogState createState() => InvitationDialogState();
@@ -54,8 +55,7 @@ class InvitationDialog extends StatefulWidget {
                   InvitationDialogState dialogState,
                   Future<void> Function({required Uint8List inviteData})
                       validateInviteData)>.has(
-          'buildInviteControl', buildInviteControl))
-      ..add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
+          'buildInviteControl', buildInviteControl));
   }
 }
 
@@ -74,8 +74,8 @@ class InvitationDialogState extends State<InvitationDialog> {
 
   Future<void> _onAccept() async {
     final navigator = Navigator.of(context);
-    final activeAccountInfo = widget.modalContext.read<UnlockedAccountInfo>();
-    final contactList = widget.modalContext.read<ContactListCubit>();
+    final activeAccountInfo = widget._locator<UnlockedAccountInfo>();
+    final contactList = widget._locator<ContactListCubit>();
 
     setState(() {
       _isAccepting = true;
@@ -90,7 +90,7 @@ class InvitationDialogState extends State<InvitationDialog> {
             acceptedContact.remoteIdentity.currentInstance.publicKey;
         if (!isSelf) {
           await contactList.createContact(
-            remoteProfile: acceptedContact.remoteProfile,
+            profile: acceptedContact.remoteProfile,
             remoteSuperIdentity: acceptedContact.remoteIdentity,
             remoteConversationRecordKey:
                 acceptedContact.remoteConversationRecordKey,
@@ -137,7 +137,7 @@ class InvitationDialogState extends State<InvitationDialog> {
   }) async {
     try {
       final contactInvitationListCubit =
-          widget.modalContext.read<ContactInvitationListCubit>();
+          widget._locator<ContactInvitationListCubit>();
 
       setState(() {
         _isValidating = true;

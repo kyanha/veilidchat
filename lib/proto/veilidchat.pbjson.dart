@@ -455,27 +455,27 @@ final $typed_data.Uint8List accountDescriptor = $convert.base64Decode(
 const Contact$json = {
   '1': 'Contact',
   '2': [
-    {'1': 'edited_profile', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'editedProfile'},
-    {'1': 'remote_profile', '3': 2, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'remoteProfile'},
+    {'1': 'nickname', '3': 1, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'profile', '3': 2, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'profile'},
     {'1': 'super_identity_json', '3': 3, '4': 1, '5': 9, '10': 'superIdentityJson'},
     {'1': 'identity_public_key', '3': 4, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'identityPublicKey'},
     {'1': 'remote_conversation_record_key', '3': 5, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'remoteConversationRecordKey'},
     {'1': 'local_conversation_record_key', '3': 6, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'localConversationRecordKey'},
     {'1': 'show_availability', '3': 7, '4': 1, '5': 8, '10': 'showAvailability'},
+    {'1': 'notes', '3': 8, '4': 1, '5': 9, '10': 'notes'},
   ],
 };
 
 /// Descriptor for `Contact`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List contactDescriptor = $convert.base64Decode(
-    'CgdDb250YWN0EjoKDmVkaXRlZF9wcm9maWxlGAEgASgLMhMudmVpbGlkY2hhdC5Qcm9maWxlUg'
-    '1lZGl0ZWRQcm9maWxlEjoKDnJlbW90ZV9wcm9maWxlGAIgASgLMhMudmVpbGlkY2hhdC5Qcm9m'
-    'aWxlUg1yZW1vdGVQcm9maWxlEi4KE3N1cGVyX2lkZW50aXR5X2pzb24YAyABKAlSEXN1cGVySW'
-    'RlbnRpdHlKc29uEkAKE2lkZW50aXR5X3B1YmxpY19rZXkYBCABKAsyEC52ZWlsaWQuVHlwZWRL'
-    'ZXlSEWlkZW50aXR5UHVibGljS2V5ElUKHnJlbW90ZV9jb252ZXJzYXRpb25fcmVjb3JkX2tleR'
-    'gFIAEoCzIQLnZlaWxpZC5UeXBlZEtleVIbcmVtb3RlQ29udmVyc2F0aW9uUmVjb3JkS2V5ElMK'
-    'HWxvY2FsX2NvbnZlcnNhdGlvbl9yZWNvcmRfa2V5GAYgASgLMhAudmVpbGlkLlR5cGVkS2V5Uh'
-    'psb2NhbENvbnZlcnNhdGlvblJlY29yZEtleRIrChFzaG93X2F2YWlsYWJpbGl0eRgHIAEoCFIQ'
-    'c2hvd0F2YWlsYWJpbGl0eQ==');
+    'CgdDb250YWN0EhoKCG5pY2tuYW1lGAEgASgJUghuaWNrbmFtZRItCgdwcm9maWxlGAIgASgLMh'
+    'MudmVpbGlkY2hhdC5Qcm9maWxlUgdwcm9maWxlEi4KE3N1cGVyX2lkZW50aXR5X2pzb24YAyAB'
+    'KAlSEXN1cGVySWRlbnRpdHlKc29uEkAKE2lkZW50aXR5X3B1YmxpY19rZXkYBCABKAsyEC52ZW'
+    'lsaWQuVHlwZWRLZXlSEWlkZW50aXR5UHVibGljS2V5ElUKHnJlbW90ZV9jb252ZXJzYXRpb25f'
+    'cmVjb3JkX2tleRgFIAEoCzIQLnZlaWxpZC5UeXBlZEtleVIbcmVtb3RlQ29udmVyc2F0aW9uUm'
+    'Vjb3JkS2V5ElMKHWxvY2FsX2NvbnZlcnNhdGlvbl9yZWNvcmRfa2V5GAYgASgLMhAudmVpbGlk'
+    'LlR5cGVkS2V5Uhpsb2NhbENvbnZlcnNhdGlvblJlY29yZEtleRIrChFzaG93X2F2YWlsYWJpbG'
+    'l0eRgHIAEoCFIQc2hvd0F2YWlsYWJpbGl0eRIUCgVub3RlcxgIIAEoCVIFbm90ZXM=');
 
 @$core.Deprecated('Use contactInvitationDescriptor instead')
 const ContactInvitation$json = {

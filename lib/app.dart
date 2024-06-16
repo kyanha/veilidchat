@@ -131,9 +131,8 @@ class VeilidChatApp extends StatelessWidget {
                         PreferencesCubit(PreferencesRepository.instance),
                   ),
                   BlocProvider<AccountRecordsBlocMapCubit>(
-                      create: (context) =>
-                          AccountRecordsBlocMapCubit(AccountRepository.instance)
-                            ..follow(context.read<UserLoginsCubit>())),
+                      create: (context) => AccountRecordsBlocMapCubit(
+                          AccountRepository.instance, context.read)),
                 ],
                 child: BackgroundTicker(
                     child: _buildShortcuts(
@@ -141,7 +140,7 @@ class VeilidChatApp extends StatelessWidget {
                         builder: (context) => MaterialApp.router(
                               debugShowCheckedModeBanner: false,
                               routerConfig:
-                                  context.watch<RouterCubit>().router(),
+                                  context.read<RouterCubit>().router(),
                               title: translate('app.title'),
                               theme: theme,
                               localizationsDelegates: [

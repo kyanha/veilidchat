@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
@@ -19,21 +19,17 @@ typedef ChatListCubitState = DHTShortArrayBusyState<proto.Chat>;
 class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     with StateMapFollowable<ChatListCubitState, TypedKey, proto.Chat> {
   ChatListCubit({
-    required UnlockedAccountInfo unlockedAccountInfo,
-    required proto.Account account,
-    required this.activeChatCubit,
-  }) : super(
-            open: () => _open(unlockedAccountInfo, account),
+    required Locator locator,
+    required TypedKey accountRecordKey,
+    required OwnedDHTRecordPointer chatListRecordPointer,
+  })  : _locator = locator,
+        super(
+            open: () => _open(locator, accountRecordKey, chatListRecordPointer),
             decodeElement: proto.Chat.fromBuffer);
 
-  static Future<DHTShortArray> _open(
-      UnlockedAccountInfo activeAccountInfo, proto.Account account) async {
-    final accountRecordKey =
-        activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-
-    final chatListRecordKey = account.chatList.toVeilid();
-
-    final dhtRecord = await DHTShortArray.openOwned(chatListRecordKey,
+  static Future<DHTShortArray> _open(Locator locator, TypedKey accountRecordKey,
+      OwnedDHTRecordPointer chatListRecordPointer) async {
+    final dhtRecord = await DHTShortArray.openOwned(chatListRecordPointer,
         debugName: 'ChatListCubit::_open::ChatList', parent: accountRecordKey);
 
     return dhtRecord;
@@ -41,11 +37,11 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
 
   Future<proto.ChatSettings> getDefaultChatSettings(
       proto.Contact contact) async {
-    final pronouns = contact.editedProfile.pronouns.isEmpty
+    final pronouns = contact.profile.pronouns.isEmpty
         ? ''
-        : ' (${contact.editedProfile.pronouns})';
+        : ' [${contact.profile.pronouns}])';
     return proto.ChatSettings()
-      ..title = '${contact.editedProfile.name}$pronouns'
+      ..title = '${contact.displayName}$pronouns'
       ..description = ''
       ..defaultExpiration = Int64.ZERO;
   }
@@ -99,6 +95,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     final deletedItem =
         // Ensure followers get their changes before we return
         await syncFollowers(() => operateWrite((writer) async {
+              final activeChatCubit = _locator<ActiveChatCubit>();
               if (activeChatCubit.state == localConversationRecordKey) {
                 activeChatCubit.setActiveChat(null);
               }
@@ -142,5 +139,5 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
 
   ////////////////////////////////////////////////////////////////////////////
 
-  final ActiveChatCubit activeChatCubit;
+  final Locator _locator;
 }

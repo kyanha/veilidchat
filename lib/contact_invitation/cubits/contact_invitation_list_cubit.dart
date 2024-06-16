@@ -4,6 +4,7 @@ import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -36,22 +37,18 @@ class ContactInvitationListCubit
         StateMapFollowable<ContactInvitiationListState, TypedKey,
             proto.ContactInvitationRecord> {
   ContactInvitationListCubit({
-    required UnlockedAccountInfo unlockedAccountInfo,
-    required proto.Account account,
-  })  : _activeAccountInfo = unlockedAccountInfo,
-        _account = account,
+    required Locator locator,
+    required TypedKey accountRecordKey,
+    required OwnedDHTRecordPointer contactInvitationListRecordPointer,
+  })  : _locator = locator,
+        _accountRecordKey = accountRecordKey,
         super(
-            open: () => _open(unlockedAccountInfo, account),
+            open: () =>
+                _open(accountRecordKey, contactInvitationListRecordPointer),
             decodeElement: proto.ContactInvitationRecord.fromBuffer);
 
-  static Future<DHTShortArray> _open(
-      UnlockedAccountInfo activeAccountInfo, proto.Account account) async {
-    final accountRecordKey =
-        activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-
-    final contactInvitationListRecordPointer =
-        account.contactInvitationRecords.toVeilid();
-
+  static Future<DHTShortArray> _open(TypedKey accountRecordKey,
+      OwnedDHTRecordPointer contactInvitationListRecordPointer) async {
     final dhtRecord = await DHTShortArray.openOwned(
         contactInvitationListRecordPointer,
         debugName: 'ContactInvitationListCubit::_open::ContactInvitationList',
@@ -71,8 +68,12 @@ class ContactInvitationListCubit
     final crcs = await pool.veilid.bestCryptoSystem();
     final contactRequestWriter = await crcs.generateKeyPair();
 
-    final idcs = await _activeAccountInfo.identityCryptoSystem;
-    final identityWriter = _activeAccountInfo.identityWriter;
+    final activeAccountInfo =
+        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+    final profile = _locator<AccountRecordCubit>().state.asData!.value.profile;
+
+    final idcs = await activeAccountInfo.identityCryptoSystem;
+    final identityWriter = activeAccountInfo.identityWriter;
 
     // Encrypt the writer secret with the encryption key
     final encryptedSecret = await encryptionKeyType.encryptSecretToBytes(
@@ -90,7 +91,7 @@ class ContactInvitationListCubit
     await (await pool.createRecord(
             debugName: 'ContactInvitationListCubit::createInvitation::'
                 'LocalConversation',
-            parent: _activeAccountInfo.accountRecordKey,
+            parent: _accountRecordKey,
             schema: DHTSchema.smpl(
                 oCnt: 0,
                 members: [DHTSchemaMember(mKey: identityWriter.key, mCnt: 1)])))
@@ -99,9 +100,9 @@ class ContactInvitationListCubit
       // Make ContactRequestPrivate and encrypt with the writer secret
       final crpriv = proto.ContactRequestPrivate()
         ..writerKey = contactRequestWriter.key.toProto()
-        ..profile = _account.profile
+        ..profile = profile
         ..superIdentityRecordKey =
-            _activeAccountInfo.userLogin.superIdentityRecordKey.toProto()
+            activeAccountInfo.userLogin.superIdentityRecordKey.toProto()
         ..chatRecordKey = localConversation.key.toProto()
         ..expiration = expiration?.toInt64() ?? Int64.ZERO;
       final crprivbytes = crpriv.writeToBuffer();
@@ -119,7 +120,7 @@ class ContactInvitationListCubit
       await (await pool.createRecord(
               debugName: 'ContactInvitationListCubit::createInvitation::'
                   'ContactRequestInbox',
-              parent: _activeAccountInfo.accountRecordKey,
+              parent: _accountRecordKey,
               schema: DHTSchema.smpl(oCnt: 1, members: [
                 DHTSchemaMember(mCnt: 1, mKey: contactRequestWriter.key)
               ]),
@@ -172,8 +173,6 @@ class ContactInvitationListCubit
       {required bool accepted,
       required TypedKey contactRequestInboxRecordKey}) async {
     final pool = DHTRecordPool.instance;
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove ContactInvitationRecord from account's list
     final deletedItem = await operateWrite((writer) async {
@@ -198,7 +197,7 @@ class ContactInvitationListCubit
       await (await pool.openRecordOwned(contactRequestInbox,
               debugName: 'ContactInvitationListCubit::deleteInvitation::'
                   'ContactRequestInbox',
-              parent: accountRecordKey))
+              parent: _accountRecordKey))
           .scope((contactRequestInbox) async {
         // Wipe out old invitation so it shows up as invalid
         await contactRequestInbox.tryWriteBytes(Uint8List(0));
@@ -248,7 +247,7 @@ class ContactInvitationListCubit
     await (await pool.openRecordRead(contactRequestInboxKey,
             debugName: 'ContactInvitationListCubit::validateInvitation::'
                 'ContactRequestInbox',
-            parent: _activeAccountInfo.accountRecordKey))
+            parent: _accountRecordKey))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
       //
       final contactRequest = await contactRequestInbox
@@ -293,8 +292,7 @@ class ContactInvitationListCubit
           secret: writerSecret);
 
       out = ValidContactInvitation(
-          activeAccountInfo: _activeAccountInfo,
-          account: _account,
+          locator: _locator,
           contactRequestInboxKey: contactRequestInboxKey,
           contactRequestPrivate: contactRequestPrivate,
           contactSuperIdentity: contactSuperIdentity,
@@ -318,6 +316,6 @@ class ContactInvitationListCubit
   }
 
   //
-  final UnlockedAccountInfo _activeAccountInfo;
-  final proto.Account _account;
+  final Locator _locator;
+  final TypedKey _accountRecordKey;
 }

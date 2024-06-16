@@ -10,6 +10,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -35,29 +36,31 @@ class ConversationState extends Equatable {
 /// 1-1 chats
 class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   ConversationCubit(
-      {required UnlockedAccountInfo activeAccountInfo,
+      {required Locator locator,
       required TypedKey remoteIdentityPublicKey,
       TypedKey? localConversationRecordKey,
       TypedKey? remoteConversationRecordKey})
-      : _unlockedAccountInfo = activeAccountInfo,
+      : _locator = locator,
         _localConversationRecordKey = localConversationRecordKey,
         _remoteIdentityPublicKey = remoteIdentityPublicKey,
         _remoteConversationRecordKey = remoteConversationRecordKey,
         super(const AsyncValue.loading()) {
+    final unlockedAccountInfo =
+        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+    _accountRecordKey = unlockedAccountInfo.accountRecordKey;
+    _identityWriter = unlockedAccountInfo.identityWriter;
+
     if (_localConversationRecordKey != null) {
       _initWait.add(() async {
         await _setLocalConversation(() async {
-          final accountRecordKey = _unlockedAccountInfo
-              .userLogin.accountRecordInfo.accountRecord.recordKey;
-
           // Open local record key if it is specified
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
-          final writer = _unlockedAccountInfo.identityWriter;
+          final writer = _identityWriter;
           final record = await pool.openRecordWrite(
               _localConversationRecordKey!, writer,
               debugName: 'ConversationCubit::LocalConversation',
-              parent: accountRecordKey,
+              parent: _accountRecordKey,
               crypto: crypto);
 
           return record;
@@ -68,15 +71,12 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     if (_remoteConversationRecordKey != null) {
       _initWait.add(() async {
         await _setRemoteConversation(() async {
-          final accountRecordKey = _unlockedAccountInfo
-              .userLogin.accountRecordInfo.accountRecord.recordKey;
-
           // Open remote record key if it is specified
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
           final record = await pool.openRecordRead(_remoteConversationRecordKey,
               debugName: 'ConversationCubit::RemoteConversation',
-              parent: accountRecordKey,
+              parent: _accountRecordKey,
               crypto: crypto);
           return record;
         });
@@ -107,18 +107,19 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   /// The callback allows for more initialization to occur and for
   /// cleanup to delete records upon failure of the callback
   Future<T> initLocalConversation<T>(
-      {required proto.Profile profile,
-      required FutureOr<T> Function(DHTRecord) callback,
+      {required FutureOr<T> Function(DHTRecord) callback,
       TypedKey? existingConversationRecordKey}) async {
     assert(_localConversationRecordKey == null,
         'must not have a local conversation yet');
 
     final pool = DHTRecordPool.instance;
-    final accountRecordKey = _unlockedAccountInfo
-        .userLogin.accountRecordInfo.accountRecord.recordKey;
 
     final crypto = await _cachedConversationCrypto();
-    final writer = _unlockedAccountInfo.identityWriter;
+    final account = _locator<AccountRecordCubit>().state.asData!.value;
+    final unlockedAccountInfo =
+        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+    final accountRecordKey = unlockedAccountInfo.accountRecordKey;
+    final writer = unlockedAccountInfo.identityWriter;
 
     // Open with SMPL scheme for identity writer
     late final DHTRecord localConversationRecord;
@@ -144,15 +145,13 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         .deleteScope((localConversation) async {
       // Make messages log
       return _initLocalMessages(
-          activeAccountInfo: _unlockedAccountInfo,
-          remoteIdentityPublicKey: _remoteIdentityPublicKey,
           localConversationKey: localConversation.key,
           callback: (messages) async {
             // Create initial local conversation key contents
             final conversation = proto.Conversation()
-              ..profile = profile
+              ..profile = account.profile
               ..superIdentityJson = jsonEncode(
-                  _unlockedAccountInfo.localAccount.superIdentity.toJson())
+                  unlockedAccountInfo.localAccount.superIdentity.toJson())
               ..messages = messages.recordKey.toProto();
 
             // Write initial conversation to record
@@ -340,14 +339,11 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
   // Initialize local messages
   Future<T> _initLocalMessages<T>({
-    required UnlockedAccountInfo activeAccountInfo,
-    required TypedKey remoteIdentityPublicKey,
     required TypedKey localConversationKey,
     required FutureOr<T> Function(DHTLog) callback,
   }) async {
-    final crypto =
-        await activeAccountInfo.makeConversationCrypto(remoteIdentityPublicKey);
-    final writer = activeAccountInfo.identityWriter;
+    final crypto = await _cachedConversationCrypto();
+    final writer = _identityWriter;
 
     return (await DHTLog.create(
             debugName: 'ConversationCubit::initLocalMessages::LocalMessages',
@@ -362,17 +358,19 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     if (conversationCrypto != null) {
       return conversationCrypto;
     }
-    conversationCrypto = await _unlockedAccountInfo
+    final unlockedAccountInfo =
+        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+    conversationCrypto = await unlockedAccountInfo
         .makeConversationCrypto(_remoteIdentityPublicKey);
-
     _conversationCrypto = conversationCrypto;
     return conversationCrypto;
   }
 
   ////////////////////////////////////////////////////////////////////////////
   // Fields
-
-  final UnlockedAccountInfo _unlockedAccountInfo;
+  final Locator _locator;
+  late final TypedKey _accountRecordKey;
+  late final KeyPair _identityWriter;
   final TypedKey _remoteIdentityPublicKey;
   TypedKey? _localConversationRecordKey;
   final TypedKey? _remoteConversationRecordKey;
