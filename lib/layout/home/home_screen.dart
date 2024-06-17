@@ -14,24 +14,24 @@ import '../../contact_invitation/contact_invitation.dart';
 import '../../contacts/contacts.dart';
 import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
-import '../../router/router.dart';
 import '../../theme/theme.dart';
+import '../../tools/tools.dart';
+import 'active_account_page_controller_wrapper.dart';
 import 'drawer_menu/drawer_menu.dart';
 import 'home_account_invalid.dart';
 import 'home_account_locked.dart';
 import 'home_account_missing.dart';
+import 'home_account_ready/home_account_ready.dart';
 import 'home_no_active.dart';
 
-class HomeShell extends StatefulWidget {
-  const HomeShell({required this.child, super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  HomeShellState createState() => HomeShellState();
-
-  final Widget child;
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class HomeShellState extends State<HomeShell> {
+class HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
@@ -84,8 +84,22 @@ class HomeShellState extends State<HomeShell> {
     });
   }
 
-  Widget _buildActiveAccount(BuildContext context) {
-    final accountRecordKey = context.select<ActiveAccountInfoCubit, TypedKey>(
+  Widget _buildAccountReadyDeviceSpecific(BuildContext context) {
+    final hasActiveChat = context.watch<ActiveChatCubit>().state != null;
+    if (responsiveVisibility(
+        context: context,
+        tablet: false,
+        tabletLandscape: false,
+        desktop: false)) {
+      if (hasActiveChat) {
+        return const HomeAccountReadyChat();
+      }
+    }
+    return const HomeAccountReadyMain();
+  }
+
+  Widget _buildUnlockedAccount(BuildContext context) {
+    final accountRecordKey = context.select<AccountInfoCubit, TypedKey>(
         (c) => c.state.unlockedAccountInfo!.accountRecordKey);
     final contactListRecordPointer =
         context.select<AccountRecordCubit, OwnedDHTRecordPointer?>(
@@ -124,8 +138,9 @@ class HomeShellState extends State<HomeShell> {
                   )),
           // Chat Cubits
           BlocProvider(
-              create: (context) => ActiveChatCubit(null,
-                  routerCubit: context.read<RouterCubit>())),
+              create: (context) => ActiveChatCubit(
+                    null,
+                  )),
           BlocProvider(
               create: (context) => ChatListCubit(
                   locator: context.read,
@@ -146,27 +161,21 @@ class HomeShellState extends State<HomeShell> {
               WaitingInvitationsBlocMapState>(
             listener: _invitationStatusListener,
           )
-        ], child: widget.child));
+        ], child: Builder(builder: _buildAccountReadyDeviceSpecific)));
   }
 
-  Widget _buildWithLogin(BuildContext context) {
+  Widget _buildAccount(BuildContext context) {
     // Get active account info status
     final (
       accountInfoStatus,
       accountInfoActive,
       superIdentityRecordKey
     ) = context
-        .select<ActiveAccountInfoCubit, (AccountInfoStatus, bool, TypedKey?)>(
-            (c) => (
-                  c.state.status,
-                  c.state.active,
-                  c.state.unlockedAccountInfo?.superIdentityRecordKey
-                ));
-
-    if (!accountInfoActive) {
-      // If no logged in user is active, show the loading panel
-      return const HomeNoActive();
-    }
+        .select<AccountInfoCubit, (AccountInfoStatus, bool, TypedKey?)>((c) => (
+              c.state.status,
+              c.state.active,
+              c.state.unlockedAccountInfo?.superIdentityRecordKey
+            ));
 
     switch (accountInfoStatus) {
       case AccountInfoStatus.noAccount:
@@ -175,7 +184,7 @@ class HomeShellState extends State<HomeShell> {
         return const HomeAccountInvalid();
       case AccountInfoStatus.accountLocked:
         return const HomeAccountLocked();
-      case AccountInfoStatus.accountReady:
+      case AccountInfoStatus.accountUnlocked:
 
         // Get the current active account record cubit
         final activeAccountRecordCubit =
@@ -190,8 +199,48 @@ class HomeShellState extends State<HomeShell> {
         return MultiBlocProvider(providers: [
           BlocProvider<AccountRecordCubit>.value(
               value: activeAccountRecordCubit),
-        ], child: Builder(builder: _buildActiveAccount));
+        ], child: Builder(builder: _buildUnlockedAccount));
     }
+  }
+
+  Widget _buildAccountPageView(BuildContext context) {
+    final localAccounts = context.watch<LocalAccountsCubit>().state;
+    final activeLocalAccountCubit = context.read<ActiveLocalAccountCubit>();
+
+    final activeIndex = localAccounts.indexWhere(
+        (x) => x.superIdentity.recordKey == activeLocalAccountCubit.state);
+    if (activeIndex == -1) {
+      return const HomeNoActive();
+    }
+
+    return Provider<ActiveAccountPageControllerWrapper>(
+        lazy: false,
+        create: (context) =>
+            ActiveAccountPageControllerWrapper(context.read, activeIndex),
+        dispose: (context, value) {
+          value.dispose();
+        },
+        child: Builder(
+            builder: (context) => PageView.builder(
+                itemCount: localAccounts.length,
+                onPageChanged: (idx) {
+                  singleFuture(this, () async {
+                    await AccountRepository.instance.switchToAccount(
+                        localAccounts[idx].superIdentity.recordKey);
+                  });
+                },
+                controller: context
+                    .read<ActiveAccountPageControllerWrapper>()
+                    .pageController,
+                itemBuilder: (context, index) {
+                  final localAccount = localAccounts[index];
+                  return BlocProvider<AccountInfoCubit>(
+                      key: ValueKey(localAccount.superIdentity.recordKey),
+                      create: (context) => AccountInfoCubit(
+                          AccountRepository.instance,
+                          localAccount.superIdentity.recordKey),
+                      child: Builder(builder: _buildAccount));
+                })));
   }
 
   @override
@@ -219,7 +268,7 @@ class HomeShellState extends State<HomeShell> {
                       color: scale.primaryScale.activeElementBackground),
                   child: Provider<ZoomDrawerController>.value(
                       value: _zoomDrawerController,
-                      child: Builder(builder: _buildWithLogin))),
+                      child: Builder(builder: _buildAccountPageView))),
               borderRadius: 24,
               showShadow: true,
               angle: 0,
@@ -239,50 +288,3 @@ class HomeShellState extends State<HomeShell> {
   final _singleInvitationStatusProcessor =
       SingleStateProcessor<WaitingInvitationsBlocMapState>();
 }
-
-// class HomeAccountReadyShell extends StatefulWidget {
-//   factory HomeAccountReadyShell(
-//       {required BuildContext context, required Widget child, Key? key}) {
-//     // These must exist in order for the account to
-//     // be considered 'ready' for this widget subtree
-//     final unlockedAccountInfo = context.watch<UnlockedAccountInfo>();
-//     final routerCubit = context.read<RouterCubit>();
-
-//     return HomeAccountReadyShell._(
-//         unlockedAccountInfo: unlockedAccountInfo,
-//         routerCubit: routerCubit,
-//         key: key,
-//         child: child);
-//   }
-//   const HomeAccountReadyShell._(
-//       {required this.unlockedAccountInfo,
-//       required this.routerCubit,
-//       required this.child,
-//       super.key});
-
-//   @override
-//   HomeAccountReadyShellState createState() => HomeAccountReadyShellState();
-
-//   final Widget child;
-//   final UnlockedAccountInfo unlockedAccountInfo;
-//   final RouterCubit routerCubit;
-
-//   @override
-//   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-//     super.debugFillProperties(properties);
-//     properties
-//       ..add(DiagnosticsProperty<UnlockedAccountInfo>(
-//           'unlockedAccountInfo', unlockedAccountInfo))
-//       ..add(DiagnosticsProperty<RouterCubit>('routerCubit', routerCubit));
-//   }
-// }
-
-// class HomeAccountReadyShellState extends State<HomeAccountReadyShell> {
-//   final SingleStateProcessor<WaitingInvitationsBlocMapState>
-//       _singleInvitationStatusProcessor = SingleStateProcessor();
-
-//   @override
-//   void initState() {
-//     super.initState();
-//   }
-// }

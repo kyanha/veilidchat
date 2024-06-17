@@ -88,7 +88,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   // Initialize everything
   Future<void> _init() async {
     _unlockedAccountInfo =
-        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
 
     _unsentMessagesQueue = PersistentQueue<proto.Message>(
       table: 'SingleContactUnsentMessages',

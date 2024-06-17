@@ -69,7 +69,7 @@ class ContactInvitationListCubit
     final contactRequestWriter = await crcs.generateKeyPair();
 
     final activeAccountInfo =
-        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
     final profile = _locator<AccountRecordCubit>().state.asData!.value.profile;
 
     final idcs = await activeAccountInfo.identityCryptoSystem;
@@ -247,7 +247,8 @@ class ContactInvitationListCubit
     await (await pool.openRecordRead(contactRequestInboxKey,
             debugName: 'ContactInvitationListCubit::validateInvitation::'
                 'ContactRequestInbox',
-            parent: _accountRecordKey))
+            parent: pool.getParentRecordKey(contactRequestInboxKey) ??
+                _accountRecordKey))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
       //
       final contactRequest = await contactRequestInbox

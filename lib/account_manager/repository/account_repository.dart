@@ -129,7 +129,7 @@ class AccountRepository {
 
     // Got account, decrypted and decoded
     return AccountInfo(
-      status: AccountInfoStatus.accountReady,
+      status: AccountInfoStatus.accountUnlocked,
       active: active,
       unlockedAccountInfo:
           UnlockedAccountInfo(localAccount: localAccount, userLogin: userLogin),

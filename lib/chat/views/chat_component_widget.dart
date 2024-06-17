@@ -8,7 +8,6 @@ import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../account_manager/account_manager.dart';
 import '../../conversation/conversation.dart';
 import '../../theme/theme.dart';
 import '../chat.dart';
@@ -147,6 +146,11 @@ class ChatComponentWidget extends StatelessWidget {
     final chatComponentCubit = context.watch<ChatComponentCubit>();
     final chatComponentState = chatComponentCubit.state;
 
+    final localUser = chatComponentState.localUser;
+    if (localUser == null) {
+      return waitingPage();
+    }
+
     final messageWindow = chatComponentState.messageWindow.asData?.value;
     if (messageWindow == null) {
       return chatComponentState.messageWindow.buildNotData();
@@ -269,7 +273,7 @@ class ChatComponentWidget extends StatelessWidget {
                                   _handleSendPressed(chatComponentCubit, pt),
                               //showUserAvatars: false,
                               //showUserNames: true,
-                              user: chatComponentState.localUser,
+                              user: localUser,
                               emptyState: const EmptyChatWidget())),
                     ),
                   ),

@@ -70,9 +70,6 @@ class _EditAccountPageState extends State<EditAccountPage> {
   @override
   Widget build(BuildContext context) {
     final displayModalHUD = _isInAsyncCall;
-    final accountRecordsCubit = context.watch<AccountRecordsBlocMapCubit>();
-    final accountRecordCubit = accountRecordsCubit
-        .operate(widget.superIdentityRecordKey, closure: (c) => c);
 
     return Scaffold(
       // resizeToAvoidBottomInset: false,
@@ -118,9 +115,15 @@ class _EditAccountPageState extends State<EditAccountPage> {
               _isInAsyncCall = true;
             });
             try {
-              // Update account profile DHT record
-              // This triggers ConversationCubits to update
-              await accountRecordCubit.updateProfile(newProfile);
+              // Look up account cubit for this specific account
+              final accountRecordsCubit =
+                  context.read<AccountRecordsBlocMapCubit>();
+              await accountRecordsCubit.operateAsync(
+                  widget.superIdentityRecordKey, closure: (c) async {
+                // Update account profile DHT record
+                // This triggers ConversationCubits to update
+                await c.updateProfile(newProfile);
+              });
 
               // Update local account profile
               await AccountRepository.instance.editAccountProfile(

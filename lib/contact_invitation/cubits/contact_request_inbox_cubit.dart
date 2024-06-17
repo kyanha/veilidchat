@@ -23,7 +23,7 @@ class ContactRequestInboxCubit
     final pool = DHTRecordPool.instance;
 
     final unlockedAccountInfo =
-        locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+        locator<AccountInfoCubit>().state.unlockedAccountInfo!;
     final accountRecordKey = unlockedAccountInfo.accountRecordKey;
 
     final writerSecret = contactInvitationRecord.writerSecret.toVeilid();

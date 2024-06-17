@@ -20,9 +20,13 @@ class ChatComponentState with _$ChatComponentState {
       // ScrollController for the chat
       required AutoScrollController scrollController,
       // Local user
-      required User localUser,
-      // Remote users
+      required User? localUser,
+      // Active remote users
       required IMap<TypedKey, User> remoteUsers,
+      // Historical remote users
+      required IMap<TypedKey, User> historicalRemoteUsers,
+      // Unknown users
+      required IMap<TypedKey, User> unknownUsers,
       // Messages state
       required AsyncValue<WindowState<Message>> messageWindow,
       // Title of the chat

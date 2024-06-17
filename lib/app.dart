@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import 'account_manager/account_manager.dart';
+import 'account_manager/cubits/active_local_account_cubit.dart';
 import 'init.dart';
 import 'layout/splash.dart';
 import 'router/router.dart';
@@ -122,9 +123,9 @@ class VeilidChatApp extends StatelessWidget {
                     create: (context) =>
                         UserLoginsCubit(AccountRepository.instance),
                   ),
-                  BlocProvider<ActiveAccountInfoCubit>(
+                  BlocProvider<ActiveLocalAccountCubit>(
                     create: (context) =>
-                        ActiveAccountInfoCubit(AccountRepository.instance),
+                        ActiveLocalAccountCubit(AccountRepository.instance),
                   ),
                   BlocProvider<PreferencesCubit>(
                     create: (context) =>

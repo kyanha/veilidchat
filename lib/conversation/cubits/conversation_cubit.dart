@@ -46,7 +46,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         _remoteConversationRecordKey = remoteConversationRecordKey,
         super(const AsyncValue.loading()) {
     final unlockedAccountInfo =
-        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
     _accountRecordKey = unlockedAccountInfo.accountRecordKey;
     _identityWriter = unlockedAccountInfo.identityWriter;
 
@@ -76,7 +76,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
           final crypto = await _cachedConversationCrypto();
           final record = await pool.openRecordRead(_remoteConversationRecordKey,
               debugName: 'ConversationCubit::RemoteConversation',
-              parent: _accountRecordKey,
+              parent: pool.getParentRecordKey(_remoteConversationRecordKey) ??
+                  _accountRecordKey,
               crypto: crypto);
           return record;
         });
@@ -117,7 +118,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     final crypto = await _cachedConversationCrypto();
     final account = _locator<AccountRecordCubit>().state.asData!.value;
     final unlockedAccountInfo =
-        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
     final accountRecordKey = unlockedAccountInfo.accountRecordKey;
     final writer = unlockedAccountInfo.identityWriter;
 
@@ -359,7 +360,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
       return conversationCrypto;
     }
     final unlockedAccountInfo =
-        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
     conversationCrypto = await unlockedAccountInfo
         .makeConversationCrypto(_remoteIdentityPublicKey);
     _conversationCrypto = conversationCrypto;
@@ -368,6 +369,8 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
   ////////////////////////////////////////////////////////////////////////////
   // Fields
+  TypedKey get remoteIdentityPublicKey => _remoteIdentityPublicKey;
+
   final Locator _locator;
   late final TypedKey _accountRecordKey;
   late final KeyPair _identityWriter;

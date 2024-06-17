@@ -27,15 +27,19 @@ const metadataKeyAttachments = 'attachments';
 
 class ChatComponentCubit extends Cubit<ChatComponentState> {
   ChatComponentCubit._({
+    required Locator locator,
+    required List<ActiveConversationCubit> conversationCubits,
     required SingleContactMessagesCubit messagesCubit,
-    required types.User localUser,
-    required IMap<TypedKey, types.User> remoteUsers,
-  })  : _messagesCubit = messagesCubit,
+  })  : _locator = locator,
+        _conversationCubits = conversationCubits,
+        _messagesCubit = messagesCubit,
         super(ChatComponentState(
           chatKey: GlobalKey<ChatState>(),
           scrollController: AutoScrollController(),
-          localUser: localUser,
-          remoteUsers: remoteUsers,
+          localUser: null,
+          remoteUsers: const IMap.empty(),
+          historicalRemoteUsers: const IMap.empty(),
+          unknownUsers: const IMap.empty(),
           messageWindow: const AsyncLoading(),
           title: '',
         )) {
@@ -43,58 +47,40 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
     _initWait.add(_init);
   }
 
-  // ignore: prefer_constructors_over_static_methods
-  static ChatComponentCubit singleContact(
-      {required Locator locator,
-      required ActiveConversationCubit activeConversationCubit,
-      required SingleContactMessagesCubit messagesCubit}) {
-    // Get account info
-    final unlockedAccountInfo =
-        locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
-    final account = locator<AccountRecordCubit>().state.asData!.value;
-
-    // Make local 'User'
-    final localUserIdentityKey = unlockedAccountInfo.identityTypedPublicKey;
-    final localUser = types.User(
-        id: localUserIdentityKey.toString(),
-        firstName: account.profile.name,
-        metadata: {metadataKeyIdentityPublicKey: localUserIdentityKey});
-
-    // Make remote 'User's
-    final remoteUsers = {
-      activeConversationState.contact.identityPublicKey.toVeilid(): types.User(
-          id: activeConversationState.contact.identityPublicKey
-              .toVeilid()
-              .toString(),
-          firstName: activeConversationState.contact.displayName,
-          metadata: {
-            metadataKeyIdentityPublicKey:
-                activeConversationState.contact.identityPublicKey.toVeilid()
-          })
-    }.toIMap();
-
-    return ChatComponentCubit._(
-      messagesCubit: messagesCubit,
-      localUser: localUser,
-      remoteUsers: remoteUsers,
-    );
-  }
+  factory ChatComponentCubit.singleContact(
+          {required Locator locator,
+          required ActiveConversationCubit activeConversationCubit,
+          required SingleContactMessagesCubit messagesCubit}) =>
+      ChatComponentCubit._(
+        locator: locator,
+        conversationCubits: [activeConversationCubit],
+        messagesCubit: messagesCubit,
+      );
 
   Future<void> _init() async {
-    _messagesSubscription = _messagesCubit.stream.listen((messagesState) {
-      emit(state.copyWith(
-        messageWindow: _convertMessages(messagesState),
-      ));
-    });
-    emit(state.copyWith(
-      messageWindow: _convertMessages(_messagesCubit.state),
-      title: _getTitle(),
-    ));
+    // Get local user info and account record cubit
+    final unlockedAccountInfo =
+        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
+    _localUserIdentityKey = unlockedAccountInfo.identityTypedPublicKey;
+    _localUserAccountRecordCubit = _locator<AccountRecordCubit>();
+
+    // Subscribe to local user info
+    _localUserAccountRecordSubscription = _localUserAccountRecordCubit.stream
+        .listen(_onChangedLocalUserAccountRecord);
+    _onChangedLocalUserAccountRecord(_localUserAccountRecordCubit.state);
+
+    // Subscribe to remote user info
+    await _updateConversationSubscriptions();
+
+    // Subscribe to messages
+    _messagesSubscription = _messagesCubit.stream.listen(_onChangedMessages);
+    _onChangedMessages(_messagesCubit.state);
   }
 
   @override
   Future<void> close() async {
     await _initWait();
+    await _localUserAccountRecordSubscription.cancel();
     await _messagesSubscription.cancel();
     await super.close();
   }
@@ -159,23 +145,130 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   ////////////////////////////////////////////////////////////////////////////
   // Private Implementation
 
-  String _getTitle() {
-    if (state.remoteUsers.length == 1) {
-      final remoteUser = state.remoteUsers.values.first;
-      return remoteUser.firstName ?? '<unnamed>';
-    } else {
-      return '<group chat with ${state.remoteUsers.length} users>';
+  void _onChangedLocalUserAccountRecord(AsyncValue<proto.Account> avAccount) {
+    final account = avAccount.asData?.value;
+    if (account == null) {
+      emit(state.copyWith(localUser: null));
+      return;
     }
+    // Make local 'User'
+    final localUser = types.User(
+        id: _localUserIdentityKey.toString(),
+        firstName: account.profile.name,
+        metadata: {metadataKeyIdentityPublicKey: _localUserIdentityKey});
+    emit(state.copyWith(localUser: localUser));
   }
 
-  types.Message? _messageStateToChatMessage(MessageState message) {
+  void _onChangedMessages(
+      AsyncValue<WindowState<MessageState>> avMessagesState) {
+    emit(_convertMessages(state, avMessagesState));
+  }
+
+  void _onChangedConversation(
+    TypedKey remoteIdentityPublicKey,
+    AsyncValue<ActiveConversationState> avConversationState,
+  ) {
+    //
+  }
+
+  types.User _convertRemoteUser(TypedKey remoteIdentityPublicKey,
+          ActiveConversationState activeConversationState) =>
+      types.User(
+          id: remoteIdentityPublicKey.toString(),
+          firstName: activeConversationState.contact.displayName,
+          metadata: {metadataKeyIdentityPublicKey: remoteIdentityPublicKey});
+
+  types.User _convertUnknownUser(TypedKey remoteIdentityPublicKey) =>
+      types.User(
+          id: remoteIdentityPublicKey.toString(),
+          firstName: '<$remoteIdentityPublicKey>',
+          metadata: {metadataKeyIdentityPublicKey: remoteIdentityPublicKey});
+
+  Future<void> _updateConversationSubscriptions() async {
+    // Get existing subscription keys and state
+    final existing = _conversationSubscriptions.keys.toList();
+    var currentRemoteUsersState = state.remoteUsers;
+
+    // Process cubit list
+    for (final cc in _conversationCubits) {
+      // Get the remote identity key
+      final remoteIdentityPublicKey = cc.input.remoteIdentityPublicKey;
+
+      // If the cubit is already being listened to we have nothing to do
+      if (existing.remove(remoteIdentityPublicKey)) {
+        continue;
+      }
+
+      // If the cubit is not already being listened to we should do that
+      _conversationSubscriptions[remoteIdentityPublicKey] = cc.stream.listen(
+          (avConv) => _onChangedConversation(remoteIdentityPublicKey, avConv));
+      final activeConversationState = cc.state.asData?.value;
+      if (activeConversationState != null) {
+        final remoteUser = _convertRemoteUser(
+            remoteIdentityPublicKey, activeConversationState);
+        currentRemoteUsersState =
+            currentRemoteUsersState.add(remoteIdentityPublicKey, remoteUser);
+      }
+    }
+    // Purge remote users we didn't see in the cubit list any more
+    final cancels = <Future<void>>[];
+    for (final deadUser in existing) {
+      currentRemoteUsersState = currentRemoteUsersState.remove(deadUser);
+      cancels.add(_conversationSubscriptions.remove(deadUser)!.cancel());
+    }
+    await cancels.wait;
+
+    // Emit change to remote users state
+    emit(_updateTitle(state.copyWith(remoteUsers: currentRemoteUsersState)));
+  }
+
+  ChatComponentState _updateTitle(ChatComponentState currentState) {
+    if (currentState.remoteUsers.length == 0) {
+      return currentState.copyWith(title: 'Empty Chat');
+    }
+    if (currentState.remoteUsers.length == 1) {
+      final remoteUser = currentState.remoteUsers.values.first;
+      return currentState.copyWith(title: remoteUser.firstName ?? '<unnamed>');
+    }
+    return currentState.copyWith(
+        title: '<group chat with ${state.remoteUsers.length} users>');
+  }
+
+  (ChatComponentState, types.Message?) _messageStateToChatMessage(
+      ChatComponentState currentState, MessageState message) {
     final authorIdentityPublicKey = message.content.author.toVeilid();
-    final author =
-        state.remoteUsers[authorIdentityPublicKey] ?? state.localUser;
+    late final types.User author;
+    if (authorIdentityPublicKey == _localUserIdentityKey &&
+        currentState.localUser != null) {
+      author = currentState.localUser!;
+    } else {
+      final remoteUser = currentState.remoteUsers[authorIdentityPublicKey];
+      if (remoteUser != null) {
+        author = remoteUser;
+      } else {
+        final historicalRemoteUser =
+            currentState.historicalRemoteUsers[authorIdentityPublicKey];
+        if (historicalRemoteUser != null) {
+          author = historicalRemoteUser;
+        } else {
+          final unknownRemoteUser =
+              currentState.unknownUsers[authorIdentityPublicKey];
+          if (unknownRemoteUser != null) {
+            author = unknownRemoteUser;
+          } else {
+            final unknownUser = _convertUnknownUser(authorIdentityPublicKey);
+            currentState = currentState.copyWith(
+                unknownUsers: currentState.unknownUsers
+                    .add(authorIdentityPublicKey, unknownUser));
+            author = unknownUser;
+          }
+        }
+      }
+    }
 
     types.Status? status;
     if (message.sendState != null) {
-      assert(author == state.localUser,
+      assert(author.id == _localUserIdentityKey.toString(),
           'send state should only be on sent messages');
       switch (message.sendState!) {
         case MessageSendState.sending:
@@ -198,7 +291,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
             text: contextText.text,
             showStatus: status != null,
             status: status);
-        return textMessage;
+        return (currentState, textMessage);
       case proto.Message_Kind.secret:
       case proto.Message_Kind.delete:
       case proto.Message_Kind.erase:
@@ -207,17 +300,24 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
       case proto.Message_Kind.membership:
       case proto.Message_Kind.moderation:
       case proto.Message_Kind.notSet:
-        return null;
+        return (currentState, null);
     }
   }
 
-  AsyncValue<WindowState<types.Message>> _convertMessages(
+  ChatComponentState _convertMessages(ChatComponentState currentState,
       AsyncValue<WindowState<MessageState>> avMessagesState) {
+    // Clear out unknown users
+    currentState = state.copyWith(unknownUsers: const IMap.empty());
+
     final asError = avMessagesState.asError;
     if (asError != null) {
-      return AsyncValue.error(asError.error, asError.stackTrace);
+      return currentState.copyWith(
+          unknownUsers: const IMap.empty(),
+          messageWindow: AsyncValue.error(asError.error, asError.stackTrace));
     } else if (avMessagesState.asLoading != null) {
-      return const AsyncValue.loading();
+      return currentState.copyWith(
+          unknownUsers: const IMap.empty(),
+          messageWindow: const AsyncValue.loading());
     }
     final messagesState = avMessagesState.asData!.value;
 
@@ -225,7 +325,9 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
     final chatMessages = <types.Message>[];
     final tsSet = <String>{};
     for (final message in messagesState.window) {
-      final chatMessage = _messageStateToChatMessage(message);
+      final (newState, chatMessage) =
+          _messageStateToChatMessage(currentState, message);
+      currentState = newState;
       if (chatMessage == null) {
         continue;
       }
@@ -238,12 +340,13 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
         assert(false, 'should not have duplicate id');
       }
     }
-    return AsyncValue.data(WindowState<types.Message>(
-        window: chatMessages.toIList(),
-        length: messagesState.length,
-        windowTail: messagesState.windowTail,
-        windowCount: messagesState.windowCount,
-        follow: messagesState.follow));
+    return currentState.copyWith(
+        messageWindow: AsyncValue.data(WindowState<types.Message>(
+            window: chatMessages.toIList(),
+            length: messagesState.length,
+            windowTail: messagesState.windowTail,
+            windowCount: messagesState.windowCount,
+            follow: messagesState.follow)));
   }
 
   void _addTextMessage(
@@ -271,7 +374,18 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   ////////////////////////////////////////////////////////////////////////////
 
   final _initWait = WaitSet<void>();
+
+  final Locator _locator;
+  final List<ActiveConversationCubit> _conversationCubits;
   final SingleContactMessagesCubit _messagesCubit;
+
+  late final TypedKey _localUserIdentityKey;
+  late final AccountRecordCubit _localUserAccountRecordCubit;
+  late final StreamSubscription<AsyncValue<proto.Account>>
+      _localUserAccountRecordSubscription;
+  final Map<TypedKey, StreamSubscription<AsyncValue<ActiveConversationState>>>
+      _conversationSubscriptions = {};
   late StreamSubscription<SingleContactMessagesState> _messagesSubscription;
+
   double scrollOffset = 0;
 }

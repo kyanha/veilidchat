@@ -1,5 +1,6 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -102,14 +103,11 @@ class _DrawerMenuState extends State<DrawerMenu> {
   }
 
   Widget _getAccountList(
-      {required TypedKey? activeLocalAccount,
+      {required IList<LocalAccount> localAccounts,
+      required TypedKey? activeLocalAccount,
       required AccountRecordsBlocMapState accountRecords}) {
     final theme = Theme.of(context);
     final scaleScheme = theme.extension<ScaleScheme>()!;
-
-    final accountRepo = AccountRepository.instance;
-    final localAccounts = accountRepo.getLocalAccounts();
-    //final userLogins = accountRepo.getUserLogins();
 
     final loggedInAccounts = <Widget>[];
     final loggedOutAccounts = <Widget>[];
@@ -234,8 +232,9 @@ class _DrawerMenuState extends State<DrawerMenu> {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     //final textTheme = theme.textTheme;
+    final localAccounts = context.watch<LocalAccountsCubit>().state;
     final accountRecords = context.watch<AccountRecordsBlocMapCubit>().state;
-    final activeLocalAccount = context.watch<ActiveAccountInfoCubit>().state;
+    final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
     final gradient = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -276,8 +275,8 @@ class _DrawerMenuState extends State<DrawerMenu> {
             ])),
         const Spacer(),
         _getAccountList(
-            activeLocalAccount:
-                activeLocalAccount.unlockedAccountInfo?.superIdentityRecordKey,
+            localAccounts: localAccounts,
+            activeLocalAccount: activeLocalAccount,
             accountRecords: accountRecords),
         _getBottomButtons(),
         const Spacer(),

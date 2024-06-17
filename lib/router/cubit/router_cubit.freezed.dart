@@ -21,7 +21,6 @@ RouterState _$RouterStateFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$RouterState {
   bool get hasAnyAccount => throw _privateConstructorUsedError;
-  bool get hasActiveChat => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -35,7 +34,7 @@ abstract class $RouterStateCopyWith<$Res> {
           RouterState value, $Res Function(RouterState) then) =
       _$RouterStateCopyWithImpl<$Res, RouterState>;
   @useResult
-  $Res call({bool hasAnyAccount, bool hasActiveChat});
+  $Res call({bool hasAnyAccount});
 }
 
 /// @nodoc
@@ -52,16 +51,11 @@ class _$RouterStateCopyWithImpl<$Res, $Val extends RouterState>
   @override
   $Res call({
     Object? hasAnyAccount = null,
-    Object? hasActiveChat = null,
   }) {
     return _then(_value.copyWith(
       hasAnyAccount: null == hasAnyAccount
           ? _value.hasAnyAccount
           : hasAnyAccount // ignore: cast_nullable_to_non_nullable
-              as bool,
-      hasActiveChat: null == hasActiveChat
-          ? _value.hasActiveChat
-          : hasActiveChat // ignore: cast_nullable_to_non_nullable
               as bool,
     ) as $Val);
   }
@@ -75,7 +69,7 @@ abstract class _$$RouterStateImplCopyWith<$Res>
       __$$RouterStateImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({bool hasAnyAccount, bool hasActiveChat});
+  $Res call({bool hasAnyAccount});
 }
 
 /// @nodoc
@@ -90,16 +84,11 @@ class __$$RouterStateImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? hasAnyAccount = null,
-    Object? hasActiveChat = null,
   }) {
     return _then(_$RouterStateImpl(
       hasAnyAccount: null == hasAnyAccount
           ? _value.hasAnyAccount
           : hasAnyAccount // ignore: cast_nullable_to_non_nullable
-              as bool,
-      hasActiveChat: null == hasActiveChat
-          ? _value.hasActiveChat
-          : hasActiveChat // ignore: cast_nullable_to_non_nullable
               as bool,
     ));
   }
@@ -108,20 +97,17 @@ class __$$RouterStateImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
-  const _$RouterStateImpl(
-      {required this.hasAnyAccount, required this.hasActiveChat});
+  const _$RouterStateImpl({required this.hasAnyAccount});
 
   factory _$RouterStateImpl.fromJson(Map<String, dynamic> json) =>
       _$$RouterStateImplFromJson(json);
 
   @override
   final bool hasAnyAccount;
-  @override
-  final bool hasActiveChat;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'RouterState(hasAnyAccount: $hasAnyAccount, hasActiveChat: $hasActiveChat)';
+    return 'RouterState(hasAnyAccount: $hasAnyAccount)';
   }
 
   @override
@@ -129,8 +115,7 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'RouterState'))
-      ..add(DiagnosticsProperty('hasAnyAccount', hasAnyAccount))
-      ..add(DiagnosticsProperty('hasActiveChat', hasActiveChat));
+      ..add(DiagnosticsProperty('hasAnyAccount', hasAnyAccount));
   }
 
   @override
@@ -139,14 +124,12 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
         (other.runtimeType == runtimeType &&
             other is _$RouterStateImpl &&
             (identical(other.hasAnyAccount, hasAnyAccount) ||
-                other.hasAnyAccount == hasAnyAccount) &&
-            (identical(other.hasActiveChat, hasActiveChat) ||
-                other.hasActiveChat == hasActiveChat));
+                other.hasAnyAccount == hasAnyAccount));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, hasAnyAccount, hasActiveChat);
+  int get hashCode => Object.hash(runtimeType, hasAnyAccount);
 
   @JsonKey(ignore: true)
   @override
@@ -163,17 +146,14 @@ class _$RouterStateImpl with DiagnosticableTreeMixin implements _RouterState {
 }
 
 abstract class _RouterState implements RouterState {
-  const factory _RouterState(
-      {required final bool hasAnyAccount,
-      required final bool hasActiveChat}) = _$RouterStateImpl;
+  const factory _RouterState({required final bool hasAnyAccount}) =
+      _$RouterStateImpl;
 
   factory _RouterState.fromJson(Map<String, dynamic> json) =
       _$RouterStateImpl.fromJson;
 
   @override
   bool get hasAnyAccount;
-  @override
-  bool get hasActiveChat;
   @override
   @JsonKey(ignore: true)
   _$$RouterStateImplCopyWith<_$RouterStateImpl> get copyWith =>

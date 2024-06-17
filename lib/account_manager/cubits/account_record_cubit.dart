@@ -11,7 +11,7 @@ typedef AccountRecordState = proto.Account;
 /// The saved state of a VeilidChat Account on the DHT
 /// Used to synchronize status, profile, and options for a specific account
 /// across multiple clients. This DHT record is the 'source of truth' for an
-/// account and is privately encrypted with an owned recrod from the 'userLogin'
+/// account and is privately encrypted with an owned record from the 'userLogin'
 /// tabledb-local storage, encrypted by the unlock code for the account.
 class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
   AccountRecordCubit(

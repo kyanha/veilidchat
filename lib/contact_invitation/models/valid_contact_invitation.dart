@@ -31,7 +31,7 @@ class ValidContactInvitation {
     final pool = DHTRecordPool.instance;
     try {
       final unlockedAccountInfo =
-          _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+          _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
       final accountRecordKey = unlockedAccountInfo.accountRecordKey;
       final identityPublicKey = unlockedAccountInfo.identityPublicKey;
 
@@ -43,7 +43,8 @@ class ValidContactInvitation {
       return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
               debugName: 'ValidContactInvitation::accept::'
                   'ContactRequestInbox',
-              parent: accountRecordKey))
+              parent: pool.getParentRecordKey(_contactRequestInboxKey) ??
+                  accountRecordKey))
           // ignore: prefer_expression_function_bodies
           .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
         // Create local conversation key for this
@@ -96,7 +97,7 @@ class ValidContactInvitation {
     final pool = DHTRecordPool.instance;
 
     final unlockedAccountInfo =
-        _locator<ActiveAccountInfoCubit>().state.unlockedAccountInfo!;
+        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
     final accountRecordKey = unlockedAccountInfo.accountRecordKey;
     final identityPublicKey = unlockedAccountInfo.identityPublicKey;
 

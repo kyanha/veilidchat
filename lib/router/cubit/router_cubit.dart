@@ -20,13 +20,12 @@ part 'router_cubit.freezed.dart';
 part 'router_cubit.g.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavKey');
-final _homeNavKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavKey');
 
 @freezed
 class RouterState with _$RouterState {
-  const factory RouterState(
-      {required bool hasAnyAccount,
-      required bool hasActiveChat}) = _RouterState;
+  const factory RouterState({
+    required bool hasAnyAccount,
+  }) = _RouterState;
 
   factory RouterState.fromJson(dynamic json) =>
       _$RouterStateFromJson(json as Map<String, dynamic>);
@@ -36,7 +35,6 @@ class RouterCubit extends Cubit<RouterState> {
   RouterCubit(AccountRepository accountRepository)
       : super(RouterState(
           hasAnyAccount: accountRepository.getLocalAccounts().isNotEmpty,
-          hasActiveChat: false,
         )) {
     // Subscribe to repository streams
     _accountRepositorySubscription = accountRepository.stream.listen((event) {
@@ -52,10 +50,6 @@ class RouterCubit extends Cubit<RouterState> {
     });
   }
 
-  void setHasActiveChat(bool active) {
-    emit(state.copyWith(hasActiveChat: active));
-  }
-
   @override
   Future<void> close() async {
     await _accountRepositorySubscription.cancel();
@@ -64,19 +58,9 @@ class RouterCubit extends Cubit<RouterState> {
 
   /// Our application routes
   List<RouteBase> get routes => [
-        ShellRoute(
-          navigatorKey: _homeNavKey,
-          builder: (context, state, child) => HomeShell(child: child),
-          routes: [
-            GoRoute(
-              path: '/',
-              builder: (context, state) => const HomeAccountReadyMain(),
-            ),
-            GoRoute(
-              path: '/chat',
-              builder: (context, state) => const HomeAccountReadyChat(),
-            ),
-          ],
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
           path: '/edit_account',
@@ -115,31 +99,6 @@ class RouterCubit extends Cubit<RouterState> {
       case '/':
         if (!state.hasAnyAccount) {
           return '/new_account';
-        }
-        if (responsiveVisibility(
-            context: context,
-            tablet: false,
-            tabletLandscape: false,
-            desktop: false)) {
-          if (state.hasActiveChat) {
-            return '/chat';
-          }
-        }
-        return null;
-      case '/chat':
-        if (!state.hasAnyAccount) {
-          return '/new_account';
-        }
-        if (responsiveVisibility(
-            context: context,
-            tablet: false,
-            tabletLandscape: false,
-            desktop: false)) {
-          if (!state.hasActiveChat) {
-            return '/';
-          }
-        } else {
-          return '/';
         }
         return null;
       case '/new_account':

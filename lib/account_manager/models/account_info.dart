@@ -7,7 +7,7 @@ enum AccountInfoStatus {
   noAccount,
   accountInvalid,
   accountLocked,
-  accountReady,
+  accountUnlocked,
 }
 
 @immutable

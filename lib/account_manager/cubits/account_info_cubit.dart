@@ -1,23 +1,23 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:veilid_support/veilid_support.dart';
 
 import '../models/models.dart';
 import '../repository/account_repository.dart';
 
-class ActiveAccountInfoCubit extends Cubit<AccountInfo> {
-  ActiveAccountInfoCubit(AccountRepository accountRepository)
+class AccountInfoCubit extends Cubit<AccountInfo> {
+  AccountInfoCubit(
+      AccountRepository accountRepository, TypedKey superIdentityRecordKey)
       : _accountRepository = accountRepository,
-        super(accountRepository
-            .getAccountInfo(accountRepository.getActiveLocalAccount())) {
+        super(accountRepository.getAccountInfo(superIdentityRecordKey)) {
     // Subscribe to streams
     _accountRepositorySubscription = _accountRepository.stream.listen((change) {
       switch (change) {
         case AccountRepositoryChange.activeLocalAccount:
         case AccountRepositoryChange.localAccounts:
         case AccountRepositoryChange.userLogins:
-          emit(accountRepository
-              .getAccountInfo(accountRepository.getActiveLocalAccount()));
+          emit(accountRepository.getAccountInfo(superIdentityRecordKey));
           break;
       }
     });

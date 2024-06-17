@@ -74,7 +74,7 @@ class InvitationDialogState extends State<InvitationDialog> {
 
   Future<void> _onAccept() async {
     final navigator = Navigator.of(context);
-    final activeAccountInfo = widget._locator<UnlockedAccountInfo>();
+    final accountInfo = widget._locator<AccountInfoCubit>().state;
     final contactList = widget._locator<ContactListCubit>();
 
     setState(() {
@@ -86,7 +86,7 @@ class InvitationDialogState extends State<InvitationDialog> {
       if (acceptedContact != null) {
         // initiator when accept is received will create
         // contact in the case of a 'note to self'
-        final isSelf = activeAccountInfo.identityPublicKey ==
+        final isSelf = accountInfo.unlockedAccountInfo!.identityPublicKey ==
             acceptedContact.remoteIdentity.currentInstance.publicKey;
         if (!isSelf) {
           await contactList.createContact(
