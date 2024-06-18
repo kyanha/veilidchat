@@ -92,29 +92,15 @@ class AccountRepository {
     return userLogins[idx];
   }
 
-  AccountInfo getAccountInfo(TypedKey? superIdentityRecordKey) {
+  AccountInfo? getAccountInfo(TypedKey superIdentityRecordKey) {
     // Get active account if we have one
     final activeLocalAccount = getActiveLocalAccount();
-    if (superIdentityRecordKey == null) {
-      if (activeLocalAccount == null) {
-        // No user logged in
-        return const AccountInfo(
-            status: AccountInfoStatus.noAccount,
-            active: false,
-            unlockedAccountInfo: null);
-      }
-      superIdentityRecordKey = activeLocalAccount;
-    }
     final active = superIdentityRecordKey == activeLocalAccount;
 
     // Get which local account we want to fetch the profile for
     final localAccount = fetchLocalAccount(superIdentityRecordKey);
     if (localAccount == null) {
-      // account does not exist
-      return AccountInfo(
-          status: AccountInfoStatus.noAccount,
-          active: active,
-          unlockedAccountInfo: null);
+      return null;
     }
 
     // See if we've logged into this account or if it is locked
@@ -122,17 +108,19 @@ class AccountRepository {
     if (userLogin == null) {
       // Account was locked
       return AccountInfo(
-          status: AccountInfoStatus.accountLocked,
-          active: active,
-          unlockedAccountInfo: null);
+        status: AccountInfoStatus.accountLocked,
+        active: active,
+        localAccount: localAccount,
+        userLogin: null,
+      );
     }
 
     // Got account, decrypted and decoded
     return AccountInfo(
       status: AccountInfoStatus.accountUnlocked,
       active: active,
-      unlockedAccountInfo:
-          UnlockedAccountInfo(localAccount: localAccount, userLogin: userLogin),
+      localAccount: localAccount,
+      userLogin: userLogin,
     );
   }
 

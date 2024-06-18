@@ -12,12 +12,12 @@ typedef AccountRecordsBlocMapState
 /// Ensures there is an single account record cubit for each logged in account
 class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<AccountRecordState>, AccountRecordCubit>
-    with StateMapFollower<UserLoginsState, TypedKey, UserLogin> {
+    with StateMapFollower<LocalAccountsState, TypedKey, LocalAccount> {
   AccountRecordsBlocMapCubit(
       AccountRepository accountRepository, Locator locator)
       : _accountRepository = accountRepository {
-    // Follow the user logins cubit
-    follow(locator<UserLoginsCubit>());
+    // Follow the local accounts cubit
+    follow(locator<LocalAccountsCubit>());
   }
 
   // Add account record cubit
@@ -35,9 +35,9 @@ class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
   Future<void> removeFromState(TypedKey key) => remove(key);
 
   @override
-  Future<void> updateState(TypedKey key, UserLogin value) async {
+  Future<void> updateState(TypedKey key, LocalAccount value) async {
     await _addAccountRecordCubit(
-        superIdentityRecordKey: value.superIdentityRecordKey);
+        superIdentityRecordKey: value.superIdentity.recordKey);
   }
 
   ////////////////////////////////////////////////////////////////////////////

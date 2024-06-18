@@ -15,18 +15,13 @@ typedef AccountRecordState = proto.Account;
 /// tabledb-local storage, encrypted by the unlock code for the account.
 class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
   AccountRecordCubit(
-      {required AccountRepository accountRepository,
-      required TypedKey superIdentityRecordKey})
+      {required LocalAccount localAccount, required UserLogin userLogin})
       : super(
             decodeState: proto.Account.fromBuffer,
-            open: () => _open(accountRepository, superIdentityRecordKey));
+            open: () => _open(localAccount, userLogin));
 
-  static Future<DHTRecord> _open(AccountRepository accountRepository,
-      TypedKey superIdentityRecordKey) async {
-    final localAccount =
-        accountRepository.fetchLocalAccount(superIdentityRecordKey)!;
-    final userLogin = accountRepository.fetchUserLogin(superIdentityRecordKey)!;
-
+  static Future<DHTRecord> _open(
+      LocalAccount localAccount, UserLogin userLogin) async {
     // Record not yet open, do it
     final pool = DHTRecordPool.instance;
     final record = await pool.openRecordOwned(

@@ -10,14 +10,18 @@ class AccountInfoCubit extends Cubit<AccountInfo> {
   AccountInfoCubit(
       AccountRepository accountRepository, TypedKey superIdentityRecordKey)
       : _accountRepository = accountRepository,
-        super(accountRepository.getAccountInfo(superIdentityRecordKey)) {
+        super(accountRepository.getAccountInfo(superIdentityRecordKey)!) {
     // Subscribe to streams
     _accountRepositorySubscription = _accountRepository.stream.listen((change) {
       switch (change) {
         case AccountRepositoryChange.activeLocalAccount:
         case AccountRepositoryChange.localAccounts:
         case AccountRepositoryChange.userLogins:
-          emit(accountRepository.getAccountInfo(superIdentityRecordKey));
+          final acctInfo =
+              accountRepository.getAccountInfo(superIdentityRecordKey);
+          if (acctInfo != null) {
+            emit(acctInfo);
+          }
           break;
       }
     });
