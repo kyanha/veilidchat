@@ -55,11 +55,26 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
       PerAccountCollectionState(
           accountInfo: accountInfoCubit.state,
           avAccountRecordState: const AsyncValue.loading(),
-          contactInvitationListCubit: null);
+          contactInvitationListCubit: null,
+          accountInfoCubit: null,
+          accountRecordCubit: null,
+          contactListCubit: null,
+          waitingInvitationsBlocMapCubit: null,
+          activeChatCubit: null,
+          chatListCubit: null,
+          activeConversationsBlocMapCubit: null,
+          activeSingleContactChatBlocMapCubit: null);
 
   Future<void> _followAccountInfoState(AccountInfo accountInfo) async {
+    // If state hasn't changed just return
+    if (state.accountInfo == accountInfo) {
+      return;
+    }
+
+    // Get the next state
     var nextState = state.copyWith(accountInfo: accountInfo);
 
+    //  Update AccountRecordCubit
     if (accountInfo.userLogin == null) {
       /////////////// Not logged in /////////////////
 
@@ -67,7 +82,7 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
       await _accountRecordSubscription?.cancel();
       _accountRecordSubscription = null;
 
-      // Update state
+      // Update state to 'loading'
       nextState =
           _updateAccountRecordState(nextState, const AsyncValue.loading());
       emit(nextState);
@@ -78,12 +93,12 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
     } else {
       ///////////////// Logged in ///////////////////
 
-      // AccountRecordCubit
+      // Create AccountRecordCubit
       accountRecordCubit ??= AccountRecordCubit(
           localAccount: accountInfo.localAccount,
           userLogin: accountInfo.userLogin!);
 
-      // Update State
+      // Update state to value
       nextState =
           _updateAccountRecordState(nextState, accountRecordCubit!.state);
       emit(nextState);
@@ -98,17 +113,17 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
 
   PerAccountCollectionState _updateAccountRecordState(
       PerAccountCollectionState prevState,
-      AsyncValue<AccountRecordState> avAccountRecordState) {
+      AsyncValue<AccountRecordState>? avAccountRecordState) {
     // Get next state
     final nextState =
-        state.copyWith(avAccountRecordState: accountRecordCubit!.state);
+        state.copyWith(avAccountRecordState: avAccountRecordState);
 
     // Get bloc parameters
     final accountInfo = nextState.accountInfo;
 
     // ContactInvitationListCubit
     final contactInvitationListRecordPointer = nextState
-        .avAccountRecordState.asData?.value.contactInvitationRecords
+        .avAccountRecordState?.asData?.value.contactInvitationRecords
         .toVeilid();
 
     final contactInvitationListCubit = contactInvitationListCubitUpdater.update(
@@ -118,7 +133,7 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
 
     // ContactListCubit
     final contactListRecordPointer =
-        nextState.avAccountRecordState.asData?.value.contactList.toVeilid();
+        nextState.avAccountRecordState?.asData?.value.contactList.toVeilid();
 
     final contactListCubit = contactListCubitUpdater.update(
         contactListRecordPointer == null
@@ -126,18 +141,18 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
             : (accountInfo, contactListRecordPointer));
 
     // WaitingInvitationsBlocMapCubit
-    waitingInvitationsBlocMapCubitUpdater.update(
-        contactInvitationListCubit == null
+    final waitingInvitationsBlocMapCubit = waitingInvitationsBlocMapCubitUpdater
+        .update(contactInvitationListCubit == null
             ? null
             : (accountInfo, accountRecordCubit!, contactInvitationListCubit));
 
     // ActiveChatCubit
-    final activeChatCubit = activeChatCubitUpdater
-        .update(nextState.avAccountRecordState.isData ? true : null);
+    final activeChatCubit = activeChatCubitUpdater.update(
+        (nextState.avAccountRecordState?.isData ?? false) ? true : null);
 
     // ChatListCubit
     final chatListRecordPointer =
-        nextState.avAccountRecordState.asData?.value.chatList.toVeilid();
+        nextState.avAccountRecordState?.asData?.value.chatList.toVeilid();
 
     final chatListCubit = chatListCubitUpdater.update(
         chatListRecordPointer == null || activeChatCubit == null
@@ -159,19 +174,31 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
                   ));
 
     // ActiveSingleContactChatBlocMapCubit
-    activeSingleContactChatBlocMapCubitUpdater.update(
-        activeConversationsBlocMapCubit == null ||
-                chatListCubit == null ||
-                contactListCubit == null
-            ? null
-            : (
-                accountInfo,
-                activeConversationsBlocMapCubit,
-                chatListCubit,
-                contactListCubit
-              ));
+    final activeSingleContactChatBlocMapCubit =
+        activeSingleContactChatBlocMapCubitUpdater.update(
+            activeConversationsBlocMapCubit == null ||
+                    chatListCubit == null ||
+                    contactListCubit == null
+                ? null
+                : (
+                    accountInfo,
+                    activeConversationsBlocMapCubit,
+                    chatListCubit,
+                    contactListCubit
+                  ));
 
-    return nextState;
+    // Update available blocs in our state
+    return nextState.copyWith(
+        contactInvitationListCubit: contactInvitationListCubit,
+        accountInfoCubit: accountInfoCubit,
+        accountRecordCubit: accountRecordCubit,
+        contactListCubit: contactListCubit,
+        waitingInvitationsBlocMapCubit: waitingInvitationsBlocMapCubit,
+        activeChatCubit: activeChatCubit,
+        chatListCubit: chatListCubit,
+        activeConversationsBlocMapCubit: activeConversationsBlocMapCubit,
+        activeSingleContactChatBlocMapCubit:
+            activeSingleContactChatBlocMapCubit);
   }
 
   T collectionLocator<T>() {

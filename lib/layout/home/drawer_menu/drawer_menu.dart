@@ -105,7 +105,8 @@ class _DrawerMenuState extends State<DrawerMenu> {
   Widget _getAccountList(
       {required IList<LocalAccount> localAccounts,
       required TypedKey? activeLocalAccount,
-      required AccountRecordsBlocMapState accountRecords}) {
+      required PerAccountCollectionBlocMapState
+          perAccountCollectionBlocMapState}) {
     final theme = Theme.of(context);
     final scaleScheme = theme.extension<ScaleScheme>()!;
 
@@ -116,11 +117,13 @@ class _DrawerMenuState extends State<DrawerMenu> {
       final superIdentityRecordKey = la.superIdentity.recordKey;
 
       // See if this account is logged in
-      final acctRecord = accountRecords.get(superIdentityRecordKey);
-      if (acctRecord != null) {
+      final avAccountRecordState = perAccountCollectionBlocMapState
+          .get(superIdentityRecordKey)
+          ?.avAccountRecordState;
+      if (avAccountRecordState != null) {
         // Account is logged in
         final scale = theme.extension<ScaleScheme>()!.tertiaryScale;
-        final loggedInAccount = acctRecord.when(
+        final loggedInAccount = avAccountRecordState.when(
           data: (value) => _makeAccountWidget(
               name: value.profile.name,
               scale: scale,
@@ -233,7 +236,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
     final scale = theme.extension<ScaleScheme>()!;
     //final textTheme = theme.textTheme;
     final localAccounts = context.watch<LocalAccountsCubit>().state;
-    final accountRecords =
+    final perAccountCollectionBlocMapState =
         context.watch<PerAccountCollectionBlocMapCubit>().state;
     final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
     final gradient = LinearGradient(
@@ -278,7 +281,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
         _getAccountList(
             localAccounts: localAccounts,
             activeLocalAccount: activeLocalAccount,
-            accountRecords: accountRecords),
+            perAccountCollectionBlocMapState: perAccountCollectionBlocMapState),
         _getBottomButtons(),
         const Spacer(),
         Row(children: [

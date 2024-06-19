@@ -1,12 +1,11 @@
-import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 
-typedef AccountRecordsBlocMapState
-    = BlocMapState<TypedKey, AsyncValue<AccountRecordState>>;
+typedef PerAccountCollectionBlocMapState
+    = BlocMapState<TypedKey, PerAccountCollectionState>;
 
 /// Map of the logged in user accounts to their PerAccountCollectionCubit
 /// Ensures there is an single account record cubit for each logged in account

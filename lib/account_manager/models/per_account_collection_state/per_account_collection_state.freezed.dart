@@ -17,10 +17,23 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$PerAccountCollectionState {
   AccountInfo get accountInfo => throw _privateConstructorUsedError;
-  AsyncValue<Account> get avAccountRecordState =>
+  AsyncValue<Account>? get avAccountRecordState =>
+      throw _privateConstructorUsedError;
+  AccountInfoCubit? get accountInfoCubit => throw _privateConstructorUsedError;
+  AccountRecordCubit? get accountRecordCubit =>
       throw _privateConstructorUsedError;
   ContactInvitationListCubit? get contactInvitationListCubit =>
       throw _privateConstructorUsedError;
+  ContactListCubit? get contactListCubit => throw _privateConstructorUsedError;
+  WaitingInvitationsBlocMapCubit? get waitingInvitationsBlocMapCubit =>
+      throw _privateConstructorUsedError;
+  ActiveChatCubit? get activeChatCubit => throw _privateConstructorUsedError;
+  ChatListCubit? get chatListCubit => throw _privateConstructorUsedError;
+  ActiveConversationsBlocMapCubit? get activeConversationsBlocMapCubit =>
+      throw _privateConstructorUsedError;
+  ActiveSingleContactChatBlocMapCubit?
+      get activeSingleContactChatBlocMapCubit =>
+          throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $PerAccountCollectionStateCopyWith<PerAccountCollectionState> get copyWith =>
@@ -35,10 +48,19 @@ abstract class $PerAccountCollectionStateCopyWith<$Res> {
   @useResult
   $Res call(
       {AccountInfo accountInfo,
-      AsyncValue<Account> avAccountRecordState,
-      ContactInvitationListCubit? contactInvitationListCubit});
+      AsyncValue<Account>? avAccountRecordState,
+      AccountInfoCubit? accountInfoCubit,
+      AccountRecordCubit? accountRecordCubit,
+      ContactInvitationListCubit? contactInvitationListCubit,
+      ContactListCubit? contactListCubit,
+      WaitingInvitationsBlocMapCubit? waitingInvitationsBlocMapCubit,
+      ActiveChatCubit? activeChatCubit,
+      ChatListCubit? chatListCubit,
+      ActiveConversationsBlocMapCubit? activeConversationsBlocMapCubit,
+      ActiveSingleContactChatBlocMapCubit?
+          activeSingleContactChatBlocMapCubit});
 
-  $AsyncValueCopyWith<Account, $Res> get avAccountRecordState;
+  $AsyncValueCopyWith<Account, $Res>? get avAccountRecordState;
 }
 
 /// @nodoc
@@ -56,29 +78,75 @@ class _$PerAccountCollectionStateCopyWithImpl<$Res,
   @override
   $Res call({
     Object? accountInfo = null,
-    Object? avAccountRecordState = null,
+    Object? avAccountRecordState = freezed,
+    Object? accountInfoCubit = freezed,
+    Object? accountRecordCubit = freezed,
     Object? contactInvitationListCubit = freezed,
+    Object? contactListCubit = freezed,
+    Object? waitingInvitationsBlocMapCubit = freezed,
+    Object? activeChatCubit = freezed,
+    Object? chatListCubit = freezed,
+    Object? activeConversationsBlocMapCubit = freezed,
+    Object? activeSingleContactChatBlocMapCubit = freezed,
   }) {
     return _then(_value.copyWith(
       accountInfo: null == accountInfo
           ? _value.accountInfo
           : accountInfo // ignore: cast_nullable_to_non_nullable
               as AccountInfo,
-      avAccountRecordState: null == avAccountRecordState
+      avAccountRecordState: freezed == avAccountRecordState
           ? _value.avAccountRecordState
           : avAccountRecordState // ignore: cast_nullable_to_non_nullable
-              as AsyncValue<Account>,
+              as AsyncValue<Account>?,
+      accountInfoCubit: freezed == accountInfoCubit
+          ? _value.accountInfoCubit
+          : accountInfoCubit // ignore: cast_nullable_to_non_nullable
+              as AccountInfoCubit?,
+      accountRecordCubit: freezed == accountRecordCubit
+          ? _value.accountRecordCubit
+          : accountRecordCubit // ignore: cast_nullable_to_non_nullable
+              as AccountRecordCubit?,
       contactInvitationListCubit: freezed == contactInvitationListCubit
           ? _value.contactInvitationListCubit
           : contactInvitationListCubit // ignore: cast_nullable_to_non_nullable
               as ContactInvitationListCubit?,
+      contactListCubit: freezed == contactListCubit
+          ? _value.contactListCubit
+          : contactListCubit // ignore: cast_nullable_to_non_nullable
+              as ContactListCubit?,
+      waitingInvitationsBlocMapCubit: freezed == waitingInvitationsBlocMapCubit
+          ? _value.waitingInvitationsBlocMapCubit
+          : waitingInvitationsBlocMapCubit // ignore: cast_nullable_to_non_nullable
+              as WaitingInvitationsBlocMapCubit?,
+      activeChatCubit: freezed == activeChatCubit
+          ? _value.activeChatCubit
+          : activeChatCubit // ignore: cast_nullable_to_non_nullable
+              as ActiveChatCubit?,
+      chatListCubit: freezed == chatListCubit
+          ? _value.chatListCubit
+          : chatListCubit // ignore: cast_nullable_to_non_nullable
+              as ChatListCubit?,
+      activeConversationsBlocMapCubit: freezed ==
+              activeConversationsBlocMapCubit
+          ? _value.activeConversationsBlocMapCubit
+          : activeConversationsBlocMapCubit // ignore: cast_nullable_to_non_nullable
+              as ActiveConversationsBlocMapCubit?,
+      activeSingleContactChatBlocMapCubit: freezed ==
+              activeSingleContactChatBlocMapCubit
+          ? _value.activeSingleContactChatBlocMapCubit
+          : activeSingleContactChatBlocMapCubit // ignore: cast_nullable_to_non_nullable
+              as ActiveSingleContactChatBlocMapCubit?,
     ) as $Val);
   }
 
   @override
   @pragma('vm:prefer-inline')
-  $AsyncValueCopyWith<Account, $Res> get avAccountRecordState {
-    return $AsyncValueCopyWith<Account, $Res>(_value.avAccountRecordState,
+  $AsyncValueCopyWith<Account, $Res>? get avAccountRecordState {
+    if (_value.avAccountRecordState == null) {
+      return null;
+    }
+
+    return $AsyncValueCopyWith<Account, $Res>(_value.avAccountRecordState!,
         (value) {
       return _then(_value.copyWith(avAccountRecordState: value) as $Val);
     });
@@ -96,11 +164,20 @@ abstract class _$$PerAccountCollectionStateImplCopyWith<$Res>
   @useResult
   $Res call(
       {AccountInfo accountInfo,
-      AsyncValue<Account> avAccountRecordState,
-      ContactInvitationListCubit? contactInvitationListCubit});
+      AsyncValue<Account>? avAccountRecordState,
+      AccountInfoCubit? accountInfoCubit,
+      AccountRecordCubit? accountRecordCubit,
+      ContactInvitationListCubit? contactInvitationListCubit,
+      ContactListCubit? contactListCubit,
+      WaitingInvitationsBlocMapCubit? waitingInvitationsBlocMapCubit,
+      ActiveChatCubit? activeChatCubit,
+      ChatListCubit? chatListCubit,
+      ActiveConversationsBlocMapCubit? activeConversationsBlocMapCubit,
+      ActiveSingleContactChatBlocMapCubit?
+          activeSingleContactChatBlocMapCubit});
 
   @override
-  $AsyncValueCopyWith<Account, $Res> get avAccountRecordState;
+  $AsyncValueCopyWith<Account, $Res>? get avAccountRecordState;
 }
 
 /// @nodoc
@@ -117,22 +194,64 @@ class __$$PerAccountCollectionStateImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? accountInfo = null,
-    Object? avAccountRecordState = null,
+    Object? avAccountRecordState = freezed,
+    Object? accountInfoCubit = freezed,
+    Object? accountRecordCubit = freezed,
     Object? contactInvitationListCubit = freezed,
+    Object? contactListCubit = freezed,
+    Object? waitingInvitationsBlocMapCubit = freezed,
+    Object? activeChatCubit = freezed,
+    Object? chatListCubit = freezed,
+    Object? activeConversationsBlocMapCubit = freezed,
+    Object? activeSingleContactChatBlocMapCubit = freezed,
   }) {
     return _then(_$PerAccountCollectionStateImpl(
       accountInfo: null == accountInfo
           ? _value.accountInfo
           : accountInfo // ignore: cast_nullable_to_non_nullable
               as AccountInfo,
-      avAccountRecordState: null == avAccountRecordState
+      avAccountRecordState: freezed == avAccountRecordState
           ? _value.avAccountRecordState
           : avAccountRecordState // ignore: cast_nullable_to_non_nullable
-              as AsyncValue<Account>,
+              as AsyncValue<Account>?,
+      accountInfoCubit: freezed == accountInfoCubit
+          ? _value.accountInfoCubit
+          : accountInfoCubit // ignore: cast_nullable_to_non_nullable
+              as AccountInfoCubit?,
+      accountRecordCubit: freezed == accountRecordCubit
+          ? _value.accountRecordCubit
+          : accountRecordCubit // ignore: cast_nullable_to_non_nullable
+              as AccountRecordCubit?,
       contactInvitationListCubit: freezed == contactInvitationListCubit
           ? _value.contactInvitationListCubit
           : contactInvitationListCubit // ignore: cast_nullable_to_non_nullable
               as ContactInvitationListCubit?,
+      contactListCubit: freezed == contactListCubit
+          ? _value.contactListCubit
+          : contactListCubit // ignore: cast_nullable_to_non_nullable
+              as ContactListCubit?,
+      waitingInvitationsBlocMapCubit: freezed == waitingInvitationsBlocMapCubit
+          ? _value.waitingInvitationsBlocMapCubit
+          : waitingInvitationsBlocMapCubit // ignore: cast_nullable_to_non_nullable
+              as WaitingInvitationsBlocMapCubit?,
+      activeChatCubit: freezed == activeChatCubit
+          ? _value.activeChatCubit
+          : activeChatCubit // ignore: cast_nullable_to_non_nullable
+              as ActiveChatCubit?,
+      chatListCubit: freezed == chatListCubit
+          ? _value.chatListCubit
+          : chatListCubit // ignore: cast_nullable_to_non_nullable
+              as ChatListCubit?,
+      activeConversationsBlocMapCubit: freezed ==
+              activeConversationsBlocMapCubit
+          ? _value.activeConversationsBlocMapCubit
+          : activeConversationsBlocMapCubit // ignore: cast_nullable_to_non_nullable
+              as ActiveConversationsBlocMapCubit?,
+      activeSingleContactChatBlocMapCubit: freezed ==
+              activeSingleContactChatBlocMapCubit
+          ? _value.activeSingleContactChatBlocMapCubit
+          : activeSingleContactChatBlocMapCubit // ignore: cast_nullable_to_non_nullable
+              as ActiveSingleContactChatBlocMapCubit?,
     ));
   }
 }
@@ -143,18 +262,43 @@ class _$PerAccountCollectionStateImpl implements _PerAccountCollectionState {
   const _$PerAccountCollectionStateImpl(
       {required this.accountInfo,
       required this.avAccountRecordState,
-      required this.contactInvitationListCubit});
+      required this.accountInfoCubit,
+      required this.accountRecordCubit,
+      required this.contactInvitationListCubit,
+      required this.contactListCubit,
+      required this.waitingInvitationsBlocMapCubit,
+      required this.activeChatCubit,
+      required this.chatListCubit,
+      required this.activeConversationsBlocMapCubit,
+      required this.activeSingleContactChatBlocMapCubit});
 
   @override
   final AccountInfo accountInfo;
   @override
-  final AsyncValue<Account> avAccountRecordState;
+  final AsyncValue<Account>? avAccountRecordState;
+  @override
+  final AccountInfoCubit? accountInfoCubit;
+  @override
+  final AccountRecordCubit? accountRecordCubit;
   @override
   final ContactInvitationListCubit? contactInvitationListCubit;
+  @override
+  final ContactListCubit? contactListCubit;
+  @override
+  final WaitingInvitationsBlocMapCubit? waitingInvitationsBlocMapCubit;
+  @override
+  final ActiveChatCubit? activeChatCubit;
+  @override
+  final ChatListCubit? chatListCubit;
+  @override
+  final ActiveConversationsBlocMapCubit? activeConversationsBlocMapCubit;
+  @override
+  final ActiveSingleContactChatBlocMapCubit?
+      activeSingleContactChatBlocMapCubit;
 
   @override
   String toString() {
-    return 'PerAccountCollectionState(accountInfo: $accountInfo, avAccountRecordState: $avAccountRecordState, contactInvitationListCubit: $contactInvitationListCubit)';
+    return 'PerAccountCollectionState(accountInfo: $accountInfo, avAccountRecordState: $avAccountRecordState, accountInfoCubit: $accountInfoCubit, accountRecordCubit: $accountRecordCubit, contactInvitationListCubit: $contactInvitationListCubit, contactListCubit: $contactListCubit, waitingInvitationsBlocMapCubit: $waitingInvitationsBlocMapCubit, activeChatCubit: $activeChatCubit, chatListCubit: $chatListCubit, activeConversationsBlocMapCubit: $activeConversationsBlocMapCubit, activeSingleContactChatBlocMapCubit: $activeSingleContactChatBlocMapCubit)';
   }
 
   @override
@@ -166,15 +310,48 @@ class _$PerAccountCollectionStateImpl implements _PerAccountCollectionState {
                 other.accountInfo == accountInfo) &&
             (identical(other.avAccountRecordState, avAccountRecordState) ||
                 other.avAccountRecordState == avAccountRecordState) &&
+            (identical(other.accountInfoCubit, accountInfoCubit) ||
+                other.accountInfoCubit == accountInfoCubit) &&
+            (identical(other.accountRecordCubit, accountRecordCubit) ||
+                other.accountRecordCubit == accountRecordCubit) &&
             (identical(other.contactInvitationListCubit,
                     contactInvitationListCubit) ||
                 other.contactInvitationListCubit ==
-                    contactInvitationListCubit));
+                    contactInvitationListCubit) &&
+            (identical(other.contactListCubit, contactListCubit) ||
+                other.contactListCubit == contactListCubit) &&
+            (identical(other.waitingInvitationsBlocMapCubit,
+                    waitingInvitationsBlocMapCubit) ||
+                other.waitingInvitationsBlocMapCubit ==
+                    waitingInvitationsBlocMapCubit) &&
+            (identical(other.activeChatCubit, activeChatCubit) ||
+                other.activeChatCubit == activeChatCubit) &&
+            (identical(other.chatListCubit, chatListCubit) ||
+                other.chatListCubit == chatListCubit) &&
+            (identical(other.activeConversationsBlocMapCubit,
+                    activeConversationsBlocMapCubit) ||
+                other.activeConversationsBlocMapCubit ==
+                    activeConversationsBlocMapCubit) &&
+            (identical(other.activeSingleContactChatBlocMapCubit,
+                    activeSingleContactChatBlocMapCubit) ||
+                other.activeSingleContactChatBlocMapCubit ==
+                    activeSingleContactChatBlocMapCubit));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, accountInfo,
-      avAccountRecordState, contactInvitationListCubit);
+  int get hashCode => Object.hash(
+      runtimeType,
+      accountInfo,
+      avAccountRecordState,
+      accountInfoCubit,
+      accountRecordCubit,
+      contactInvitationListCubit,
+      contactListCubit,
+      waitingInvitationsBlocMapCubit,
+      activeChatCubit,
+      chatListCubit,
+      activeConversationsBlocMapCubit,
+      activeSingleContactChatBlocMapCubit);
 
   @JsonKey(ignore: true)
   @override
@@ -186,17 +363,44 @@ class _$PerAccountCollectionStateImpl implements _PerAccountCollectionState {
 
 abstract class _PerAccountCollectionState implements PerAccountCollectionState {
   const factory _PerAccountCollectionState(
-      {required final AccountInfo accountInfo,
-      required final AsyncValue<Account> avAccountRecordState,
-      required final ContactInvitationListCubit?
-          contactInvitationListCubit}) = _$PerAccountCollectionStateImpl;
+          {required final AccountInfo accountInfo,
+          required final AsyncValue<Account>? avAccountRecordState,
+          required final AccountInfoCubit? accountInfoCubit,
+          required final AccountRecordCubit? accountRecordCubit,
+          required final ContactInvitationListCubit? contactInvitationListCubit,
+          required final ContactListCubit? contactListCubit,
+          required final WaitingInvitationsBlocMapCubit?
+              waitingInvitationsBlocMapCubit,
+          required final ActiveChatCubit? activeChatCubit,
+          required final ChatListCubit? chatListCubit,
+          required final ActiveConversationsBlocMapCubit?
+              activeConversationsBlocMapCubit,
+          required final ActiveSingleContactChatBlocMapCubit?
+              activeSingleContactChatBlocMapCubit}) =
+      _$PerAccountCollectionStateImpl;
 
   @override
   AccountInfo get accountInfo;
   @override
-  AsyncValue<Account> get avAccountRecordState;
+  AsyncValue<Account>? get avAccountRecordState;
+  @override
+  AccountInfoCubit? get accountInfoCubit;
+  @override
+  AccountRecordCubit? get accountRecordCubit;
   @override
   ContactInvitationListCubit? get contactInvitationListCubit;
+  @override
+  ContactListCubit? get contactListCubit;
+  @override
+  WaitingInvitationsBlocMapCubit? get waitingInvitationsBlocMapCubit;
+  @override
+  ActiveChatCubit? get activeChatCubit;
+  @override
+  ChatListCubit? get chatListCubit;
+  @override
+  ActiveConversationsBlocMapCubit? get activeConversationsBlocMapCubit;
+  @override
+  ActiveSingleContactChatBlocMapCubit? get activeSingleContactChatBlocMapCubit;
   @override
   @JsonKey(ignore: true)
   _$$PerAccountCollectionStateImplCopyWith<_$PerAccountCollectionStateImpl>
