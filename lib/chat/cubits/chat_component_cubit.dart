@@ -8,7 +8,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
-import 'package:provider/provider.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -27,10 +26,12 @@ const metadataKeyAttachments = 'attachments';
 
 class ChatComponentCubit extends Cubit<ChatComponentState> {
   ChatComponentCubit._({
-    required Locator locator,
+    required AccountInfo accountInfo,
+    required AccountRecordCubit accountRecordCubit,
     required List<ActiveConversationCubit> conversationCubits,
     required SingleContactMessagesCubit messagesCubit,
-  })  : _locator = locator,
+  })  : _accountInfo = accountInfo,
+        _accountRecordCubit = accountRecordCubit,
         _conversationCubits = conversationCubits,
         _messagesCubit = messagesCubit,
         super(ChatComponentState(
@@ -48,26 +49,25 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   }
 
   factory ChatComponentCubit.singleContact(
-          {required Locator locator,
+          {required AccountInfo accountInfo,
+          required AccountRecordCubit accountRecordCubit,
           required ActiveConversationCubit activeConversationCubit,
           required SingleContactMessagesCubit messagesCubit}) =>
       ChatComponentCubit._(
-        locator: locator,
+        accountInfo: accountInfo,
+        accountRecordCubit: accountRecordCubit,
         conversationCubits: [activeConversationCubit],
         messagesCubit: messagesCubit,
       );
 
   Future<void> _init() async {
     // Get local user info and account record cubit
-    final unlockedAccountInfo =
-        _locator<AccountInfoCubit>().state.unlockedAccountInfo!;
-    _localUserIdentityKey = unlockedAccountInfo.identityTypedPublicKey;
-    _localUserAccountRecordCubit = _locator<AccountRecordCubit>();
+    _localUserIdentityKey = _accountInfo.identityTypedPublicKey;
 
     // Subscribe to local user info
-    _localUserAccountRecordSubscription = _localUserAccountRecordCubit.stream
-        .listen(_onChangedLocalUserAccountRecord);
-    _onChangedLocalUserAccountRecord(_localUserAccountRecordCubit.state);
+    _accountRecordSubscription =
+        _accountRecordCubit.stream.listen(_onChangedAccountRecord);
+    _onChangedAccountRecord(_accountRecordCubit.state);
 
     // Subscribe to remote user info
     await _updateConversationSubscriptions();
@@ -80,7 +80,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   @override
   Future<void> close() async {
     await _initWait();
-    await _localUserAccountRecordSubscription.cancel();
+    await _accountRecordSubscription.cancel();
     await _messagesSubscription.cancel();
     await super.close();
   }
@@ -145,7 +145,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   ////////////////////////////////////////////////////////////////////////////
   // Private Implementation
 
-  void _onChangedLocalUserAccountRecord(AsyncValue<proto.Account> avAccount) {
+  void _onChangedAccountRecord(AsyncValue<proto.Account> avAccount) {
     final account = avAccount.asData?.value;
     if (account == null) {
       emit(state.copyWith(localUser: null));
@@ -374,15 +374,14 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   ////////////////////////////////////////////////////////////////////////////
 
   final _initWait = WaitSet<void>();
-
-  final Locator _locator;
+  final AccountInfo _accountInfo;
+  final AccountRecordCubit _accountRecordCubit;
   final List<ActiveConversationCubit> _conversationCubits;
   final SingleContactMessagesCubit _messagesCubit;
 
   late final TypedKey _localUserIdentityKey;
-  late final AccountRecordCubit _localUserAccountRecordCubit;
   late final StreamSubscription<AsyncValue<proto.Account>>
-      _localUserAccountRecordSubscription;
+      _accountRecordSubscription;
   final Map<TypedKey, StreamSubscription<AsyncValue<ActiveConversationState>>>
       _conversationSubscriptions = {};
   late StreamSubscription<SingleContactMessagesState> _messagesSubscription;

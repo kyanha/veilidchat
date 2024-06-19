@@ -4,9 +4,9 @@ import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
-import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../account_manager/account_manager.dart';
 import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
@@ -24,18 +24,22 @@ class InvitationStatus extends Equatable {
 
 class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     proto.SignedContactResponse?> {
-  WaitingInvitationCubit(ContactRequestInboxCubit super.input,
-      {required Locator locator,
-      required proto.ContactInvitationRecord contactInvitationRecord})
-      : super(
+  WaitingInvitationCubit(
+    ContactRequestInboxCubit super.input, {
+    required AccountInfo accountInfo,
+    required AccountRecordCubit accountRecordCubit,
+    required proto.ContactInvitationRecord contactInvitationRecord,
+  }) : super(
             transform: (signedContactResponse) => _transform(
                 signedContactResponse,
-                locator: locator,
+                accountInfo: accountInfo,
+                accountRecordCubit: accountRecordCubit,
                 contactInvitationRecord: contactInvitationRecord));
 
   static Future<AsyncValue<InvitationStatus>> _transform(
       proto.SignedContactResponse? signedContactResponse,
-      {required Locator locator,
+      {required AccountInfo accountInfo,
+      required AccountRecordCubit accountRecordCubit,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
     if (signedContactResponse == null) {
       return const AsyncValue.loading();
@@ -69,7 +73,7 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
         contactResponse.remoteConversationRecordKey.toVeilid();
 
     final conversation = ConversationCubit(
-        locator: locator,
+        accountInfo: accountInfo,
         remoteIdentityPublicKey:
             contactSuperIdentity.currentInstance.typedPublicKey,
         remoteConversationRecordKey: remoteConversationRecordKey);
@@ -96,6 +100,7 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     final localConversationRecordKey =
         contactInvitationRecord.localConversationRecordKey.toVeilid();
     return conversation.initLocalConversation(
+        profile: accountRecordCubit.state.asData!.value.profile,
         existingConversationRecordKey: localConversationRecordKey,
         callback: (localConversation) async => AsyncValue.data(InvitationStatus(
             acceptedContact: AcceptedContact(

@@ -164,45 +164,44 @@ class HomeScreenState extends State<HomeScreen> {
         ], child: Builder(builder: _buildAccountReadyDeviceSpecific)));
   }
 
-  Widget _buildAccount(BuildContext context, TypedKey superIdentityRecordKey) =>
-      BlocProvider<AccountInfoCubit>(
+  Widget _buildAccount(BuildContext context, TypedKey superIdentityRecordKey,
+          PerAccountCollectionCubit perAccountCollectionCubit) =>
+      BlocBuilder<PerAccountCollectionCubit, PerAccountCollectionState>(
           key: ValueKey(superIdentityRecordKey),
-          create: (context) => AccountInfoCubit(
-              AccountRepository.instance, superIdentityRecordKey),
-          child: Builder(builder: (context) {
-            // Get active account info status
-            final accountInfoStatus =
-                context.select<AccountInfoCubit, AccountInfoStatus>(
-                    (c) => c.state.status);
+          bloc: perAccountCollectionCubit,
+          builder: (context, state) {
 
-            switch (accountInfoStatus) {
-              case AccountInfoStatus.noAccount:
-                return const HomeAccountMissing();
-              case AccountInfoStatus.accountInvalid:
-                return const HomeAccountInvalid();
-              case AccountInfoStatus.accountLocked:
-                return const HomeAccountLocked();
-              case AccountInfoStatus.accountUnlocked:
 
-                // Get the current active account record cubit
-                final activeAccountRecordCubit = context
-                    .select<AccountRecordsBlocMapCubit, AccountRecordCubit?>(
-                        (c) => c.tryOperate(superIdentityRecordKey,
-                            closure: (x) => x));
-                if (activeAccountRecordCubit == null) {
-                  return waitingPage();
-                }
+                  switch (state.accountInfo.status) {
+                    case AccountInfoStatus.accountInvalid:
+                      return const HomeAccountInvalid();
+                    case AccountInfoStatus.accountLocked:
+                      return const HomeAccountLocked();
+                    case AccountInfoStatus.accountUnlocked:
 
-                return MultiBlocProvider(providers: [
-                  BlocProvider<AccountRecordCubit>.value(
-                      value: activeAccountRecordCubit),
-                ], child: Builder(builder: _buildUnlockedAccount));
-            }
-          }));
+                      // Get the current active account record cubit
+                      final activeAccountRecordCubit = context.select<
+                              PerAccountCollectionBlocMapCubit,
+                              AccountRecordCubit?>(
+                          (c) => c.tryOperate(superIdentityRecordKey,
+                              closure: (x) => x));
+                      if (activeAccountRecordCubit == null) {
+                        return waitingPage();
+                      }
+
+                      return MultiBlocProvider(providers: [
+                        BlocProvider<AccountRecordCubit>.value(
+                            value: activeAccountRecordCubit),
+                      ], child: Builder(builder: _buildUnlockedAccount));
+                  }
+                });
+          };
 
   Widget _buildAccountPageView(BuildContext context) {
     final localAccounts = context.watch<LocalAccountsCubit>().state;
-    final activeLocalAccountCubit = context.read<ActiveLocalAccountCubit>();
+    final activeLocalAccountCubit = context.watch<ActiveLocalAccountCubit>();
+    final perAccountCollectionBlocMapCubit =
+        context.watch<PerAccountCollectionBlocMapCubit>();
 
     final activeIndex = localAccounts.indexWhere(
         (x) => x.superIdentity.recordKey == activeLocalAccountCubit.state);
@@ -218,7 +217,7 @@ class HomeScreenState extends State<HomeScreen> {
           value.dispose();
         },
         child: Builder(
-            builder: (context) => PageView.custom(
+            builder: (context) => PageView.builder(
                 onPageChanged: (idx) {
                   singleFuture(this, () async {
                     await AccountRepository.instance.switchToAccount(
@@ -228,10 +227,21 @@ class HomeScreenState extends State<HomeScreen> {
                 controller: context
                     .read<ActiveAccountPageControllerWrapper>()
                     .pageController,
-                childrenDelegate: SliverChildListDelegate(localAccounts
-                    .map((la) =>
-                        _buildAccount(context, la.superIdentity.recordKey))
-                    .toList()))));
+                itemCount: localAccounts.length,
+                itemBuilder: (context, index) {
+                  final superIdentityRecordKey =
+                      localAccounts[index].superIdentity.recordKey;
+                  final perAccountCollectionCubit =
+                      perAccountCollectionBlocMapCubit.tryOperate(
+                          superIdentityRecordKey,
+                          closure: (c) => c);
+                  if (perAccountCollectionCubit == null) {
+                    return HomeAccountMissing(
+                        key: ValueKey(superIdentityRecordKey));
+                  }
+                  return _buildAccount(context, superIdentityRecordKey,
+                      perAccountCollectionCubit);
+                })));
   }
 
   @override

@@ -8,6 +8,7 @@ import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../account_manager/account_manager.dart';
 import '../../conversation/conversation.dart';
 import '../../theme/theme.dart';
 import '../chat.dart';
@@ -21,6 +22,12 @@ class ChatComponentWidget extends StatelessWidget {
   static Widget builder(
           {required TypedKey localConversationRecordKey, Key? key}) =>
       Builder(builder: (context) {
+        // Get the account info
+        final accountInfo = context.watch<AccountInfoCubit>().state;
+
+        // Get the account record cubit
+        final accountRecordCubit = context.read<AccountRecordCubit>();
+
         // Get the active conversation cubit
         final activeConversationCubit = context
             .select<ActiveConversationsBlocMapCubit, ActiveConversationCubit?>(
@@ -43,7 +50,8 @@ class ChatComponentWidget extends StatelessWidget {
         // Make chat component state
         return BlocProvider(
             create: (context) => ChatComponentCubit.singleContact(
-                  locator: context.read,
+                  accountInfo: accountInfo,
+                  accountRecordCubit: accountRecordCubit,
                   activeConversationCubit: activeConversationCubit,
                   messagesCubit: messagesCubit,
                 ),

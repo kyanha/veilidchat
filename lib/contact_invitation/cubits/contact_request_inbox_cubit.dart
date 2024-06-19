@@ -1,4 +1,3 @@
-import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -8,23 +7,21 @@ import '../../proto/proto.dart' as proto;
 class ContactRequestInboxCubit
     extends DefaultDHTRecordCubit<proto.SignedContactResponse?> {
   ContactRequestInboxCubit(
-      {required Locator locator, required this.contactInvitationRecord})
+      {required AccountInfo accountInfo, required this.contactInvitationRecord})
       : super(
             open: () => _open(
-                locator: locator,
+                accountInfo: accountInfo,
                 contactInvitationRecord: contactInvitationRecord),
             decodeState: (buf) => buf.isEmpty
                 ? null
                 : proto.SignedContactResponse.fromBuffer(buf));
 
   static Future<DHTRecord> _open(
-      {required Locator locator,
+      {required AccountInfo accountInfo,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
     final pool = DHTRecordPool.instance;
 
-    final unlockedAccountInfo =
-        locator<AccountInfoCubit>().state.unlockedAccountInfo!;
-    final accountRecordKey = unlockedAccountInfo.accountRecordKey;
+    final accountRecordKey = accountInfo.accountRecordKey;
 
     final writerSecret = contactInvitationRecord.writerSecret.toVeilid();
     final recordKey =

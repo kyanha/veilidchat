@@ -1,8 +1,8 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
-import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
 import 'cubits.dart';
 
@@ -17,11 +17,14 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
     with
         StateMapFollower<DHTShortArrayBusyState<proto.ContactInvitationRecord>,
             TypedKey, proto.ContactInvitationRecord> {
-  WaitingInvitationsBlocMapCubit({
-    required Locator locator,
-  }) : _locator = locator {
+  WaitingInvitationsBlocMapCubit(
+      {required AccountInfo accountInfo,
+      required AccountRecordCubit accountRecordCubit,
+      required ContactInvitationListCubit contactInvitationListCubit})
+      : _accountInfo = accountInfo,
+        _accountRecordCubit = accountRecordCubit {
     // Follow the contact invitation list cubit
-    follow(locator<ContactInvitationListCubit>());
+    follow(contactInvitationListCubit);
   }
 
   Future<void> _addWaitingInvitation(
@@ -31,9 +34,10 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
           contactInvitationRecord.contactRequestInbox.recordKey.toVeilid(),
           WaitingInvitationCubit(
               ContactRequestInboxCubit(
-                  locator: _locator,
+                  accountInfo: _accountInfo,
                   contactInvitationRecord: contactInvitationRecord),
-              locator: _locator,
+              accountInfo: _accountInfo,
+              accountRecordCubit: _accountRecordCubit,
               contactInvitationRecord: contactInvitationRecord)));
 
   /// StateFollower /////////////////////////
@@ -46,5 +50,6 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
       _addWaitingInvitation(contactInvitationRecord: value);
 
   ////
-  final Locator _locator;
+  final AccountInfo _accountInfo;
+  final AccountRecordCubit _accountRecordCubit;
 }

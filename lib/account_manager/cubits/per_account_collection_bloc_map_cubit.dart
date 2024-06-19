@@ -8,26 +8,30 @@ import '../../account_manager/account_manager.dart';
 typedef AccountRecordsBlocMapState
     = BlocMapState<TypedKey, AsyncValue<AccountRecordState>>;
 
-/// Map of the logged in user accounts to their AccountRecordCubit
+/// Map of the logged in user accounts to their PerAccountCollectionCubit
 /// Ensures there is an single account record cubit for each logged in account
-class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
-        AsyncValue<AccountRecordState>, AccountRecordCubit>
+class PerAccountCollectionBlocMapCubit extends BlocMapCubit<TypedKey,
+        PerAccountCollectionState, PerAccountCollectionCubit>
     with StateMapFollower<LocalAccountsState, TypedKey, LocalAccount> {
-  AccountRecordsBlocMapCubit(
-      AccountRepository accountRepository, Locator locator)
-      : _accountRepository = accountRepository {
+  PerAccountCollectionBlocMapCubit({
+    required Locator locator,
+    required AccountRepository accountRepository,
+  })  : _locator = locator,
+        _accountRepository = accountRepository {
     // Follow the local accounts cubit
     follow(locator<LocalAccountsCubit>());
   }
 
   // Add account record cubit
-  Future<void> _addAccountRecordCubit(
+  Future<void> _addPerAccountCollectionCubit(
           {required TypedKey superIdentityRecordKey}) async =>
       add(() => MapEntry(
           superIdentityRecordKey,
-          AccountRecordCubit(
-              accountRepository: _accountRepository,
-              superIdentityRecordKey: superIdentityRecordKey)));
+          PerAccountCollectionCubit(
+              locator: _locator,
+              accountInfoCubit: AccountInfoCubit(
+                  accountRepository: _accountRepository,
+                  superIdentityRecordKey: superIdentityRecordKey))));
 
   /// StateFollower /////////////////////////
 
@@ -36,10 +40,11 @@ class AccountRecordsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   @override
   Future<void> updateState(TypedKey key, LocalAccount value) async {
-    await _addAccountRecordCubit(
+    await _addPerAccountCollectionCubit(
         superIdentityRecordKey: value.superIdentity.recordKey);
   }
 
   ////////////////////////////////////////////////////////////////////////////
   final AccountRepository _accountRepository;
+  final Locator _locator;
 }

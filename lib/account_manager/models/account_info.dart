@@ -16,20 +16,17 @@ enum AccountInfoStatus {
 class AccountInfo extends Equatable {
   const AccountInfo({
     required this.status,
-    required this.active,
     required this.localAccount,
     required this.userLogin,
   });
 
   final AccountInfoStatus status;
-  final bool active;
   final LocalAccount localAccount;
   final UserLogin? userLogin;
 
   @override
   List<Object?> get props => [
         status,
-        active,
         localAccount,
         userLogin,
       ];

@@ -8,7 +8,8 @@ import '../repository/account_repository.dart';
 
 class AccountInfoCubit extends Cubit<AccountInfo> {
   AccountInfoCubit(
-      AccountRepository accountRepository, TypedKey superIdentityRecordKey)
+      {required AccountRepository accountRepository,
+      required TypedKey superIdentityRecordKey})
       : _accountRepository = accountRepository,
         super(accountRepository.getAccountInfo(superIdentityRecordKey)!) {
     // Subscribe to streams

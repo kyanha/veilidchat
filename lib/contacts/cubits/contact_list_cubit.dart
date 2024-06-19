@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:protobuf/protobuf.dart';
-import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../account_manager/account_manager.dart';
 import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
@@ -15,12 +15,12 @@ import '../../tools/tools.dart';
 
 class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   ContactListCubit({
-    required Locator locator,
-    required TypedKey accountRecordKey,
+    required AccountInfo accountInfo,
     required OwnedDHTRecordPointer contactListRecordPointer,
-  })  : _locator = locator,
+  })  : _accountInfo = accountInfo,
         super(
-            open: () => _open(accountRecordKey, contactListRecordPointer),
+            open: () =>
+                _open(accountInfo.accountRecordKey, contactListRecordPointer),
             decodeElement: proto.Contact.fromBuffer);
 
   static Future<DHTShortArray> _open(TypedKey accountRecordKey,
@@ -126,7 +126,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
       try {
         // Make a conversation cubit to manipulate the conversation
         final conversationCubit = ConversationCubit(
-          locator: _locator,
+          accountInfo: _accountInfo,
           remoteIdentityPublicKey: deletedItem.identityPublicKey.toVeilid(),
           localConversationRecordKey:
               deletedItem.localConversationRecordKey.toVeilid(),
@@ -144,5 +144,5 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
   final _contactProfileUpdateMap =
       SingleStateProcessorMap<TypedKey, proto.Profile?>();
-  final Locator _locator;
+  final AccountInfo _accountInfo;
 }

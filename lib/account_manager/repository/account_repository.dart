@@ -93,10 +93,6 @@ class AccountRepository {
   }
 
   AccountInfo? getAccountInfo(TypedKey superIdentityRecordKey) {
-    // Get active account if we have one
-    final activeLocalAccount = getActiveLocalAccount();
-    final active = superIdentityRecordKey == activeLocalAccount;
-
     // Get which local account we want to fetch the profile for
     final localAccount = fetchLocalAccount(superIdentityRecordKey);
     if (localAccount == null) {
@@ -109,7 +105,6 @@ class AccountRepository {
       // Account was locked
       return AccountInfo(
         status: AccountInfoStatus.accountLocked,
-        active: active,
         localAccount: localAccount,
         userLogin: null,
       );
@@ -118,7 +113,6 @@ class AccountRepository {
     // Got account, decrypted and decoded
     return AccountInfo(
       status: AccountInfoStatus.accountUnlocked,
-      active: active,
       localAccount: localAccount,
       userLogin: userLogin,
     );

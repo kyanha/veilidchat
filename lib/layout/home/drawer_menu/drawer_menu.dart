@@ -233,7 +233,8 @@ class _DrawerMenuState extends State<DrawerMenu> {
     final scale = theme.extension<ScaleScheme>()!;
     //final textTheme = theme.textTheme;
     final localAccounts = context.watch<LocalAccountsCubit>().state;
-    final accountRecords = context.watch<AccountRecordsBlocMapCubit>().state;
+    final accountRecords =
+        context.watch<PerAccountCollectionBlocMapCubit>().state;
     final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
     final gradient = LinearGradient(
         begin: Alignment.topLeft,

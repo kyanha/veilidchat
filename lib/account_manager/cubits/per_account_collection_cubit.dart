@@ -10,6 +10,7 @@ import '../../chat/chat.dart';
 import '../../chat_list/chat_list.dart';
 import '../../contact_invitation/contact_invitation.dart';
 import '../../contacts/contacts.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../account_manager.dart';
 
@@ -29,6 +30,14 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
     await accountInfoCubit.close();
     await _accountRecordSubscription?.cancel();
     await accountRecordCubit?.close();
+
+    await activeSingleContactChatBlocMapCubitUpdater.close();
+    await activeConversationsBlocMapCubitUpdater.close();
+    await activeChatCubitUpdater.close();
+    await waitingInvitationsBlocMapCubitUpdater.close();
+    await chatListCubitUpdater.close();
+    await contactListCubitUpdater.close();
+    await contactInvitationListCubitUpdater.close();
 
     await super.close();
   }
@@ -95,48 +104,72 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
         state.copyWith(avAccountRecordState: accountRecordCubit!.state);
 
     // Get bloc parameters
-    final accountRecordKey = nextState.accountInfo.accountRecordKey;
+    final accountInfo = nextState.accountInfo;
 
     // ContactInvitationListCubit
     final contactInvitationListRecordPointer = nextState
         .avAccountRecordState.asData?.value.contactInvitationRecords
         .toVeilid();
 
-    contactInvitationListCubitUpdater.update(
+    final contactInvitationListCubit = contactInvitationListCubitUpdater.update(
         contactInvitationListRecordPointer == null
             ? null
-            : (
-                collectionLocator,
-                accountRecordKey,
-                contactInvitationListRecordPointer
-              ));
+            : (accountInfo, contactInvitationListRecordPointer));
 
     // ContactListCubit
     final contactListRecordPointer =
         nextState.avAccountRecordState.asData?.value.contactList.toVeilid();
 
-    contactListCubitUpdater.update(contactListRecordPointer == null
-        ? null
-        : (collectionLocator, accountRecordKey, contactListRecordPointer));
+    final contactListCubit = contactListCubitUpdater.update(
+        contactListRecordPointer == null
+            ? null
+            : (accountInfo, contactListRecordPointer));
 
     // WaitingInvitationsBlocMapCubit
     waitingInvitationsBlocMapCubitUpdater.update(
-        nextState.avAccountRecordState.isData ? collectionLocator : null);
+        contactInvitationListCubit == null
+            ? null
+            : (accountInfo, accountRecordCubit!, contactInvitationListCubit));
 
     // ActiveChatCubit
-    activeChatCubitUpdater
+    final activeChatCubit = activeChatCubitUpdater
         .update(nextState.avAccountRecordState.isData ? true : null);
 
     // ChatListCubit
     final chatListRecordPointer =
         nextState.avAccountRecordState.asData?.value.chatList.toVeilid();
 
-    chatListCubitUpdater.update(chatListRecordPointer == null
-        ? null
-        : (collectionLocator, accountRecordKey, chatListRecordPointer));
+    final chatListCubit = chatListCubitUpdater.update(
+        chatListRecordPointer == null || activeChatCubit == null
+            ? null
+            : (accountInfo, chatListRecordPointer, activeChatCubit));
 
     // ActiveConversationsBlocMapCubit
-    // xxx
+    final activeConversationsBlocMapCubit =
+        activeConversationsBlocMapCubitUpdater.update(
+            accountRecordCubit == null ||
+                    chatListCubit == null ||
+                    contactListCubit == null
+                ? null
+                : (
+                    accountInfo,
+                    accountRecordCubit!,
+                    chatListCubit,
+                    contactListCubit
+                  ));
+
+    // ActiveSingleContactChatBlocMapCubit
+    activeSingleContactChatBlocMapCubitUpdater.update(
+        activeConversationsBlocMapCubit == null ||
+                chatListCubit == null ||
+                contactListCubit == null
+            ? null
+            : (
+                accountInfo,
+                activeConversationsBlocMapCubit,
+                chatListCubit,
+                contactListCubit
+              ));
 
     return nextState;
   }
@@ -163,6 +196,12 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
     if (T is ChatListCubit) {
       return chatListCubitUpdater.bloc! as T;
     }
+    if (T is ActiveConversationsBlocMapCubit) {
+      return activeConversationsBlocMapCubitUpdater.bloc! as T;
+    }
+    if (T is ActiveSingleContactChatBlocMapCubit) {
+      return activeSingleContactChatBlocMapCubitUpdater.bloc! as T;
+    }
     return _locator<T>();
   }
 
@@ -178,32 +217,52 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
   StreamSubscription<AsyncValue<AccountRecordState>>?
       _accountRecordSubscription;
   final contactInvitationListCubitUpdater = BlocUpdater<
-          ContactInvitationListCubit,
-          (Locator, TypedKey, OwnedDHTRecordPointer)>(
+          ContactInvitationListCubit, (AccountInfo, OwnedDHTRecordPointer)>(
       create: (params) => ContactInvitationListCubit(
-            locator: params.$1,
-            accountRecordKey: params.$2,
-            contactInvitationListRecordPointer: params.$3,
+            accountInfo: params.$1,
+            contactInvitationListRecordPointer: params.$2,
           ));
   final contactListCubitUpdater =
-      BlocUpdater<ContactListCubit, (Locator, TypedKey, OwnedDHTRecordPointer)>(
+      BlocUpdater<ContactListCubit, (AccountInfo, OwnedDHTRecordPointer)>(
           create: (params) => ContactListCubit(
-                locator: params.$1,
-                accountRecordKey: params.$2,
-                contactListRecordPointer: params.$3,
+                accountInfo: params.$1,
+                contactListRecordPointer: params.$2,
               ));
-  final waitingInvitationsBlocMapCubitUpdater =
-      BlocUpdater<WaitingInvitationsBlocMapCubit, Locator>(
-          create: (params) => WaitingInvitationsBlocMapCubit(
-                locator: params,
-              ));
+  final waitingInvitationsBlocMapCubitUpdater = BlocUpdater<
+          WaitingInvitationsBlocMapCubit,
+          (AccountInfo, AccountRecordCubit, ContactInvitationListCubit)>(
+      create: (params) => WaitingInvitationsBlocMapCubit(
+          accountInfo: params.$1,
+          accountRecordCubit: params.$2,
+          contactInvitationListCubit: params.$3));
   final activeChatCubitUpdater =
       BlocUpdater<ActiveChatCubit, bool>(create: (_) => ActiveChatCubit(null));
-  final chatListCubitUpdater =
-      BlocUpdater<ChatListCubit, (Locator, TypedKey, OwnedDHTRecordPointer)>(
-          create: (params) => ChatListCubit(
-                locator: params.$1,
-                accountRecordKey: params.$2,
-                chatListRecordPointer: params.$3,
-              ));
+  final chatListCubitUpdater = BlocUpdater<ChatListCubit,
+          (AccountInfo, OwnedDHTRecordPointer, ActiveChatCubit)>(
+      create: (params) => ChatListCubit(
+          accountInfo: params.$1,
+          chatListRecordPointer: params.$2,
+          activeChatCubit: params.$3));
+  final activeConversationsBlocMapCubitUpdater = BlocUpdater<
+          ActiveConversationsBlocMapCubit,
+          (AccountInfo, AccountRecordCubit, ChatListCubit, ContactListCubit)>(
+      create: (params) => ActiveConversationsBlocMapCubit(
+          accountInfo: params.$1,
+          accountRecordCubit: params.$2,
+          chatListCubit: params.$3,
+          contactListCubit: params.$4));
+  final activeSingleContactChatBlocMapCubitUpdater = BlocUpdater<
+          ActiveSingleContactChatBlocMapCubit,
+          (
+            AccountInfo,
+            ActiveConversationsBlocMapCubit,
+            ChatListCubit,
+            ContactListCubit
+          )>(
+      create: (params) => ActiveSingleContactChatBlocMapCubit(
+            accountInfo: params.$1,
+            activeConversationsBlocMapCubit: params.$2,
+            chatListCubit: params.$3,
+            contactListCubit: params.$4,
+          ));
 }

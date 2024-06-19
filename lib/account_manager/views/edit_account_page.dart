@@ -116,13 +116,13 @@ class _EditAccountPageState extends State<EditAccountPage> {
             });
             try {
               // Look up account cubit for this specific account
-              final accountRecordsCubit =
-                  context.read<AccountRecordsBlocMapCubit>();
-              await accountRecordsCubit.operateAsync(
+              final perAccountCollectionCubit =
+                  context.read<PerAccountCollectionBlocMapCubit>();
+              await perAccountCollectionCubit.operateAsync(
                   widget.superIdentityRecordKey, closure: (c) async {
                 // Update account profile DHT record
                 // This triggers ConversationCubits to update
-                await c.updateProfile(newProfile);
+                await c.accountRecordCubit!.updateProfile(newProfile);
               });
 
               // Update local account profile

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
-import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
@@ -19,18 +19,19 @@ typedef ChatListCubitState = DHTShortArrayBusyState<proto.Chat>;
 class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     with StateMapFollowable<ChatListCubitState, TypedKey, proto.Chat> {
   ChatListCubit({
-    required Locator locator,
-    required TypedKey accountRecordKey,
+    required AccountInfo accountInfo,
     required OwnedDHTRecordPointer chatListRecordPointer,
-  })  : _locator = locator,
+    required ActiveChatCubit activeChatCubit,
+  })  : _activeChatCubit = activeChatCubit,
         super(
-            open: () => _open(locator, accountRecordKey, chatListRecordPointer),
+            open: () => _open(accountInfo, chatListRecordPointer),
             decodeElement: proto.Chat.fromBuffer);
 
-  static Future<DHTShortArray> _open(Locator locator, TypedKey accountRecordKey,
+  static Future<DHTShortArray> _open(AccountInfo accountInfo,
       OwnedDHTRecordPointer chatListRecordPointer) async {
     final dhtRecord = await DHTShortArray.openOwned(chatListRecordPointer,
-        debugName: 'ChatListCubit::_open::ChatList', parent: accountRecordKey);
+        debugName: 'ChatListCubit::_open::ChatList',
+        parent: accountInfo.accountRecordKey);
 
     return dhtRecord;
   }
@@ -95,9 +96,8 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     final deletedItem =
         // Ensure followers get their changes before we return
         await syncFollowers(() => operateWrite((writer) async {
-              final activeChatCubit = _locator<ActiveChatCubit>();
-              if (activeChatCubit.state == localConversationRecordKey) {
-                activeChatCubit.setActiveChat(null);
+              if (_activeChatCubit.state == localConversationRecordKey) {
+                _activeChatCubit.setActiveChat(null);
               }
               for (var i = 0; i < writer.length; i++) {
                 final c = await writer.getProtobuf(proto.Chat.fromBuffer, i);
@@ -139,5 +139,5 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
 
   ////////////////////////////////////////////////////////////////////////////
 
-  final Locator _locator;
+  final ActiveChatCubit _activeChatCubit;
 }
