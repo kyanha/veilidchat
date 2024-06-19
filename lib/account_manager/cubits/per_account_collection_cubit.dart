@@ -26,6 +26,8 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
 
   @override
   Future<void> close() async {
+    await _initWait();
+
     await _processor.close();
     await accountInfoCubit.close();
     await _accountRecordSubscription?.cancel();
@@ -43,8 +45,6 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
   }
 
   Future<void> _init() async {
-    await _initWait();
-
     // subscribe to accountInfo changes
     _processor.follow(accountInfoCubit.stream, accountInfoCubit.state,
         _followAccountInfoState);
@@ -66,11 +66,6 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
           activeSingleContactChatBlocMapCubit: null);
 
   Future<void> _followAccountInfoState(AccountInfo accountInfo) async {
-    // If state hasn't changed just return
-    if (state.accountInfo == accountInfo) {
-      return;
-    }
-
     // Get the next state
     var nextState = state.copyWith(accountInfo: accountInfo);
 
@@ -83,8 +78,7 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
       _accountRecordSubscription = null;
 
       // Update state to 'loading'
-      nextState =
-          _updateAccountRecordState(nextState, const AsyncValue.loading());
+      nextState = _updateAccountRecordState(nextState, null);
       emit(nextState);
 
       // Close AccountRecordCubit
@@ -116,7 +110,7 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
       AsyncValue<AccountRecordState>? avAccountRecordState) {
     // Get next state
     final nextState =
-        state.copyWith(avAccountRecordState: avAccountRecordState);
+        prevState.copyWith(avAccountRecordState: avAccountRecordState);
 
     // Get bloc parameters
     final accountInfo = nextState.accountInfo;
@@ -127,7 +121,8 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
         .toVeilid();
 
     final contactInvitationListCubit = contactInvitationListCubitUpdater.update(
-        contactInvitationListRecordPointer == null
+        accountInfo.userLogin == null ||
+                contactInvitationListRecordPointer == null
             ? null
             : (accountInfo, contactInvitationListRecordPointer));
 
@@ -136,26 +131,33 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
         nextState.avAccountRecordState?.asData?.value.contactList.toVeilid();
 
     final contactListCubit = contactListCubitUpdater.update(
-        contactListRecordPointer == null
+        accountInfo.userLogin == null || contactListRecordPointer == null
             ? null
             : (accountInfo, contactListRecordPointer));
 
     // WaitingInvitationsBlocMapCubit
-    final waitingInvitationsBlocMapCubit = waitingInvitationsBlocMapCubitUpdater
-        .update(contactInvitationListCubit == null
-            ? null
-            : (accountInfo, accountRecordCubit!, contactInvitationListCubit));
+    final waitingInvitationsBlocMapCubit =
+        waitingInvitationsBlocMapCubitUpdater.update(
+            accountInfo.userLogin == null || contactInvitationListCubit == null
+                ? null
+                : (
+                    accountInfo,
+                    accountRecordCubit!,
+                    contactInvitationListCubit
+                  ));
 
     // ActiveChatCubit
-    final activeChatCubit = activeChatCubitUpdater.update(
-        (nextState.avAccountRecordState?.isData ?? false) ? true : null);
+    final activeChatCubit = activeChatCubitUpdater
+        .update((accountInfo.userLogin == null) ? null : true);
 
     // ChatListCubit
     final chatListRecordPointer =
         nextState.avAccountRecordState?.asData?.value.chatList.toVeilid();
 
     final chatListCubit = chatListCubitUpdater.update(
-        chatListRecordPointer == null || activeChatCubit == null
+        accountInfo.userLogin == null ||
+                chatListRecordPointer == null ||
+                activeChatCubit == null
             ? null
             : (accountInfo, chatListRecordPointer, activeChatCubit));
 
@@ -176,7 +178,8 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
     // ActiveSingleContactChatBlocMapCubit
     final activeSingleContactChatBlocMapCubit =
         activeSingleContactChatBlocMapCubitUpdater.update(
-            activeConversationsBlocMapCubit == null ||
+            accountInfo.userLogin == null ||
+                    activeConversationsBlocMapCubit == null ||
                     chatListCubit == null ||
                     contactListCubit == null
                 ? null

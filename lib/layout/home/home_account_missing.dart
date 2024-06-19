@@ -21,13 +21,3 @@ class HomeAccountMissingState extends State<HomeAccountMissing> {
   @override
   Widget build(BuildContext context) => const Text('Account missing');
 }
-
-// xxx click to delete missing account or add to postframecallback
-        // Future.delayed(0.ms, () async {
-        //   await showErrorModal(context, translate('home.missing_account_title'),
-        //       translate('home.missing_account_text'));
-        //   // Delete account
-        //   await AccountRepository.instance.deleteLocalAccount(activeUserLogin);
-        //   // Switch to no active user login
-        //   await AccountRepository.instance.switchToAccount(null);
-        // });
