@@ -12,6 +12,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../contacts/contacts.dart';
 import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../models/chat_component_state.dart';
@@ -28,10 +29,12 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   ChatComponentCubit._({
     required AccountInfo accountInfo,
     required AccountRecordCubit accountRecordCubit,
+    required ContactListCubit contactListCubit,
     required List<ActiveConversationCubit> conversationCubits,
     required SingleContactMessagesCubit messagesCubit,
   })  : _accountInfo = accountInfo,
         _accountRecordCubit = accountRecordCubit,
+        _contactListCubit = contactListCubit,
         _conversationCubits = conversationCubits,
         _messagesCubit = messagesCubit,
         super(ChatComponentState(
@@ -51,11 +54,13 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   factory ChatComponentCubit.singleContact(
           {required AccountInfo accountInfo,
           required AccountRecordCubit accountRecordCubit,
+          required ContactListCubit contactListCubit,
           required ActiveConversationCubit activeConversationCubit,
           required SingleContactMessagesCubit messagesCubit}) =>
       ChatComponentCubit._(
         accountInfo: accountInfo,
         accountRecordCubit: accountRecordCubit,
+        contactListCubit: contactListCubit,
         conversationCubits: [activeConversationCubit],
         messagesCubit: messagesCubit,
       );
@@ -82,6 +87,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
     await _initWait();
     await _accountRecordSubscription.cancel();
     await _messagesSubscription.cancel();
+    await _conversationSubscriptions.values.map((v) => v.cancel()).wait;
     await super.close();
   }
 
@@ -146,12 +152,12 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   // Private Implementation
 
   void _onChangedAccountRecord(AsyncValue<proto.Account> avAccount) {
+    // Update local 'User'
     final account = avAccount.asData?.value;
     if (account == null) {
       emit(state.copyWith(localUser: null));
       return;
     }
-    // Make local 'User'
     final localUser = types.User(
         id: _localUserIdentityKey.toString(),
         firstName: account.profile.name,
@@ -168,15 +174,40 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
     TypedKey remoteIdentityPublicKey,
     AsyncValue<ActiveConversationState> avConversationState,
   ) {
-    //
+    // Update remote 'User'
+    final activeConversationState = avConversationState.asData?.value;
+    if (activeConversationState == null) {
+      // Don't change user information on loading state
+      return;
+    }
+    emit(state.copyWith(
+        remoteUsers: state.remoteUsers.add(
+            remoteIdentityPublicKey,
+            _convertRemoteUser(
+                remoteIdentityPublicKey, activeConversationState))));
   }
 
   types.User _convertRemoteUser(TypedKey remoteIdentityPublicKey,
-          ActiveConversationState activeConversationState) =>
-      types.User(
-          id: remoteIdentityPublicKey.toString(),
-          firstName: activeConversationState.contact.displayName,
-          metadata: {metadataKeyIdentityPublicKey: remoteIdentityPublicKey});
+      ActiveConversationState activeConversationState) {
+    // See if we have a contact for this remote user
+    final contacts = _contactListCubit.state.state.asData?.value;
+    if (contacts != null) {
+      final contactIdx = contacts.indexWhere((x) =>
+          x.value.identityPublicKey.toVeilid() == remoteIdentityPublicKey);
+      if (contactIdx != -1) {
+        final contact = contacts[contactIdx].value;
+        return types.User(
+            id: remoteIdentityPublicKey.toString(),
+            firstName: contact.displayName,
+            metadata: {metadataKeyIdentityPublicKey: remoteIdentityPublicKey});
+      }
+    }
+
+    return types.User(
+        id: remoteIdentityPublicKey.toString(),
+        firstName: activeConversationState.remoteConversation.profile.name,
+        metadata: {metadataKeyIdentityPublicKey: remoteIdentityPublicKey});
+  }
 
   types.User _convertUnknownUser(TypedKey remoteIdentityPublicKey) =>
       types.User(
@@ -376,6 +407,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   final _initWait = WaitSet<void>();
   final AccountInfo _accountInfo;
   final AccountRecordCubit _accountRecordCubit;
+  final ContactListCubit _contactListCubit;
   final List<ActiveConversationCubit> _conversationCubits;
   final SingleContactMessagesCubit _messagesCubit;
 

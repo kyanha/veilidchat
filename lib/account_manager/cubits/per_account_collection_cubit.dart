@@ -136,15 +136,17 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
             : (accountInfo, contactListRecordPointer));
 
     // WaitingInvitationsBlocMapCubit
-    final waitingInvitationsBlocMapCubit =
-        waitingInvitationsBlocMapCubitUpdater.update(
-            accountInfo.userLogin == null || contactInvitationListCubit == null
-                ? null
-                : (
-                    accountInfo,
-                    accountRecordCubit!,
-                    contactInvitationListCubit
-                  ));
+    final waitingInvitationsBlocMapCubit = waitingInvitationsBlocMapCubitUpdater
+        .update(accountInfo.userLogin == null ||
+                contactInvitationListCubit == null ||
+                contactListCubit == null
+            ? null
+            : (
+                accountInfo,
+                accountRecordCubit!,
+                contactInvitationListCubit,
+                contactListCubit,
+              ));
 
     // ActiveChatCubit
     final activeChatCubit = activeChatCubitUpdater
@@ -179,15 +181,11 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
     final activeSingleContactChatBlocMapCubit =
         activeSingleContactChatBlocMapCubitUpdater.update(
             accountInfo.userLogin == null ||
-                    activeConversationsBlocMapCubit == null ||
-                    chatListCubit == null ||
-                    contactListCubit == null
+                    activeConversationsBlocMapCubit == null
                 ? null
                 : (
                     accountInfo,
                     activeConversationsBlocMapCubit,
-                    chatListCubit,
-                    contactListCubit
                   ));
 
     // Update available blocs in our state
@@ -260,11 +258,18 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
               ));
   final waitingInvitationsBlocMapCubitUpdater = BlocUpdater<
           WaitingInvitationsBlocMapCubit,
-          (AccountInfo, AccountRecordCubit, ContactInvitationListCubit)>(
+          (
+            AccountInfo,
+            AccountRecordCubit,
+            ContactInvitationListCubit,
+            ContactListCubit
+          )>(
       create: (params) => WaitingInvitationsBlocMapCubit(
-          accountInfo: params.$1,
-          accountRecordCubit: params.$2,
-          contactInvitationListCubit: params.$3));
+            accountInfo: params.$1,
+            accountRecordCubit: params.$2,
+            contactInvitationListCubit: params.$3,
+            contactListCubit: params.$4,
+          ));
   final activeChatCubitUpdater =
       BlocUpdater<ActiveChatCubit, bool>(create: (_) => ActiveChatCubit(null));
   final chatListCubitUpdater = BlocUpdater<ChatListCubit,
@@ -286,13 +291,9 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
           (
             AccountInfo,
             ActiveConversationsBlocMapCubit,
-            ChatListCubit,
-            ContactListCubit
           )>(
       create: (params) => ActiveSingleContactChatBlocMapCubit(
             accountInfo: params.$1,
             activeConversationsBlocMapCubit: params.$2,
-            chatListCubit: params.$3,
-            contactListCubit: params.$4,
           ));
 }

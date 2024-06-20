@@ -609,7 +609,7 @@ class _DHTLogSpine {
       // Don't watch for local changes because this class already handles
       // notifying listeners and knows when it makes local changes
       _subscription ??=
-          await _spineRecord.listen(localChanges: false, _onSpineChanged);
+          await _spineRecord.listen(localChanges: true, _onSpineChanged);
     } on Exception {
       // If anything fails, try to cancel the watches
       await cancelWatch();

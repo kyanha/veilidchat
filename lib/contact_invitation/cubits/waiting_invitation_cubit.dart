@@ -59,8 +59,11 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     // Verify
     final idcs = await contactSuperIdentity.currentInstance.cryptoSystem;
     final signature = signedContactResponse.identitySignature.toVeilid();
-    await idcs.verify(contactSuperIdentity.currentInstance.publicKey,
-        contactResponseBytes, signature);
+    if (!await idcs.verify(contactSuperIdentity.currentInstance.publicKey,
+        contactResponseBytes, signature)) {
+      // Could not verify signature of contact response
+      return AsyncValue.error('Invalid signature on contact response.');
+    }
 
     // Check for rejection
     if (!contactResponse.accept) {

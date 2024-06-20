@@ -13,17 +13,27 @@ import '../conversation.dart';
 @immutable
 class ActiveConversationState extends Equatable {
   const ActiveConversationState({
-    required this.contact,
+    required this.remoteIdentityPublicKey,
+    required this.localConversationRecordKey,
+    required this.remoteConversationRecordKey,
     required this.localConversation,
     required this.remoteConversation,
   });
 
-  final proto.Contact contact;
+  final TypedKey remoteIdentityPublicKey;
+  final TypedKey localConversationRecordKey;
+  final TypedKey remoteConversationRecordKey;
   final proto.Conversation localConversation;
   final proto.Conversation remoteConversation;
 
   @override
-  List<Object?> get props => [contact, localConversation, remoteConversation];
+  List<Object?> get props => [
+        remoteIdentityPublicKey,
+        localConversationRecordKey,
+        remoteConversationRecordKey,
+        localConversation,
+        remoteConversation
+      ];
 }
 
 typedef ActiveConversationCubit = TransformerCubit<
@@ -37,9 +47,11 @@ typedef ActiveConversationsBlocMapState
 // Map of localConversationRecordKey to ActiveConversationCubit
 // Wraps a conversation cubit to only expose completely built conversations
 // Automatically follows the state of a ChatListCubit.
-// Even though 'conversations' are per-contact and not per-chat
 // We currently only build the cubits for the chats that are active, not
 // archived chats or contacts that are not actively in a chat.
+//
+// TODO: Polling contacts for new inactive chats is yet to be done
+//
 class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         AsyncValue<ActiveConversationState>, ActiveConversationCubit>
     with StateMapFollower<ChatListCubitState, TypedKey, proto.Chat> {
@@ -62,14 +74,11 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
   // Private Implementation
 
   // Add an active conversation to be tracked for changes
-  Future<void> _addConversation({required proto.Contact contact}) async =>
+  Future<void> _addDirectConversation(
+          {required TypedKey remoteIdentityPublicKey,
+          required TypedKey localConversationRecordKey,
+          required TypedKey remoteConversationRecordKey}) async =>
       add(() {
-        final remoteIdentityPublicKey = contact.identityPublicKey.toVeilid();
-        final localConversationRecordKey =
-            contact.localConversationRecordKey.toVeilid();
-        final remoteConversationRecordKey =
-            contact.remoteConversationRecordKey.toVeilid();
-
         // Conversation cubit the tracks the state between the local
         // and remote halves of a contact's relationship with this account
         final conversationCubit = ConversationCubit(
@@ -105,14 +114,16 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
                         data.remoteConversation == null)
                     ? const AsyncValue.loading()
                     : AsyncValue.data(ActiveConversationState(
-                        contact: contact,
                         localConversation: data.localConversation!,
-                        remoteConversation: data.remoteConversation!)),
+                        remoteConversation: data.remoteConversation!,
+                        remoteIdentityPublicKey: remoteIdentityPublicKey,
+                        localConversationRecordKey: localConversationRecordKey,
+                        remoteConversationRecordKey:
+                            remoteConversationRecordKey)),
                 loading: AsyncValue.loading,
                 error: AsyncValue.error));
 
-        return MapEntry(
-            contact.localConversationRecordKey.toVeilid(), transformedCubit);
+        return MapEntry(localConversationRecordKey, transformedCubit);
       });
 
   /// StateFollower /////////////////////////
@@ -121,20 +132,44 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
   Future<void> removeFromState(TypedKey key) => remove(key);
 
   @override
-  Future<void> updateState(TypedKey key, proto.Chat value) async {
-    final contactList = _contactListCubit.state.state.asData?.value;
-    if (contactList == null) {
-      await addState(key, const AsyncValue.loading());
-      return;
+  Future<void> updateState(
+      TypedKey key, proto.Chat? oldValue, proto.Chat newValue) async {
+    switch (newValue.whichKind()) {
+      case proto.Chat_Kind.notSet:
+        throw StateError('unknown chat kind');
+      case proto.Chat_Kind.direct:
+        final localConversationRecordKey =
+            newValue.direct.localConversationRecordKey.toVeilid();
+        final remoteIdentityPublicKey =
+            newValue.direct.remoteMember.remoteIdentityPublicKey.toVeilid();
+        final remoteConversationRecordKey =
+            newValue.direct.remoteMember.remoteConversationRecordKey.toVeilid();
+
+        if (oldValue != null) {
+          final oldLocalConversationRecordKey =
+              oldValue.direct.localConversationRecordKey.toVeilid();
+          final oldRemoteIdentityPublicKey =
+              oldValue.direct.remoteMember.remoteIdentityPublicKey.toVeilid();
+          final oldRemoteConversationRecordKey = oldValue
+              .direct.remoteMember.remoteConversationRecordKey
+              .toVeilid();
+
+          if (oldLocalConversationRecordKey == localConversationRecordKey &&
+              oldRemoteIdentityPublicKey == remoteIdentityPublicKey &&
+              oldRemoteConversationRecordKey == remoteConversationRecordKey) {
+            return;
+          }
+        }
+
+        await _addDirectConversation(
+            remoteIdentityPublicKey: remoteIdentityPublicKey,
+            localConversationRecordKey: localConversationRecordKey,
+            remoteConversationRecordKey: remoteConversationRecordKey);
+
+        break;
+      case proto.Chat_Kind.group:
+        break;
     }
-    final contactIndex = contactList.indexWhere(
-        (c) => c.value.localConversationRecordKey.toVeilid() == key);
-    if (contactIndex == -1) {
-      await addState(key, AsyncValue.error('Contact not found'));
-      return;
-    }
-    final contact = contactList[contactIndex];
-    await _addConversation(contact: contact.value);
   }
 
   ////

@@ -116,7 +116,14 @@ class _EditAccountPageState extends State<EditAccountPage> {
             });
             try {
               // Look up account cubit for this specific account
-              final accountRecordCubit = context.read<AccountRecordCubit>();
+              final perAccountCollectionBlocMapCubit =
+                  context.read<PerAccountCollectionBlocMapCubit>();
+              final accountRecordCubit = await perAccountCollectionBlocMapCubit
+                  .operate(widget.superIdentityRecordKey,
+                      closure: (c) async => c.accountRecordCubit);
+              if (accountRecordCubit == null) {
+                return;
+              }
 
               // Update account profile DHT record
               // This triggers ConversationCubits to update

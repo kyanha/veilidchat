@@ -9,6 +9,7 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../contacts/contacts.dart';
 import '../../conversation/conversation.dart';
 import '../../theme/theme.dart';
 import '../chat.dart';
@@ -28,10 +29,13 @@ class ChatComponentWidget extends StatelessWidget {
         // Get the account record cubit
         final accountRecordCubit = context.read<AccountRecordCubit>();
 
+        // Get the contact list cubit
+        final contactListCubit = context.watch<ContactListCubit>();
+
         // Get the active conversation cubit
         final activeConversationCubit = context
             .select<ActiveConversationsBlocMapCubit, ActiveConversationCubit?>(
-                (x) => x.tryOperate(localConversationRecordKey,
+                (x) => x.tryOperateSync(localConversationRecordKey,
                     closure: (cubit) => cubit));
         if (activeConversationCubit == null) {
           return waitingPage();
@@ -41,7 +45,7 @@ class ChatComponentWidget extends StatelessWidget {
         final messagesCubit = context.select<
                 ActiveSingleContactChatBlocMapCubit,
                 SingleContactMessagesCubit?>(
-            (x) => x.tryOperate(localConversationRecordKey,
+            (x) => x.tryOperateSync(localConversationRecordKey,
                 closure: (cubit) => cubit));
         if (messagesCubit == null) {
           return waitingPage();
@@ -49,9 +53,11 @@ class ChatComponentWidget extends StatelessWidget {
 
         // Make chat component state
         return BlocProvider(
+            key: key,
             create: (context) => ChatComponentCubit.singleContact(
                   accountInfo: accountInfo,
                   accountRecordCubit: accountRecordCubit,
+                  contactListCubit: contactListCubit,
                   activeConversationCubit: activeConversationCubit,
                   messagesCubit: messagesCubit,
                 ),

@@ -54,6 +54,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     // Make local copy so we don't share the buffer
     final localConversationRecordKey =
         contact.localConversationRecordKey.toVeilid();
+    final remoteIdentityPublicKey = contact.identityPublicKey.toVeilid();
     final remoteConversationRecordKey =
         contact.remoteConversationRecordKey.toVeilid();
 
@@ -67,18 +68,38 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
           throw Exception('Failed to get chat');
         }
         final c = proto.Chat.fromBuffer(cbuf);
-        if (c.localConversationRecordKey ==
-            contact.localConversationRecordKey) {
-          // Nothing to do here
-          return;
+
+        switch (c.whichKind()) {
+          case proto.Chat_Kind.direct:
+            if (c.direct.localConversationRecordKey ==
+                contact.localConversationRecordKey) {
+              // Nothing to do here
+              return;
+            }
+            break;
+          case proto.Chat_Kind.group:
+            if (c.group.localConversationRecordKey ==
+                contact.localConversationRecordKey) {
+              throw StateError('direct conversation record key should'
+                  ' not be used for group chats!');
+            }
+            break;
+          case proto.Chat_Kind.notSet:
+            throw StateError('unknown chat kind');
         }
       }
 
       // Create 1:1 conversation type Chat
-      final chat = proto.Chat()
+      final chatMember = proto.ChatMember()
+        ..remoteIdentityPublicKey = remoteIdentityPublicKey.toProto()
+        ..remoteConversationRecordKey = remoteConversationRecordKey.toProto();
+
+      final directChat = proto.DirectChat()
         ..settings = await getDefaultChatSettings(contact)
         ..localConversationRecordKey = localConversationRecordKey.toProto()
-        ..remoteConversationRecordKey = remoteConversationRecordKey.toProto();
+        ..remoteMember = chatMember;
+
+      final chat = proto.Chat()..direct = directChat;
 
       // Add chat
       await writer.add(chat.writeToBuffer());
@@ -88,9 +109,6 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
   /// Delete a chat
   Future<void> deleteChat(
       {required TypedKey localConversationRecordKey}) async {
-    final localConversationRecordKeyProto =
-        localConversationRecordKey.toProto();
-
     // Remove Chat from account's list
     // if this fails, don't keep retrying, user can try again later
     final deletedItem =
@@ -104,9 +122,9 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
                 if (c == null) {
                   throw Exception('Failed to get chat');
                 }
+
                 if (c.localConversationRecordKey ==
-                    localConversationRecordKeyProto) {
-                  // Found the right chat
+                    localConversationRecordKey) {
                   await writer.remove(i);
                   return c;
                 }
@@ -133,7 +151,7 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
       return IMap();
     }
     return IMap.fromIterable(stateValue,
-        keyMapper: (e) => e.value.localConversationRecordKey.toVeilid(),
+        keyMapper: (e) => e.value.localConversationRecordKey,
         valueMapper: (e) => e.value);
   }
 

@@ -2,15 +2,12 @@ import 'dart:math';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
-import '../../contact_invitation/contact_invitation.dart';
-import '../../contacts/contacts.dart';
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import 'active_account_page_controller_wrapper.dart';
@@ -37,48 +34,6 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     super.dispose();
-  }
-
-  // Process all accepted or rejected invitations
-  void _invitationStatusListener(
-      BuildContext context, WaitingInvitationsBlocMapState state) {
-    _singleInvitationStatusProcessor.updateState(state, (newState) async {
-      final contactListCubit = context.read<ContactListCubit>();
-      final contactInvitationListCubit =
-          context.read<ContactInvitationListCubit>();
-
-      for (final entry in newState.entries) {
-        final contactRequestInboxRecordKey = entry.key;
-        final invStatus = entry.value.asData?.value;
-        // Skip invitations that have not yet been accepted or rejected
-        if (invStatus == null) {
-          continue;
-        }
-
-        // Delete invitation and process the accepted or rejected contact
-        final acceptedContact = invStatus.acceptedContact;
-        if (acceptedContact != null) {
-          await contactInvitationListCubit.deleteInvitation(
-              accepted: true,
-              contactRequestInboxRecordKey: contactRequestInboxRecordKey);
-
-          // Accept
-          await contactListCubit.createContact(
-            profile: acceptedContact.remoteProfile,
-            remoteSuperIdentity: acceptedContact.remoteIdentity,
-            remoteConversationRecordKey:
-                acceptedContact.remoteConversationRecordKey,
-            localConversationRecordKey:
-                acceptedContact.localConversationRecordKey,
-          );
-        } else {
-          // Reject
-          await contactInvitationListCubit.deleteInvitation(
-              accepted: false,
-              contactRequestInboxRecordKey: contactRequestInboxRecordKey);
-        }
-      }
-    });
   }
 
   Widget _buildAccountReadyDeviceSpecific(BuildContext context) {
@@ -110,24 +65,18 @@ class HomeScreenState extends State<HomeScreen> {
 
         // Re-export all ready blocs to the account display subtree
         return perAccountCollectionState.provide(
-            child: MultiBlocListener(listeners: [
-          BlocListener<WaitingInvitationsBlocMapCubit,
-              WaitingInvitationsBlocMapState>(
-            listener: _invitationStatusListener,
-          )
-        ], child: Builder(builder: _buildAccountReadyDeviceSpecific)));
+            child: Builder(builder: _buildAccountReadyDeviceSpecific));
     }
   }
 
   Widget _buildAccountPageView(BuildContext context) {
     final localAccounts = context.watch<LocalAccountsCubit>().state;
-    final activeLocalAccountCubit =
-        context.watch<ActiveLocalAccountCubit>().state;
+    final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
     final perAccountCollectionBlocMapState =
         context.watch<PerAccountCollectionBlocMapCubit>().state;
 
-    final activeIndex = localAccounts.indexWhere(
-        (x) => x.superIdentity.recordKey == activeLocalAccountCubit);
+    final activeIndex = localAccounts
+        .indexWhere((x) => x.superIdentity.recordKey == activeLocalAccount);
     if (activeIndex == -1) {
       return const HomeNoActive();
     }
@@ -208,6 +157,4 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   final _zoomDrawerController = ZoomDrawerController();
-  final _singleInvitationStatusProcessor =
-      SingleStateProcessor<WaitingInvitationsBlocMapState>();
 }

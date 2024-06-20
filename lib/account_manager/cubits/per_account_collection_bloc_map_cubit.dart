@@ -38,9 +38,23 @@ class PerAccountCollectionBlocMapCubit extends BlocMapCubit<TypedKey,
   Future<void> removeFromState(TypedKey key) => remove(key);
 
   @override
-  Future<void> updateState(TypedKey key, LocalAccount value) async {
+  Future<void> updateState(
+      TypedKey key, LocalAccount? oldValue, LocalAccount newValue) async {
+    // Don't replace unless this is a totally different account
+    // The sub-cubit's subscription will update our state later
+    if (oldValue != null) {
+      if (oldValue.superIdentity.recordKey !=
+          newValue.superIdentity.recordKey) {
+        throw StateError(
+            'should remove LocalAccount and make a new one, not change it, if '
+            'the superidentity record key has changed');
+      }
+      // This never changes anything that should result in rebuildin the
+      // sub-cubit
+      return;
+    }
     await _addPerAccountCollectionCubit(
-        superIdentityRecordKey: value.superIdentity.recordKey);
+        superIdentityRecordKey: newValue.superIdentity.recordKey);
   }
 
   ////////////////////////////////////////////////////////////////////////////

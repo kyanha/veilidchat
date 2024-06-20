@@ -365,41 +365,76 @@ final $typed_data.Uint8List conversationDescriptor = $convert.base64Decode(
     'JvZmlsZRIuChNzdXBlcl9pZGVudGl0eV9qc29uGAIgASgJUhFzdXBlcklkZW50aXR5SnNvbhIs'
     'CghtZXNzYWdlcxgDIAEoCzIQLnZlaWxpZC5UeXBlZEtleVIIbWVzc2FnZXM=');
 
-@$core.Deprecated('Use chatDescriptor instead')
-const Chat$json = {
-  '1': 'Chat',
+@$core.Deprecated('Use chatMemberDescriptor instead')
+const ChatMember$json = {
+  '1': 'ChatMember',
   '2': [
-    {'1': 'settings', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.ChatSettings', '10': 'settings'},
-    {'1': 'local_conversation_record_key', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'localConversationRecordKey'},
-    {'1': 'remote_conversation_record_key', '3': 3, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'remoteConversationRecordKey'},
+    {'1': 'remote_identity_public_key', '3': 1, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'remoteIdentityPublicKey'},
+    {'1': 'remote_conversation_record_key', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'remoteConversationRecordKey'},
   ],
 };
 
-/// Descriptor for `Chat`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List chatDescriptor = $convert.base64Decode(
-    'CgRDaGF0EjQKCHNldHRpbmdzGAEgASgLMhgudmVpbGlkY2hhdC5DaGF0U2V0dGluZ3NSCHNldH'
-    'RpbmdzElMKHWxvY2FsX2NvbnZlcnNhdGlvbl9yZWNvcmRfa2V5GAIgASgLMhAudmVpbGlkLlR5'
-    'cGVkS2V5Uhpsb2NhbENvbnZlcnNhdGlvblJlY29yZEtleRJVCh5yZW1vdGVfY29udmVyc2F0aW'
-    '9uX3JlY29yZF9rZXkYAyABKAsyEC52ZWlsaWQuVHlwZWRLZXlSG3JlbW90ZUNvbnZlcnNhdGlv'
-    'blJlY29yZEtleQ==');
+/// Descriptor for `ChatMember`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List chatMemberDescriptor = $convert.base64Decode(
+    'CgpDaGF0TWVtYmVyEk0KGnJlbW90ZV9pZGVudGl0eV9wdWJsaWNfa2V5GAEgASgLMhAudmVpbG'
+    'lkLlR5cGVkS2V5UhdyZW1vdGVJZGVudGl0eVB1YmxpY0tleRJVCh5yZW1vdGVfY29udmVyc2F0'
+    'aW9uX3JlY29yZF9rZXkYAiABKAsyEC52ZWlsaWQuVHlwZWRLZXlSG3JlbW90ZUNvbnZlcnNhdG'
+    'lvblJlY29yZEtleQ==');
+
+@$core.Deprecated('Use directChatDescriptor instead')
+const DirectChat$json = {
+  '1': 'DirectChat',
+  '2': [
+    {'1': 'settings', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.ChatSettings', '10': 'settings'},
+    {'1': 'local_conversation_record_key', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'localConversationRecordKey'},
+    {'1': 'remote_member', '3': 3, '4': 1, '5': 11, '6': '.veilidchat.ChatMember', '10': 'remoteMember'},
+  ],
+};
+
+/// Descriptor for `DirectChat`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List directChatDescriptor = $convert.base64Decode(
+    'CgpEaXJlY3RDaGF0EjQKCHNldHRpbmdzGAEgASgLMhgudmVpbGlkY2hhdC5DaGF0U2V0dGluZ3'
+    'NSCHNldHRpbmdzElMKHWxvY2FsX2NvbnZlcnNhdGlvbl9yZWNvcmRfa2V5GAIgASgLMhAudmVp'
+    'bGlkLlR5cGVkS2V5Uhpsb2NhbENvbnZlcnNhdGlvblJlY29yZEtleRI7Cg1yZW1vdGVfbWVtYm'
+    'VyGAMgASgLMhYudmVpbGlkY2hhdC5DaGF0TWVtYmVyUgxyZW1vdGVNZW1iZXI=');
 
 @$core.Deprecated('Use groupChatDescriptor instead')
 const GroupChat$json = {
   '1': 'GroupChat',
   '2': [
     {'1': 'settings', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.ChatSettings', '10': 'settings'},
-    {'1': 'local_conversation_record_key', '3': 2, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'localConversationRecordKey'},
-    {'1': 'remote_conversation_record_keys', '3': 3, '4': 3, '5': 11, '6': '.veilid.TypedKey', '10': 'remoteConversationRecordKeys'},
+    {'1': 'membership', '3': 2, '4': 1, '5': 11, '6': '.veilidchat.Membership', '10': 'membership'},
+    {'1': 'permissions', '3': 3, '4': 1, '5': 11, '6': '.veilidchat.Permissions', '10': 'permissions'},
+    {'1': 'local_conversation_record_key', '3': 4, '4': 1, '5': 11, '6': '.veilid.TypedKey', '10': 'localConversationRecordKey'},
+    {'1': 'remote_members', '3': 5, '4': 3, '5': 11, '6': '.veilidchat.ChatMember', '10': 'remoteMembers'},
   ],
 };
 
 /// Descriptor for `GroupChat`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List groupChatDescriptor = $convert.base64Decode(
     'CglHcm91cENoYXQSNAoIc2V0dGluZ3MYASABKAsyGC52ZWlsaWRjaGF0LkNoYXRTZXR0aW5nc1'
-    'IIc2V0dGluZ3MSUwodbG9jYWxfY29udmVyc2F0aW9uX3JlY29yZF9rZXkYAiABKAsyEC52ZWls'
-    'aWQuVHlwZWRLZXlSGmxvY2FsQ29udmVyc2F0aW9uUmVjb3JkS2V5ElcKH3JlbW90ZV9jb252ZX'
-    'JzYXRpb25fcmVjb3JkX2tleXMYAyADKAsyEC52ZWlsaWQuVHlwZWRLZXlSHHJlbW90ZUNvbnZl'
-    'cnNhdGlvblJlY29yZEtleXM=');
+    'IIc2V0dGluZ3MSNgoKbWVtYmVyc2hpcBgCIAEoCzIWLnZlaWxpZGNoYXQuTWVtYmVyc2hpcFIK'
+    'bWVtYmVyc2hpcBI5CgtwZXJtaXNzaW9ucxgDIAEoCzIXLnZlaWxpZGNoYXQuUGVybWlzc2lvbn'
+    'NSC3Blcm1pc3Npb25zElMKHWxvY2FsX2NvbnZlcnNhdGlvbl9yZWNvcmRfa2V5GAQgASgLMhAu'
+    'dmVpbGlkLlR5cGVkS2V5Uhpsb2NhbENvbnZlcnNhdGlvblJlY29yZEtleRI9Cg5yZW1vdGVfbW'
+    'VtYmVycxgFIAMoCzIWLnZlaWxpZGNoYXQuQ2hhdE1lbWJlclINcmVtb3RlTWVtYmVycw==');
+
+@$core.Deprecated('Use chatDescriptor instead')
+const Chat$json = {
+  '1': 'Chat',
+  '2': [
+    {'1': 'direct', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.DirectChat', '9': 0, '10': 'direct'},
+    {'1': 'group', '3': 2, '4': 1, '5': 11, '6': '.veilidchat.GroupChat', '9': 0, '10': 'group'},
+  ],
+  '8': [
+    {'1': 'kind'},
+  ],
+};
+
+/// Descriptor for `Chat`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List chatDescriptor = $convert.base64Decode(
+    'CgRDaGF0EjAKBmRpcmVjdBgBIAEoCzIWLnZlaWxpZGNoYXQuRGlyZWN0Q2hhdEgAUgZkaXJlY3'
+    'QSLQoFZ3JvdXAYAiABKAsyFS52ZWlsaWRjaGF0Lkdyb3VwQ2hhdEgAUgVncm91cEIGCgRraW5k');
 
 @$core.Deprecated('Use profileDescriptor instead')
 const Profile$json = {

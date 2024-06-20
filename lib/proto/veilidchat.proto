@@ -267,15 +267,23 @@ message Conversation {
     veilid.TypedKey messages = 3;
 }
 
-// Either a 1-1 conversation or a group chat
+// A member of chat which may or may not be associated with a contact
+message ChatMember {
+    // The identity public key most recently associated with the chat member
+    veilid.TypedKey remote_identity_public_key = 1;
+    // Conversation key for the other party
+    veilid.TypedKey remote_conversation_record_key = 2;
+}
+
+// A 1-1 chat
 // Privately encrypted, this is the local user's copy of the chat
-message Chat {
+message DirectChat {
     // Settings
     ChatSettings settings = 1;
     // Conversation key for this user
     veilid.TypedKey local_conversation_record_key = 2;
     // Conversation key for the other party
-    veilid.TypedKey remote_conversation_record_key = 3;
+    ChatMember remote_member = 3;
 }
 
 // A group chat
@@ -283,10 +291,22 @@ message Chat {
 message GroupChat {
     // Settings
     ChatSettings settings = 1;
+    // Membership
+    Membership membership = 2;
+    // Permissions
+    Permissions permissions = 3;
     // Conversation key for this user
-    veilid.TypedKey local_conversation_record_key = 2;
+    veilid.TypedKey local_conversation_record_key = 4;
     // Conversation keys for the other parties
-    repeated veilid.TypedKey remote_conversation_record_keys = 3;
+    repeated ChatMember remote_members = 5;
+}
+
+// Some kind of chat
+message Chat {
+    oneof kind {
+        DirectChat direct = 1;
+        GroupChat group = 2;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

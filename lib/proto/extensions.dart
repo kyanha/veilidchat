@@ -34,3 +34,16 @@ extension ContactExt on proto.Contact {
   String get displayName =>
       nickname.isNotEmpty ? '$nickname (${profile.name})' : profile.name;
 }
+
+extension ChatExt on proto.Chat {
+  TypedKey get localConversationRecordKey {
+    switch (whichKind()) {
+      case proto.Chat_Kind.direct:
+        return direct.localConversationRecordKey.toVeilid();
+      case proto.Chat_Kind.group:
+        return group.localConversationRecordKey.toVeilid();
+      case proto.Chat_Kind.notSet:
+        throw StateError('unknown chat kind');
+    }
+  }
+}
