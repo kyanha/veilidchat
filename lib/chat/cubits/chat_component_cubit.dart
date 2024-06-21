@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:async_tools/async_tools.dart';
+import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/widgets.dart';
@@ -24,6 +25,7 @@ const metadataKeyIdentityPublicKey = 'identityPublicKey';
 const metadataKeyExpirationDuration = 'expiration';
 const metadataKeyViewLimit = 'view_limit';
 const metadataKeyAttachments = 'attachments';
+const _sfChangedContacts = 'changedContacts';
 
 class ChatComponentCubit extends Cubit<ChatComponentState> {
   ChatComponentCubit._({
@@ -80,11 +82,17 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
     // Subscribe to messages
     _messagesSubscription = _messagesCubit.stream.listen(_onChangedMessages);
     _onChangedMessages(_messagesCubit.state);
+
+    // Subscribe to contact list changes
+    _contactListSubscription =
+        _contactListCubit.stream.listen(_onChangedContacts);
+    _onChangedContacts(_contactListCubit.state);
   }
 
   @override
   Future<void> close() async {
     await _initWait();
+    await _contactListSubscription.cancel();
     await _accountRecordSubscription.cancel();
     await _messagesSubscription.cancel();
     await _conversationSubscriptions.values.map((v) => v.cancel()).wait;
@@ -170,6 +178,13 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
     emit(_convertMessages(state, avMessagesState));
   }
 
+  void _onChangedContacts(
+      BlocBusyState<AsyncValue<IList<DHTShortArrayElementState<proto.Contact>>>>
+          bavContacts) {
+    // Rewrite users when contacts change
+    singleFuture((this, _sfChangedContacts), _updateConversationSubscriptions);
+  }
+
   void _onChangedConversation(
     TypedKey remoteIdentityPublicKey,
     AsyncValue<ActiveConversationState> avConversationState,
@@ -180,11 +195,23 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
       // Don't change user information on loading state
       return;
     }
-    emit(state.copyWith(
+    emit(_updateTitle(state.copyWith(
         remoteUsers: state.remoteUsers.add(
             remoteIdentityPublicKey,
             _convertRemoteUser(
-                remoteIdentityPublicKey, activeConversationState))));
+                remoteIdentityPublicKey, activeConversationState)))));
+  }
+
+  static ChatComponentState _updateTitle(ChatComponentState currentState) {
+    if (currentState.remoteUsers.length == 0) {
+      return currentState.copyWith(title: 'Empty Chat');
+    }
+    if (currentState.remoteUsers.length == 1) {
+      final remoteUser = currentState.remoteUsers.values.first;
+      return currentState.copyWith(title: remoteUser.firstName ?? '<unnamed>');
+    }
+    return currentState.copyWith(
+        title: '<group chat with ${currentState.remoteUsers.length} users>');
   }
 
   types.User _convertRemoteUser(TypedKey remoteIdentityPublicKey,
@@ -227,18 +254,18 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
 
       // If the cubit is already being listened to we have nothing to do
       if (existing.remove(remoteIdentityPublicKey)) {
-        continue;
+        // If the cubit is not already being listened to we should do that
+        _conversationSubscriptions[remoteIdentityPublicKey] = cc.stream.listen(
+            (avConv) =>
+                _onChangedConversation(remoteIdentityPublicKey, avConv));
       }
 
-      // If the cubit is not already being listened to we should do that
-      _conversationSubscriptions[remoteIdentityPublicKey] = cc.stream.listen(
-          (avConv) => _onChangedConversation(remoteIdentityPublicKey, avConv));
       final activeConversationState = cc.state.asData?.value;
       if (activeConversationState != null) {
-        final remoteUser = _convertRemoteUser(
-            remoteIdentityPublicKey, activeConversationState);
-        currentRemoteUsersState =
-            currentRemoteUsersState.add(remoteIdentityPublicKey, remoteUser);
+        currentRemoteUsersState = currentRemoteUsersState.add(
+            remoteIdentityPublicKey,
+            _convertRemoteUser(
+                remoteIdentityPublicKey, activeConversationState));
       }
     }
     // Purge remote users we didn't see in the cubit list any more
@@ -251,18 +278,6 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
 
     // Emit change to remote users state
     emit(_updateTitle(state.copyWith(remoteUsers: currentRemoteUsersState)));
-  }
-
-  ChatComponentState _updateTitle(ChatComponentState currentState) {
-    if (currentState.remoteUsers.length == 0) {
-      return currentState.copyWith(title: 'Empty Chat');
-    }
-    if (currentState.remoteUsers.length == 1) {
-      final remoteUser = currentState.remoteUsers.values.first;
-      return currentState.copyWith(title: remoteUser.firstName ?? '<unnamed>');
-    }
-    return currentState.copyWith(
-        title: '<group chat with ${state.remoteUsers.length} users>');
   }
 
   (ChatComponentState, types.Message?) _messageStateToChatMessage(
@@ -417,6 +432,9 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
   final Map<TypedKey, StreamSubscription<AsyncValue<ActiveConversationState>>>
       _conversationSubscriptions = {};
   late StreamSubscription<SingleContactMessagesState> _messagesSubscription;
-
+  late StreamSubscription<
+          BlocBusyState<
+              AsyncValue<IList<DHTShortArrayElementState<proto.Contact>>>>>
+      _contactListSubscription;
   double scrollOffset = 0;
 }

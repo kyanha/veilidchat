@@ -320,6 +320,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         open: open, decodeState: proto.Conversation.fromBuffer);
     _localSubscription =
         _localConversationCubit!.stream.listen(_updateLocalConversationState);
+    _updateLocalConversationState(_localConversationCubit!.state);
   }
 
   // Open remote converation key
@@ -330,6 +331,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         open: open, decodeState: proto.Conversation.fromBuffer);
     _remoteSubscription =
         _remoteConversationCubit!.stream.listen(_updateRemoteConversationState);
+    _updateRemoteConversationState(_remoteConversationCubit!.state);
   }
 
   // Initialize local messages
