@@ -4,6 +4,7 @@ import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -302,8 +303,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         _reconciledMessagesCubit?.state.state.asData?.value;
     // Get all sent messages
     final sentMessages = _sentMessagesCubit?.state.state.asData?.value;
-    // Get all items in the unsent queue
-    // final unsentMessages = _unsentMessagesQueue.queue;
+    //Get all items in the unsent queue
+    final unsentMessages = _unsentMessagesQueue.queue;
 
     // If we aren't ready to render a state, say we're loading
     if (reconciledMessages == null || sentMessages == null) {
@@ -315,7 +316,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // final reconciledMessagesMap =
     //     IMap<String, proto.ReconciledMessage>.fromValues(
     //   keyMapper: (x) => x.content.authorUniqueIdString,
-    //   values: reconciledMessages.elements,
+    //   values: reconciledMessages.windowElements,
     // );
     final sentMessagesMap =
         IMap<String, OnlineElementState<proto.Message>>.fromValues(
@@ -344,6 +345,12 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         reconciledTimestamp: reconciledTimestamp,
         sent: sent,
         sentOffline: sentOffline,
+      ));
+    }
+    for (final m in unsentMessages) {
+      renderedElements.add(RenderStateElement(
+        message: (m.deepCopy())..id = m.timestamp.toBytes(),
+        isLocal: true,
       ));
     }
 

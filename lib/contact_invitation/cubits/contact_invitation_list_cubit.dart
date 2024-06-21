@@ -232,7 +232,12 @@ class ContactInvitationListCubit
     // inbox with our list of extant invitations
     // If we're chatting to ourselves,
     // we are validating an invitation we have created
-    final isSelf = state.state.asData!.value.indexWhere((cir) =>
+    final contactInvitationList = state.state.asData?.value;
+    if (contactInvitationList == null) {
+      return null;
+    }
+
+    final isSelf = contactInvitationList.indexWhere((cir) =>
             cir.value.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxKey) !=
         -1;
