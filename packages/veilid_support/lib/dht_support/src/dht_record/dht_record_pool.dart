@@ -673,7 +673,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
   /// Handle the DHT record updates coming from Veilid
   void processRemoteValueChange(VeilidUpdateValueChange updateValueChange) {
-    if (updateValueChange.subkeys.isNotEmpty) {
+    if (updateValueChange.subkeys.isNotEmpty && updateValueChange.count != 0) {
       // Change
       for (final kv in _opened.entries) {
         if (kv.key == updateValueChange.key) {
@@ -691,7 +691,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
         final openedRecordInfo = entry.value;
 
         if (openedKey == updateValueChange.key) {
-          // Renew watch state for each opened recrod
+          // Renew watch state for each opened record
           for (final rec in openedRecordInfo.records) {
             // See if the watch had an expiration and if it has expired
             // otherwise the renewal will keep the same parameters
