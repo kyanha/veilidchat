@@ -9,7 +9,8 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../chat_list/chat_list.dart';
+import '../../contacts/contacts.dart';
+import '../../conversation/conversation.dart';
 import '../../theme/theme.dart';
 import '../chat.dart';
 
@@ -22,31 +23,29 @@ class ChatComponentWidget extends StatelessWidget {
   static Widget builder(
           {required TypedKey localConversationRecordKey, Key? key}) =>
       Builder(builder: (context) {
-        // Get all watched dependendies
-        final activeAccountInfo = context.watch<ActiveAccountInfo>();
-        final accountRecordInfo =
-            context.watch<AccountRecordCubit>().state.asData?.value;
-        if (accountRecordInfo == null) {
-          return debugPage('should always have an account record here');
-        }
+        // Get the account info
+        final accountInfo = context.watch<AccountInfoCubit>().state;
 
-        final avconversation = context.select<ActiveConversationsBlocMapCubit,
-                AsyncValue<ActiveConversationState>?>(
-            (x) => x.state[localConversationRecordKey]);
-        if (avconversation == null) {
+        // Get the account record cubit
+        final accountRecordCubit = context.read<AccountRecordCubit>();
+
+        // Get the contact list cubit
+        final contactListCubit = context.watch<ContactListCubit>();
+
+        // Get the active conversation cubit
+        final activeConversationCubit = context
+            .select<ActiveConversationsBlocMapCubit, ActiveConversationCubit?>(
+                (x) => x.tryOperateSync(localConversationRecordKey,
+                    closure: (cubit) => cubit));
+        if (activeConversationCubit == null) {
           return waitingPage();
-        }
-
-        final activeConversationState = avconversation.asData?.value;
-        if (activeConversationState == null) {
-          return avconversation.buildNotData();
         }
 
         // Get the messages cubit
         final messagesCubit = context.select<
                 ActiveSingleContactChatBlocMapCubit,
                 SingleContactMessagesCubit?>(
-            (x) => x.tryOperate(localConversationRecordKey,
+            (x) => x.tryOperateSync(localConversationRecordKey,
                 closure: (cubit) => cubit));
         if (messagesCubit == null) {
           return waitingPage();
@@ -54,10 +53,12 @@ class ChatComponentWidget extends StatelessWidget {
 
         // Make chat component state
         return BlocProvider(
+            key: key,
             create: (context) => ChatComponentCubit.singleContact(
-                  activeAccountInfo: activeAccountInfo,
-                  accountRecordInfo: accountRecordInfo,
-                  activeConversationState: activeConversationState,
+                  accountInfo: accountInfo,
+                  accountRecordCubit: accountRecordCubit,
+                  contactListCubit: contactListCubit,
+                  activeConversationCubit: activeConversationCubit,
                   messagesCubit: messagesCubit,
                 ),
             child: ChatComponentWidget._(key: key));
@@ -158,6 +159,11 @@ class ChatComponentWidget extends StatelessWidget {
     // (created by ChatComponentWidget.builder())
     final chatComponentCubit = context.watch<ChatComponentCubit>();
     final chatComponentState = chatComponentCubit.state;
+
+    final localUser = chatComponentState.localUser;
+    if (localUser == null) {
+      return waitingPage();
+    }
 
     final messageWindow = chatComponentState.messageWindow.asData?.value;
     if (messageWindow == null) {
@@ -281,7 +287,7 @@ class ChatComponentWidget extends StatelessWidget {
                                   _handleSendPressed(chatComponentCubit, pt),
                               //showUserAvatars: false,
                               //showUserNames: true,
-                              user: chatComponentState.localUser,
+                              user: localUser,
                               emptyState: const EmptyChatWidget())),
                     ),
                   ),

@@ -45,10 +45,13 @@ class ContactListWidget extends StatelessWidget {
                         final lowerValue = value.toLowerCase();
                         return contactList
                             .where((element) =>
-                                element.editedProfile.name
+                                element.nickname
                                     .toLowerCase()
                                     .contains(lowerValue) ||
-                                element.editedProfile.pronouns
+                                element.profile.name
+                                    .toLowerCase()
+                                    .contains(lowerValue) ||
+                                element.profile.pronouns
                                     .toLowerCase()
                                     .contains(lowerValue))
                             .toList();

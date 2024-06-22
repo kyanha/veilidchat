@@ -7,27 +7,22 @@ import '../../proto/proto.dart' as proto;
 class ContactRequestInboxCubit
     extends DefaultDHTRecordCubit<proto.SignedContactResponse?> {
   ContactRequestInboxCubit(
-      {required this.activeAccountInfo, required this.contactInvitationRecord})
+      {required AccountInfo accountInfo, required this.contactInvitationRecord})
       : super(
             open: () => _open(
-                activeAccountInfo: activeAccountInfo,
+                accountInfo: accountInfo,
                 contactInvitationRecord: contactInvitationRecord),
             decodeState: (buf) => buf.isEmpty
                 ? null
                 : proto.SignedContactResponse.fromBuffer(buf));
 
-  // ContactRequestInboxCubit.value(
-  //     {required super.record,
-  //     required this.activeAccountInfo,
-  //     required this.contactInvitationRecord})
-  //     : super.value(decodeState: proto.SignedContactResponse.fromBuffer);
-
   static Future<DHTRecord> _open(
-      {required ActiveAccountInfo activeAccountInfo,
+      {required AccountInfo accountInfo,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
     final pool = DHTRecordPool.instance;
-    final accountRecordKey =
-        activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
+
+    final accountRecordKey = accountInfo.accountRecordKey;
+
     final writerSecret = contactInvitationRecord.writerSecret.toVeilid();
     final recordKey =
         contactInvitationRecord.contactRequestInbox.recordKey.toVeilid();
@@ -42,6 +37,5 @@ class ContactRequestInboxCubit
         defaultSubkey: 1);
   }
 
-  final ActiveAccountInfo activeAccountInfo;
   final proto.ContactInvitationRecord contactInvitationRecord;
 }

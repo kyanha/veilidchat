@@ -8,8 +8,7 @@ import 'package:protobuf/protobuf.dart';
 import 'table_db.dart';
 
 class PersistentQueue<T extends GeneratedMessage>
-    /*extends Cubit<AsyncValue<IList<T>>>*/ with
-        TableDBBackedFromBuffer<IList<T>> {
+    with TableDBBackedFromBuffer<IList<T>> {
   //
   PersistentQueue(
       {required String table,

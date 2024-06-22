@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../../../../proto/proto.dart' as proto;
-import '../../../tools/tools.dart';
-import '../../models/models.dart';
+import '../../../proto/proto.dart' as proto;
+import '../../tools/tools.dart';
+import '../models/models.dart';
 
 const String veilidChatAccountKey = 'com.veilid.veilidchat';
 
@@ -45,19 +45,6 @@ class AccountRepository {
       valueToJson: (val) => val?.toJson(),
       makeInitialValue: () => null);
 
-  //////////////////////////////////////////////////////////////
-  /// Fields
-
-  final TableDBValue<IList<LocalAccount>> _localAccounts;
-  final TableDBValue<IList<UserLogin>> _userLogins;
-  final TableDBValue<TypedKey?> _activeLocalAccount;
-  final StreamController<AccountRepositoryChange> _streamController;
-
-  //////////////////////////////////////////////////////////////
-  /// Singleton initialization
-
-  static AccountRepository instance = AccountRepository._();
-
   Future<void> init() async {
     await _localAccounts.get();
     await _userLogins.get();
@@ -71,12 +58,10 @@ class AccountRepository {
   }
 
   //////////////////////////////////////////////////////////////
-  /// Streams
-
+  /// Public Interface
+  ///
   Stream<AccountRepositoryChange> get stream => _streamController.stream;
 
-  //////////////////////////////////////////////////////////////
-  /// Selectors
   IList<LocalAccount> getLocalAccounts() => _localAccounts.value;
   TypedKey? getActiveLocalAccount() => _activeLocalAccount.value;
   IList<UserLogin> getUserLogins() => _userLogins.value;
@@ -107,29 +92,11 @@ class AccountRepository {
     return userLogins[idx];
   }
 
-  AccountInfo getAccountInfo(TypedKey? superIdentityRecordKey) {
-    // Get active account if we have one
-    final activeLocalAccount = getActiveLocalAccount();
-    if (superIdentityRecordKey == null) {
-      if (activeLocalAccount == null) {
-        // No user logged in
-        return const AccountInfo(
-            status: AccountInfoStatus.noAccount,
-            active: false,
-            activeAccountInfo: null);
-      }
-      superIdentityRecordKey = activeLocalAccount;
-    }
-    final active = superIdentityRecordKey == activeLocalAccount;
-
+  AccountInfo? getAccountInfo(TypedKey superIdentityRecordKey) {
     // Get which local account we want to fetch the profile for
     final localAccount = fetchLocalAccount(superIdentityRecordKey);
     if (localAccount == null) {
-      // account does not exist
-      return AccountInfo(
-          status: AccountInfoStatus.noAccount,
-          active: active,
-          activeAccountInfo: null);
+      return null;
     }
 
     // See if we've logged into this account or if it is locked
@@ -137,22 +104,19 @@ class AccountRepository {
     if (userLogin == null) {
       // Account was locked
       return AccountInfo(
-          status: AccountInfoStatus.accountLocked,
-          active: active,
-          activeAccountInfo: null);
+        status: AccountInfoStatus.accountLocked,
+        localAccount: localAccount,
+        userLogin: null,
+      );
     }
 
     // Got account, decrypted and decoded
     return AccountInfo(
-      status: AccountInfoStatus.accountReady,
-      active: active,
-      activeAccountInfo:
-          ActiveAccountInfo(localAccount: localAccount, userLogin: userLogin),
+      status: AccountInfoStatus.accountUnlocked,
+      localAccount: localAccount,
+      userLogin: userLogin,
     );
   }
-
-  //////////////////////////////////////////////////////////////
-  /// Mutators
 
   /// Reorder accounts
   Future<void> reorderAccount(int oldIndex, int newIndex) async {
@@ -168,104 +132,39 @@ class AccountRepository {
   /// Creates a new super identity, an identity instance, an account associated
   /// with the identity instance, stores the account in the identity key and
   /// then logs into that account with no password set at this time
-  Future<void> createWithNewSuperIdentity(NewProfileSpec newProfileSpec) async {
+  Future<SecretKey> createWithNewSuperIdentity(proto.Profile newProfile) async {
     log.debug('Creating super identity');
     final wsi = await WritableSuperIdentity.create();
     try {
       final localAccount = await _newLocalAccount(
           superIdentity: wsi.superIdentity,
           identitySecret: wsi.identitySecret,
-          newProfileSpec: newProfileSpec);
+          newProfile: newProfile);
 
       // Log in the new account by default with no pin
       final ok = await login(
           localAccount.superIdentity.recordKey, EncryptionKeyType.none, '');
       assert(ok, 'login with none should never fail');
+
+      return wsi.superSecret;
     } on Exception catch (_) {
       await wsi.delete();
       rethrow;
     }
   }
 
-  /// Creates a new Account associated with the current instance of the identity
-  /// Adds a logged-out LocalAccount to track its existence on this device
-  Future<LocalAccount> _newLocalAccount(
-      {required SuperIdentity superIdentity,
-      required SecretKey identitySecret,
-      required NewProfileSpec newProfileSpec,
-      EncryptionKeyType encryptionKeyType = EncryptionKeyType.none,
-      String encryptionKey = ''}) async {
-    log.debug('Creating new local account');
+  Future<void> editAccountProfile(
+      TypedKey superIdentityRecordKey, proto.Profile newProfile) async {
+    log.debug('Editing profile for $superIdentityRecordKey');
 
     final localAccounts = await _localAccounts.get();
 
-    // Add account with profile to DHT
-    await superIdentity.currentInstance.addAccount(
-        superRecordKey: superIdentity.recordKey,
-        secretKey: identitySecret,
-        accountKey: veilidChatAccountKey,
-        createAccountCallback: (parent) async {
-          // Make empty contact list
-          log.debug('Creating contacts list');
-          final contactList = await (await DHTShortArray.create(
-                  debugName: 'AccountRepository::_newLocalAccount::Contacts',
-                  parent: parent))
-              .scope((r) async => r.recordPointer);
-
-          // Make empty contact invitation record list
-          log.debug('Creating contact invitation records list');
-          final contactInvitationRecords = await (await DHTShortArray.create(
-                  debugName:
-                      'AccountRepository::_newLocalAccount::ContactInvitations',
-                  parent: parent))
-              .scope((r) async => r.recordPointer);
-
-          // Make empty chat record list
-          log.debug('Creating chat records list');
-          final chatRecords = await (await DHTShortArray.create(
-                  debugName: 'AccountRepository::_newLocalAccount::Chats',
-                  parent: parent))
-              .scope((r) async => r.recordPointer);
-
-          // Make account object
-          final account = proto.Account()
-            ..profile = (proto.Profile()
-              ..name = newProfileSpec.name
-              ..pronouns = newProfileSpec.pronouns)
-            ..contactList = contactList.toProto()
-            ..contactInvitationRecords = contactInvitationRecords.toProto()
-            ..chatList = chatRecords.toProto();
-          return account.writeToBuffer();
-        });
-
-    // Encrypt identitySecret with key
-    final identitySecretBytes = await encryptionKeyType.encryptSecretToBytes(
-      secret: identitySecret,
-      cryptoKind: superIdentity.currentInstance.recordKey.kind,
-      encryptionKey: encryptionKey,
-    );
-
-    // Create local account object
-    // Does not contain the account key or its secret
-    // as that is not to be persisted, and only pulled from the identity key
-    // and optionally decrypted with the unlock password
-    final localAccount = LocalAccount(
-      superIdentity: superIdentity,
-      identitySecretBytes: identitySecretBytes,
-      encryptionKeyType: encryptionKeyType,
-      biometricsEnabled: false,
-      hiddenAccount: false,
-      name: newProfileSpec.name,
-    );
-
-    // Add local account object to internal store
-    final newLocalAccounts = localAccounts.add(localAccount);
+    final newLocalAccounts = localAccounts.replaceFirstWhere(
+        (x) => x.superIdentity.recordKey == superIdentityRecordKey,
+        (localAccount) => localAccount!.copyWith(name: newProfile.name));
 
     await _localAccounts.set(newLocalAccounts);
     _streamController.add(AccountRepositoryChange.localAccounts);
-
-    // Return local account object
-    return localAccount;
   }
 
   /// Remove an account and wipe the messages for this account from this device
@@ -305,6 +204,88 @@ class AccountRepository {
     }
     await _activeLocalAccount.set(superIdentityRecordKey);
     _streamController.add(AccountRepositoryChange.activeLocalAccount);
+  }
+
+  //////////////////////////////////////////////////////////////
+  /// Internal Implementation
+
+  /// Creates a new Account associated with the current instance of the identity
+  /// Adds a logged-out LocalAccount to track its existence on this device
+  Future<LocalAccount> _newLocalAccount(
+      {required SuperIdentity superIdentity,
+      required SecretKey identitySecret,
+      required proto.Profile newProfile,
+      EncryptionKeyType encryptionKeyType = EncryptionKeyType.none,
+      String encryptionKey = ''}) async {
+    log.debug('Creating new local account');
+
+    final localAccounts = await _localAccounts.get();
+
+    // Add account with profile to DHT
+    await superIdentity.currentInstance.addAccount(
+        superRecordKey: superIdentity.recordKey,
+        secretKey: identitySecret,
+        accountKey: veilidChatAccountKey,
+        createAccountCallback: (parent) async {
+          // Make empty contact list
+          log.debug('Creating contacts list');
+          final contactList = await (await DHTShortArray.create(
+                  debugName: 'AccountRepository::_newLocalAccount::Contacts',
+                  parent: parent))
+              .scope((r) async => r.recordPointer);
+
+          // Make empty contact invitation record list
+          log.debug('Creating contact invitation records list');
+          final contactInvitationRecords = await (await DHTShortArray.create(
+                  debugName:
+                      'AccountRepository::_newLocalAccount::ContactInvitations',
+                  parent: parent))
+              .scope((r) async => r.recordPointer);
+
+          // Make empty chat record list
+          log.debug('Creating chat records list');
+          final chatRecords = await (await DHTShortArray.create(
+                  debugName: 'AccountRepository::_newLocalAccount::Chats',
+                  parent: parent))
+              .scope((r) async => r.recordPointer);
+
+          // Make account object
+          final account = proto.Account()
+            ..profile = newProfile
+            ..contactList = contactList.toProto()
+            ..contactInvitationRecords = contactInvitationRecords.toProto()
+            ..chatList = chatRecords.toProto();
+          return account.writeToBuffer();
+        });
+
+    // Encrypt identitySecret with key
+    final identitySecretBytes = await encryptionKeyType.encryptSecretToBytes(
+      secret: identitySecret,
+      cryptoKind: superIdentity.currentInstance.recordKey.kind,
+      encryptionKey: encryptionKey,
+    );
+
+    // Create local account object
+    // Does not contain the account key or its secret
+    // as that is not to be persisted, and only pulled from the identity key
+    // and optionally decrypted with the unlock password
+    final localAccount = LocalAccount(
+      superIdentity: superIdentity,
+      identitySecretBytes: identitySecretBytes,
+      encryptionKeyType: encryptionKeyType,
+      biometricsEnabled: false,
+      hiddenAccount: false,
+      name: newProfile.name,
+    );
+
+    // Add local account object to internal store
+    final newLocalAccounts = localAccounts.add(localAccount);
+
+    await _localAccounts.set(newLocalAccounts);
+    _streamController.add(AccountRepositoryChange.localAccounts);
+
+    // Return local account object
+    return localAccount;
   }
 
   Future<bool> _decryptedLogin(
@@ -399,16 +380,13 @@ class AccountRepository {
     _streamController.add(AccountRepositoryChange.userLogins);
   }
 
-  Future<DHTRecord> openAccountRecord(UserLogin userLogin) async {
-    final localAccount = fetchLocalAccount(userLogin.superIdentityRecordKey)!;
+  //////////////////////////////////////////////////////////////
+  /// Fields
 
-    // Record not yet open, do it
-    final pool = DHTRecordPool.instance;
-    final record = await pool.openRecordOwned(
-        userLogin.accountRecordInfo.accountRecord,
-        debugName: 'AccountRepository::openAccountRecord::AccountRecord',
-        parent: localAccount.superIdentity.currentInstance.recordKey);
+  static AccountRepository instance = AccountRepository._();
 
-    return record;
-  }
+  final TableDBValue<IList<LocalAccount>> _localAccounts;
+  final TableDBValue<IList<UserLogin>> _userLogins;
+  final TableDBValue<TypedKey?> _activeLocalAccount;
+  final StreamController<AccountRepositoryChange> _streamController;
 }

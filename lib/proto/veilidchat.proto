@@ -48,6 +48,31 @@ enum Scope {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
+// Data
+////////////////////////////////////////////////////////////////////////////////////
+
+// Reference to data on the DHT
+message DHTDataReference {
+    veilid.TypedKey dht_data = 1;
+    veilid.TypedKey hash = 2;
+}
+
+// Reference to data on the BlockStore
+message BlockStoreDataReference {
+    veilid.TypedKey block = 1;
+}
+
+// DataReference
+// Pointer to data somewhere in Veilid
+// Abstraction over DHTData and BlockStore
+message DataReference {
+    oneof kind {
+        DHTDataReference dht_data = 1;
+        BlockStoreDataReference block_store_data = 2;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
 // Attachments
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -67,9 +92,8 @@ message AttachmentMedia {
     // Title or filename
     string name = 2;
     // Pointer to the data content
-    dht.DataReference content = 3;
+    DataReference content = 3;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Chat room controls
@@ -106,7 +130,7 @@ message ChatSettings {
     // Description for the chat 
     string description = 2;
     // Icon for the chat 
-    optional dht.DataReference icon = 3;
+    optional DataReference icon = 3;
     // Default message expiration duration (in us)
     uint64 default_expiration = 4;
 }
@@ -243,15 +267,23 @@ message Conversation {
     veilid.TypedKey messages = 3;
 }
 
-// Either a 1-1 conversation or a group chat
+// A member of chat which may or may not be associated with a contact
+message ChatMember {
+    // The identity public key most recently associated with the chat member
+    veilid.TypedKey remote_identity_public_key = 1;
+    // Conversation key for the other party
+    veilid.TypedKey remote_conversation_record_key = 2;
+}
+
+// A 1-1 chat
 // Privately encrypted, this is the local user's copy of the chat
-message Chat {
+message DirectChat {
     // Settings
     ChatSettings settings = 1;
     // Conversation key for this user
     veilid.TypedKey local_conversation_record_key = 2;
     // Conversation key for the other party
-    veilid.TypedKey remote_conversation_record_key = 3;
+    ChatMember remote_member = 3;
 }
 
 // A group chat
@@ -259,10 +291,22 @@ message Chat {
 message GroupChat {
     // Settings
     ChatSettings settings = 1;
+    // Membership
+    Membership membership = 2;
+    // Permissions
+    Permissions permissions = 3;
     // Conversation key for this user
-    veilid.TypedKey local_conversation_record_key = 2;
+    veilid.TypedKey local_conversation_record_key = 4;
     // Conversation keys for the other parties
-    repeated veilid.TypedKey remote_conversation_record_keys = 3;
+    repeated ChatMember remote_members = 5;
+}
+
+// Some kind of chat
+message Chat {
+    oneof kind {
+        DirectChat direct = 1;
+        GroupChat group = 2;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -285,8 +329,10 @@ message Profile  {
     string status = 4;
     // Availability
     Availability availability = 5;
-    // Avatar DHTData
-    optional veilid.TypedKey avatar = 6;
+    // Avatar
+    optional DataReference avatar = 6;
+    // Timestamp of last change
+    uint64 timestamp = 7;
 }
 
 // A record of an individual account
@@ -323,10 +369,10 @@ message Account {
 //
 // Stored in ContactList DHTList
 message Contact {
-    // Friend's profile as locally edited
-    Profile edited_profile = 1;
+    // Friend's nickname
+    string nickname = 1;
     // Copy of friend's profile from remote conversation
-    Profile remote_profile = 2;
+    Profile profile = 2;
     // Copy of friend's SuperIdentity in JSON from remote conversation
     string super_identity_json = 3;
     // Copy of friend's most recent identity public key from their identityMaster
@@ -337,6 +383,8 @@ message Contact {
     veilid.TypedKey local_conversation_record_key = 6;
     // Show availability to this contact
     bool show_availability = 7;
+    // Notes about this friend
+    string notes = 8;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

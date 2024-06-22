@@ -36,22 +36,16 @@ class ContactInvitationListCubit
         StateMapFollowable<ContactInvitiationListState, TypedKey,
             proto.ContactInvitationRecord> {
   ContactInvitationListCubit({
-    required ActiveAccountInfo activeAccountInfo,
-    required proto.Account account,
-  })  : _activeAccountInfo = activeAccountInfo,
-        _account = account,
+    required AccountInfo accountInfo,
+    required OwnedDHTRecordPointer contactInvitationListRecordPointer,
+  })  : _accountInfo = accountInfo,
         super(
-            open: () => _open(activeAccountInfo, account),
+            open: () => _open(accountInfo.accountRecordKey,
+                contactInvitationListRecordPointer),
             decodeElement: proto.ContactInvitationRecord.fromBuffer);
 
-  static Future<DHTShortArray> _open(
-      ActiveAccountInfo activeAccountInfo, proto.Account account) async {
-    final accountRecordKey =
-        activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
-
-    final contactInvitationListRecordPointer =
-        account.contactInvitationRecords.toVeilid();
-
+  static Future<DHTShortArray> _open(TypedKey accountRecordKey,
+      OwnedDHTRecordPointer contactInvitationListRecordPointer) async {
     final dhtRecord = await DHTShortArray.openOwned(
         contactInvitationListRecordPointer,
         debugName: 'ContactInvitationListCubit::_open::ContactInvitationList',
@@ -61,7 +55,8 @@ class ContactInvitationListCubit
   }
 
   Future<Uint8List> createInvitation(
-      {required EncryptionKeyType encryptionKeyType,
+      {required proto.Profile profile,
+      required EncryptionKeyType encryptionKeyType,
       required String encryptionKey,
       required String message,
       required Timestamp? expiration}) async {
@@ -71,8 +66,8 @@ class ContactInvitationListCubit
     final crcs = await pool.veilid.bestCryptoSystem();
     final contactRequestWriter = await crcs.generateKeyPair();
 
-    final idcs = await _activeAccountInfo.identityCryptoSystem;
-    final identityWriter = _activeAccountInfo.identityWriter;
+    final idcs = await _accountInfo.identityCryptoSystem;
+    final identityWriter = _accountInfo.identityWriter;
 
     // Encrypt the writer secret with the encryption key
     final encryptedSecret = await encryptionKeyType.encryptSecretToBytes(
@@ -90,7 +85,7 @@ class ContactInvitationListCubit
     await (await pool.createRecord(
             debugName: 'ContactInvitationListCubit::createInvitation::'
                 'LocalConversation',
-            parent: _activeAccountInfo.accountRecordKey,
+            parent: _accountInfo.accountRecordKey,
             schema: DHTSchema.smpl(
                 oCnt: 0,
                 members: [DHTSchemaMember(mKey: identityWriter.key, mCnt: 1)])))
@@ -99,9 +94,8 @@ class ContactInvitationListCubit
       // Make ContactRequestPrivate and encrypt with the writer secret
       final crpriv = proto.ContactRequestPrivate()
         ..writerKey = contactRequestWriter.key.toProto()
-        ..profile = _account.profile
-        ..superIdentityRecordKey =
-            _activeAccountInfo.userLogin.superIdentityRecordKey.toProto()
+        ..profile = profile
+        ..superIdentityRecordKey = _accountInfo.superIdentityRecordKey.toProto()
         ..chatRecordKey = localConversation.key.toProto()
         ..expiration = expiration?.toInt64() ?? Int64.ZERO;
       final crprivbytes = crpriv.writeToBuffer();
@@ -119,7 +113,7 @@ class ContactInvitationListCubit
       await (await pool.createRecord(
               debugName: 'ContactInvitationListCubit::createInvitation::'
                   'ContactRequestInbox',
-              parent: _activeAccountInfo.accountRecordKey,
+              parent: _accountInfo.accountRecordKey,
               schema: DHTSchema.smpl(oCnt: 1, members: [
                 DHTSchemaMember(mCnt: 1, mKey: contactRequestWriter.key)
               ]),
@@ -158,8 +152,7 @@ class ContactInvitationListCubit
           ..message = message;
 
         // Add ContactInvitationRecord to account's list
-        // if this fails, don't keep retrying, user can try again later
-        await operateWrite((writer) async {
+        await operateWriteEventual((writer) async {
           await writer.add(cinvrec.writeToBuffer());
         });
       });
@@ -172,8 +165,6 @@ class ContactInvitationListCubit
       {required bool accepted,
       required TypedKey contactRequestInboxRecordKey}) async {
     final pool = DHTRecordPool.instance;
-    final accountRecordKey =
-        _activeAccountInfo.userLogin.accountRecordInfo.accountRecord.recordKey;
 
     // Remove ContactInvitationRecord from account's list
     final deletedItem = await operateWrite((writer) async {
@@ -198,7 +189,7 @@ class ContactInvitationListCubit
       await (await pool.openRecordOwned(contactRequestInbox,
               debugName: 'ContactInvitationListCubit::deleteInvitation::'
                   'ContactRequestInbox',
-              parent: accountRecordKey))
+              parent: _accountInfo.accountRecordKey))
           .scope((contactRequestInbox) async {
         // Wipe out old invitation so it shows up as invalid
         await contactRequestInbox.tryWriteBytes(Uint8List(0));
@@ -240,7 +231,12 @@ class ContactInvitationListCubit
     // inbox with our list of extant invitations
     // If we're chatting to ourselves,
     // we are validating an invitation we have created
-    final isSelf = state.state.asData!.value.indexWhere((cir) =>
+    final contactInvitationList = state.state.asData?.value;
+    if (contactInvitationList == null) {
+      return null;
+    }
+
+    final isSelf = contactInvitationList.indexWhere((cir) =>
             cir.value.contactRequestInbox.recordKey.toVeilid() ==
             contactRequestInboxKey) !=
         -1;
@@ -248,7 +244,8 @@ class ContactInvitationListCubit
     await (await pool.openRecordRead(contactRequestInboxKey,
             debugName: 'ContactInvitationListCubit::validateInvitation::'
                 'ContactRequestInbox',
-            parent: _activeAccountInfo.accountRecordKey))
+            parent: pool.getParentRecordKey(contactRequestInboxKey) ??
+                _accountInfo.accountRecordKey))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
       //
       final contactRequest = await contactRequestInbox
@@ -293,8 +290,7 @@ class ContactInvitationListCubit
           secret: writerSecret);
 
       out = ValidContactInvitation(
-          activeAccountInfo: _activeAccountInfo,
-          account: _account,
+          accountInfo: _accountInfo,
           contactRequestInboxKey: contactRequestInboxKey,
           contactRequestPrivate: contactRequestPrivate,
           contactSuperIdentity: contactSuperIdentity,
@@ -318,6 +314,5 @@ class ContactInvitationListCubit
   }
 
   //
-  final ActiveAccountInfo _activeAccountInfo;
-  final proto.Account _account;
+  final AccountInfo _accountInfo;
 }

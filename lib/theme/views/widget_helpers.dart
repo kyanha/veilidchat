@@ -5,7 +5,6 @@ import 'package:blurry_modal_progress_hud/blurry_modal_progress_hud.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:flutter_translate/flutter_translate.dart';
 import 'package:motion_toast/motion_toast.dart';
 import 'package:quickalert/quickalert.dart';
 
@@ -122,35 +121,44 @@ Future<void> showErrorModal(
 }
 
 void showErrorToast(BuildContext context, String message) {
-  MotionToast.error(
-    title: Text(translate('toast.error')),
+  final theme = Theme.of(context);
+  final scale = theme.extension<ScaleScheme>()!;
+  final scaleConfig = theme.extension<ScaleConfig>()!;
+
+  MotionToast(
+    //title: Text(translate('toast.error')),
     description: Text(message),
+    constraints: BoxConstraints.loose(const Size(400, 100)),
+    contentPadding: const EdgeInsets.all(16),
+    primaryColor: scale.errorScale.elementBackground,
+    secondaryColor: scale.errorScale.calloutBackground,
+    borderRadius: 16,
+    toastDuration: const Duration(seconds: 4),
+    animationDuration: const Duration(milliseconds: 1000),
+    displayBorder: scaleConfig.useVisualIndicators,
+    icon: Icons.error,
   ).show(context);
 }
 
 void showInfoToast(BuildContext context, String message) {
-  MotionToast.info(
-    title: Text(translate('toast.info')),
+  final theme = Theme.of(context);
+  final scale = theme.extension<ScaleScheme>()!;
+  final scaleConfig = theme.extension<ScaleConfig>()!;
+
+  MotionToast(
+    //title: Text(translate('toast.info')),
     description: Text(message),
+    constraints: BoxConstraints.loose(const Size(400, 100)),
+    contentPadding: const EdgeInsets.all(16),
+    primaryColor: scale.tertiaryScale.elementBackground,
+    secondaryColor: scale.tertiaryScale.calloutBackground,
+    borderRadius: 16,
+    toastDuration: const Duration(seconds: 2),
+    animationDuration: const Duration(milliseconds: 500),
+    displayBorder: scaleConfig.useVisualIndicators,
+    icon: Icons.info,
   ).show(context);
 }
-
-// Widget insetBorder(
-//     {required BuildContext context,
-//     required bool enabled,
-//     required Color color,
-//     required Widget child}) {
-//   if (!enabled) {
-//     return child;
-//   }
-
-//   return Stack({
-//     children: [] {
-//       DecoratedBox(decoration: BoxDecoration()
-//       child,
-//     }
-//   })
-// }
 
 Widget styledTitleContainer({
   required BuildContext context,
@@ -230,3 +238,26 @@ Widget styledBottomSheet({
 bool get isPlatformDark =>
     WidgetsBinding.instance.platformDispatcher.platformBrightness ==
     Brightness.dark;
+
+const grayColorFilter = ColorFilter.matrix(<double>[
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+]);

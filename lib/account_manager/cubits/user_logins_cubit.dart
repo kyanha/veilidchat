@@ -4,9 +4,11 @@ import 'package:bloc/bloc.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../models/models.dart';
-import '../repository/account_repository/account_repository.dart';
+import '../repository/account_repository.dart';
 
-class UserLoginsCubit extends Cubit<IList<UserLogin>> {
+typedef UserLoginsState = IList<UserLogin>;
+
+class UserLoginsCubit extends Cubit<UserLoginsState> {
   UserLoginsCubit(AccountRepository accountRepository)
       : _accountRepository = accountRepository,
         super(accountRepository.getUserLogins()) {
@@ -29,6 +31,7 @@ class UserLoginsCubit extends Cubit<IList<UserLogin>> {
     await super.close();
     await _accountRepositorySubscription.cancel();
   }
+  ////////////////////////////////////////////////////////////////////////////
 
   final AccountRepository _accountRepository;
   late final StreamSubscription<AccountRepositoryChange>

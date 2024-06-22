@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import 'account_manager/account_manager.dart';
+import 'account_manager/cubits/active_local_account_cubit.dart';
 import 'init.dart';
 import 'layout/splash.dart';
 import 'router/router.dart';
@@ -129,7 +130,11 @@ class VeilidChatApp extends StatelessWidget {
                   BlocProvider<PreferencesCubit>(
                     create: (context) =>
                         PreferencesCubit(PreferencesRepository.instance),
-                  )
+                  ),
+                  BlocProvider<PerAccountCollectionBlocMapCubit>(
+                      create: (context) => PerAccountCollectionBlocMapCubit(
+                          accountRepository: AccountRepository.instance,
+                          locator: context.read)),
                 ],
                 child: BackgroundTicker(
                     child: _buildShortcuts(
@@ -137,7 +142,7 @@ class VeilidChatApp extends StatelessWidget {
                         builder: (context) => MaterialApp.router(
                               debugShowCheckedModeBanner: false,
                               routerConfig:
-                                  context.watch<RouterCubit>().router(),
+                                  context.read<RouterCubit>().router(),
                               title: translate('app.title'),
                               theme: theme,
                               localizationsDelegates: [

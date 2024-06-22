@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../contacts/contacts.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 import '../models/accepted_contact.dart';
@@ -24,25 +24,27 @@ class InvitationStatus extends Equatable {
 
 class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     proto.SignedContactResponse?> {
-  WaitingInvitationCubit(ContactRequestInboxCubit super.input,
-      {required ActiveAccountInfo activeAccountInfo,
-      required proto.Account account,
-      required proto.ContactInvitationRecord contactInvitationRecord})
-      : super(
+  WaitingInvitationCubit(
+    ContactRequestInboxCubit super.input, {
+    required AccountInfo accountInfo,
+    required AccountRecordCubit accountRecordCubit,
+    required proto.ContactInvitationRecord contactInvitationRecord,
+  }) : super(
             transform: (signedContactResponse) => _transform(
                 signedContactResponse,
-                activeAccountInfo: activeAccountInfo,
-                account: account,
+                accountInfo: accountInfo,
+                accountRecordCubit: accountRecordCubit,
                 contactInvitationRecord: contactInvitationRecord));
 
   static Future<AsyncValue<InvitationStatus>> _transform(
       proto.SignedContactResponse? signedContactResponse,
-      {required ActiveAccountInfo activeAccountInfo,
-      required proto.Account account,
+      {required AccountInfo accountInfo,
+      required AccountRecordCubit accountRecordCubit,
       required proto.ContactInvitationRecord contactInvitationRecord}) async {
     if (signedContactResponse == null) {
       return const AsyncValue.loading();
     }
+
     final contactResponseBytes =
         Uint8List.fromList(signedContactResponse.contactResponse);
     final contactResponse =
@@ -57,8 +59,11 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     // Verify
     final idcs = await contactSuperIdentity.currentInstance.cryptoSystem;
     final signature = signedContactResponse.identitySignature.toVeilid();
-    await idcs.verify(contactSuperIdentity.currentInstance.publicKey,
-        contactResponseBytes, signature);
+    if (!await idcs.verify(contactSuperIdentity.currentInstance.publicKey,
+        contactResponseBytes, signature)) {
+      // Could not verify signature of contact response
+      return AsyncValue.error('Invalid signature on contact response.');
+    }
 
     // Check for rejection
     if (!contactResponse.accept) {
@@ -71,7 +76,7 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
         contactResponse.remoteConversationRecordKey.toVeilid();
 
     final conversation = ConversationCubit(
-        activeAccountInfo: activeAccountInfo,
+        accountInfo: accountInfo,
         remoteIdentityPublicKey:
             contactSuperIdentity.currentInstance.typedPublicKey,
         remoteConversationRecordKey: remoteConversationRecordKey);
@@ -98,16 +103,13 @@ class WaitingInvitationCubit extends AsyncTransformerCubit<InvitationStatus,
     final localConversationRecordKey =
         contactInvitationRecord.localConversationRecordKey.toVeilid();
     return conversation.initLocalConversation(
+        profile: accountRecordCubit.state.asData!.value.profile,
         existingConversationRecordKey: localConversationRecordKey,
-        profile: account.profile,
-        // ignore: prefer_expression_function_bodies
-        callback: (localConversation) async {
-          return AsyncValue.data(InvitationStatus(
-              acceptedContact: AcceptedContact(
-                  remoteProfile: remoteProfile,
-                  remoteIdentity: contactSuperIdentity,
-                  remoteConversationRecordKey: remoteConversationRecordKey,
-                  localConversationRecordKey: localConversationRecordKey)));
-        });
+        callback: (localConversation) async => AsyncValue.data(InvitationStatus(
+            acceptedContact: AcceptedContact(
+                remoteProfile: remoteProfile,
+                remoteIdentity: contactSuperIdentity,
+                remoteConversationRecordKey: remoteConversationRecordKey,
+                localConversationRecordKey: localConversationRecordKey))));
   }
 }

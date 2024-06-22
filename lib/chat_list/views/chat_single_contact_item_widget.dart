@@ -28,13 +28,31 @@ class ChatSingleContactItemWidget extends StatelessWidget {
         _contact.localConversationRecordKey.toVeilid();
     final selected = activeChatCubit.state == localConversationRecordKey;
 
+    late final String title;
+    late final String subtitle;
+    if (_contact.nickname.isNotEmpty) {
+      title = _contact.nickname;
+      if (_contact.profile.pronouns.isNotEmpty) {
+        subtitle = '${_contact.profile.name} (${_contact.profile.pronouns})';
+      } else {
+        subtitle = _contact.profile.name;
+      }
+    } else {
+      title = _contact.profile.name;
+      if (_contact.profile.pronouns.isNotEmpty) {
+        subtitle = '(${_contact.profile.pronouns})';
+      } else {
+        subtitle = '';
+      }
+    }
+
     return SliderTile(
       key: ObjectKey(_contact),
       disabled: _disabled,
       selected: selected,
       tileScale: ScaleKind.secondary,
-      title: _contact.editedProfile.name,
-      subtitle: _contact.editedProfile.pronouns,
+      title: title,
+      subtitle: subtitle,
       icon: Icons.chat,
       onTap: () {
         singleFuture(activeChatCubit, () async {

@@ -1,7 +1,5 @@
 part of 'dht_record_pool.dart';
 
-const _sfListen = 'listen';
-
 @immutable
 class DHTRecordWatchChange extends Equatable {
   const DHTRecordWatchChange(
@@ -41,7 +39,7 @@ enum DHTRecordRefreshMode {
 class DHTRecord implements DHTDeleteable<DHTRecord> {
   DHTRecord._(
       {required VeilidRoutingContext routingContext,
-      required SharedDHTRecordData sharedDHTRecordData,
+      required _SharedDHTRecordData sharedDHTRecordData,
       required int defaultSubkey,
       required KeyPair? writer,
       required VeilidCrypto crypto,
@@ -241,7 +239,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     // if so, shortcut and don't bother decrypting it
     if (newValueData.data.equals(encryptedNewValue)) {
       if (isUpdated) {
-        DHTRecordPool.instance.processLocalValueChange(key, newValue, subkey);
+        DHTRecordPool.instance._processLocalValueChange(key, newValue, subkey);
       }
       return null;
     }
@@ -251,7 +249,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
         await (crypto ?? _crypto).decrypt(newValueData.data);
     if (isUpdated) {
       DHTRecordPool.instance
-          .processLocalValueChange(key, decryptedNewValue, subkey);
+          ._processLocalValueChange(key, decryptedNewValue, subkey);
     }
     return decryptedNewValue;
   }
@@ -298,7 +296,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
 
     final isUpdated = newValueData.seq != lastSeq;
     if (isUpdated) {
-      DHTRecordPool.instance.processLocalValueChange(key, newValue, subkey);
+      DHTRecordPool.instance._processLocalValueChange(key, newValue, subkey);
     }
   }
 
@@ -308,7 +306,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   /// Each attempt to write the value calls an update function with the
   /// old value to determine what new value should be attempted for that write.
   Future<void> eventualUpdateBytes(
-      Future<Uint8List> Function(Uint8List? oldValue) update,
+      Future<Uint8List?> Function(Uint8List? oldValue) update,
       {int subkey = -1,
       VeilidCrypto? crypto,
       KeyPair? writer,
@@ -323,7 +321,10 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     do {
       // Update the data
       final updatedValue = await update(oldValue);
-
+      if (updatedValue == null) {
+        // If null is returned from the update, stop trying to do the update
+        break;
+      }
       // Try to write it back to the network
       oldValue = await tryWriteBytes(updatedValue,
           subkey: subkey, crypto: crypto, writer: writer, outSeqNum: outSeqNum);
@@ -389,7 +390,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
 
   /// Like 'eventualUpdateBytes' but with JSON marshal/unmarshal of the value
   Future<void> eventualUpdateJson<T>(
-          T Function(dynamic) fromJson, Future<T> Function(T?) update,
+          T Function(dynamic) fromJson, Future<T?> Function(T?) update,
           {int subkey = -1,
           VeilidCrypto? crypto,
           KeyPair? writer,
@@ -399,7 +400,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
 
   /// Like 'eventualUpdateBytes' but with protobuf marshal/unmarshal of the value
   Future<void> eventualUpdateProtobuf<T extends GeneratedMessage>(
-          T Function(List<int>) fromBuffer, Future<T> Function(T?) update,
+          T Function(List<int>) fromBuffer, Future<T?> Function(T?) update,
           {int subkey = -1,
           VeilidCrypto? crypto,
           KeyPair? writer,
@@ -416,7 +417,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
     // Set up watch requirements which will get picked up by the next tick
     final oldWatchState = watchState;
     watchState =
-        WatchState(subkeys: subkeys, expiration: expiration, count: count);
+        _WatchState(subkeys: subkeys, expiration: expiration, count: count);
     if (oldWatchState != watchState) {
       _sharedDHTRecordData.needsWatchStateUpdate = true;
     }
@@ -541,7 +542,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
 
   //////////////////////////////////////////////////////////////
 
-  final SharedDHTRecordData _sharedDHTRecordData;
+  final _SharedDHTRecordData _sharedDHTRecordData;
   final VeilidRoutingContext _routingContext;
   final int _defaultSubkey;
   final KeyPair? _writer;
@@ -551,5 +552,5 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   int _openCount;
   StreamController<DHTRecordWatchChange>? _watchController;
   @internal
-  WatchState? watchState;
+  _WatchState? watchState;
 }

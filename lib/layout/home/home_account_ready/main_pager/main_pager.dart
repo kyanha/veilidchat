@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:preload_page_view/preload_page_view.dart';
+import 'package:provider/provider.dart';
 import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
 import '../../../../chat/chat.dart';
@@ -117,7 +118,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
                 style: TextStyle(fontSize: 24),
               ),
               content: ScanInvitationDialog(
-                modalContext: context,
+                locator: context.read,
               ));
         });
   }

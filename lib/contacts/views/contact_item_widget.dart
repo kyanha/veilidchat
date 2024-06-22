@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,18 +10,9 @@ import '../contacts.dart';
 
 class ContactItemWidget extends StatelessWidget {
   const ContactItemWidget(
-      {required this.contact, required this.disabled, super.key});
-
-  final proto.Contact contact;
-  final bool disabled;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty<proto.Contact>('contact', contact))
-      ..add(DiagnosticsProperty<bool>('disabled', disabled));
-  }
+      {required proto.Contact contact, required bool disabled, super.key})
+      : _disabled = disabled,
+        _contact = contact;
 
   @override
   // ignore: prefer_expression_function_bodies
@@ -30,26 +20,44 @@ class ContactItemWidget extends StatelessWidget {
     BuildContext context,
   ) {
     final localConversationRecordKey =
-        contact.localConversationRecordKey.toVeilid();
+        _contact.localConversationRecordKey.toVeilid();
 
     const selected = false; // xxx: eventually when we have selectable contacts:
     // activeContactCubit.state == localConversationRecordKey;
 
-    final tileDisabled = disabled || context.watch<ContactListCubit>().isBusy;
+    final tileDisabled = _disabled || context.watch<ContactListCubit>().isBusy;
+
+    late final String title;
+    late final String subtitle;
+    if (_contact.nickname.isNotEmpty) {
+      title = _contact.nickname;
+      if (_contact.profile.pronouns.isNotEmpty) {
+        subtitle = '${_contact.profile.name} (${_contact.profile.pronouns})';
+      } else {
+        subtitle = _contact.profile.name;
+      }
+    } else {
+      title = _contact.profile.name;
+      if (_contact.profile.pronouns.isNotEmpty) {
+        subtitle = '(${_contact.profile.pronouns})';
+      } else {
+        subtitle = '';
+      }
+    }
 
     return SliderTile(
-      key: ObjectKey(contact),
+      key: ObjectKey(_contact),
       disabled: tileDisabled,
       selected: selected,
       tileScale: ScaleKind.primary,
-      title: contact.editedProfile.name,
-      subtitle: contact.editedProfile.pronouns,
+      title: title,
+      subtitle: subtitle,
       icon: Icons.person,
       onTap: () async {
         // Start a chat
         final chatListCubit = context.read<ChatListCubit>();
 
-        await chatListCubit.getOrCreateChatSingleContact(contact: contact);
+        await chatListCubit.getOrCreateChatSingleContact(contact: _contact);
         // Click over to chats
         if (context.mounted) {
           await MainPager.of(context)
@@ -66,14 +74,20 @@ class ContactItemWidget extends StatelessWidget {
               final contactListCubit = context.read<ContactListCubit>();
               final chatListCubit = context.read<ChatListCubit>();
 
+              // Delete the contact itself
+              await contactListCubit.deleteContact(
+                  localConversationRecordKey: localConversationRecordKey);
+
               // Remove any chats for this contact
               await chatListCubit.deleteChat(
                   localConversationRecordKey: localConversationRecordKey);
-
-              // Delete the contact itself
-              await contactListCubit.deleteContact(contact: contact);
             })
       ],
     );
   }
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  final proto.Contact _contact;
+  final bool _disabled;
 }

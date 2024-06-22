@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:veilid_support/veilid_support.dart';
 
-import '../repository/account_repository/account_repository.dart';
+import '../repository/account_repository.dart';
 
 class ActiveLocalAccountCubit extends Cubit<TypedKey?> {
   ActiveLocalAccountCubit(AccountRepository accountRepository)

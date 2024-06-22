@@ -4,6 +4,7 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../theme/theme.dart';
@@ -11,29 +12,23 @@ import '../../tools/tools.dart';
 import 'invitation_dialog.dart';
 
 class PasteInvitationDialog extends StatefulWidget {
-  const PasteInvitationDialog({required this.modalContext, super.key});
+  const PasteInvitationDialog({required Locator locator, super.key})
+      : _locator = locator;
 
   @override
   PasteInvitationDialogState createState() => PasteInvitationDialogState();
 
   static Future<void> show(BuildContext context) async {
-    final modalContext = context;
+    final locator = context.read;
 
     await showPopControlDialog<void>(
         context: context,
         builder: (context) => StyledDialog(
             title: translate('paste_invitation_dialog.title'),
-            child: PasteInvitationDialog(modalContext: modalContext)));
+            child: PasteInvitationDialog(locator: locator)));
   }
 
-  final BuildContext modalContext;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-        .add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
-  }
+  final Locator _locator;
 }
 
 class PasteInvitationDialogState extends State<PasteInvitationDialog> {
@@ -138,7 +133,7 @@ class PasteInvitationDialogState extends State<PasteInvitationDialog> {
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     return InvitationDialog(
-        modalContext: widget.modalContext,
+        locator: widget._locator,
         onValidationCancelled: onValidationCancelled,
         onValidationSuccess: onValidationSuccess,
         onValidationFailed: onValidationFailed,

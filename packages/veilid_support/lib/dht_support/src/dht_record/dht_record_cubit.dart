@@ -29,20 +29,6 @@ class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
     });
   }
 
-  // DHTRecordCubit.value({
-  //   required DHTRecord record,
-  //   required InitialStateFunction<T> initialStateFunction,
-  //   required StateFunction<T> stateFunction,
-  //   required WatchFunction watchFunction,
-  // })  : _record = record,
-  //       _stateFunction = stateFunction,
-  //       _wantsCloseRecord = false,
-  //       super(const AsyncValue.loading()) {
-  //   Future.delayed(Duration.zero, () async {
-  //     await _init(initialStateFunction, stateFunction, watchFunction);
-  //   });
-  // }
-
   Future<void> _init(
     InitialStateFunction<T> initialStateFunction,
     StateFunction<T> stateFunction,

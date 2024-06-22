@@ -21,8 +21,13 @@ mixin _$ChatComponentState {
       throw _privateConstructorUsedError; // ScrollController for the chat
   AutoScrollController get scrollController =>
       throw _privateConstructorUsedError; // Local user
-  User get localUser => throw _privateConstructorUsedError; // Remote users
+  User? get localUser =>
+      throw _privateConstructorUsedError; // Active remote users
   IMap<Typed<FixedEncodedString43>, User> get remoteUsers =>
+      throw _privateConstructorUsedError; // Historical remote users
+  IMap<Typed<FixedEncodedString43>, User> get historicalRemoteUsers =>
+      throw _privateConstructorUsedError; // Unknown users
+  IMap<Typed<FixedEncodedString43>, User> get unknownUsers =>
       throw _privateConstructorUsedError; // Messages state
   AsyncValue<WindowState<Message>> get messageWindow =>
       throw _privateConstructorUsedError; // Title of the chat
@@ -42,8 +47,10 @@ abstract class $ChatComponentStateCopyWith<$Res> {
   $Res call(
       {GlobalKey<ChatState> chatKey,
       AutoScrollController scrollController,
-      User localUser,
+      User? localUser,
       IMap<Typed<FixedEncodedString43>, User> remoteUsers,
+      IMap<Typed<FixedEncodedString43>, User> historicalRemoteUsers,
+      IMap<Typed<FixedEncodedString43>, User> unknownUsers,
       AsyncValue<WindowState<Message>> messageWindow,
       String title});
 
@@ -65,8 +72,10 @@ class _$ChatComponentStateCopyWithImpl<$Res, $Val extends ChatComponentState>
   $Res call({
     Object? chatKey = null,
     Object? scrollController = null,
-    Object? localUser = null,
+    Object? localUser = freezed,
     Object? remoteUsers = null,
+    Object? historicalRemoteUsers = null,
+    Object? unknownUsers = null,
     Object? messageWindow = null,
     Object? title = null,
   }) {
@@ -79,13 +88,21 @@ class _$ChatComponentStateCopyWithImpl<$Res, $Val extends ChatComponentState>
           ? _value.scrollController
           : scrollController // ignore: cast_nullable_to_non_nullable
               as AutoScrollController,
-      localUser: null == localUser
+      localUser: freezed == localUser
           ? _value.localUser
           : localUser // ignore: cast_nullable_to_non_nullable
-              as User,
+              as User?,
       remoteUsers: null == remoteUsers
           ? _value.remoteUsers
           : remoteUsers // ignore: cast_nullable_to_non_nullable
+              as IMap<Typed<FixedEncodedString43>, User>,
+      historicalRemoteUsers: null == historicalRemoteUsers
+          ? _value.historicalRemoteUsers
+          : historicalRemoteUsers // ignore: cast_nullable_to_non_nullable
+              as IMap<Typed<FixedEncodedString43>, User>,
+      unknownUsers: null == unknownUsers
+          ? _value.unknownUsers
+          : unknownUsers // ignore: cast_nullable_to_non_nullable
               as IMap<Typed<FixedEncodedString43>, User>,
       messageWindow: null == messageWindow
           ? _value.messageWindow
@@ -119,8 +136,10 @@ abstract class _$$ChatComponentStateImplCopyWith<$Res>
   $Res call(
       {GlobalKey<ChatState> chatKey,
       AutoScrollController scrollController,
-      User localUser,
+      User? localUser,
       IMap<Typed<FixedEncodedString43>, User> remoteUsers,
+      IMap<Typed<FixedEncodedString43>, User> historicalRemoteUsers,
+      IMap<Typed<FixedEncodedString43>, User> unknownUsers,
       AsyncValue<WindowState<Message>> messageWindow,
       String title});
 
@@ -141,8 +160,10 @@ class __$$ChatComponentStateImplCopyWithImpl<$Res>
   $Res call({
     Object? chatKey = null,
     Object? scrollController = null,
-    Object? localUser = null,
+    Object? localUser = freezed,
     Object? remoteUsers = null,
+    Object? historicalRemoteUsers = null,
+    Object? unknownUsers = null,
     Object? messageWindow = null,
     Object? title = null,
   }) {
@@ -155,13 +176,21 @@ class __$$ChatComponentStateImplCopyWithImpl<$Res>
           ? _value.scrollController
           : scrollController // ignore: cast_nullable_to_non_nullable
               as AutoScrollController,
-      localUser: null == localUser
+      localUser: freezed == localUser
           ? _value.localUser
           : localUser // ignore: cast_nullable_to_non_nullable
-              as User,
+              as User?,
       remoteUsers: null == remoteUsers
           ? _value.remoteUsers
           : remoteUsers // ignore: cast_nullable_to_non_nullable
+              as IMap<Typed<FixedEncodedString43>, User>,
+      historicalRemoteUsers: null == historicalRemoteUsers
+          ? _value.historicalRemoteUsers
+          : historicalRemoteUsers // ignore: cast_nullable_to_non_nullable
+              as IMap<Typed<FixedEncodedString43>, User>,
+      unknownUsers: null == unknownUsers
+          ? _value.unknownUsers
+          : unknownUsers // ignore: cast_nullable_to_non_nullable
               as IMap<Typed<FixedEncodedString43>, User>,
       messageWindow: null == messageWindow
           ? _value.messageWindow
@@ -183,6 +212,8 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
       required this.scrollController,
       required this.localUser,
       required this.remoteUsers,
+      required this.historicalRemoteUsers,
+      required this.unknownUsers,
       required this.messageWindow,
       required this.title});
 
@@ -194,10 +225,16 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
   final AutoScrollController scrollController;
 // Local user
   @override
-  final User localUser;
-// Remote users
+  final User? localUser;
+// Active remote users
   @override
   final IMap<Typed<FixedEncodedString43>, User> remoteUsers;
+// Historical remote users
+  @override
+  final IMap<Typed<FixedEncodedString43>, User> historicalRemoteUsers;
+// Unknown users
+  @override
+  final IMap<Typed<FixedEncodedString43>, User> unknownUsers;
 // Messages state
   @override
   final AsyncValue<WindowState<Message>> messageWindow;
@@ -207,7 +244,7 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
 
   @override
   String toString() {
-    return 'ChatComponentState(chatKey: $chatKey, scrollController: $scrollController, localUser: $localUser, remoteUsers: $remoteUsers, messageWindow: $messageWindow, title: $title)';
+    return 'ChatComponentState(chatKey: $chatKey, scrollController: $scrollController, localUser: $localUser, remoteUsers: $remoteUsers, historicalRemoteUsers: $historicalRemoteUsers, unknownUsers: $unknownUsers, messageWindow: $messageWindow, title: $title)';
   }
 
   @override
@@ -222,14 +259,26 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
                 other.localUser == localUser) &&
             (identical(other.remoteUsers, remoteUsers) ||
                 other.remoteUsers == remoteUsers) &&
+            (identical(other.historicalRemoteUsers, historicalRemoteUsers) ||
+                other.historicalRemoteUsers == historicalRemoteUsers) &&
+            (identical(other.unknownUsers, unknownUsers) ||
+                other.unknownUsers == unknownUsers) &&
             (identical(other.messageWindow, messageWindow) ||
                 other.messageWindow == messageWindow) &&
             (identical(other.title, title) || other.title == title));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, chatKey, scrollController,
-      localUser, remoteUsers, messageWindow, title);
+  int get hashCode => Object.hash(
+      runtimeType,
+      chatKey,
+      scrollController,
+      localUser,
+      remoteUsers,
+      historicalRemoteUsers,
+      unknownUsers,
+      messageWindow,
+      title);
 
   @JsonKey(ignore: true)
   @override
@@ -243,8 +292,11 @@ abstract class _ChatComponentState implements ChatComponentState {
   const factory _ChatComponentState(
       {required final GlobalKey<ChatState> chatKey,
       required final AutoScrollController scrollController,
-      required final User localUser,
+      required final User? localUser,
       required final IMap<Typed<FixedEncodedString43>, User> remoteUsers,
+      required final IMap<Typed<FixedEncodedString43>, User>
+          historicalRemoteUsers,
+      required final IMap<Typed<FixedEncodedString43>, User> unknownUsers,
       required final AsyncValue<WindowState<Message>> messageWindow,
       required final String title}) = _$ChatComponentStateImpl;
 
@@ -253,9 +305,13 @@ abstract class _ChatComponentState implements ChatComponentState {
   @override // ScrollController for the chat
   AutoScrollController get scrollController;
   @override // Local user
-  User get localUser;
-  @override // Remote users
+  User? get localUser;
+  @override // Active remote users
   IMap<Typed<FixedEncodedString43>, User> get remoteUsers;
+  @override // Historical remote users
+  IMap<Typed<FixedEncodedString43>, User> get historicalRemoteUsers;
+  @override // Unknown users
+  IMap<Typed<FixedEncodedString43>, User> get unknownUsers;
   @override // Messages state
   AsyncValue<WindowState<Message>> get messageWindow;
   @override // Title of the chat

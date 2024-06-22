@@ -2,10 +2,11 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 
 import '../../../account_manager/account_manager.dart';
 import '../../../chat/chat.dart';
+import '../../../proto/proto.dart' as proto;
 import '../../../theme/theme.dart';
 import '../../../tools/tools.dart';
 import 'main_pager/main_pager.dart';
@@ -29,14 +30,15 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
   }
 
   Widget buildUserPanel() => Builder(builder: (context) {
-        final account = context.watch<AccountRecordCubit>().state;
+        final profile = context.select<AccountRecordCubit, proto.Profile>(
+            (c) => c.state.asData!.value.profile);
         final theme = Theme.of(context);
         final scale = theme.extension<ScaleScheme>()!;
 
         return Column(children: <Widget>[
           Row(children: [
             IconButton(
-                icon: const Icon(Icons.settings),
+                icon: const Icon(Icons.menu),
                 color: scale.secondaryScale.borderText,
                 constraints: const BoxConstraints.expand(height: 64, width: 64),
                 style: ButtonStyle(
@@ -44,13 +46,13 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
                         WidgetStateProperty.all(scale.primaryScale.hoverBorder),
                     shape: WidgetStateProperty.all(const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(16))))),
-                tooltip: translate('app_bar.settings_tooltip'),
+                tooltip: translate('menu.settings_tooltip'),
                 onPressed: () async {
-                  await GoRouterHelper(context).push('/settings');
+                  final ctrl = context.read<ZoomDrawerController>();
+                  await ctrl.toggle?.call();
+                  //await GoRouterHelper(context).push('/settings');
                 }).paddingLTRB(0, 0, 8, 0),
-            asyncValueBuilder(account,
-                    (_, account) => ProfileWidget(profile: account.profile))
-                .expanded(),
+            ProfileWidget(profile: profile).expanded(),
           ]).paddingAll(8),
           const MainPager().expanded()
         ]);
@@ -70,8 +72,8 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
       return const NoConversationWidget();
     }
     return ChatComponentWidget.builder(
-      localConversationRecordKey: activeChatLocalConversationKey,
-    );
+        localConversationRecordKey: activeChatLocalConversationKey,
+        key: ValueKey(activeChatLocalConversationKey));
   }
 
   // ignore: prefer_expression_function_bodies

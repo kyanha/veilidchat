@@ -25,7 +25,7 @@ class ChatsPageState extends State<ChatsPage> {
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     return Column(children: <Widget>[
-      const ChatSingleContactListWidget().expanded(),
+      const ChatListWidget().expanded(),
     ]);
   }
 }

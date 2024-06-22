@@ -9,6 +9,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pasteboard/pasteboard.dart';
+import 'package:provider/provider.dart';
 import 'package:zxing2/qrcode.dart';
 
 import '../../theme/theme.dart';
@@ -102,28 +103,22 @@ class ScannerOverlay extends CustomPainter {
 }
 
 class ScanInvitationDialog extends StatefulWidget {
-  const ScanInvitationDialog({required this.modalContext, super.key});
+  const ScanInvitationDialog({required Locator locator, super.key})
+      : _locator = locator;
 
   @override
   ScanInvitationDialogState createState() => ScanInvitationDialogState();
 
   static Future<void> show(BuildContext context) async {
-    final modalContext = context;
+    final locator = context.read;
     await showPopControlDialog<void>(
         context: context,
         builder: (context) => StyledDialog(
             title: translate('scan_invitation_dialog.title'),
-            child: ScanInvitationDialog(modalContext: modalContext)));
+            child: ScanInvitationDialog(locator: locator)));
   }
 
-  final BuildContext modalContext;
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-        .add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
-  }
+  final Locator _locator;
 }
 
 class ScanInvitationDialogState extends State<ScanInvitationDialog> {
@@ -396,7 +391,7 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     return InvitationDialog(
-        modalContext: widget.modalContext,
+        locator: widget._locator,
         onValidationCancelled: onValidationCancelled,
         onValidationSuccess: onValidationSuccess,
         onValidationFailed: onValidationFailed,

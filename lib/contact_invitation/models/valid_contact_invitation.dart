@@ -2,7 +2,7 @@ import 'package:meta/meta.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../contacts/contacts.dart';
+import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 import 'models.dart';
@@ -13,14 +13,12 @@ import 'models.dart';
 class ValidContactInvitation {
   @internal
   ValidContactInvitation(
-      {required ActiveAccountInfo activeAccountInfo,
-      required proto.Account account,
+      {required AccountInfo accountInfo,
       required TypedKey contactRequestInboxKey,
       required proto.ContactRequestPrivate contactRequestPrivate,
       required SuperIdentity contactSuperIdentity,
       required KeyPair writer})
-      : _activeAccountInfo = activeAccountInfo,
-        _account = account,
+      : _accountInfo = accountInfo,
         _contactRequestInboxKey = contactRequestInboxKey,
         _contactRequestPrivate = contactRequestPrivate,
         _contactSuperIdentity = contactSuperIdentity,
@@ -28,44 +26,40 @@ class ValidContactInvitation {
 
   proto.Profile get remoteProfile => _contactRequestPrivate.profile;
 
-  Future<AcceptedContact?> accept() async {
+  Future<AcceptedContact?> accept(proto.Profile profile) async {
     final pool = DHTRecordPool.instance;
     try {
       // Ensure we don't delete this if we're trying to chat to self
       // The initiating side will delete the records in deleteInvitation()
       final isSelf = _contactSuperIdentity.currentInstance.publicKey ==
-          _activeAccountInfo.identityPublicKey;
-      final accountRecordKey = _activeAccountInfo.accountRecordKey;
+          _accountInfo.identityPublicKey;
 
       return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
               debugName: 'ValidContactInvitation::accept::'
                   'ContactRequestInbox',
-              parent: accountRecordKey))
+              parent: pool.getParentRecordKey(_contactRequestInboxKey) ??
+                  _accountInfo.accountRecordKey))
           // ignore: prefer_expression_function_bodies
           .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
         // Create local conversation key for this
         // contact and send via contact response
         final conversation = ConversationCubit(
-            activeAccountInfo: _activeAccountInfo,
+            accountInfo: _accountInfo,
             remoteIdentityPublicKey:
                 _contactSuperIdentity.currentInstance.typedPublicKey);
         return conversation.initLocalConversation(
-            profile: _account.profile,
+            profile: profile,
             callback: (localConversation) async {
               final contactResponse = proto.ContactResponse()
                 ..accept = true
                 ..remoteConversationRecordKey = localConversation.key.toProto()
                 ..superIdentityRecordKey =
-                    _activeAccountInfo.superIdentityRecordKey.toProto();
+                    _accountInfo.superIdentityRecordKey.toProto();
               final contactResponseBytes = contactResponse.writeToBuffer();
 
-              final cs = await pool.veilid
-                  .getCryptoSystem(_contactRequestInboxKey.kind);
-
-              final identitySignature = await cs.sign(
-                  _activeAccountInfo.identityWriter.key,
-                  _activeAccountInfo.identityWriter.secret,
-                  contactResponseBytes);
+              final cs = await _accountInfo.identityCryptoSystem;
+              final identitySignature = await cs.signWithKeyPair(
+                  _accountInfo.identityWriter, contactResponseBytes);
 
               final signedContactResponse = proto.SignedContactResponse()
                 ..contactResponse = contactResponseBytes
@@ -95,27 +89,22 @@ class ValidContactInvitation {
 
     // Ensure we don't delete this if we're trying to chat to self
     final isSelf = _contactSuperIdentity.currentInstance.publicKey ==
-        _activeAccountInfo.identityPublicKey;
-    final accountRecordKey = _activeAccountInfo.accountRecordKey;
+        _accountInfo.identityPublicKey;
 
     return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
             debugName: 'ValidContactInvitation::reject::'
                 'ContactRequestInbox',
-            parent: accountRecordKey))
+            parent: _accountInfo.accountRecordKey))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
-      final cs =
-          await pool.veilid.getCryptoSystem(_contactRequestInboxKey.kind);
-
       final contactResponse = proto.ContactResponse()
         ..accept = false
         ..superIdentityRecordKey =
-            _activeAccountInfo.superIdentityRecordKey.toProto();
+            _accountInfo.superIdentityRecordKey.toProto();
       final contactResponseBytes = contactResponse.writeToBuffer();
 
-      final identitySignature = await cs.sign(
-          _activeAccountInfo.identityWriter.key,
-          _activeAccountInfo.identityWriter.secret,
-          contactResponseBytes);
+      final cs = await _accountInfo.identityCryptoSystem;
+      final identitySignature = await cs.signWithKeyPair(
+          _accountInfo.identityWriter, contactResponseBytes);
 
       final signedContactResponse = proto.SignedContactResponse()
         ..contactResponse = contactResponseBytes
@@ -129,8 +118,7 @@ class ValidContactInvitation {
   }
 
   //
-  final ActiveAccountInfo _activeAccountInfo;
-  final proto.Account _account;
+  final AccountInfo _accountInfo;
   final TypedKey _contactRequestInboxKey;
   final SuperIdentity _contactSuperIdentity;
   final KeyPair _writer;

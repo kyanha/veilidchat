@@ -50,13 +50,13 @@ typedef SingleContactMessagesState = AsyncValue<WindowState<MessageState>>;
 // Builds the reconciled chat record from the local and remote conversation keys
 class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   SingleContactMessagesCubit({
-    required ActiveAccountInfo activeAccountInfo,
+    required AccountInfo accountInfo,
     required TypedKey remoteIdentityPublicKey,
     required TypedKey localConversationRecordKey,
     required TypedKey localMessagesRecordKey,
     required TypedKey remoteConversationRecordKey,
     required TypedKey remoteMessagesRecordKey,
-  })  : _activeAccountInfo = activeAccountInfo,
+  })  : _accountInfo = accountInfo,
         _remoteIdentityPublicKey = remoteIdentityPublicKey,
         _localConversationRecordKey = localConversationRecordKey,
         _localMessagesRecordKey = localMessagesRecordKey,
@@ -81,6 +81,16 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     await _sentMessagesCubit?.close();
     await _rcvdMessagesCubit?.close();
     await _reconciledMessagesCubit?.close();
+
+    // If the local conversation record is gone, then delete the reconciled
+    // messages table as well
+    final conversationDead = await DHTRecordPool.instance
+        .isDeletedRecordKey(_localConversationRecordKey);
+    if (conversationDead) {
+      await SingleContactMessagesCubit.cleanupAndDeleteMessages(
+          localConversationRecordKey: _localConversationRecordKey);
+    }
+
     await super.close();
   }
 
@@ -111,15 +121,15 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Make crypto
   Future<void> _initCrypto() async {
-    _conversationCrypto = await _activeAccountInfo
-        .makeConversationCrypto(_remoteIdentityPublicKey);
+    _conversationCrypto =
+        await _accountInfo.makeConversationCrypto(_remoteIdentityPublicKey);
     _senderMessageIntegrity = await MessageIntegrity.create(
-        author: _activeAccountInfo.identityTypedPublicKey);
+        author: _accountInfo.identityTypedPublicKey);
   }
 
   // Open local messages key
   Future<void> _initSentMessagesCubit() async {
-    final writer = _activeAccountInfo.identityWriter;
+    final writer = _accountInfo.identityWriter;
 
     _sentMessagesCubit = DHTLogCubit(
         open: () async => DHTLog.openWrite(_localMessagesRecordKey, writer,
@@ -149,7 +159,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   Future<VeilidCrypto> _makeLocalMessagesCrypto() async =>
       VeilidCryptoPrivate.fromTypedKey(
-          _activeAccountInfo.userLogin.identitySecret, 'tabledb');
+          _accountInfo.userLogin!.identitySecret, 'tabledb');
 
   // Open reconciled chat record key
   Future<void> _initReconciledMessagesCubit() async {
@@ -240,8 +250,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       return;
     }
 
-    _reconciliation.reconcileMessages(_activeAccountInfo.identityTypedPublicKey,
-        sentMessages, _sentMessagesCubit!);
+    _reconciliation.reconcileMessages(
+        _accountInfo.identityTypedPublicKey, sentMessages, _sentMessagesCubit!);
 
     // Update the view
     _renderState();
@@ -278,7 +288,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
     // Now sign it
     await _senderMessageIntegrity.signMessage(
-        message, _activeAccountInfo.identitySecretKey);
+        message, _accountInfo.identitySecretKey);
   }
 
   // Async process to send messages in the background
@@ -291,8 +301,14 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       previousMessage = message;
     }
 
+    // _sendingMessages = messages;
+
+    // _renderState();
+
     await _sentMessagesCubit!.operateAppendEventual((writer) =>
         writer.addAll(messages.map((m) => m.writeToBuffer()).toList()));
+
+    // _sendingMessages = const IList.empty();
   }
 
   // Produce a state for this cubit from the input cubits and queues
@@ -302,8 +318,8 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         _reconciledMessagesCubit?.state.state.asData?.value;
     // Get all sent messages
     final sentMessages = _sentMessagesCubit?.state.state.asData?.value;
-    // Get all items in the unsent queue
-    // final unsentMessages = _unsentMessagesQueue.queue;
+    //Get all items in the unsent queue
+    //final unsentMessages = _unsentMessagesQueue.queue;
 
     // If we aren't ready to render a state, say we're loading
     if (reconciledMessages == null || sentMessages == null) {
@@ -315,7 +331,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // final reconciledMessagesMap =
     //     IMap<String, proto.ReconciledMessage>.fromValues(
     //   keyMapper: (x) => x.content.authorUniqueIdString,
-    //   values: reconciledMessages.elements,
+    //   values: reconciledMessages.windowElements,
     // );
     final sentMessagesMap =
         IMap<String, OnlineElementState<proto.Message>>.fromValues(
@@ -328,10 +344,10 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // );
 
     final renderedElements = <RenderStateElement>[];
-
+    final renderedIds = <String>{};
     for (final m in reconciledMessages.windowElements) {
-      final isLocal = m.content.author.toVeilid() ==
-          _activeAccountInfo.identityTypedPublicKey;
+      final isLocal =
+          m.content.author.toVeilid() == _accountInfo.identityTypedPublicKey;
       final reconciledTimestamp = Timestamp.fromInt64(m.reconciledTime);
       final sm =
           isLocal ? sentMessagesMap[m.content.authorUniqueIdString] : null;
@@ -345,7 +361,22 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         sent: sent,
         sentOffline: sentOffline,
       ));
+
+      renderedIds.add(m.content.authorUniqueIdString);
     }
+
+    // Render in-flight messages at the bottom
+    // for (final m in _sendingMessages) {
+    //   if (renderedIds.contains(m.authorUniqueIdString)) {
+    //     continue;
+    //   }
+    //   renderedElements.add(RenderStateElement(
+    //     message: m,
+    //     isLocal: true,
+    //     sent: true,
+    //     sentOffline: true,
+    //   ));
+    // }
 
     // Render the state
     final messages = renderedElements
@@ -369,7 +400,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // Add common fields
     // id and signature will get set by _processMessageToSend
     message
-      ..author = _activeAccountInfo.identityTypedPublicKey.toProto()
+      ..author = _accountInfo.identityTypedPublicKey.toProto()
       ..timestamp = Veilid.instance.now().toInt64();
 
     // Put in the queue
@@ -402,7 +433,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   /////////////////////////////////////////////////////////////////////////
 
   final WaitSet<void> _initWait = WaitSet();
-  final ActiveAccountInfo _activeAccountInfo;
+  late final AccountInfo _accountInfo;
   final TypedKey _remoteIdentityPublicKey;
   final TypedKey _localConversationRecordKey;
   final TypedKey _localMessagesRecordKey;
@@ -419,7 +450,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   late final MessageReconciliation _reconciliation;
 
   late final PersistentQueue<proto.Message> _unsentMessagesQueue;
-
+  // IList<proto.Message> _sendingMessages = const IList.empty();
   StreamSubscription<DHTLogBusyState<proto.Message>>? _sentSubscription;
   StreamSubscription<DHTLogBusyState<proto.Message>>? _rcvdSubscription;
   StreamSubscription<TableDBArrayProtobufBusyState<proto.ReconciledMessage>>?

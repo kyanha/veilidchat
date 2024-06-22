@@ -140,8 +140,18 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
     // Start generation
     final contactInvitationListCubit =
         widget.modalContext.read<ContactInvitationListCubit>();
+    final profile = widget.modalContext
+        .read<AccountRecordCubit>()
+        .state
+        .asData
+        ?.value
+        .profile;
+    if (profile == null) {
+      return;
+    }
 
     final generator = contactInvitationListCubit.createInvitation(
+        profile: profile,
         encryptionKeyType: _encryptionKeyType,
         encryptionKey: _encryptionKey,
         message: _messageTextController.text,
