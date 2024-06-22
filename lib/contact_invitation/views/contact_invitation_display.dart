@@ -46,7 +46,6 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    //final scale = theme.extension<ScaleScheme>()!;
     final textTheme = theme.textTheme;
 
     final signedContactInvitationBytesV =
@@ -58,6 +57,9 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
     return PopControl(
         dismissible: !signedContactInvitationBytesV.isLoading,
         child: Dialog(
+            shape: RoundedRectangleBorder(
+                side: const BorderSide(width: 2),
+                borderRadius: BorderRadius.circular(16)),
             backgroundColor: Colors.white,
             child: ConstrainedBox(
                 constraints: BoxConstraints(
@@ -90,6 +92,10 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
                               .paddingAll(8),
                           ElevatedButton.icon(
                             icon: const Icon(Icons.copy),
+                            style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.black,
+                                backgroundColor: Colors.white,
+                                side: const BorderSide()),
                             label: Text(translate(
                                 'create_invitation_dialog.copy_invitation')),
                             onPressed: () async {

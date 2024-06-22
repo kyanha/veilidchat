@@ -4,7 +4,6 @@ import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -82,6 +81,16 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     await _sentMessagesCubit?.close();
     await _rcvdMessagesCubit?.close();
     await _reconciledMessagesCubit?.close();
+
+    // If the local conversation record is gone, then delete the reconciled
+    // messages table as well
+    final conversationDead = await DHTRecordPool.instance
+        .isDeletedRecordKey(_localConversationRecordKey);
+    if (conversationDead) {
+      await SingleContactMessagesCubit.cleanupAndDeleteMessages(
+          localConversationRecordKey: _localConversationRecordKey);
+    }
+
     await super.close();
   }
 
@@ -292,8 +301,14 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       previousMessage = message;
     }
 
+    // _sendingMessages = messages;
+
+    // _renderState();
+
     await _sentMessagesCubit!.operateAppendEventual((writer) =>
         writer.addAll(messages.map((m) => m.writeToBuffer()).toList()));
+
+    // _sendingMessages = const IList.empty();
   }
 
   // Produce a state for this cubit from the input cubits and queues
@@ -304,7 +319,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // Get all sent messages
     final sentMessages = _sentMessagesCubit?.state.state.asData?.value;
     //Get all items in the unsent queue
-    final unsentMessages = _unsentMessagesQueue.queue;
+    //final unsentMessages = _unsentMessagesQueue.queue;
 
     // If we aren't ready to render a state, say we're loading
     if (reconciledMessages == null || sentMessages == null) {
@@ -329,7 +344,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     // );
 
     final renderedElements = <RenderStateElement>[];
-
+    final renderedIds = <String>{};
     for (final m in reconciledMessages.windowElements) {
       final isLocal =
           m.content.author.toVeilid() == _accountInfo.identityTypedPublicKey;
@@ -346,13 +361,22 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
         sent: sent,
         sentOffline: sentOffline,
       ));
+
+      renderedIds.add(m.content.authorUniqueIdString);
     }
-    for (final m in unsentMessages) {
-      renderedElements.add(RenderStateElement(
-        message: (m.deepCopy())..id = m.timestamp.toBytes(),
-        isLocal: true,
-      ));
-    }
+
+    // Render in-flight messages at the bottom
+    // for (final m in _sendingMessages) {
+    //   if (renderedIds.contains(m.authorUniqueIdString)) {
+    //     continue;
+    //   }
+    //   renderedElements.add(RenderStateElement(
+    //     message: m,
+    //     isLocal: true,
+    //     sent: true,
+    //     sentOffline: true,
+    //   ));
+    // }
 
     // Render the state
     final messages = renderedElements
@@ -426,7 +450,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   late final MessageReconciliation _reconciliation;
 
   late final PersistentQueue<proto.Message> _unsentMessagesQueue;
-
+  // IList<proto.Message> _sendingMessages = const IList.empty();
   StreamSubscription<DHTLogBusyState<proto.Message>>? _sentSubscription;
   StreamSubscription<DHTLogBusyState<proto.Message>>? _rcvdSubscription;
   StreamSubscription<TableDBArrayProtobufBusyState<proto.ReconciledMessage>>?

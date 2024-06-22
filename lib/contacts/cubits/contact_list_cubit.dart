@@ -6,7 +6,6 @@ import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../conversation/conversation.dart';
 import '../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 
@@ -17,8 +16,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   ContactListCubit({
     required AccountInfo accountInfo,
     required OwnedDHTRecordPointer contactListRecordPointer,
-  })  : _accountInfo = accountInfo,
-        super(
+  }) : super(
             open: () =>
                 _open(accountInfo.accountRecordKey, contactListRecordPointer),
             decodeElement: proto.Contact.fromBuffer);
@@ -98,8 +96,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
       ..showAvailability = false;
 
     // Add Contact to account's list
-    // if this fails, don't keep retrying, user can try again later
-    await operateWrite((writer) async {
+    await operateWriteEventual((writer) async {
       await writer.add(contact.writeToBuffer());
     });
   }
@@ -107,7 +104,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
   Future<void> deleteContact(
       {required TypedKey localConversationRecordKey}) async {
     // Remove Contact from account's list
-    final deletedItem = await operateWrite((writer) async {
+    final deletedItem = await operateWriteEventual((writer) async {
       for (var i = 0; i < writer.length; i++) {
         final item = await writer.getProtobuf(proto.Contact.fromBuffer, i);
         if (item == null) {
@@ -124,18 +121,11 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
     if (deletedItem != null) {
       try {
-        // Make a conversation cubit to manipulate the conversation
-        final conversationCubit = ConversationCubit(
-          accountInfo: _accountInfo,
-          remoteIdentityPublicKey: deletedItem.identityPublicKey.toVeilid(),
-          localConversationRecordKey:
-              deletedItem.localConversationRecordKey.toVeilid(),
-          remoteConversationRecordKey:
-              deletedItem.remoteConversationRecordKey.toVeilid(),
-        );
-
-        // Delete the local and remote conversation records
-        await conversationCubit.delete();
+        // Mark the conversation records for deletion
+        await DHTRecordPool.instance
+            .deleteRecord(deletedItem.localConversationRecordKey.toVeilid());
+        await DHTRecordPool.instance
+            .deleteRecord(deletedItem.remoteConversationRecordKey.toVeilid());
       } on Exception catch (e) {
         log.debug('error deleting conversation records: $e', e);
       }
@@ -144,5 +134,4 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
 
   final _contactProfileUpdateMap =
       SingleStateProcessorMap<TypedKey, proto.Profile?>();
-  final AccountInfo _accountInfo;
 }

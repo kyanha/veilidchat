@@ -71,11 +71,22 @@ class _DrawerMenuState extends State<DrawerMenu> {
       shortname = abbrev;
     }
 
-    final avatar = AvatarImage(
-        size: 32,
-        backgroundColor: loggedIn ? scale.primary : scale.elementBackground,
-        foregroundColor: loggedIn ? scale.primaryText : scale.subtleText,
-        child: Text(shortname, style: theme.textTheme.titleLarge));
+    final avatar = Container(
+        height: 34,
+        width: 34,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+              color: loggedIn ? scale.border : scale.subtleBorder,
+              width: 2,
+              strokeAlign: BorderSide.strokeAlignOutside),
+          color: Colors.blue,
+        ),
+        child: AvatarImage(
+            //size: 32,
+            backgroundColor: loggedIn ? scale.primary : scale.elementBackground,
+            foregroundColor: loggedIn ? scale.primaryText : scale.subtleText,
+            child: Text(shortname, style: theme.textTheme.titleLarge)));
 
     return AnimatedPadding(
         padding: EdgeInsets.fromLTRB(selected ? 0 : 0, 0, selected ? 0 : 8, 0),
@@ -234,6 +245,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
     //final textTheme = theme.textTheme;
     final localAccounts = context.watch<LocalAccountsCubit>().state;
     final perAccountCollectionBlocMapState =
@@ -269,13 +281,17 @@ class _DrawerMenuState extends State<DrawerMenu> {
             fit: BoxFit.scaleDown,
             child: Row(children: [
               SvgPicture.asset(
-                height: 48,
-                'assets/images/icon.svg',
-              ).paddingLTRB(0, 0, 16, 0),
+                      height: 48,
+                      'assets/images/icon.svg',
+                      colorFilter: scaleConfig.useVisualIndicators
+                          ? grayColorFilter
+                          : null)
+                  .paddingLTRB(0, 0, 16, 0),
               SvgPicture.asset(
-                height: 48,
-                'assets/images/title.svg',
-              ),
+                  height: 48,
+                  'assets/images/title.svg',
+                  colorFilter:
+                      scaleConfig.useVisualIndicators ? grayColorFilter : null),
             ])),
         const Spacer(),
         _getAccountList(

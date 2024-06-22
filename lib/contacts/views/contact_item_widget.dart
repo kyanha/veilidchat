@@ -74,12 +74,12 @@ class ContactItemWidget extends StatelessWidget {
               final contactListCubit = context.read<ContactListCubit>();
               final chatListCubit = context.read<ChatListCubit>();
 
-              // Remove any chats for this contact
-              await chatListCubit.deleteChat(
-                  localConversationRecordKey: localConversationRecordKey);
-
               // Delete the contact itself
               await contactListCubit.deleteContact(
+                  localConversationRecordKey: localConversationRecordKey);
+
+              // Remove any chats for this contact
+              await chatListCubit.deleteChat(
                   localConversationRecordKey: localConversationRecordKey);
             })
       ],

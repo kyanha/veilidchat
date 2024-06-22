@@ -8,7 +8,6 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
 import '../../proto/proto.dart' as proto;
-import '../../tools/tools.dart';
 
 //////////////////////////////////////////////////
 
@@ -58,9 +57,20 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
     final remoteConversationRecordKey =
         contact.remoteConversationRecordKey.toVeilid();
 
+    // Create 1:1 conversation type Chat
+    final chatMember = proto.ChatMember()
+      ..remoteIdentityPublicKey = remoteIdentityPublicKey.toProto()
+      ..remoteConversationRecordKey = remoteConversationRecordKey.toProto();
+
+    final directChat = proto.DirectChat()
+      ..settings = await getDefaultChatSettings(contact)
+      ..localConversationRecordKey = localConversationRecordKey.toProto()
+      ..remoteMember = chatMember;
+
+    final chat = proto.Chat()..direct = directChat;
+
     // Add Chat to account's list
-    // if this fails, don't keep retrying, user can try again later
-    await operateWrite((writer) async {
+    await operateWriteEventual((writer) async {
       // See if we have added this chat already
       for (var i = 0; i < writer.length; i++) {
         final cbuf = await writer.get(i);
@@ -89,18 +99,6 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
         }
       }
 
-      // Create 1:1 conversation type Chat
-      final chatMember = proto.ChatMember()
-        ..remoteIdentityPublicKey = remoteIdentityPublicKey.toProto()
-        ..remoteConversationRecordKey = remoteConversationRecordKey.toProto();
-
-      final directChat = proto.DirectChat()
-        ..settings = await getDefaultChatSettings(contact)
-        ..localConversationRecordKey = localConversationRecordKey.toProto()
-        ..remoteMember = chatMember;
-
-      final chat = proto.Chat()..direct = directChat;
-
       // Add chat
       await writer.add(chat.writeToBuffer());
     });
@@ -110,37 +108,22 @@ class ChatListCubit extends DHTShortArrayCubit<proto.Chat>
   Future<void> deleteChat(
       {required TypedKey localConversationRecordKey}) async {
     // Remove Chat from account's list
-    // if this fails, don't keep retrying, user can try again later
-    final deletedItem =
-        // Ensure followers get their changes before we return
-        await syncFollowers(() => operateWrite((writer) async {
-              if (_activeChatCubit.state == localConversationRecordKey) {
-                _activeChatCubit.setActiveChat(null);
-              }
-              for (var i = 0; i < writer.length; i++) {
-                final c = await writer.getProtobuf(proto.Chat.fromBuffer, i);
-                if (c == null) {
-                  throw Exception('Failed to get chat');
-                }
-
-                if (c.localConversationRecordKey ==
-                    localConversationRecordKey) {
-                  await writer.remove(i);
-                  return c;
-                }
-              }
-              return null;
-            }));
-    // Since followers are synced, we can safetly remove the reconciled
-    // chat record now
-    if (deletedItem != null) {
-      try {
-        await SingleContactMessagesCubit.cleanupAndDeleteMessages(
-            localConversationRecordKey: localConversationRecordKey);
-      } on Exception catch (e) {
-        log.debug('error removing reconciled chat table: $e', e);
+    await operateWriteEventual((writer) async {
+      if (_activeChatCubit.state == localConversationRecordKey) {
+        _activeChatCubit.setActiveChat(null);
       }
-    }
+      for (var i = 0; i < writer.length; i++) {
+        final c = await writer.getProtobuf(proto.Chat.fromBuffer, i);
+        if (c == null) {
+          throw Exception('Failed to get chat');
+        }
+
+        if (c.localConversationRecordKey == localConversationRecordKey) {
+          await writer.remove(i);
+          return;
+        }
+      }
+    });
   }
 
   /// StateMapFollowable /////////////////////////

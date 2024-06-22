@@ -152,8 +152,7 @@ class ContactInvitationListCubit
           ..message = message;
 
         // Add ContactInvitationRecord to account's list
-        // if this fails, don't keep retrying, user can try again later
-        await operateWrite((writer) async {
+        await operateWriteEventual((writer) async {
           await writer.add(cinvrec.writeToBuffer());
         });
       });

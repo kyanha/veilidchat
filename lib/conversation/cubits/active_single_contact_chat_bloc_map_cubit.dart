@@ -28,7 +28,6 @@ class _SingleContactChatState extends Equatable {
   final TypedKey remoteMessagesRecordKey;
 
   @override
-  // TODO: implement props
   List<Object?> get props => [
         remoteIdentityPublicKey,
         localConversationRecordKey,

@@ -14,7 +14,6 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../proto/proto.dart' as proto;
-import '../../tools/tools.dart';
 
 const _sfUpdateAccountChange = 'updateAccountChange';
 
@@ -116,7 +115,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     final accountRecordKey = _accountInfo.accountRecordKey;
     final writer = _accountInfo.identityWriter;
 
-    // Open with SMPL scheme for identity writer
+    // Open with SMPL schema for identity writer
     late final DHTRecord localConversationRecord;
     if (existingConversationRecordKey != null) {
       localConversationRecord = await pool.openRecordWrite(
@@ -169,57 +168,6 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     await _setLocalConversation(() async => localConversationRecord);
 
     return out;
-  }
-
-  /// Delete the conversation keys associated with this conversation
-  Future<bool> delete() async {
-    final pool = DHTRecordPool.instance;
-
-    await _initWait();
-    final localConversationCubit = _localConversationCubit;
-    final remoteConversationCubit = _remoteConversationCubit;
-
-    final deleteSet = DelayedWaitSet<void>();
-
-    if (localConversationCubit != null) {
-      final data = localConversationCubit.state.asData;
-      if (data == null) {
-        log.warning('could not delete local conversation');
-        return false;
-      }
-
-      deleteSet.add(() async {
-        _localConversationCubit = null;
-        await localConversationCubit.close();
-        final conversation = data.value;
-        final messagesKey = conversation.messages.toVeilid();
-        await pool.deleteRecord(messagesKey);
-        await pool.deleteRecord(_localConversationRecordKey!);
-        _localConversationRecordKey = null;
-      });
-    }
-
-    if (remoteConversationCubit != null) {
-      final data = remoteConversationCubit.state.asData;
-      if (data == null) {
-        log.warning('could not delete remote conversation');
-        return false;
-      }
-
-      deleteSet.add(() async {
-        _remoteConversationCubit = null;
-        await remoteConversationCubit.close();
-        final conversation = data.value;
-        final messagesKey = conversation.messages.toVeilid();
-        await pool.deleteRecord(messagesKey);
-        await pool.deleteRecord(_remoteConversationRecordKey!);
-      });
-    }
-
-    // Commit the delete futures
-    await deleteSet();
-
-    return true;
   }
 
   /// Force refresh of conversation keys
