@@ -89,9 +89,11 @@ class ScaleScheme extends ThemeExtension<ScaleScheme> {
         onError: errorScale.primaryText,
         // errorContainer: errorScale.hoverElementBackground,
         // onErrorContainer: errorScale.subtleText,
+        background: grayScale.appBackground, // reviewed
+        onBackground: grayScale.appText, // reviewed
         surface: primaryScale.primary, // reviewed
         onSurface: primaryScale.primaryText, // reviewed
-        surfaceContainerHighest: secondaryScale.primary,
+        surfaceVariant: secondaryScale.primary,
         onSurfaceVariant: secondaryScale.primaryText, // ?? reviewed a little
         outline: primaryScale.border,
         outlineVariant: secondaryScale.border,
