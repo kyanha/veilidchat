@@ -198,6 +198,7 @@
         "title": "Developer Logs",
         "command": "Command",
         "copied": "Selection copied",
+        "copied_all": "Copied all content",
         "cleared": "Logs cleared",
         "are_you_sure_clear": "Are you sure you want to clear the logs?"
     },

@@ -127,6 +127,14 @@ class _DeveloperPageState extends State<DeveloperPage> {
     }
   }
 
+  Future<void> copyAll(BuildContext context) async {
+    final text = globalDebugTerminal.buffer.getText();
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      showInfoToast(context, translate('developer.copied_all'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -157,6 +165,13 @@ class _DeveloperPageState extends State<DeveloperPage> {
                     : () async {
                         await copySelection(context);
                       }),
+            IconButton(
+                icon: const Icon(Icons.copy_all),
+                color: scale.primaryScale.primaryText,
+                disabledColor: scale.primaryScale.primaryText.withAlpha(0x3F),
+                onPressed: () async {
+                  await copyAll(context);
+                }),
             IconButton(
                 icon: const Icon(Icons.clear_all),
                 color: scale.primaryScale.primaryText,
@@ -243,54 +258,60 @@ class _DeveloperPageState extends State<DeveloperPage> {
             ).paddingLTRB(0, 0, 8, 0)
           ],
         ),
-        body: SafeArea(
-            child: Column(children: [
-          Stack(alignment: AlignmentDirectional.center, children: [
-            Image.asset('assets/images/ellet.png'),
-            TerminalView(globalDebugTerminal,
-                textStyle: kDefaultTerminalStyle,
-                controller: _terminalController,
-                //autofocus: true,
-                backgroundOpacity: _showEllet ? 0.75 : 1.0,
-                onSecondaryTapDown: (details, offset) async {
-              await copySelection(context);
-            })
-          ]).expanded(),
-          TextField(
-            controller: _debugCommandController,
-            decoration: InputDecoration(
-                filled: true,
-                contentPadding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                fillColor: scale.primaryScale.subtleBackground,
-                hintText: translate('developer.command'),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.send,
-                      color: _debugCommandController.text.isEmpty
-                          ? scale.primaryScale.primary.withAlpha(0x3F)
-                          : scale.primaryScale.primary),
-                  onPressed: _debugCommandController.text.isEmpty
-                      ? null
-                      : () async {
-                          final debugCommand = _debugCommandController.text;
-                          _debugCommandController.clear();
-                          await _sendDebugCommand(debugCommand);
-                        },
-                )),
-            onChanged: (_) {
-              setState(() => {});
-            },
-            onSubmitted: (debugCommand) async {
-              _debugCommandController.clear();
-              await _sendDebugCommand(debugCommand);
-            },
-          ).paddingAll(4)
-        ])));
+        body: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: SafeArea(
+                child: Column(children: [
+              Stack(alignment: AlignmentDirectional.center, children: [
+                Image.asset('assets/images/ellet.png'),
+                TerminalView(globalDebugTerminal,
+                    textStyle: kDefaultTerminalStyle,
+                    controller: _terminalController,
+                    keyboardType: TextInputType.none,
+                    //autofocus: true,
+                    backgroundOpacity: _showEllet ? 0.75 : 1.0,
+                    onSecondaryTapDown: (details, offset) async {
+                  await copySelection(context);
+                })
+              ]).expanded(),
+              TextField(
+                controller: _debugCommandController,
+                onTapOutside: (event) {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                decoration: InputDecoration(
+                    filled: true,
+                    contentPadding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    fillColor: scale.primaryScale.subtleBackground,
+                    hintText: translate('developer.command'),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.send,
+                          color: _debugCommandController.text.isEmpty
+                              ? scale.primaryScale.primary.withAlpha(0x3F)
+                              : scale.primaryScale.primary),
+                      onPressed: _debugCommandController.text.isEmpty
+                          ? null
+                          : () async {
+                              final debugCommand = _debugCommandController.text;
+                              _debugCommandController.clear();
+                              await _sendDebugCommand(debugCommand);
+                            },
+                    )),
+                onChanged: (_) {
+                  setState(() => {});
+                },
+                onSubmitted: (debugCommand) async {
+                  _debugCommandController.clear();
+                  await _sendDebugCommand(debugCommand);
+                },
+              ).paddingAll(4)
+            ]))));
   }
 
   @override
