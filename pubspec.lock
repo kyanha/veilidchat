@@ -17,6 +17,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.4.1"
+  animated_switcher_transitions:
+    dependency: "direct main"
+    description:
+      name: animated_switcher_transitions
+      sha256: "0f3ef1b46ab3f0b5efe784dcff55bbeabdc75a3b9bcbefbf2315468c9cec87c3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   animated_theme_switcher:
     dependency: "direct main"
     description:
@@ -1399,6 +1407,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  transitioned_indexed_stack:
+    dependency: "direct main"
+    description:
+      name: transitioned_indexed_stack
+      sha256: "8023abb5efe72e6d40cc3775fb03d7504c32ac918ec2ce7f9ba6804753820259"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   typed_data:
     dependency: transitive
     description:

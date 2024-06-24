@@ -8,6 +8,7 @@ environment:
   flutter: '>=3.22.1'
 
 dependencies:
+  animated_switcher_transitions: ^1.0.0
   animated_theme_switcher: ^2.0.10
   ansicolor: ^2.0.2
   archive: ^3.6.1
@@ -83,6 +84,7 @@ dependencies:
   stack_trace: ^1.11.1
   stream_transform: ^2.1.0
   stylish_bottom_bar: ^1.1.0
+  transitioned_indexed_stack: ^1.0.2
   uuid: ^4.4.0
   veilid:
     #   veilid: ^0.0.1

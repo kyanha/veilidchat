@@ -28,25 +28,6 @@ class MainPager extends StatefulWidget {
 class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
   //////////////////////////////////////////////////////////////////
 
-  var _currentPage = 0;
-  final pageController = PreloadPageController();
-
-  final _selectedIconList = <IconData>[Icons.person, Icons.chat];
-  // final _unselectedIconList = <IconData>[
-  //   Icons.chat_outlined,
-  //   Icons.person_outlined
-  // ];
-  final _fabIconList = <IconData>[
-    Icons.person_add_sharp,
-    Icons.add_comment_sharp,
-  ];
-  final _bottomLabelList = <String>[
-    translate('pager.contacts'),
-    translate('pager.chats'),
-  ];
-
-  //////////////////////////////////////////////////////////////////
-
   @override
   void initState() {
     super.initState();
@@ -124,10 +105,10 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
   }
 
   Widget _bottomSheetBuilder(BuildContext sheetContext, BuildContext context) {
-    if (_currentPage == 0) {
+    if (currentPage == 0) {
       // New contact invitation
       return newContactBottomSheetBuilder(sheetContext, context);
-    } else if (_currentPage == 1) {
+    } else if (currentPage == 1) {
       // New chat
       return newChatBottomSheetBuilder(sheetContext, context);
     } else {
@@ -148,11 +129,12 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
       body: NotificationListener<ScrollNotification>(
           onNotification: onScrollNotification,
           child: PreloadPageView(
+              key: _pageViewKey,
               controller: pageController,
               preloadPagesCount: 2,
               onPageChanged: (index) {
                 setState(() {
-                  _currentPage = index;
+                  currentPage = index;
                 });
               },
               children: const [
@@ -176,7 +158,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
         items: _buildBottomBarItems(),
         hasNotch: true,
         fabLocation: StylishBarFabLocation.end,
-        currentIndex: _currentPage,
+        currentIndex: currentPage,
         onTap: (index) async {
           await pageController.animateToPage(index,
               duration: 250.ms, curve: Curves.easeInOut);
@@ -189,7 +171,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
           foregroundColor: scale.secondaryScale.borderText,
           backgroundColor: scale.secondaryScale.hoverBorder,
           builder: (context) => Icon(
-                _fabIconList[_currentPage],
+                _fabIconList[currentPage],
                 color: scale.secondaryScale.borderText,
               ),
           bottomSheetBuilder: (sheetContext) =>
@@ -198,10 +180,33 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
     );
   }
 
+  //////////////////////////////////////////////////////////////////
+
+  final _selectedIconList = <IconData>[Icons.person, Icons.chat];
+  // final _unselectedIconList = <IconData>[
+  //   Icons.chat_outlined,
+  //   Icons.person_outlined
+  // ];
+  final _fabIconList = <IconData>[
+    Icons.person_add_sharp,
+    Icons.add_comment_sharp,
+  ];
+  final _bottomLabelList = <String>[
+    translate('pager.contacts'),
+    translate('pager.chats'),
+  ];
+  final _pageViewKey = GlobalKey(debugLabel: '_pageViewKey');
+
+  // key-accessible controller
+  int currentPage = 0;
+  final pageController = PreloadPageController();
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<PreloadPageController>(
-        'pageController', pageController));
+    properties
+      ..add(IntProperty('currentPage', currentPage))
+      ..add(DiagnosticsProperty<PreloadPageController>(
+          'pageController', pageController));
   }
 }

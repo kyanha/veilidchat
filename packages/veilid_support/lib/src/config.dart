@@ -2,6 +2,12 @@ import 'dart:io' show Platform;
 
 import 'package:veilid/veilid.dart';
 
+// ignore: do_not_use_environment
+const bool _kReleaseMode = bool.fromEnvironment('dart.vm.product');
+// ignore: do_not_use_environment
+const bool _kProfileMode = bool.fromEnvironment('dart.vm.profile');
+const bool _kDebugMode = !_kReleaseMode && !_kProfileMode;
+
 Map<String, dynamic> getDefaultVeilidPlatformConfig(
     bool isWeb, String appName) {
   final ignoreLogTargetsStr =
@@ -16,7 +22,9 @@ Map<String, dynamic> getDefaultVeilidPlatformConfig(
             logging: VeilidWASMConfigLogging(
                 performance: VeilidWASMConfigLoggingPerformance(
                     enabled: true,
-                    level: VeilidConfigLogLevel.debug,
+                    level: _kDebugMode
+                        ? VeilidConfigLogLevel.debug
+                        : VeilidConfigLogLevel.info,
                     logsInTimings: true,
                     logsInConsole: false,
                     ignoreLogTargets: ignoreLogTargets),
@@ -29,8 +37,11 @@ Map<String, dynamic> getDefaultVeilidPlatformConfig(
   return VeilidFFIConfig(
           logging: VeilidFFIConfigLogging(
               terminal: VeilidFFIConfigLoggingTerminal(
-                  enabled: false,
-                  level: VeilidConfigLogLevel.debug,
+                  enabled:
+                      _kDebugMode && (Platform.isIOS || Platform.isAndroid),
+                  level: _kDebugMode
+                      ? VeilidConfigLogLevel.debug
+                      : VeilidConfigLogLevel.info,
                   ignoreLogTargets: ignoreLogTargets),
               otlp: VeilidFFIConfigLoggingOtlp(
                   enabled: false,

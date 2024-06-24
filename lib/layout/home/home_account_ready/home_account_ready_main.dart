@@ -1,4 +1,5 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -35,27 +36,32 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
         final theme = Theme.of(context);
         final scale = theme.extension<ScaleScheme>()!;
 
-        return Column(children: <Widget>[
-          Row(children: [
-            IconButton(
-                icon: const Icon(Icons.menu),
-                color: scale.secondaryScale.borderText,
-                constraints: const BoxConstraints.expand(height: 64, width: 64),
-                style: ButtonStyle(
-                    backgroundColor:
-                        WidgetStateProperty.all(scale.primaryScale.hoverBorder),
-                    shape: WidgetStateProperty.all(const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(16))))),
-                tooltip: translate('menu.settings_tooltip'),
-                onPressed: () async {
-                  final ctrl = context.read<ZoomDrawerController>();
-                  await ctrl.toggle?.call();
-                  //await GoRouterHelper(context).push('/settings');
-                }).paddingLTRB(0, 0, 8, 0),
-            ProfileWidget(profile: profile).expanded(),
-          ]).paddingAll(8),
-          const MainPager().expanded()
-        ]);
+        return ColoredBox(
+            color: scale.primaryScale.subtleBorder,
+            child: Column(children: <Widget>[
+              Row(children: [
+                IconButton(
+                    icon: const Icon(Icons.menu),
+                    color: scale.secondaryScale.borderText,
+                    constraints:
+                        const BoxConstraints.expand(height: 64, width: 64),
+                    style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(
+                            scale.primaryScale.hoverBorder),
+                        shape: WidgetStateProperty.all(
+                            const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16))))),
+                    tooltip: translate('menu.settings_tooltip'),
+                    onPressed: () async {
+                      final ctrl = context.read<ZoomDrawerController>();
+                      await ctrl.toggle?.call();
+                      //await GoRouterHelper(context).push('/settings');
+                    }).paddingLTRB(0, 0, 8, 0),
+                ProfileWidget(profile: profile).expanded(),
+              ]).paddingAll(8),
+              MainPager(key: _mainPagerKey).expanded()
+            ]));
       });
 
   Widget buildPhone(BuildContext context) =>
@@ -107,4 +113,7 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
       )
           ? buildTablet(context)
           : buildPhone(context);
+
+  ////////////////////////////////////////////////////////////////////////////
+  final _mainPagerKey = GlobalKey(debugLabel: '_mainPagerKey');
 }

@@ -1,16 +1,16 @@
 import 'dart:math';
 
-import 'package:async_tools/async_tools.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:provider/provider.dart';
+import 'package:transitioned_indexed_stack/transitioned_indexed_stack.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
-import 'active_account_page_controller_wrapper.dart';
 import 'drawer_menu/drawer_menu.dart';
 import 'home_account_invalid.dart';
 import 'home_account_locked.dart';
@@ -23,34 +23,71 @@ class HomeScreen extends StatefulWidget {
 
   @override
   HomeScreenState createState() => HomeScreenState();
+
+  static HomeScreenState? of(BuildContext context) =>
+      context.findAncestorStateOfType<HomeScreenState>();
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   @override
   void initState() {
+    // Chat animation setup (open in phone mode)
+    _chatAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _chatAnimation = Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _chatAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Account animation setup
+
     super.initState();
   }
 
   @override
   void dispose() {
+    _chatAnimationController.dispose();
     super.dispose();
   }
 
   Widget _buildAccountReadyDeviceSpecific(BuildContext context) {
-    final hasActiveChat = context.watch<ActiveChatCubit>().state != null;
     if (responsiveVisibility(
         context: context,
         tablet: false,
         tabletLandscape: false,
         desktop: false)) {
-      if (hasActiveChat) {
-        return const HomeAccountReadyChat();
-      }
+      return BlocConsumer<ActiveChatCubit, TypedKey?>(
+          listener: (context, activeChat) {
+            final hasActiveChat = activeChat != null;
+            if (hasActiveChat) {
+              _chatAnimationController.forward();
+            } else {
+              _chatAnimationController.reset();
+            }
+          },
+          builder: (context, activeChat) => Stack(
+                children: <Widget>[
+                  const HomeAccountReadyMain(),
+                  Offstage(
+                      offstage: activeChat == null,
+                      child: SlideTransition(
+                          position: _chatAnimation,
+                          child: const HomeAccountReadyChat())),
+                ],
+              ));
     }
     return const HomeAccountReadyMain();
   }
 
-  Widget _buildAccount(BuildContext context, TypedKey superIdentityRecordKey,
+  Widget _buildAccountPage(
+      BuildContext context,
+      TypedKey superIdentityRecordKey,
       PerAccountCollectionState perAccountCollectionState) {
     switch (perAccountCollectionState.accountInfo.status) {
       case AccountInfoStatus.accountInvalid:
@@ -81,38 +118,25 @@ class HomeScreenState extends State<HomeScreen> {
       return const HomeNoActive();
     }
 
-    return Provider<ActiveAccountPageControllerWrapper>(
-        lazy: false,
-        create: (context) =>
-            ActiveAccountPageControllerWrapper(context.read, activeIndex),
-        dispose: (context, value) {
-          value.dispose();
-        },
-        child: Builder(
-            builder: (context) => PageView.builder(
-                onPageChanged: (idx) {
-                  singleFuture(this, () async {
-                    await AccountRepository.instance.switchToAccount(
-                        localAccounts[idx].superIdentity.recordKey);
-                  });
-                },
-                controller: context
-                    .read<ActiveAccountPageControllerWrapper>()
-                    .pageController,
-                itemCount: localAccounts.length,
-                itemBuilder: (context, index) {
-                  final superIdentityRecordKey =
-                      localAccounts[index].superIdentity.recordKey;
-                  final perAccountCollectionState =
-                      perAccountCollectionBlocMapState
-                          .get(superIdentityRecordKey);
-                  if (perAccountCollectionState == null) {
-                    return HomeAccountMissing(
-                        key: ValueKey(superIdentityRecordKey));
-                  }
-                  return _buildAccount(context, superIdentityRecordKey,
-                      perAccountCollectionState);
-                })));
+    final accountPages = <Widget>[];
+
+    for (var i = 0; i < localAccounts.length; i++) {
+      final superIdentityRecordKey = localAccounts[i].superIdentity.recordKey;
+      final perAccountCollectionState =
+          perAccountCollectionBlocMapState.get(superIdentityRecordKey);
+      if (perAccountCollectionState == null) {
+        return HomeAccountMissing(key: ValueKey(superIdentityRecordKey));
+      }
+      final accountPage = _buildAccountPage(
+          context, superIdentityRecordKey, perAccountCollectionState);
+      accountPages.add(KeyedSubtree.wrap(accountPage, i));
+    }
+
+    return SlideIndexedStack(
+      index: activeIndex,
+      beginSlideOffset: const Offset(1, 0),
+      children: accountPages,
+    );
   }
 
   @override
@@ -134,15 +158,20 @@ class HomeScreenState extends State<HomeScreen> {
             child: ZoomDrawer(
               controller: _zoomDrawerController,
               //menuBackgroundColor: Colors.transparent,
-              menuScreen: const DrawerMenu(),
-              mainScreen: DecoratedBox(
-                  decoration: BoxDecoration(
-                      color: scale.primaryScale.activeElementBackground),
-                  child: Provider<ZoomDrawerController>.value(
-                      value: _zoomDrawerController,
-                      child: Builder(builder: _buildAccountPageView))),
+              menuScreen: Builder(builder: (context) {
+                final zoomDrawer = ZoomDrawer.of(context);
+                zoomDrawer!.stateNotifier.addListener(() {
+                  if (zoomDrawer.isOpen()) {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                  }
+                });
+                return const DrawerMenu();
+              }),
+              mainScreen: Provider<ZoomDrawerController>.value(
+                  value: _zoomDrawerController,
+                  child: Builder(builder: _buildAccountPageView)),
               borderRadius: 24,
-              showShadow: true,
+              //showShadow: false,
               angle: 0,
               drawerShadowsBackgroundColor: theme.shadowColor,
               mainScreenOverlayColor: theme.shadowColor.withAlpha(0x3F),
@@ -151,10 +180,15 @@ class HomeScreenState extends State<HomeScreen> {
               // reverseDuration: const Duration(milliseconds: 250),
               menuScreenTapClose: true,
               mainScreenTapClose: true,
+              //disableDragGesture: false,
               mainScreenScale: .25,
               slideWidth: min(360, MediaQuery.of(context).size.width * 0.9),
             )));
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+
   final _zoomDrawerController = ZoomDrawerController();
+  late final Animation<Offset> _chatAnimation;
+  late final AnimationController _chatAnimationController;
 }
