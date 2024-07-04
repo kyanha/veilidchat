@@ -52,6 +52,43 @@ class _NewAccountPageState extends State<NewAccountPage> {
         onSubmit: !canSubmit ? null : onSubmit);
   }
 
+  Future<void> _onSubmit(GlobalKey<FormBuilderState> formKey) async {
+    // dismiss the keyboard by unfocusing the textfield
+    FocusScope.of(context).unfocus();
+
+    try {
+      final name = formKey
+          .currentState!.fields[EditProfileForm.formFieldName]!.value as String;
+      final pronouns = formKey.currentState!
+              .fields[EditProfileForm.formFieldPronouns]!.value as String? ??
+          '';
+      final newProfile = proto.Profile()
+        ..name = name
+        ..pronouns = pronouns;
+
+      setState(() {
+        _isInAsyncCall = true;
+      });
+      try {
+        final superSecret = await AccountRepository.instance
+            .createWithNewSuperIdentity(newProfile);
+        GoRouterHelper(context)
+            .pushReplacement('/new_account/recovery_key', extra: superSecret);
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isInAsyncCall = false;
+          });
+        }
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        await showErrorModal(
+            context, translate('new_account_page.error'), 'Exception: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final displayModalHUD = _isInAsyncCall;
@@ -79,45 +116,7 @@ class _NewAccountPageState extends State<NewAccountPage> {
           ]),
       body: _newAccountForm(
         context,
-        onSubmit: (formKey) async {
-          // dismiss the keyboard by unfocusing the textfield
-          FocusScope.of(context).unfocus();
-
-          try {
-            final name = formKey.currentState!
-                .fields[EditProfileForm.formFieldName]!.value as String;
-            final pronouns = formKey
-                    .currentState!
-                    .fields[EditProfileForm.formFieldPronouns]!
-                    .value as String? ??
-                '';
-            final newProfile = proto.Profile()
-              ..name = name
-              ..pronouns = pronouns;
-
-            setState(() {
-              _isInAsyncCall = true;
-            });
-            try {
-              final superSecret = await AccountRepository.instance
-                  .createWithNewSuperIdentity(newProfile);
-              GoRouterHelper(context).pushReplacement(
-                  '/new_account/recovery_key',
-                  extra: superSecret);
-            } finally {
-              if (mounted) {
-                setState(() {
-                  _isInAsyncCall = false;
-                });
-              }
-            }
-          } on Exception catch (e) {
-            if (context.mounted) {
-              await showErrorModal(context, translate('new_account_page.error'),
-                  'Exception: $e');
-            }
-          }
-        },
+        onSubmit: _onSubmit,
       ).paddingSymmetric(horizontal: 24, vertical: 8),
     ).withModalHUD(context, displayModalHUD);
   }

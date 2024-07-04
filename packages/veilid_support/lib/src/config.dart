@@ -1,5 +1,7 @@
 import 'dart:io' show Platform;
 
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:veilid/veilid.dart';
 
 // ignore: do_not_use_environment
@@ -8,14 +10,24 @@ const bool _kReleaseMode = bool.fromEnvironment('dart.vm.product');
 const bool _kProfileMode = bool.fromEnvironment('dart.vm.profile');
 const bool _kDebugMode = !_kReleaseMode && !_kProfileMode;
 
-Map<String, dynamic> getDefaultVeilidPlatformConfig(
-    bool isWeb, String appName) {
+Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
+    bool isWeb, String appName) async {
   final ignoreLogTargetsStr =
       // ignore: do_not_use_environment
       const String.fromEnvironment('IGNORE_LOG_TARGETS').trim();
   final ignoreLogTargets = ignoreLogTargetsStr.isEmpty
       ? <String>[]
       : ignoreLogTargetsStr.split(',').map((e) => e.trim()).toList();
+
+  // ignore: do_not_use_environment
+  var flamePathStr = const String.fromEnvironment('FLAME').trim();
+  if (flamePathStr == '1') {
+    flamePathStr = p.join(
+        (await getApplicationSupportDirectory()).absolute.path,
+        '$appName.folded');
+    // ignore: avoid_print
+    print('Flame data logged to $flamePathStr');
+  }
 
   if (isWeb) {
     return VeilidWASMConfig(
@@ -52,7 +64,9 @@ Map<String, dynamic> getDefaultVeilidPlatformConfig(
               api: VeilidFFIConfigLoggingApi(
                   enabled: true,
                   level: VeilidConfigLogLevel.info,
-                  ignoreLogTargets: ignoreLogTargets)))
+                  ignoreLogTargets: ignoreLogTargets),
+              flame: VeilidFFIConfigLoggingFlame(
+                  enabled: flamePathStr.isNotEmpty, path: flamePathStr)))
       .toJson();
 }
 

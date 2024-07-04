@@ -69,6 +69,7 @@ class RouterCubit extends Cubit<RouterState> {
             return EditAccountPage(
               superIdentityRecordKey: extra[0]! as TypedKey,
               existingProfile: extra[1]! as proto.Profile,
+              accountRecord: extra[2]! as OwnedDHTRecordPointer,
             );
           },
         ),

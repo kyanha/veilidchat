@@ -37,11 +37,17 @@
         "pronouns": "Pronouns",
         "remove_account": "Remove Account",
         "delete_identity": "Delete Identity",
-        "remove_account_confirm": "Confirm Account Removal?",
+        "remove_account_confirm": "Confirm Account Removal",
         "remove_account_description": "Remove account from this device only",
-        "delete_identity_description": "Delete identity and all messages completely",
-        "delete_identity_confirm_message": "This action is PERMANENT, and your identity will no longer be recoverable with the recovery key. This will not remove your messages you have sent from other people's devices.",
-        "confirm_are_you_sure": "Are you sure you want to do this?"
+        "remove_account_confirm_message": " • Your account will be removed from this device ONLY\n • Your identity will remain recoverable with the recovery key\n • Your messages and contacts will remain available on other devices\n",
+        "delete_identity_description": "Delete identity from all devices everywhere",
+        "delete_identity_confirm_message": "This action is PERMANENT, and your identity will no longer be recoverable with the recovery key. Restoring from backups will not recover your account!",
+        "delete_identity_confirm_message_details": "You will lose access to:\n • Your entire message history\n • Your contacts\n • This will not remove your messages you have sent from other people's devices\n",
+        "confirm_are_you_sure": "Are you sure you want to do this?",
+        "failed_to_remove": "Failed to remove account.\n\nTry again when you have a more stable network connection.",
+        "failed_to_delete": "Failed to delete identity.\n\nTry again when you have a more stable network connection.",
+        "account_removed": "Account removed successfully",
+        "identity_deleted": "Identity deleted successfully"
     },
     "show_recovery_key_page": {
         "titlebar": "Save Recovery Key",
@@ -58,6 +64,8 @@
         "accept": "Accept",
         "reject": "Reject",
         "finish": "Finish",
+        "yes_proceed": "Yes, proceed",
+        "no_cancel": "No, cancel",
         "waiting_for_network": "Waiting For Network"
     },
     "toast": {

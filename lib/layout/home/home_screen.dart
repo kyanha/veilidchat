@@ -45,8 +45,20 @@ class HomeScreenState extends State<HomeScreen>
       curve: Curves.easeInOut,
     ));
 
-    // Account animation setup
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final localAccounts = context.read<LocalAccountsCubit>().state;
+      final activeLocalAccount = context.read<ActiveLocalAccountCubit>().state;
+      final activeIndex = localAccounts
+          .indexWhere((x) => x.superIdentity.recordKey == activeLocalAccount);
+      final canClose = activeIndex != -1;
 
+      await changeWindowSetup(
+          TitleBarStyle.normal, OrientationCapability.normal);
+
+      if (!canClose) {
+        await _zoomDrawerController.open!();
+      }
+    });
     super.initState();
   }
 
@@ -152,6 +164,12 @@ class HomeScreenState extends State<HomeScreen>
           scale.tertiaryScale.appBackground,
         ]);
 
+    final localAccounts = context.watch<LocalAccountsCubit>().state;
+    final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
+    final activeIndex = localAccounts
+        .indexWhere((x) => x.superIdentity.recordKey == activeLocalAccount);
+    final canClose = activeIndex != -1;
+
     return SafeArea(
         child: DecoratedBox(
             decoration: BoxDecoration(gradient: gradient),
@@ -178,9 +196,9 @@ class HomeScreenState extends State<HomeScreen>
               openCurve: Curves.fastEaseInToSlowEaseOut,
               // duration: const Duration(milliseconds: 250),
               // reverseDuration: const Duration(milliseconds: 250),
-              menuScreenTapClose: true,
-              mainScreenTapClose: true,
-              //disableDragGesture: false,
+              menuScreenTapClose: canClose,
+              mainScreenTapClose: canClose,
+              disableDragGesture: !canClose,
               mainScreenScale: .25,
               slideWidth: min(360, MediaQuery.of(context).size.width * 0.9),
             )));

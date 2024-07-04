@@ -23,11 +23,6 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.normal);
-    });
   }
 
   Widget buildUserPanel() => Builder(builder: (context) {

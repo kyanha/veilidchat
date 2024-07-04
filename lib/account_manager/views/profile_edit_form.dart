@@ -99,9 +99,13 @@ class _EditProfileFormState extends State<EditProfileForm> {
                         await widget.onSubmit!(_formKey);
                       }
                     },
-              child: Text((widget.onSubmit == null)
-                  ? widget.submitDisabledText
-                  : widget.submitText),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
+                Text((widget.onSubmit == null)
+                        ? widget.submitDisabledText
+                        : widget.submitText)
+                    .paddingLTRB(0, 0, 4, 0)
+              ]),
             ).paddingSymmetric(vertical: 4).alignAtCenterRight(),
           ],
         ),

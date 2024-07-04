@@ -15,7 +15,7 @@ class VeilidChatGlobalInit {
   Future<void> _initializeVeilid() async {
     // Init Veilid
     Veilid.instance.initializeVeilidCore(
-        getDefaultVeilidPlatformConfig(kIsWeb, VeilidChatApp.name));
+        await getDefaultVeilidPlatformConfig(kIsWeb, VeilidChatApp.name));
 
     // Veilid logging
     initVeilidLog(kDebugMode);

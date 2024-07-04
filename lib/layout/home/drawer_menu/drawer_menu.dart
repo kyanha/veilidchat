@@ -39,11 +39,11 @@ class _DrawerMenuState extends State<DrawerMenu> {
     });
   }
 
-  void _doEditClick(
-      TypedKey superIdentityRecordKey, proto.Profile existingProfile) {
+  void _doEditClick(TypedKey superIdentityRecordKey,
+      proto.Profile existingProfile, OwnedDHTRecordPointer accountRecord) {
     singleFuture(this, () async {
       await GoRouterHelper(context).push('/edit_account',
-          extra: [superIdentityRecordKey, existingProfile]);
+          extra: [superIdentityRecordKey, existingProfile, accountRecord]);
     });
   }
 
@@ -128,10 +128,10 @@ class _DrawerMenuState extends State<DrawerMenu> {
       final superIdentityRecordKey = la.superIdentity.recordKey;
 
       // See if this account is logged in
-      final avAccountRecordState = perAccountCollectionBlocMapState
-          .get(superIdentityRecordKey)
-          ?.avAccountRecordState;
-      if (avAccountRecordState != null) {
+      final perAccountState =
+          perAccountCollectionBlocMapState.get(superIdentityRecordKey);
+      final avAccountRecordState = perAccountState?.avAccountRecordState;
+      if (perAccountState != null && avAccountRecordState != null) {
         // Account is logged in
         final scale = theme.extension<ScaleScheme>()!.tertiaryScale;
         final loggedInAccount = avAccountRecordState.when(
@@ -144,7 +144,11 @@ class _DrawerMenuState extends State<DrawerMenu> {
                 _doSwitchClick(superIdentityRecordKey);
               },
               footerCallback: () {
-                _doEditClick(superIdentityRecordKey, value.profile);
+                _doEditClick(
+                    superIdentityRecordKey,
+                    value.profile,
+                    perAccountState.accountInfo.userLogin!.accountRecordInfo
+                        .accountRecord);
               }),
           loading: () => _wrapInBox(
               child: buildProgressIndicator(),

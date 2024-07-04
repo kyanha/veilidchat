@@ -168,7 +168,15 @@ class AccountRepository {
   }
 
   /// Remove an account and wipe the messages for this account from this device
-  Future<bool> deleteLocalAccount(TypedKey superIdentityRecordKey) async {
+  Future<bool> deleteLocalAccount(TypedKey superIdentityRecordKey,
+      OwnedDHTRecordPointer? accountRecord) async {
+    // Delete the account record locally which causes a deep delete
+    // of all the contacts, invites, chats, and messages in the dht record
+    // pool
+    if (accountRecord != null) {
+      await DHTRecordPool.instance.deleteRecord(accountRecord.recordKey);
+    }
+
     await logout(superIdentityRecordKey);
 
     final localAccounts = await _localAccounts.get();
@@ -177,8 +185,6 @@ class AccountRepository {
 
     await _localAccounts.set(newLocalAccounts);
     _streamController.add(AccountRepositoryChange.localAccounts);
-
-    // TO DO: wipe messages
 
     return true;
   }
@@ -365,6 +371,11 @@ class AccountRepository {
     if (logoutUser == null) {
       log.error('missing user in logout: $accountMasterRecordKey');
       return;
+    }
+
+    if (logoutUser == activeLocalAccount) {
+      await switchToAccount(
+          _localAccounts.value.firstOrNull?.superIdentity.recordKey);
     }
 
     final logoutUserLogin = fetchUserLogin(logoutUser);

@@ -5,7 +5,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../src/veilid_log.dart';
 import '../veilid_support.dart';
-import 'exceptions.dart';
 
 part 'identity_instance.freezed.dart';
 part 'identity_instance.g.dart';
