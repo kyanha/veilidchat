@@ -483,10 +483,10 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "6712d897e25041de38fb53ec06dc7a12cc6bff7d"
+      resolved-ref: "0d8ac2fcafe24eba1adff9290a9ccd41f7718480"
       url: "https://gitlab.com/veilid/flutter-chat-ui.git"
     source: git
-    version: "1.6.13"
+    version: "1.6.14"
   flutter_form_builder:
     dependency: "direct main"
     description:

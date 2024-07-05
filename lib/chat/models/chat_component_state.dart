@@ -2,7 +2,8 @@ import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' show Message, User;
-import 'package:flutter_chat_ui/flutter_chat_ui.dart' show ChatState;
+import 'package:flutter_chat_ui/flutter_chat_ui.dart'
+    show ChatState, InputTextFieldController;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -19,6 +20,8 @@ class ChatComponentState with _$ChatComponentState {
       required GlobalKey<ChatState> chatKey,
       // ScrollController for the chat
       required AutoScrollController scrollController,
+      // TextEditingController for the chat
+      required InputTextFieldController textEditingController,
       // Local user
       required User? localUser,
       // Active remote users

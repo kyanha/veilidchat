@@ -68,12 +68,12 @@ class IdentityInstance with _$IdentityInstance {
     return cs;
   }
 
-  /// Read the account record info for a specific accountKey from the identity
-  /// instance record using the identity instance secret key to decrypt
+  /// Read the account record info for a specific applicationId from the
+  /// identity instance record using the identity instance secret key to decrypt
   Future<List<AccountRecordInfo>> readAccount(
       {required TypedKey superRecordKey,
       required SecretKey secretKey,
-      required String accountKey}) async {
+      required String applicationId}) async {
     // Read the identity key to get the account keys
     final pool = DHTRecordPool.instance;
 
@@ -91,7 +91,7 @@ class IdentityInstance with _$IdentityInstance {
         throw IdentityException.readError;
       }
       final accountRecords = IMapOfSets.from(identity.accountRecords);
-      final vcAccounts = accountRecords.get(accountKey);
+      final vcAccounts = accountRecords.get(applicationId);
 
       accountRecordInfo = vcAccounts.toList();
     });
@@ -104,7 +104,7 @@ class IdentityInstance with _$IdentityInstance {
   Future<AccountRecordInfo> addAccount({
     required TypedKey superRecordKey,
     required SecretKey secretKey,
-    required String accountKey,
+    required String applicationId,
     required Future<Uint8List> Function(TypedKey parent) createAccountCallback,
     int maxAccounts = 1,
   }) async {
@@ -143,16 +143,72 @@ class IdentityInstance with _$IdentityInstance {
           }
           final oldAccountRecords = IMapOfSets.from(oldIdentity.accountRecords);
 
-          if (oldAccountRecords.get(accountKey).length >= maxAccounts) {
+          if (oldAccountRecords.get(applicationId).length >= maxAccounts) {
             throw IdentityException.limitExceeded;
           }
-          final accountRecords =
-              oldAccountRecords.add(accountKey, newAccountRecordInfo).asIMap();
+          final accountRecords = oldAccountRecords
+              .add(applicationId, newAccountRecordInfo)
+              .asIMap();
           return oldIdentity.copyWith(accountRecords: accountRecords);
         });
 
         return newAccountRecordInfo;
       });
+    });
+  }
+
+  /// Removes an Account associated with super identity from the identity
+  /// instance record. 'removeAccountCallback' returns the account to be
+  /// removed from the list passed to it.
+  Future<bool> removeAccount({
+    required TypedKey superRecordKey,
+    required SecretKey secretKey,
+    required String applicationId,
+    required Future<AccountRecordInfo?> Function(
+            List<AccountRecordInfo> accountRecordInfos)
+        removeAccountCallback,
+  }) async {
+    final pool = DHTRecordPool.instance;
+
+    /////// Add account with profile to DHT
+
+    // Open identity key for writing
+    veilidLoggy.debug('Opening identity record');
+    return (await pool.openRecordWrite(recordKey, writer(secretKey),
+            debugName: 'IdentityInstance::addAccount::IdentityRecord',
+            parent: superRecordKey))
+        .scope((identityRec) async {
+      try {
+        // Update identity key to remove account
+        veilidLoggy.debug('Updating identity to remove account');
+        await identityRec.eventualUpdateJson(Identity.fromJson,
+            (oldIdentity) async {
+          if (oldIdentity == null) {
+            throw IdentityException.readError;
+          }
+          final oldAccountRecords = IMapOfSets.from(oldIdentity.accountRecords);
+
+          // Get list of accounts associated with the application
+          final vcAccounts = oldAccountRecords.get(applicationId);
+          final accountRecordInfos = vcAccounts.toList();
+
+          // Call the callback to return what account to remove
+          final toRemove = await removeAccountCallback(accountRecordInfos);
+          if (toRemove == null) {
+            throw IdentityException.cancelled;
+          }
+          final newAccountRecords =
+              oldAccountRecords.remove(applicationId, toRemove).asIMap();
+
+          return oldIdentity.copyWith(accountRecords: newAccountRecords);
+        });
+      } on IdentityException catch (e) {
+        if (e == IdentityException.cancelled) {
+          return false;
+        }
+        rethrow;
+      }
+      return true;
     });
   }
 

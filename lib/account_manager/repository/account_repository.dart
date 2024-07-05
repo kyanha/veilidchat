@@ -7,7 +7,7 @@ import '../../../proto/proto.dart' as proto;
 import '../../tools/tools.dart';
 import '../models/models.dart';
 
-const String veilidChatAccountKey = 'com.veilid.veilidchat';
+const String veilidChatApplicationId = 'com.veilid.veilidchat';
 
 enum AccountRepositoryChange { localAccounts, userLogins, activeLocalAccount }
 
@@ -194,6 +194,33 @@ class AccountRepository {
   /// Recover an account with the master identity secret
 
   /// Delete an account from all devices
+  Future<bool> destroyAccount(TypedKey superIdentityRecordKey,
+      OwnedDHTRecordPointer accountRecord) async {
+    // Get which local account we want to fetch the profile for
+    final localAccount = fetchLocalAccount(superIdentityRecordKey);
+    if (localAccount == null) {
+      return false;
+    }
+
+    // See if we've logged into this account or if it is locked
+    final userLogin = fetchUserLogin(superIdentityRecordKey);
+    if (userLogin == null) {
+      return false;
+    }
+
+    final success = await localAccount.superIdentity.currentInstance
+        .removeAccount(
+            superRecordKey: localAccount.superIdentity.recordKey,
+            secretKey: userLogin.identitySecret.value,
+            applicationId: veilidChatApplicationId,
+            removeAccountCallback: (accountRecordInfos) async =>
+                accountRecordInfos.singleOrNull);
+    if (!success) {
+      return false;
+    }
+
+    return deleteLocalAccount(superIdentityRecordKey, accountRecord);
+  }
 
   Future<void> switchToAccount(TypedKey? superIdentityRecordKey) async {
     final activeLocalAccount = await _activeLocalAccount.get();
@@ -231,7 +258,7 @@ class AccountRepository {
     await superIdentity.currentInstance.addAccount(
         superRecordKey: superIdentity.recordKey,
         secretKey: identitySecret,
-        accountKey: veilidChatAccountKey,
+        applicationId: veilidChatApplicationId,
         createAccountCallback: (parent) async {
           // Make empty contact list
           log.debug('Creating contacts list');
@@ -305,7 +332,7 @@ class AccountRepository {
         .readAccount(
             superRecordKey: superIdentity.recordKey,
             secretKey: identitySecret,
-            accountKey: veilidChatAccountKey);
+            applicationId: veilidChatApplicationId);
     if (accountRecordInfoList.length > 1) {
       throw IdentityException.limitExceeded;
     } else if (accountRecordInfoList.isEmpty) {

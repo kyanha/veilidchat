@@ -134,8 +134,70 @@ class _EditAccountPageState extends State<EditAccountPage> {
     }
   }
 
-  Future<void> _onDeleteIdentity() async {
-    //
+  Future<void> _onDestroyAccount() async {
+    final confirmed = await StyledDialog.show<bool>(
+        context: context,
+        title: translate('edit_account_page.destroy_account_confirm'),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(translate('edit_account_page.destroy_account_confirm_message'))
+              .paddingLTRB(24, 24, 24, 0),
+          Text(translate(
+                  'edit_account_page.destroy_account_confirm_message_details'))
+              .paddingLTRB(24, 24, 24, 0),
+          Text(translate('edit_account_page.confirm_are_you_sure'))
+              .paddingAll(8),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.cancel, size: 16).paddingLTRB(0, 0, 4, 0),
+                  Text(translate('button.no_cancel')).paddingLTRB(0, 0, 4, 0)
+                ])),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
+                  Text(translate('button.yes_proceed')).paddingLTRB(0, 0, 4, 0)
+                ]))
+          ]).paddingAll(24)
+        ]));
+    if (confirmed != null && confirmed && mounted) {
+      // dismiss the keyboard by unfocusing the textfield
+      FocusScope.of(context).unfocus();
+
+      try {
+        setState(() {
+          _isInAsyncCall = true;
+        });
+        try {
+          final success = await AccountRepository.instance.destroyAccount(
+              widget.superIdentityRecordKey, widget.accountRecord);
+          if (success && mounted) {
+            showInfoToast(
+                context, translate('edit_account_page.account_destroyed'));
+            GoRouterHelper(context).pop();
+          } else if (mounted) {
+            showErrorToast(
+                context, translate('edit_account_page.failed_to_destroy'));
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isInAsyncCall = false;
+            });
+          }
+        }
+      } on Exception catch (e) {
+        if (mounted) {
+          await showErrorModal(
+              context, translate('new_account_page.error'), 'Exception: $e');
+        }
+      }
+    }
   }
 
   Future<void> _onSubmit(GlobalKey<FormBuilderState> formKey) async {
@@ -234,13 +296,13 @@ class _EditAccountPageState extends State<EditAccountPage> {
                     Text(translate('edit_account_page.remove_account'))
                         .paddingLTRB(0, 0, 4, 0)
                   ])).paddingLTRB(0, 8, 0, 24),
-              Text(translate('edit_account_page.delete_identity_description')),
+              Text(translate('edit_account_page.destroy_account_description')),
               ElevatedButton(
-                  onPressed: _onDeleteIdentity,
+                  onPressed: _onDestroyAccount,
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     const Icon(Icons.person_off, size: 16)
                         .paddingLTRB(0, 0, 4, 0),
-                    Text(translate('edit_account_page.delete_identity'))
+                    Text(translate('edit_account_page.destroy_account'))
                         .paddingLTRB(0, 0, 4, 0)
                   ])).paddingLTRB(0, 8, 0, 24)
             ]).paddingSymmetric(horizontal: 24, vertical: 8))

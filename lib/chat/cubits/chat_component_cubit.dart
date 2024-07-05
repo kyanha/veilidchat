@@ -42,6 +42,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
         super(ChatComponentState(
           chatKey: GlobalKey<ChatState>(),
           scrollController: AutoScrollController(),
+          textEditingController: InputTextFieldController(),
           localUser: null,
           remoteUsers: const IMap.empty(),
           historicalRemoteUsers: const IMap.empty(),

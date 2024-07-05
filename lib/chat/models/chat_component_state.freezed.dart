@@ -20,6 +20,8 @@ mixin _$ChatComponentState {
   GlobalKey<ChatState> get chatKey =>
       throw _privateConstructorUsedError; // ScrollController for the chat
   AutoScrollController get scrollController =>
+      throw _privateConstructorUsedError; // TextEditingController for the chat
+  InputTextFieldController get textEditingController =>
       throw _privateConstructorUsedError; // Local user
   User? get localUser =>
       throw _privateConstructorUsedError; // Active remote users
@@ -47,6 +49,7 @@ abstract class $ChatComponentStateCopyWith<$Res> {
   $Res call(
       {GlobalKey<ChatState> chatKey,
       AutoScrollController scrollController,
+      InputTextFieldController textEditingController,
       User? localUser,
       IMap<Typed<FixedEncodedString43>, User> remoteUsers,
       IMap<Typed<FixedEncodedString43>, User> historicalRemoteUsers,
@@ -72,6 +75,7 @@ class _$ChatComponentStateCopyWithImpl<$Res, $Val extends ChatComponentState>
   $Res call({
     Object? chatKey = null,
     Object? scrollController = null,
+    Object? textEditingController = null,
     Object? localUser = freezed,
     Object? remoteUsers = null,
     Object? historicalRemoteUsers = null,
@@ -88,6 +92,10 @@ class _$ChatComponentStateCopyWithImpl<$Res, $Val extends ChatComponentState>
           ? _value.scrollController
           : scrollController // ignore: cast_nullable_to_non_nullable
               as AutoScrollController,
+      textEditingController: null == textEditingController
+          ? _value.textEditingController
+          : textEditingController // ignore: cast_nullable_to_non_nullable
+              as InputTextFieldController,
       localUser: freezed == localUser
           ? _value.localUser
           : localUser // ignore: cast_nullable_to_non_nullable
@@ -136,6 +144,7 @@ abstract class _$$ChatComponentStateImplCopyWith<$Res>
   $Res call(
       {GlobalKey<ChatState> chatKey,
       AutoScrollController scrollController,
+      InputTextFieldController textEditingController,
       User? localUser,
       IMap<Typed<FixedEncodedString43>, User> remoteUsers,
       IMap<Typed<FixedEncodedString43>, User> historicalRemoteUsers,
@@ -160,6 +169,7 @@ class __$$ChatComponentStateImplCopyWithImpl<$Res>
   $Res call({
     Object? chatKey = null,
     Object? scrollController = null,
+    Object? textEditingController = null,
     Object? localUser = freezed,
     Object? remoteUsers = null,
     Object? historicalRemoteUsers = null,
@@ -176,6 +186,10 @@ class __$$ChatComponentStateImplCopyWithImpl<$Res>
           ? _value.scrollController
           : scrollController // ignore: cast_nullable_to_non_nullable
               as AutoScrollController,
+      textEditingController: null == textEditingController
+          ? _value.textEditingController
+          : textEditingController // ignore: cast_nullable_to_non_nullable
+              as InputTextFieldController,
       localUser: freezed == localUser
           ? _value.localUser
           : localUser // ignore: cast_nullable_to_non_nullable
@@ -210,6 +224,7 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
   const _$ChatComponentStateImpl(
       {required this.chatKey,
       required this.scrollController,
+      required this.textEditingController,
       required this.localUser,
       required this.remoteUsers,
       required this.historicalRemoteUsers,
@@ -223,6 +238,9 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
 // ScrollController for the chat
   @override
   final AutoScrollController scrollController;
+// TextEditingController for the chat
+  @override
+  final InputTextFieldController textEditingController;
 // Local user
   @override
   final User? localUser;
@@ -244,7 +262,7 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
 
   @override
   String toString() {
-    return 'ChatComponentState(chatKey: $chatKey, scrollController: $scrollController, localUser: $localUser, remoteUsers: $remoteUsers, historicalRemoteUsers: $historicalRemoteUsers, unknownUsers: $unknownUsers, messageWindow: $messageWindow, title: $title)';
+    return 'ChatComponentState(chatKey: $chatKey, scrollController: $scrollController, textEditingController: $textEditingController, localUser: $localUser, remoteUsers: $remoteUsers, historicalRemoteUsers: $historicalRemoteUsers, unknownUsers: $unknownUsers, messageWindow: $messageWindow, title: $title)';
   }
 
   @override
@@ -255,6 +273,8 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
             (identical(other.chatKey, chatKey) || other.chatKey == chatKey) &&
             (identical(other.scrollController, scrollController) ||
                 other.scrollController == scrollController) &&
+            (identical(other.textEditingController, textEditingController) ||
+                other.textEditingController == textEditingController) &&
             (identical(other.localUser, localUser) ||
                 other.localUser == localUser) &&
             (identical(other.remoteUsers, remoteUsers) ||
@@ -273,6 +293,7 @@ class _$ChatComponentStateImpl implements _ChatComponentState {
       runtimeType,
       chatKey,
       scrollController,
+      textEditingController,
       localUser,
       remoteUsers,
       historicalRemoteUsers,
@@ -292,6 +313,7 @@ abstract class _ChatComponentState implements ChatComponentState {
   const factory _ChatComponentState(
       {required final GlobalKey<ChatState> chatKey,
       required final AutoScrollController scrollController,
+      required final InputTextFieldController textEditingController,
       required final User? localUser,
       required final IMap<Typed<FixedEncodedString43>, User> remoteUsers,
       required final IMap<Typed<FixedEncodedString43>, User>
@@ -304,6 +326,8 @@ abstract class _ChatComponentState implements ChatComponentState {
   GlobalKey<ChatState> get chatKey;
   @override // ScrollController for the chat
   AutoScrollController get scrollController;
+  @override // TextEditingController for the chat
+  InputTextFieldController get textEditingController;
   @override // Local user
   User? get localUser;
   @override // Active remote users

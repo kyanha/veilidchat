@@ -97,11 +97,13 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   // Initialize everything
   Future<void> _init() async {
     _unsentMessagesQueue = PersistentQueue<proto.Message>(
-      table: 'SingleContactUnsentMessages',
-      key: _remoteConversationRecordKey.toString(),
-      fromBuffer: proto.Message.fromBuffer,
-      closure: _processUnsentMessages,
-    );
+        table: 'SingleContactUnsentMessages',
+        key: _remoteConversationRecordKey.toString(),
+        fromBuffer: proto.Message.fromBuffer,
+        closure: _processUnsentMessages,
+        onError: (e, sp) {
+          log.error('Exception while processing unsent messages: $e\n$sp\n');
+        });
 
     // Make crypto
     await _initCrypto();
@@ -297,16 +299,23 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     proto.Message? previousMessage;
     final processedMessages = messages.toList();
     for (final message in processedMessages) {
-      await _processMessageToSend(message, previousMessage);
-      previousMessage = message;
+      try {
+        await _processMessageToSend(message, previousMessage);
+        previousMessage = message;
+      } on Exception catch (e) {
+        log.error('Exception processing unsent message: $e');
+      }
     }
 
     // _sendingMessages = messages;
 
     // _renderState();
-
-    await _sentMessagesCubit!.operateAppendEventual((writer) =>
-        writer.addAll(messages.map((m) => m.writeToBuffer()).toList()));
+    try {
+      await _sentMessagesCubit!.operateAppendEventual((writer) =>
+          writer.addAll(messages.map((m) => m.writeToBuffer()).toList()));
+    } on Exception catch (e) {
+      log.error('Exception appending unsent messages: $e');
+    }
 
     // _sendingMessages = const IList.empty();
   }
@@ -402,6 +411,10 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     message
       ..author = _accountInfo.identityTypedPublicKey.toProto()
       ..timestamp = Veilid.instance.now().toInt64();
+
+    if ((message.writeToBuffer().lengthInBytes + 256) > 4096) {
+      throw const FormatException('message is too long');
+    }
 
     // Put in the queue
     _unsentMessagesQueue.addSync(message);

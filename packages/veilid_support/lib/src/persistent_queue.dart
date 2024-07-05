@@ -15,12 +15,14 @@ class PersistentQueue<T extends GeneratedMessage>
       required String key,
       required T Function(Uint8List) fromBuffer,
       required Future<void> Function(IList<T>) closure,
-      bool deleteOnClose = true})
+      bool deleteOnClose = true,
+      void Function(Object, StackTrace)? onError})
       : _table = table,
         _key = key,
         _fromBuffer = fromBuffer,
         _closure = closure,
-        _deleteOnClose = deleteOnClose {
+        _deleteOnClose = deleteOnClose,
+        _onError = onError {
     _initWait.add(_init);
   }
 
@@ -61,9 +63,17 @@ class PersistentQueue<T extends GeneratedMessage>
     }));
 
     // Load the queue if we have one
-    await _queueMutex.protect(() async {
-      _queue = await load() ?? await store(IList<T>.empty());
-    });
+    try {
+      await _queueMutex.protect(() async {
+        _queue = await load() ?? await store(IList<T>.empty());
+      });
+    } on Exception catch (e, st) {
+      if (_onError != null) {
+        _onError(e, st);
+      } else {
+        rethrow;
+      }
+    }
   }
 
   Future<void> _updateQueueInner(IList<T> newQueue) async {
@@ -132,24 +142,32 @@ class PersistentQueue<T extends GeneratedMessage>
   // }
 
   Future<void> _process() async {
-    // Take a copy of the current queue
-    // (doesn't need queue mutex because this is a sync operation)
-    final toProcess = _queue;
-    final processCount = toProcess.length;
-    if (processCount == 0) {
-      return;
+    try {
+      // Take a copy of the current queue
+      // (doesn't need queue mutex because this is a sync operation)
+      final toProcess = _queue;
+      final processCount = toProcess.length;
+      if (processCount == 0) {
+        return;
+      }
+
+      // Run the processing closure
+      await _closure(toProcess);
+
+      // If there was no exception, remove the processed items
+      await _queueMutex.protect(() async {
+        // Get the queue from the state again as items could
+        // have been added during processing
+        final newQueue = _queue.skip(processCount).toIList();
+        await _updateQueueInner(newQueue);
+      });
+    } on Exception catch (e, sp) {
+      if (_onError != null) {
+        _onError(e, sp);
+      } else {
+        rethrow;
+      }
     }
-
-    // Run the processing closure
-    await _closure(toProcess);
-
-    // If there was no exception, remove the processed items
-    await _queueMutex.protect(() async {
-      // Get the queue from the state again as items could
-      // have been added during processing
-      final newQueue = _queue.skip(processCount).toIList();
-      await _updateQueueInner(newQueue);
-    });
   }
 
   IList<T> get queue => _queue;
@@ -190,4 +208,5 @@ class PersistentQueue<T extends GeneratedMessage>
   final StreamController<Iterable<T>> _syncAddController = StreamController();
   final StreamController<void> _queueReady = StreamController();
   final Future<void> Function(IList<T>) _closure;
+  final void Function(Object, StackTrace)? _onError;
 }
