@@ -5,47 +5,82 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 
 import 'scale_scheme.dart';
 
-ChatTheme makeChatTheme(ScaleScheme scale, TextTheme textTheme) =>
+ChatTheme makeChatTheme(
+        ScaleScheme scale, ScaleConfig scaleConfig, TextTheme textTheme) =>
     DefaultChatTheme(
-        primaryColor: scale.primaryScale.calloutBackground,
-        secondaryColor: scale.secondaryScale.calloutBackground,
+        primaryColor: scaleConfig.preferBorders
+            ? scale.primaryScale.calloutText
+            : scale.primaryScale.calloutBackground,
+        secondaryColor: scaleConfig.preferBorders
+            ? scale.secondaryScale.calloutText
+            : scale.secondaryScale.calloutBackground,
         backgroundColor: scale.grayScale.appBackground,
+        messageBorderRadius: scaleConfig.borderRadiusScale * 16,
+        bubbleBorderSide: scaleConfig.preferBorders
+            ? BorderSide(
+                color: scale.primaryScale.calloutBackground,
+                width: 2,
+              )
+            : null,
         sendButtonIcon: Image.asset(
           'assets/icon-send.png',
-          color: scale.primaryScale.borderText,
+          color: scaleConfig.preferBorders
+              ? scale.primaryScale.border
+              : scale.primaryScale.borderText,
           package: 'flutter_chat_ui',
         ),
         inputBackgroundColor: Colors.blue,
         inputBorderRadius: BorderRadius.zero,
         inputTextDecoration: InputDecoration(
-          filled: true,
-          fillColor: scale.primaryScale.elementBackground,
+          filled: !scaleConfig.preferBorders,
+          fillColor: scale.primaryScale.subtleBackground,
           isDense: true,
           contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-          border: const OutlineInputBorder(
-              borderSide: BorderSide.none,
-              borderRadius: BorderRadius.all(Radius.circular(8))),
-          focusedBorder: const OutlineInputBorder(
-              borderSide: BorderSide.none,
-              borderRadius: BorderRadius.all(Radius.circular(8))),
+          disabledBorder: OutlineInputBorder(
+              borderSide: scaleConfig.preferBorders
+                  ? BorderSide(color: scale.grayScale.border, width: 2)
+                  : BorderSide.none,
+              borderRadius: BorderRadius.all(
+                  Radius.circular(8 * scaleConfig.borderRadiusScale))),
+          enabledBorder: OutlineInputBorder(
+              borderSide: scaleConfig.preferBorders
+                  ? BorderSide(color: scale.primaryScale.border, width: 2)
+                  : BorderSide.none,
+              borderRadius: BorderRadius.all(
+                  Radius.circular(8 * scaleConfig.borderRadiusScale))),
+          focusedBorder: OutlineInputBorder(
+              borderSide: scaleConfig.preferBorders
+                  ? BorderSide(color: scale.primaryScale.border, width: 2)
+                  : BorderSide.none,
+              borderRadius: BorderRadius.all(
+                  Radius.circular(8 * scaleConfig.borderRadiusScale))),
         ),
-        inputContainerDecoration:
-            BoxDecoration(color: scale.primaryScale.border),
-        inputPadding: const EdgeInsets.all(9),
-        inputTextColor: scale.primaryScale.appText,
+        inputContainerDecoration: BoxDecoration(
+            border: scaleConfig.preferBorders
+                ? Border(
+                    top: BorderSide(color: scale.primaryScale.border, width: 2))
+                : null,
+            color: scaleConfig.preferBorders
+                ? scale.primaryScale.elementBackground
+                : scale.primaryScale.border),
+        inputPadding: const EdgeInsets.all(12),
+        inputTextColor: !scaleConfig.preferBorders
+            ? scale.primaryScale.appText
+            : scale.primaryScale.border,
         attachmentButtonIcon: const Icon(Icons.attach_file),
-        sentMessageBodyTextStyle: TextStyle(
-          color: scale.primaryScale.calloutText,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
+        sentMessageBodyTextStyle: textTheme.bodyLarge!.copyWith(
+          color: scaleConfig.preferBorders
+              ? scale.primaryScale.calloutBackground
+              : scale.primaryScale.calloutText,
         ),
         sentEmojiMessageTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 64,
         ),
         receivedMessageBodyTextStyle: TextStyle(
-          color: scale.secondaryScale.calloutText,
+          color: scaleConfig.preferBorders
+              ? scale.secondaryScale.calloutBackground
+              : scale.secondaryScale.calloutText,
           fontSize: 16,
           fontWeight: FontWeight.w500,
           height: 1.5,

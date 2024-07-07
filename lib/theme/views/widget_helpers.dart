@@ -132,7 +132,7 @@ void showErrorToast(BuildContext context, String message) {
     contentPadding: const EdgeInsets.all(16),
     primaryColor: scale.errorScale.elementBackground,
     secondaryColor: scale.errorScale.calloutBackground,
-    borderRadius: 16,
+    borderRadius: 16 * scaleConfig.borderRadiusScale,
     toastDuration: const Duration(seconds: 4),
     animationDuration: const Duration(milliseconds: 1000),
     displayBorder: scaleConfig.useVisualIndicators,
@@ -152,7 +152,7 @@ void showInfoToast(BuildContext context, String message) {
     contentPadding: const EdgeInsets.all(16),
     primaryColor: scale.tertiaryScale.elementBackground,
     secondaryColor: scale.tertiaryScale.calloutBackground,
-    borderRadius: 16,
+    borderRadius: 16 * scaleConfig.borderRadiusScale,
     toastDuration: const Duration(seconds: 2),
     animationDuration: const Duration(milliseconds: 500),
     displayBorder: scaleConfig.useVisualIndicators,
@@ -170,13 +170,15 @@ Widget styledTitleContainer({
 }) {
   final theme = Theme.of(context);
   final scale = theme.extension<ScaleScheme>()!;
+  final scaleConfig = theme.extension<ScaleConfig>()!;
   final textTheme = theme.textTheme;
 
   return DecoratedBox(
       decoration: ShapeDecoration(
           color: borderColor ?? scale.primaryScale.border,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius:
+                BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
           )),
       child: Column(children: [
         Text(
@@ -189,7 +191,8 @@ Widget styledTitleContainer({
                     color:
                         backgroundColor ?? scale.primaryScale.subtleBackground,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                          16 * scaleConfig.borderRadiusScale),
                     )),
                 child: child)
             .paddingAll(4)
@@ -207,15 +210,17 @@ Widget styledBottomSheet({
 }) {
   final theme = Theme.of(context);
   final scale = theme.extension<ScaleScheme>()!;
+  final scaleConfig = theme.extension<ScaleConfig>()!;
   final textTheme = theme.textTheme;
 
   return DecoratedBox(
       decoration: ShapeDecoration(
           color: borderColor ?? scale.primaryScale.dialogBorder,
-          shape: const RoundedRectangleBorder(
+          shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16)))),
+                  topLeft: Radius.circular(16 * scaleConfig.borderRadiusScale),
+                  topRight:
+                      Radius.circular(16 * scaleConfig.borderRadiusScale)))),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Text(
           title,
@@ -226,10 +231,12 @@ Widget styledBottomSheet({
                 decoration: ShapeDecoration(
                     color:
                         backgroundColor ?? scale.primaryScale.subtleBackground,
-                    shape: const RoundedRectangleBorder(
+                    shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16)))),
+                            topLeft: Radius.circular(
+                                16 * scaleConfig.borderRadiusScale),
+                            topRight: Radius.circular(
+                                16 * scaleConfig.borderRadiusScale)))),
                 child: child)
             .paddingLTRB(4, 4, 4, 0)
       ]));
@@ -261,3 +268,25 @@ const grayColorFilter = ColorFilter.matrix(<double>[
   1,
   0,
 ]);
+
+Widget clipBorder({
+  required bool clipEnabled,
+  required bool borderEnabled,
+  required double borderRadius,
+  required Color borderColor,
+  required Widget child,
+}) =>
+    ClipRRect(
+        borderRadius: clipEnabled
+            ? BorderRadius.circular(borderRadius)
+            : BorderRadius.zero,
+        child: DecoratedBox(
+            decoration: BoxDecoration(boxShadow: [
+              if (borderEnabled) BoxShadow(color: borderColor, spreadRadius: 2)
+            ]),
+            child: ClipRRect(
+              borderRadius: clipEnabled
+                  ? BorderRadius.circular(borderRadius)
+                  : BorderRadius.zero,
+              child: child,
+            )).paddingAll(clipEnabled && borderEnabled ? 2 : 0));

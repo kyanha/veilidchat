@@ -261,7 +261,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
   Widget build(BuildContext context) {
     final displayModalHUD = _isInAsyncCall;
 
-    return Scaffold(
+    return StyledScaffold(
             // resizeToAvoidBottomInset: false,
             appBar: DefaultAppBar(
                 title: Text(translate('edit_account_page.titlebar')),

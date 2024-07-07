@@ -1,12 +1,14 @@
 import 'dart:async';
 
+import 'package:animated_bottom_navigation_bar/'
+    'animated_bottom_navigation_bar.dart';
+import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
-import 'package:stylish_bottom_bar/stylish_bottom_bar.dart';
 
 import '../../../../chat/chat.dart';
 import '../../../../contact_invitation/contact_invitation.dart';
@@ -39,7 +41,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  bool onScrollNotification(ScrollNotification notification) {
+  bool _onScrollNotification(ScrollNotification notification) {
     if (notification is UserScrollNotification &&
         notification.metrics.axis == Axis.vertical) {
       switch (notification.direction) {
@@ -56,30 +58,6 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
       }
     }
     return false;
-  }
-
-  BottomBarItem buildBottomBarItem(int index) {
-    final theme = Theme.of(context);
-    final scale = theme.extension<ScaleScheme>()!;
-    return BottomBarItem(
-      title: Text(_bottomLabelList[index]),
-      icon:
-          Icon(_selectedIconList[index], color: scale.primaryScale.borderText),
-      selectedIcon:
-          Icon(_selectedIconList[index], color: scale.primaryScale.borderText),
-      backgroundColor: scale.primaryScale.borderText,
-      //badge: const Text('9+'),
-      //showBadge: true,
-    );
-  }
-
-  List<BottomBarItem> _buildBottomBarItems() {
-    final bottomBarItems = List<BottomBarItem>.empty(growable: true);
-    for (var index = 0; index < _bottomLabelList.length; index++) {
-      final item = buildBottomBarItem(index);
-      bottomBarItems.add(item);
-    }
-    return bottomBarItems;
   }
 
   Future<void> scanContactInvitationDialog(BuildContext context) async {
@@ -104,6 +82,63 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
         });
   }
 
+  Widget _buildBottomBarItem(int index, bool isActive) {
+    final theme = Theme.of(context);
+    final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
+
+    final color = scaleConfig.useVisualIndicators
+        ? (scaleConfig.preferBorders
+            ? scale.primaryScale.border
+            : scale.primaryScale.borderText)
+        : (isActive
+            ? (scaleConfig.preferBorders
+                ? scale.primaryScale.border
+                : scale.primaryScale.borderText)
+            : (scaleConfig.preferBorders
+                ? scale.primaryScale.subtleBorder
+                : scale.primaryScale.borderText.withAlpha(0x80)));
+
+    final item = Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          _selectedIconList[index],
+          size: 24,
+          color: color,
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            _bottomLabelList[index],
+            style: theme.textTheme.labelLarge!.copyWith(
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: color),
+          ),
+        )
+      ],
+    );
+
+    if (scaleConfig.useVisualIndicators && isActive) {
+      return DecoratedBox(
+              decoration: ShapeDecoration(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          14 * scaleConfig.borderRadiusScale),
+                      side: BorderSide(
+                          width: 2,
+                          color: scaleConfig.preferBorders
+                              ? scale.primaryScale.border
+                              : scale.primaryScale.borderText))),
+              child: item)
+          .paddingLTRB(8, 0, 8, 6);
+    }
+
+    return item;
+  }
+
   Widget _bottomSheetBuilder(BuildContext sheetContext, BuildContext context) {
     if (currentPage == 0) {
       // New contact invitation
@@ -122,12 +157,13 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     return Scaffold(
       //extendBody: true,
       backgroundColor: Colors.transparent,
       body: NotificationListener<ScrollNotification>(
-          onNotification: onScrollNotification,
+          onNotification: _onScrollNotification,
           child: PreloadPageView(
               key: _pageViewKey,
               controller: pageController,
@@ -148,31 +184,46 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
       //     style: Theme.of(context).textTheme.headlineSmall,
       //   ),
       // ),
-      bottomNavigationBar: StylishBottomBar(
-        backgroundColor: scale.primaryScale.hoverBorder,
-        option: AnimatedBarOptions(
-          inkEffect: true,
-          inkColor: scale.primaryScale.hoverPrimary,
-          opacity: 0.3,
-        ),
-        items: _buildBottomBarItems(),
-        hasNotch: true,
-        fabLocation: StylishBarFabLocation.end,
-        currentIndex: currentPage,
+      bottomNavigationBar: AnimatedBottomNavigationBar.builder(
+        itemCount: 2,
+        height: 64,
+        tabBuilder: _buildBottomBarItem,
+        activeIndex: currentPage,
+        gapLocation: GapLocation.end,
+        gapWidth: 90,
+        notchSmoothness: NotchSmoothness.defaultEdge,
+        notchMargin: 4,
+        backgroundColor: scaleConfig.preferBorders
+            ? scale.primaryScale.hoverElementBackground
+            : scale.primaryScale.hoverBorder,
+        elevation: 0,
         onTap: (index) async {
           await pageController.animateToPage(index,
               duration: 250.ms, curve: Curves.easeInOut);
         },
       ),
-
       floatingActionButton: BottomSheetActionButton(
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(14))),
-          foregroundColor: scale.secondaryScale.borderText,
-          backgroundColor: scale.secondaryScale.hoverBorder,
+          shape: CircleBorder(
+            side: !scaleConfig.useVisualIndicators
+                ? BorderSide.none
+                : BorderSide(
+                    strokeAlign: BorderSide.strokeAlignCenter,
+                    color: scaleConfig.preferBorders
+                        ? scale.secondaryScale.border
+                        : scale.secondaryScale.borderText,
+                    width: 2),
+          ),
+          foregroundColor: scaleConfig.preferBorders
+              ? scale.secondaryScale.border
+              : scale.secondaryScale.borderText,
+          backgroundColor: scaleConfig.preferBorders
+              ? scale.secondaryScale.hoverElementBackground
+              : scale.secondaryScale.hoverBorder,
           builder: (context) => Icon(
                 _fabIconList[currentPage],
-                color: scale.secondaryScale.borderText,
+                color: scaleConfig.preferBorders
+                    ? scale.secondaryScale.border
+                    : scale.secondaryScale.borderText,
               ),
           bottomSheetBuilder: (sheetContext) =>
               _bottomSheetBuilder(sheetContext, context)),

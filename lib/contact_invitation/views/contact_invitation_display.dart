@@ -47,6 +47,7 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final signedContactInvitationBytesV =
         context.watch<InvitationGeneratorCubit>().state;
@@ -59,7 +60,8 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
         child: Dialog(
             shape: RoundedRectangleBorder(
                 side: const BorderSide(width: 2),
-                borderRadius: BorderRadius.circular(16)),
+                borderRadius:
+                    BorderRadius.circular(16 * scaleConfig.borderRadiusScale)),
             backgroundColor: Colors.white,
             child: ConstrainedBox(
                 constraints: BoxConstraints(

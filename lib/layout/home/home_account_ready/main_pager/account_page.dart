@@ -34,6 +34,7 @@ class AccountPageState extends State<AccountPage> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final cilState = context.watch<ContactInvitationListCubit>().state;
     final cilBusy = cilState.busy;
@@ -55,10 +56,12 @@ class AccountPageState extends State<AccountPage> {
           backgroundColor: scale.primaryScale.border,
           collapsedBackgroundColor: scale.primaryScale.border,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius:
+                BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
           ),
           collapsedShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius:
+                BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
           ),
           title: Text(
             translate('account_page.contact_invitations'),

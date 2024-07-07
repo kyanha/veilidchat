@@ -11,12 +11,12 @@ import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import 'account_manager/account_manager.dart';
-import 'account_manager/cubits/active_local_account_cubit.dart';
 import 'init.dart';
 import 'layout/splash.dart';
 import 'router/router.dart';
 import 'settings/settings.dart';
 import 'theme/models/theme_preference.dart';
+import 'theme/theme.dart';
 import 'tick.dart';
 import 'tools/loggy.dart';
 import 'veilid_processor/veilid_processor.dart';
@@ -69,9 +69,7 @@ class VeilidChatApp extends StatelessWidget {
     });
   }
 
-  Widget _buildShortcuts(
-          {required BuildContext context,
-          required Widget Function(BuildContext) builder}) =>
+  Widget _buildShortcuts({required Widget Function(BuildContext) builder}) =>
       ThemeSwitcher(
           builder: (context) => Shortcuts(
                   shortcuts: <LogicalKeySet, Intent>{
@@ -136,25 +134,42 @@ class VeilidChatApp extends StatelessWidget {
                           accountRepository: AccountRepository.instance,
                           locator: context.read)),
                 ],
-                child: BackgroundTicker(
-                    child: _buildShortcuts(
-                        context: context,
-                        builder: (context) => MaterialApp.router(
-                              debugShowCheckedModeBanner: false,
-                              routerConfig:
-                                  context.read<RouterCubit>().router(),
-                              title: translate('app.title'),
-                              theme: theme,
-                              localizationsDelegates: [
-                                GlobalMaterialLocalizations.delegate,
-                                GlobalWidgetsLocalizations.delegate,
-                                FormBuilderLocalizations.delegate,
-                                localizationDelegate
-                              ],
-                              supportedLocales:
-                                  localizationDelegate.supportedLocales,
-                              locale: localizationDelegate.currentLocale,
-                            ))),
+                child:
+                    BackgroundTicker(child: _buildShortcuts(builder: (context) {
+                  final scale = theme.extension<ScaleScheme>()!;
+                  final scaleConfig = theme.extension<ScaleConfig>()!;
+
+                  final gradient = LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: scaleConfig.preferBorders &&
+                              theme.brightness == Brightness.light
+                          ? [
+                              scale.grayScale.hoverElementBackground,
+                              scale.grayScale.subtleBackground,
+                            ]
+                          : [
+                              scale.tertiaryScale.hoverElementBackground,
+                              scale.tertiaryScale.subtleBackground,
+                            ]);
+
+                  return DecoratedBox(
+                      decoration: BoxDecoration(gradient: gradient),
+                      child: MaterialApp.router(
+                        debugShowCheckedModeBanner: false,
+                        routerConfig: context.read<RouterCubit>().router(),
+                        title: translate('app.title'),
+                        theme: theme,
+                        localizationsDelegates: [
+                          GlobalMaterialLocalizations.delegate,
+                          GlobalWidgetsLocalizations.delegate,
+                          FormBuilderLocalizations.delegate,
+                          localizationDelegate
+                        ],
+                        supportedLocales: localizationDelegate.supportedLocales,
+                        locale: localizationDelegate.currentLocale,
+                      ));
+                })),
               )),
         );
       });

@@ -30,23 +30,39 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
             (c) => c.state.asData!.value.profile);
         final theme = Theme.of(context);
         final scale = theme.extension<ScaleScheme>()!;
+        final scaleConfig = theme.extension<ScaleConfig>()!;
 
         return ColoredBox(
-            color: scale.primaryScale.subtleBorder,
+            color: scaleConfig.preferBorders
+                ? scale.primaryScale.subtleBackground
+                : scale.primaryScale.subtleBorder,
             child: Column(children: <Widget>[
               Row(children: [
                 IconButton(
                     icon: const Icon(Icons.menu),
-                    color: scale.secondaryScale.borderText,
+                    color: scaleConfig.preferBorders
+                        ? scale.primaryScale.border
+                        : scale.primaryScale.borderText,
                     constraints:
                         const BoxConstraints.expand(height: 64, width: 64),
                     style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.all(
-                            scale.primaryScale.hoverBorder),
+                            scaleConfig.preferBorders
+                                ? scale.primaryScale.hoverElementBackground
+                                : scale.primaryScale.hoverBorder),
                         shape: WidgetStateProperty.all(
-                            const RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(16))))),
+                          RoundedRectangleBorder(
+                              side: !scaleConfig.useVisualIndicators
+                                  ? BorderSide.none
+                                  : BorderSide(
+                                      strokeAlign: BorderSide.strokeAlignCenter,
+                                      color: scaleConfig.preferBorders
+                                          ? scale.primaryScale.border
+                                          : scale.primaryScale.borderText,
+                                      width: 2),
+                              borderRadius: BorderRadius.all(Radius.circular(
+                                  16 * scaleConfig.borderRadiusScale))),
+                        )),
                     tooltip: translate('menu.settings_tooltip'),
                     onPressed: () async {
                       final ctrl = context.read<ZoomDrawerController>();
@@ -82,6 +98,7 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
     final w = MediaQuery.of(context).size.width;
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final children = [
       ConstrainedBox(
@@ -92,7 +109,10 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
       SizedBox(
           width: 2,
           height: double.infinity,
-          child: ColoredBox(color: scale.primaryScale.hoverBorder)),
+          child: ColoredBox(
+              color: scaleConfig.preferBorders
+                  ? scale.primaryScale.subtleBorder
+                  : scale.primaryScale.subtleBackground)),
       Expanded(child: buildTabletRightPane(context)),
     ];
 

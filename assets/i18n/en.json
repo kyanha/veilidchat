@@ -4,7 +4,9 @@
     },
     "menu": {
         "settings_tooltip": "Settings",
-        "add_account_tooltip": "Add Account"
+        "add_account_tooltip": "Add Account",
+        "accounts": "Accounts",
+        "version": "Version"
     },
     "pager": {
         "chats": "Chats",
@@ -192,6 +194,7 @@
         "eggplant": "Eggplant",
         "lime": "Lime",
         "grim": "Grim",
+        "elite": "31337",
         "contrast": "Contrast"
     },
     "brightness": {

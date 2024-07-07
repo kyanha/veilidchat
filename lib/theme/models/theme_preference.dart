@@ -5,6 +5,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../views/widget_helpers.dart';
 import 'contrast_generator.dart';
 import 'radix_generator.dart';
+import 'scale_scheme.dart';
 
 part 'theme_preference.freezed.dart';
 part 'theme_preference.g.dart';
@@ -37,6 +38,7 @@ enum ColorPreference {
   lime,
   grim,
   // Accessible Colors
+  elite,
   contrast;
 
   factory ColorPreference.fromJson(dynamic j) =>
@@ -63,7 +65,7 @@ class ThemePreferences with _$ThemePreferences {
 }
 
 extension ThemePreferencesExt on ThemePreferences {
-  /// Get material 'ThemeData' for existinb
+  /// Get material 'ThemeData' for existing theme
   ThemeData themeData() {
     late final Brightness brightness;
     switch (brightnessPreference) {
@@ -83,8 +85,60 @@ extension ThemePreferencesExt on ThemePreferences {
     switch (colorPreference) {
       // Special cases
       case ColorPreference.contrast:
-        // xxx do contrastGenerator
-        themeData = contrastGenerator(brightness);
+        themeData = contrastGenerator(
+          brightness: brightness,
+          scaleConfig: ScaleConfig(
+              useVisualIndicators: true,
+              preferBorders: false,
+              borderRadiusScale: 1),
+          primaryFront: Colors.black,
+          primaryBack: Colors.white,
+          secondaryFront: Colors.black,
+          secondaryBack: Colors.white,
+          tertiaryFront: Colors.black,
+          tertiaryBack: Colors.white,
+          grayFront: Colors.black,
+          grayBack: Colors.white,
+          errorFront: Colors.black,
+          errorBack: Colors.white,
+        );
+      case ColorPreference.elite:
+        themeData = brightness == Brightness.light
+            ? contrastGenerator(
+                brightness: Brightness.light,
+                scaleConfig: ScaleConfig(
+                    useVisualIndicators: true,
+                    preferBorders: true,
+                    borderRadiusScale: 0.2),
+                primaryFront: const Color(0xFF000000),
+                primaryBack: const Color(0xFF00FF00),
+                secondaryFront: const Color(0xFF000000),
+                secondaryBack: const Color(0xFF00FFFF),
+                tertiaryFront: const Color(0xFF000000),
+                tertiaryBack: const Color(0xFFFF00FF),
+                grayFront: const Color(0xFF000000),
+                grayBack: const Color(0xFFFFFFFF),
+                errorFront: const Color(0xFFC0C0C0),
+                errorBack: const Color(0xFF0000FF),
+                customTextTheme: makeMonoSpaceTextTheme(Brightness.light))
+            : contrastGenerator(
+                brightness: Brightness.dark,
+                scaleConfig: ScaleConfig(
+                    useVisualIndicators: true,
+                    preferBorders: true,
+                    borderRadiusScale: 0.5),
+                primaryFront: const Color(0xFF000000),
+                primaryBack: const Color(0xFF00FF00),
+                secondaryFront: const Color(0xFF000000),
+                secondaryBack: const Color(0xFF00FFFF),
+                tertiaryFront: const Color(0xFF000000),
+                tertiaryBack: const Color(0xFFFF00FF),
+                grayFront: const Color(0xFF000000),
+                grayBack: const Color(0xFFFFFFFF),
+                errorFront: const Color(0xFF0000FF),
+                errorBack: const Color(0xFFC0C0C0),
+                customTextTheme: makeMonoSpaceTextTheme(Brightness.dark),
+              );
       // Generate from Radix
       case ColorPreference.scarlet:
         themeData = radixGenerator(brightness, RadixThemeColor.scarlet);

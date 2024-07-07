@@ -604,7 +604,11 @@ ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
   final radix = _radixScheme(brightness, themeColor);
   final scaleScheme = radix.toScale();
   final colorScheme = scaleScheme.toColorScheme(brightness);
-  final scaleConfig = ScaleConfig(useVisualIndicators: false);
+  final scaleConfig = ScaleConfig(
+    useVisualIndicators: false,
+    preferBorders: false,
+    borderRadiusScale: 1,
+  );
 
   final themeData = ThemeData.from(
       colorScheme: colorScheme, textTheme: textTheme, useMaterial3: true);
@@ -654,8 +658,10 @@ ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
             disabledForegroundColor: scaleScheme.grayScale.primary,
             shape: RoundedRectangleBorder(
                 side: BorderSide(color: scaleScheme.primaryScale.border),
-                borderRadius: BorderRadius.circular(8))),
+                borderRadius:
+                    BorderRadius.circular(8 * scaleConfig.borderRadiusScale))),
       ),
-      inputDecorationTheme: ScaleInputDecoratorTheme(scaleScheme, textTheme),
+      inputDecorationTheme:
+          ScaleInputDecoratorTheme(scaleScheme, scaleConfig, textTheme),
       extensions: <ThemeExtension<dynamic>>[scaleScheme, scaleConfig]);
 }

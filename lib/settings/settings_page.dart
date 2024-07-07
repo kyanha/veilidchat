@@ -36,19 +36,18 @@ class SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) =>
       AsyncBlocBuilder<PreferencesCubit, Preferences>(
-          builder: (context, state) => ThemeSwitchingArea(
-                  child: Scaffold(
-                appBar: DefaultAppBar(
-                    title: Text(translate('settings_page.titlebar')),
-                    leading: IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => GoRouterHelper(context).pop(),
-                    ),
-                    actions: <Widget>[
-                      const SignalStrengthMeterWidget()
-                          .paddingLTRB(16, 0, 16, 0),
-                    ]),
-                body: FormBuilder(
+          builder: (context, state) => StyledScaffold(
+              appBar: DefaultAppBar(
+                  title: Text(translate('settings_page.titlebar')),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => GoRouterHelper(context).pop(),
+                  ),
+                  actions: <Widget>[
+                    const SignalStrengthMeterWidget().paddingLTRB(16, 0, 16, 0),
+                  ]),
+              body: ThemeSwitchingArea(
+                child: FormBuilder(
                   key: _formKey,
                   child: ListView(
                     children: [

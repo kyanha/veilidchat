@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 
 import 'scale_color.dart';
@@ -97,7 +100,7 @@ class ScaleScheme extends ThemeExtension<ScaleScheme> {
         onSurfaceVariant: secondaryScale.primaryText, // ?? reviewed a little
         outline: primaryScale.border,
         outlineVariant: secondaryScale.border,
-        shadow: const Color(0xFF000000),
+        shadow: primaryScale.primary.darken(80),
         //scrim: primaryScale.background,
         // inverseSurface: primaryScale.subtleText,
         // onInverseSurface: primaryScale.subtleBackground,
@@ -109,16 +112,24 @@ class ScaleScheme extends ThemeExtension<ScaleScheme> {
 class ScaleConfig extends ThemeExtension<ScaleConfig> {
   ScaleConfig({
     required this.useVisualIndicators,
+    required this.preferBorders,
+    required this.borderRadiusScale,
   });
 
   final bool useVisualIndicators;
+  final bool preferBorders;
+  final double borderRadiusScale;
 
   @override
   ScaleConfig copyWith({
     bool? useVisualIndicators,
+    bool? preferBorders,
+    double? borderRadiusScale,
   }) =>
       ScaleConfig(
         useVisualIndicators: useVisualIndicators ?? this.useVisualIndicators,
+        preferBorders: preferBorders ?? this.preferBorders,
+        borderRadiusScale: borderRadiusScale ?? this.borderRadiusScale,
       );
 
   @override
@@ -127,8 +138,10 @@ class ScaleConfig extends ThemeExtension<ScaleConfig> {
       return this;
     }
     return ScaleConfig(
-      useVisualIndicators:
-          t < .5 ? useVisualIndicators : other.useVisualIndicators,
-    );
+        useVisualIndicators:
+            t < .5 ? useVisualIndicators : other.useVisualIndicators,
+        preferBorders: t < .5 ? preferBorders : other.preferBorders,
+        borderRadiusScale:
+            lerpDouble(borderRadiusScale, other.borderRadiusScale, t) ?? 1);
   }
 }

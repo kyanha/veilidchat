@@ -1,6 +1,7 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -47,18 +48,22 @@ class _DrawerMenuState extends State<DrawerMenu> {
     });
   }
 
-  Widget _wrapInBox({required Widget child, required Color color}) =>
+  Widget _wrapInBox(
+          {required Widget child,
+          required Color color,
+          required double borderRadius}) =>
       DecoratedBox(
           decoration: ShapeDecoration(
               color: color,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16))),
+                  borderRadius: BorderRadius.circular(borderRadius))),
           child: child);
 
   Widget _makeAccountWidget(
       {required String name,
       required bool selected,
       required ScaleColor scale,
+      required ScaleConfig scaleConfig,
       required bool loggedIn,
       required void Function()? callback,
       required void Function()? footerCallback}) {
@@ -71,13 +76,37 @@ class _DrawerMenuState extends State<DrawerMenu> {
       shortname = abbrev;
     }
 
+    late final Color background;
+    late final Color hoverBackground;
+    late final Color activeBackground;
+    late final Color border;
+    late final Color hoverBorder;
+    late final Color activeBorder;
+    if (scaleConfig.useVisualIndicators && !scaleConfig.preferBorders) {
+      background = loggedIn ? scale.border : scale.subtleBorder;
+      hoverBackground = background;
+      activeBackground = background;
+      border =
+          selected ? scale.activeElementBackground : scale.elementBackground;
+      hoverBorder = border;
+      activeBorder = border;
+    } else {
+      background =
+          selected ? scale.activeElementBackground : scale.elementBackground;
+      hoverBackground = scale.hoverElementBackground;
+      activeBackground = scale.activeElementBackground;
+      border = loggedIn ? scale.border : scale.subtleBorder;
+      hoverBorder = scale.hoverBorder;
+      activeBorder = scale.primary;
+    }
+
     final avatar = Container(
         height: 34,
         width: 34,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-              color: loggedIn ? scale.border : scale.subtleBorder,
+              color: border,
               width: 2,
               strokeAlign: BorderSide.strokeAlignOutside),
           color: Colors.blue,
@@ -89,27 +118,28 @@ class _DrawerMenuState extends State<DrawerMenu> {
             child: Text(shortname, style: theme.textTheme.titleLarge)));
 
     return AnimatedPadding(
-        padding: EdgeInsets.fromLTRB(selected ? 0 : 0, 0, selected ? 0 : 8, 0),
+        padding: EdgeInsets.fromLTRB(selected ? 0 : 8, selected ? 0 : 2,
+            selected ? 0 : 8, selected ? 0 : 2),
         duration: const Duration(milliseconds: 50),
         child: MenuItemWidget(
           title: name,
           headerWidget: avatar,
-          titleStyle: theme.textTheme.titleLarge!,
+          titleStyle: theme.textTheme.titleSmall!
+              .copyWith(color: scaleConfig.useVisualIndicators ? border : null),
           foregroundColor: scale.primary,
-          backgroundColor: selected
-              ? scale.activeElementBackground
-              : scale.elementBackground,
-          backgroundHoverColor: scale.hoverElementBackground,
-          backgroundFocusColor: scale.activeElementBackground,
-          borderColor: scale.border,
-          borderHoverColor: scale.hoverBorder,
-          borderFocusColor: scale.primary,
+          backgroundColor: background,
+          backgroundHoverColor: hoverBackground,
+          backgroundFocusColor: activeBackground,
+          borderColor: border,
+          borderHoverColor: hoverBorder,
+          borderFocusColor: activeBorder,
+          borderRadius: 16 * scaleConfig.borderRadiusScale,
           callback: callback,
           footerButtonIcon: loggedIn ? Icons.edit_outlined : null,
           footerCallback: footerCallback,
-          footerButtonIconColor: scale.border,
-          footerButtonIconHoverColor: scale.hoverElementBackground,
-          footerButtonIconFocusColor: scale.activeElementBackground,
+          footerButtonIconColor: border,
+          footerButtonIconHoverColor: hoverBackground,
+          footerButtonIconFocusColor: activeBackground,
         ));
   }
 
@@ -120,6 +150,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
           perAccountCollectionBlocMapState}) {
     final theme = Theme.of(context);
     final scaleScheme = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final loggedInAccounts = <Widget>[];
     final loggedOutAccounts = <Widget>[];
@@ -133,11 +164,12 @@ class _DrawerMenuState extends State<DrawerMenu> {
       final avAccountRecordState = perAccountState?.avAccountRecordState;
       if (perAccountState != null && avAccountRecordState != null) {
         // Account is logged in
-        final scale = theme.extension<ScaleScheme>()!.tertiaryScale;
+        final scale = theme.extension<ScaleScheme>()!.primaryScale;
         final loggedInAccount = avAccountRecordState.when(
           data: (value) => _makeAccountWidget(
               name: value.profile.name,
               scale: scale,
+              scaleConfig: scaleConfig,
               selected: superIdentityRecordKey == activeLocalAccount,
               loggedIn: true,
               callback: () {
@@ -152,10 +184,12 @@ class _DrawerMenuState extends State<DrawerMenu> {
               }),
           loading: () => _wrapInBox(
               child: buildProgressIndicator(),
-              color: scaleScheme.grayScale.subtleBorder),
+              color: scaleScheme.grayScale.subtleBorder,
+              borderRadius: 16 * scaleConfig.borderRadiusScale),
           error: (err, st) => _wrapInBox(
               child: errorPage(err, st),
-              color: scaleScheme.errorScale.subtleBorder),
+              color: scaleScheme.errorScale.subtleBorder,
+              borderRadius: 16 * scaleConfig.borderRadiusScale),
         );
         loggedInAccounts.add(loggedInAccount.paddingLTRB(0, 0, 0, 8));
       } else {
@@ -164,6 +198,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
         final loggedOutAccount = _makeAccountWidget(
           name: la.name,
           scale: scale,
+          scaleConfig: scaleConfig,
           selected: superIdentityRecordKey == activeLocalAccount,
           loggedIn: false,
           callback: () => {_doSwitchClick(superIdentityRecordKey)},
@@ -185,49 +220,77 @@ class _DrawerMenuState extends State<DrawerMenu> {
   }
 
   Widget _getButton(
-          {required Icon icon,
-          required ScaleColor scale,
-          required String tooltip,
-          required void Function()? onPressed}) =>
-      IconButton(
-          icon: icon,
-          color: scale.hoverBorder,
-          constraints: const BoxConstraints.expand(height: 64, width: 64),
-          style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.hovered)) {
-              return scale.hoverElementBackground;
-            }
-            if (states.contains(WidgetState.focused)) {
-              return scale.activeElementBackground;
-            }
-            return scale.elementBackground;
-          }), shape: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.hovered)) {
-              return RoundedRectangleBorder(
-                  side: BorderSide(color: scale.hoverBorder),
-                  borderRadius: const BorderRadius.all(Radius.circular(16)));
-            }
-            if (states.contains(WidgetState.focused)) {
-              return RoundedRectangleBorder(
-                  side: BorderSide(color: scale.primary),
-                  borderRadius: const BorderRadius.all(Radius.circular(16)));
-            }
+      {required Icon icon,
+      required ScaleColor scale,
+      required ScaleConfig scaleConfig,
+      required String tooltip,
+      required void Function()? onPressed}) {
+    late final Color background;
+    late final Color hoverBackground;
+    late final Color activeBackground;
+    late final Color border;
+    late final Color hoverBorder;
+    late final Color activeBorder;
+    if (scaleConfig.useVisualIndicators && !scaleConfig.preferBorders) {
+      background = scale.border;
+      hoverBackground = scale.hoverBorder;
+      activeBackground = scale.primary;
+      border = scale.elementBackground;
+      hoverBorder = scale.hoverElementBackground;
+      activeBorder = scale.activeElementBackground;
+    } else {
+      background = scale.elementBackground;
+      hoverBackground = scale.hoverElementBackground;
+      activeBackground = scale.activeElementBackground;
+      border = scale.border;
+      hoverBorder = scale.hoverBorder;
+      activeBorder = scale.primary;
+    }
+    return IconButton(
+        icon: icon,
+        color: border,
+        constraints: const BoxConstraints.expand(height: 64, width: 64),
+        style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.hovered)) {
+            return hoverBackground;
+          }
+          if (states.contains(WidgetState.focused)) {
+            return activeBackground;
+          }
+          return background;
+        }), shape: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.hovered)) {
             return RoundedRectangleBorder(
-                side: BorderSide(color: scale.border),
-                borderRadius: const BorderRadius.all(Radius.circular(16)));
-          })),
-          tooltip: tooltip,
-          onPressed: onPressed);
+                side: BorderSide(color: hoverBorder),
+                borderRadius: BorderRadius.all(
+                    Radius.circular(16 * scaleConfig.borderRadiusScale)));
+          }
+          if (states.contains(WidgetState.focused)) {
+            return RoundedRectangleBorder(
+                side: BorderSide(color: activeBorder),
+                borderRadius: BorderRadius.all(
+                    Radius.circular(16 * scaleConfig.borderRadiusScale)));
+          }
+          return RoundedRectangleBorder(
+              side: BorderSide(color: border),
+              borderRadius: BorderRadius.all(
+                  Radius.circular(16 * scaleConfig.borderRadiusScale)));
+        })),
+        tooltip: tooltip,
+        onPressed: onPressed);
+  }
 
   Widget _getBottomButtons() {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final settingsButton = _getButton(
         icon: const Icon(Icons.settings),
         tooltip: translate('menu.settings_tooltip'),
         scale: scale.tertiaryScale,
+        scaleConfig: scaleConfig,
         onPressed: () async {
           await GoRouterHelper(context).push('/settings');
         }).paddingLTRB(0, 0, 16, 0);
@@ -236,6 +299,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
         icon: const Icon(Icons.add),
         tooltip: translate('menu.add_account_tooltip'),
         scale: scale.tertiaryScale,
+        scaleConfig: scaleConfig,
         onPressed: () async {
           await GoRouterHelper(context).push('/new_account');
         }).paddingLTRB(0, 0, 16, 0);
@@ -259,53 +323,105 @@ class _DrawerMenuState extends State<DrawerMenu> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          scale.tertiaryScale.hoverElementBackground,
+          scale.tertiaryScale.subtleBorder,
           scale.tertiaryScale.subtleBackground,
         ]);
 
     return DecoratedBox(
       decoration: ShapeDecoration(
           shadows: [
-            BoxShadow(
-              color: scale.tertiaryScale.appBackground,
-              blurRadius: 6,
-              offset: const Offset(
-                0,
-                3,
+            if (scaleConfig.useVisualIndicators && !scaleConfig.preferBorders)
+              BoxShadow(
+                color: scale.tertiaryScale.primary.darken(80),
+                spreadRadius: 2,
+              )
+            else if (scaleConfig.useVisualIndicators &&
+                scaleConfig.preferBorders)
+              BoxShadow(
+                color: scale.tertiaryScale.border,
+                spreadRadius: 2,
+              )
+            else
+              BoxShadow(
+                color: scale.tertiaryScale.primary.darken(40),
+                blurRadius: 6,
+                offset: const Offset(
+                  0,
+                  4,
+                ),
               ),
-            ),
           ],
-          gradient: gradient,
-          shape: const RoundedRectangleBorder(
+          gradient: scaleConfig.useVisualIndicators ? null : gradient,
+          color: scaleConfig.useVisualIndicators
+              ? (scaleConfig.preferBorders
+                  ? scale.tertiaryScale.appBackground
+                  : scale.tertiaryScale.subtleBorder)
+              : null,
+          shape: RoundedRectangleBorder(
+              side: scaleConfig.preferBorders
+                  ? BorderSide(color: scale.tertiaryScale.primary, width: 2)
+                  : BorderSide.none,
               borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(16),
-                  bottomRight: Radius.circular(16)))),
+                  topRight: Radius.circular(16 * scaleConfig.borderRadiusScale),
+                  bottomRight:
+                      Radius.circular(16 * scaleConfig.borderRadiusScale)))),
       child: Column(children: [
         FittedBox(
             fit: BoxFit.scaleDown,
-            child: Row(children: [
-              SvgPicture.asset(
+            child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                    theme.brightness == Brightness.light
+                        ? scale.tertiaryScale.primary
+                        : scale.tertiaryScale.border,
+                    scaleConfig.preferBorders
+                        ? BlendMode.modulate
+                        : BlendMode.dst),
+                child: Row(children: [
+                  SvgPicture.asset(
+                          height: 48,
+                          'assets/images/icon.svg',
+                          colorFilter: scaleConfig.useVisualIndicators
+                              ? grayColorFilter
+                              : null)
+                      .paddingLTRB(0, 0, 16, 0),
+                  SvgPicture.asset(
                       height: 48,
-                      'assets/images/icon.svg',
+                      'assets/images/title.svg',
                       colorFilter: scaleConfig.useVisualIndicators
                           ? grayColorFilter
-                          : null)
-                  .paddingLTRB(0, 0, 16, 0),
-              SvgPicture.asset(
-                  height: 48,
-                  'assets/images/title.svg',
-                  colorFilter:
-                      scaleConfig.useVisualIndicators ? grayColorFilter : null),
-            ])),
+                          : null),
+                ]))),
         const Spacer(),
-        _getAccountList(
-            localAccounts: localAccounts,
-            activeLocalAccount: activeLocalAccount,
-            perAccountCollectionBlocMapState: perAccountCollectionBlocMapState),
+        DecoratedBox(
+            decoration: ShapeDecoration(
+                shape: RoundedRectangleBorder(
+                    side: !scaleConfig.useVisualIndicators
+                        ? BorderSide.none
+                        : scaleConfig.preferBorders
+                            ? BorderSide(color: scale.tertiaryScale.border)
+                            : BorderSide(color: scale.tertiaryScale.primary),
+                    borderRadius: BorderRadius.circular(
+                        16 * scaleConfig.borderRadiusScale)),
+                color: scaleConfig.preferBorders
+                    ? Colors.transparent
+                    : scale.tertiaryScale.border.withAlpha(0x5F)),
+            child: Column(children: [
+              Text(translate('menu.accounts'),
+                      style: theme.textTheme.titleMedium!.copyWith(
+                          color: scaleConfig.preferBorders
+                              ? scale.tertiaryScale.border
+                              : scale.tertiaryScale.primary))
+                  .paddingLTRB(0, 0, 0, 16),
+              _getAccountList(
+                  localAccounts: localAccounts,
+                  activeLocalAccount: activeLocalAccount,
+                  perAccountCollectionBlocMapState:
+                      perAccountCollectionBlocMapState)
+            ]).paddingAll(16)),
         _getBottomButtons(),
         const Spacer(),
         Row(children: [
-          Text('Version $packageInfoVersion',
+          Text('${translate('menu.version')} $packageInfoVersion',
               style: theme.textTheme.labelMedium!
                   .copyWith(color: scale.tertiaryScale.hoverBorder)),
           const Spacer(),
@@ -315,6 +431,6 @@ class _DrawerMenuState extends State<DrawerMenu> {
           ),
         ])
       ]).paddingAll(16),
-    );
+    ).paddingLTRB(0, 2, 2, 2);
   }
 }

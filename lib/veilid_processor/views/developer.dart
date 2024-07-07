@@ -140,6 +140,7 @@ class _DeveloperPageState extends State<DeveloperPage> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //   if (!_isScrolling && _wantsBottom) {
@@ -225,12 +226,22 @@ class _DeveloperPageState extends State<DeveloperPage> {
                     .copyWith(color: scale.primaryScale.primaryText),
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                 openBoxDecoration: BoxDecoration(
-                  color: scale.primaryScale.border,
-                  borderRadius: BorderRadius.circular(8),
+                  //color: scale.primaryScale.border,
+                  border: Border.all(
+                      color: scaleConfig.useVisualIndicators
+                          ? scale.primaryScale.hoverBorder
+                          : scale.primaryScale.borderText),
+                  borderRadius:
+                      BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
                 ),
                 boxDecoration: BoxDecoration(
-                  color: scale.primaryScale.hoverBorder,
-                  borderRadius: BorderRadius.circular(8),
+                  //color: scale.primaryScale.hoverBorder,
+                  border: Border.all(
+                      color: scaleConfig.useVisualIndicators
+                          ? scale.primaryScale.hoverBorder
+                          : scale.primaryScale.borderText),
+                  borderRadius:
+                      BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
                 ),
               ),
               dropdownOptions: DropdownOptions(
@@ -239,7 +250,8 @@ class _DeveloperPageState extends State<DeveloperPage> {
                 duration: 150.ms,
                 color: scale.primaryScale.elementBackground,
                 borderSide: BorderSide(color: scale.primaryScale.border),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius:
+                    BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
               ),
               dropdownTriangleOptions: const DropdownTriangleOptions(
@@ -283,10 +295,12 @@ class _DeveloperPageState extends State<DeveloperPage> {
                     filled: true,
                     contentPadding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(
+                            8 * scaleConfig.borderRadiusScale),
                         borderSide: BorderSide.none),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(
+                          8 * scaleConfig.borderRadiusScale),
                     ),
                     fillColor: scale.primaryScale.subtleBackground,
                     hintText: translate('developer.command'),

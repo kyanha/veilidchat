@@ -93,7 +93,7 @@ class _NewAccountPageState extends State<NewAccountPage> {
   Widget build(BuildContext context) {
     final displayModalHUD = _isInAsyncCall;
 
-    return Scaffold(
+    return StyledScaffold(
       // resizeToAvoidBottomInset: false,
       appBar: DefaultAppBar(
           title: Text(translate('new_account_page.titlebar')),

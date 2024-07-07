@@ -154,8 +154,9 @@ class ChatComponentWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
-    final textTheme = Theme.of(context).textTheme;
-    final chatTheme = makeChatTheme(scale, textTheme);
+    final scaleConfig = theme.extension<ScaleConfig>()!;
+    final textTheme = theme.textTheme;
+    final chatTheme = makeChatTheme(scale, scaleConfig, textTheme);
     final errorChatTheme = (ChatThemeEditor(chatTheme)
           ..inputTextColor = scale.errorScale.primary
           ..sendButtonIcon = Image.asset(
@@ -191,104 +192,99 @@ class ChatComponentWidget extends StatelessWidget {
       chatComponentCubit.scrollOffset = 0;
     }
 
-    return DefaultTextStyle(
-        style: textTheme.bodySmall!,
-        child: Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: Stack(
+    return Align(
+      alignment: AlignmentDirectional.centerEnd,
+      child: Stack(
+        children: [
+          Column(
             children: [
-              Column(
-                children: [
-                  Container(
-                    height: 48,
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: scale.primaryScale.subtleBorder,
+                ),
+                child: Row(children: [
+                  Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Padding(
+                        padding:
+                            const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+                        child: Text(title,
+                            textAlign: TextAlign.start,
+                            style: textTheme.titleMedium!.copyWith(
+                                color: scale.primaryScale.borderText)),
+                      )),
+                  const Spacer(),
+                  IconButton(
+                      icon: Icon(Icons.close,
+                          color: scale.primaryScale.borderText),
+                      onPressed: () async {
+                        context.read<ActiveChatCubit>().setActiveChat(null);
+                      }).paddingLTRB(16, 0, 16, 0)
+                ]),
+              ),
+              Expanded(
+                child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: scale.primaryScale.subtleBorder,
-                    ),
-                    child: Row(children: [
-                      Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Padding(
-                            padding: const EdgeInsetsDirectional.fromSTEB(
-                                16, 0, 16, 0),
-                            child: Text(title,
-                                textAlign: TextAlign.start,
-                                style: textTheme.titleMedium!.copyWith(
-                                    color: scale.primaryScale.borderText)),
-                          )),
-                      const Spacer(),
-                      IconButton(
-                          icon: Icon(Icons.close,
-                              color: scale.primaryScale.borderText),
-                          onPressed: () async {
-                            context.read<ActiveChatCubit>().setActiveChat(null);
-                          }).paddingLTRB(16, 0, 16, 0)
-                    ]),
-                  ),
-                  Expanded(
-                    child: DecoratedBox(
-                        decoration: const BoxDecoration(),
-                        child: NotificationListener<ScrollNotification>(
-                            onNotification: (notification) {
-                              if (chatComponentCubit.scrollOffset != 0) {
-                                return false;
-                              }
+                        color: scale.primaryScale.subtleBackground),
+                    child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (chatComponentCubit.scrollOffset != 0) {
+                            return false;
+                          }
 
-                              if (!isFirstPage &&
-                                  notification.metrics.pixels <=
-                                      ((notification.metrics.maxScrollExtent -
-                                                  notification.metrics
-                                                      .minScrollExtent) *
-                                              (1.0 - onEndReachedThreshold) +
-                                          notification
-                                              .metrics.minScrollExtent)) {
-                                //
-                                final scrollOffset = (notification
-                                            .metrics.maxScrollExtent -
+                          if (!isFirstPage &&
+                              notification.metrics.pixels <=
+                                  ((notification.metrics.maxScrollExtent -
+                                              notification
+                                                  .metrics.minScrollExtent) *
+                                          (1.0 - onEndReachedThreshold) +
+                                      notification.metrics.minScrollExtent)) {
+                            //
+                            final scrollOffset =
+                                (notification.metrics.maxScrollExtent -
                                         notification.metrics.minScrollExtent) *
                                     (1.0 - onEndReachedThreshold);
 
-                                chatComponentCubit.scrollOffset = scrollOffset;
+                            chatComponentCubit.scrollOffset = scrollOffset;
 
-                                //
-                                singleFuture(chatComponentState.chatKey,
-                                    () async {
-                                  await _handlePageForward(chatComponentCubit,
-                                      messageWindow, notification);
-                                });
-                              } else if (!isLastPage &&
-                                  notification.metrics.pixels >=
-                                      ((notification.metrics.maxScrollExtent -
-                                                  notification.metrics
-                                                      .minScrollExtent) *
-                                              onEndReachedThreshold +
-                                          notification
-                                              .metrics.minScrollExtent)) {
-                                //
-                                final scrollOffset = -(notification
-                                            .metrics.maxScrollExtent -
+                            //
+                            singleFuture(chatComponentState.chatKey, () async {
+                              await _handlePageForward(chatComponentCubit,
+                                  messageWindow, notification);
+                            });
+                          } else if (!isLastPage &&
+                              notification.metrics.pixels >=
+                                  ((notification.metrics.maxScrollExtent -
+                                              notification
+                                                  .metrics.minScrollExtent) *
+                                          onEndReachedThreshold +
+                                      notification.metrics.minScrollExtent)) {
+                            //
+                            final scrollOffset =
+                                -(notification.metrics.maxScrollExtent -
                                         notification.metrics.minScrollExtent) *
                                     (1.0 - onEndReachedThreshold);
 
-                                chatComponentCubit.scrollOffset = scrollOffset;
-                                //
-                                singleFuture(chatComponentState.chatKey,
-                                    () async {
-                                  await _handlePageBackward(chatComponentCubit,
-                                      messageWindow, notification);
-                                });
-                              }
-                              return false;
-                            },
-                            child: ValueListenableBuilder(
-                                valueListenable:
-                                    chatComponentState.textEditingController,
-                                builder: (context, textEditingValue, __) {
-                                  final messageIsValid = utf8
-                                          .encode(textEditingValue.text)
-                                          .lengthInBytes <
-                                      2048;
+                            chatComponentCubit.scrollOffset = scrollOffset;
+                            //
+                            singleFuture(chatComponentState.chatKey, () async {
+                              await _handlePageBackward(chatComponentCubit,
+                                  messageWindow, notification);
+                            });
+                          }
+                          return false;
+                        },
+                        child: ValueListenableBuilder(
+                            valueListenable:
+                                chatComponentState.textEditingController,
+                            builder: (context, textEditingValue, __) {
+                              final messageIsValid = utf8
+                                      .encode(textEditingValue.text)
+                                      .lengthInBytes <
+                                  2048;
 
-                                  return Chat(
+                              return Chat(
                                       key: chatComponentState.chatKey,
                                       theme: messageIsValid
                                           ? chatTheme
@@ -343,13 +339,14 @@ class ChatComponentWidget extends StatelessWidget {
                                       //showUserAvatars: false,
                                       //showUserNames: true,
                                       user: localUser,
-                                      emptyState: const EmptyChatWidget());
-                                }))),
-                  ),
-                ],
+                                      emptyState: const EmptyChatWidget())
+                                  .paddingLTRB(0, 2, 0, 0);
+                            }))),
               ),
             ],
           ),
-        ));
+        ],
+      ),
+    );
   }
 }

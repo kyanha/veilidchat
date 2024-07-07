@@ -64,13 +64,13 @@ class SliderTile extends StatelessWidget {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     final tileColor = scale.scale(!disabled ? tileScale : ScaleKind.gray);
-    final scalecfg = theme.extension<ScaleConfig>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final borderColor = selected ? tileColor.hoverBorder : tileColor.border;
-    final backgroundColor = scalecfg.useVisualIndicators && !selected
+    final backgroundColor = scaleConfig.useVisualIndicators && !selected
         ? tileColor.borderText
         : borderColor;
-    final textColor = scalecfg.useVisualIndicators && !selected
+    final textColor = scaleConfig.useVisualIndicators && !selected
         ? borderColor
         : tileColor.borderText;
 
@@ -79,10 +79,11 @@ class SliderTile extends StatelessWidget {
         decoration: ShapeDecoration(
             color: backgroundColor,
             shape: RoundedRectangleBorder(
-              side: scalecfg.useVisualIndicators
+              side: scaleConfig.useVisualIndicators
                   ? BorderSide(width: 2, color: borderColor, strokeAlign: 0)
                   : BorderSide.none,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius:
+                  BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
             )),
         child: Slidable(
             // Specify a key if the Slidable is dismissible.
@@ -95,12 +96,12 @@ class SliderTile extends StatelessWidget {
                         .map(
                           (a) => SlidableAction(
                               onPressed: disabled ? null : a.onPressed,
-                              backgroundColor: scalecfg.useVisualIndicators
+                              backgroundColor: scaleConfig.useVisualIndicators
                                   ? (selected
                                       ? tileColor.borderText
                                       : tileColor.border)
                                   : scale.scale(a.actionScale).primary,
-                              foregroundColor: scalecfg.useVisualIndicators
+                              foregroundColor: scaleConfig.useVisualIndicators
                                   ? (selected
                                       ? tileColor.border
                                       : tileColor.borderText)
@@ -118,12 +119,12 @@ class SliderTile extends StatelessWidget {
                         .map(
                           (a) => SlidableAction(
                               onPressed: disabled ? null : a.onPressed,
-                              backgroundColor: scalecfg.useVisualIndicators
+                              backgroundColor: scaleConfig.useVisualIndicators
                                   ? (selected
                                       ? tileColor.borderText
                                       : tileColor.border)
                                   : scale.scale(a.actionScale).primary,
-                              foregroundColor: scalecfg.useVisualIndicators
+                              foregroundColor: scaleConfig.useVisualIndicators
                                   ? (selected
                                       ? tileColor.border
                                       : tileColor.borderText)
@@ -134,7 +135,7 @@ class SliderTile extends StatelessWidget {
                         )
                         .toList()),
             child: Padding(
-                padding: scalecfg.useVisualIndicators
+                padding: scaleConfig.useVisualIndicators
                     ? EdgeInsets.zero
                     : const EdgeInsets.fromLTRB(0, 2, 0, 2),
                 child: ListTile(

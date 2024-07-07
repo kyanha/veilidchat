@@ -118,6 +118,23 @@ class HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Widget _applyPageBorder(Widget child) {
+    final theme = Theme.of(context);
+    final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
+
+    return ValueListenableBuilder(
+        valueListenable: _zoomDrawerController.stateNotifier!,
+        child: child,
+        builder: (context, drawerState, staticChild) => clipBorder(
+            clipEnabled: drawerState != DrawerState.closed,
+            borderEnabled:
+                scaleConfig.preferBorders && scaleConfig.useVisualIndicators,
+            borderRadius: 16 * scaleConfig.borderRadiusScale,
+            borderColor: scale.primaryScale.border,
+            child: staticChild!));
+  }
+
   Widget _buildAccountPageView(BuildContext context) {
     final localAccounts = context.watch<LocalAccountsCubit>().state;
     final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
@@ -127,7 +144,7 @@ class HomeScreenState extends State<HomeScreen>
     final activeIndex = localAccounts
         .indexWhere((x) => x.superIdentity.recordKey == activeLocalAccount);
     if (activeIndex == -1) {
-      return const HomeNoActive();
+      return _applyPageBorder(const HomeNoActive());
     }
 
     final accountPages = <Widget>[];
@@ -141,7 +158,7 @@ class HomeScreenState extends State<HomeScreen>
       }
       final accountPage = _buildAccountPage(
           context, superIdentityRecordKey, perAccountCollectionState);
-      accountPages.add(KeyedSubtree.wrap(accountPage, i));
+      accountPages.add(_applyPageBorder(accountPage));
     }
 
     return SlideIndexedStack(
@@ -154,15 +171,6 @@ class HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scale = theme.extension<ScaleScheme>()!;
-
-    final gradient = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          scale.tertiaryScale.subtleBackground,
-          scale.tertiaryScale.appBackground,
-        ]);
 
     final localAccounts = context.watch<LocalAccountsCubit>().state;
     final activeLocalAccount = context.watch<ActiveLocalAccountCubit>().state;
@@ -171,8 +179,8 @@ class HomeScreenState extends State<HomeScreen>
     final canClose = activeIndex != -1;
 
     return SafeArea(
-        child: DecoratedBox(
-            decoration: BoxDecoration(gradient: gradient),
+        child: DefaultTextStyle(
+            style: theme.textTheme.bodySmall!,
             child: ZoomDrawer(
               controller: _zoomDrawerController,
               //menuBackgroundColor: Colors.transparent,
@@ -188,18 +196,16 @@ class HomeScreenState extends State<HomeScreen>
               mainScreen: Provider<ZoomDrawerController>.value(
                   value: _zoomDrawerController,
                   child: Builder(builder: _buildAccountPageView)),
-              borderRadius: 24,
-              //showShadow: false,
+              borderRadius: 0,
               angle: 0,
-              drawerShadowsBackgroundColor: theme.shadowColor,
-              mainScreenOverlayColor: theme.shadowColor.withAlpha(0x3F),
+              mainScreenOverlayColor: theme.shadowColor.withAlpha(0x2F),
               openCurve: Curves.fastEaseInToSlowEaseOut,
               // duration: const Duration(milliseconds: 250),
               // reverseDuration: const Duration(milliseconds: 250),
               menuScreenTapClose: canClose,
               mainScreenTapClose: canClose,
               disableDragGesture: !canClose,
-              mainScreenScale: .25,
+              mainScreenScale: .15,
               slideWidth: min(360, MediaQuery.of(context).size.width * 0.9),
             )));
   }

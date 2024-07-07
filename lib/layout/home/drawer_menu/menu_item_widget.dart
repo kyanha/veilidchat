@@ -1,7 +1,6 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class MenuItemWidget extends StatelessWidget {
   const MenuItemWidget({
@@ -17,6 +16,7 @@ class MenuItemWidget extends StatelessWidget {
     this.borderColor,
     this.borderHoverColor,
     this.borderFocusColor,
+    this.borderRadius,
     this.footerButtonIcon,
     this.footerButtonIconColor,
     this.footerButtonIconHoverColor,
@@ -41,18 +41,20 @@ class MenuItemWidget extends StatelessWidget {
           side: WidgetStateBorderSide.resolveWith((states) {
             if (states.contains(WidgetState.hovered)) {
               return borderColor != null
-                  ? BorderSide(color: borderHoverColor!)
+                  ? BorderSide(width: 2, color: borderHoverColor!)
                   : null;
             }
             if (states.contains(WidgetState.focused)) {
               return borderColor != null
-                  ? BorderSide(color: borderFocusColor!)
+                  ? BorderSide(width: 2, color: borderFocusColor!)
                   : null;
             }
-            return borderColor != null ? BorderSide(color: borderColor!) : null;
+            return borderColor != null
+                ? BorderSide(width: 2, color: borderColor!)
+                : null;
           }),
-          shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+          shape: WidgetStateProperty.all(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(borderRadius ?? 0)))),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
@@ -104,6 +106,7 @@ class MenuItemWidget extends StatelessWidget {
       ..add(ColorProperty('backgroundHoverColor', backgroundHoverColor))
       ..add(ColorProperty('backgroundFocusColor', backgroundFocusColor))
       ..add(ColorProperty('borderColor', borderColor))
+      ..add(DoubleProperty('borderRadius', borderRadius))
       ..add(ColorProperty('borderHoverColor', borderHoverColor))
       ..add(ColorProperty('borderFocusColor', borderFocusColor));
   }
@@ -122,6 +125,7 @@ class MenuItemWidget extends StatelessWidget {
   final Color? backgroundHoverColor;
   final Color? backgroundFocusColor;
   final Color? borderColor;
+  final double? borderRadius;
   final Color? borderHoverColor;
   final Color? borderFocusColor;
   final Color? footerButtonIconColor;

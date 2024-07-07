@@ -51,6 +51,7 @@ class _EnterPinDialogState extends State<EnterPinDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
     final focusedBorderColor = scale.primaryScale.hoverBorder;
     final fillColor = scale.primaryScale.elementBackground;
     final borderColor = scale.primaryScale.border;
@@ -61,7 +62,7 @@ class _EnterPinDialogState extends State<EnterPinDialog> {
       textStyle: TextStyle(fontSize: 22, color: scale.primaryScale.appText),
       decoration: BoxDecoration(
         color: fillColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
         border: Border.all(color: borderColor),
       ),
     );

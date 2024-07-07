@@ -22,6 +22,7 @@ List<DropdownMenuItem<dynamic>> _getThemeDropdownItems() {
     ColorPreference.eggplant: translate('themes.eggplant'),
     ColorPreference.lime: translate('themes.lime'),
     ColorPreference.grim: translate('themes.grim'),
+    ColorPreference.elite: translate('themes.elite'),
     ColorPreference.contrast: translate('themes.contrast')
   };
 

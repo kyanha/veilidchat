@@ -40,13 +40,14 @@ class ContactInvitationListWidgetState
     final theme = Theme.of(context);
     //final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
       decoration: ShapeDecoration(
           shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
       )),
       constraints: const BoxConstraints(maxHeight: 200),
       child: Container(
@@ -54,7 +55,8 @@ class ContactInvitationListWidgetState
           decoration: ShapeDecoration(
               color: scale.primaryScale.subtleBackground,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius:
+                    BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
               )),
           child: ListView.builder(
             controller: _scrollController,

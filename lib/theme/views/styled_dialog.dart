@@ -11,12 +11,14 @@ class StyledDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
     final textTheme = theme.textTheme;
 
     return AlertDialog(
         elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+              Radius.circular(16 * scaleConfig.borderRadiusScale)),
         ),
         contentPadding: const EdgeInsets.all(4),
         backgroundColor: scale.primaryScale.dialogBorder,
@@ -31,12 +33,14 @@ class StyledDialog extends StatelessWidget {
             decoration: ShapeDecoration(
                 color: scale.primaryScale.border,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16))),
+                    borderRadius: BorderRadius.circular(
+                        16 * scaleConfig.borderRadiusScale))),
             child: DecoratedBox(
                 decoration: ShapeDecoration(
                     color: scale.primaryScale.appBackground,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12))),
+                        borderRadius: BorderRadius.circular(
+                            12 * scaleConfig.borderRadiusScale))),
                 child: child.paddingAll(0))));
   }
 

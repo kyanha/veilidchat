@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'scale_scheme.dart';
 
 class ScaleInputDecoratorTheme extends InputDecorationTheme {
-  ScaleInputDecoratorTheme(this._scaleScheme, this._textTheme)
+  ScaleInputDecoratorTheme(
+      this._scaleScheme, ScaleConfig scaleConfig, this._textTheme)
       : super(
             border: OutlineInputBorder(
                 borderSide: BorderSide(color: _scaleScheme.primaryScale.border),
-                borderRadius: BorderRadius.circular(8)),
+                borderRadius:
+                    BorderRadius.circular(8 * scaleConfig.borderRadiusScale)),
             contentPadding: const EdgeInsets.all(8),
             labelStyle: TextStyle(
                 color: _scaleScheme.primaryScale.subtleText.withAlpha(127)),
@@ -16,7 +18,8 @@ class ScaleInputDecoratorTheme extends InputDecorationTheme {
             focusedBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                     color: _scaleScheme.primaryScale.hoverBorder, width: 2),
-                borderRadius: BorderRadius.circular(8)));
+                borderRadius:
+                    BorderRadius.circular(8 * scaleConfig.borderRadiusScale)));
 
   final ScaleScheme _scaleScheme;
   final TextTheme _textTheme;
