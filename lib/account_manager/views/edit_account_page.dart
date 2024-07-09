@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +55,13 @@ class _EditAccountPageState extends State<EditAccountPage> {
       await changeWindowSetup(
           TitleBarStyle.normal, OrientationCapability.portraitOnly);
     });
+  }
+
+  @override
+  void dispose() {
+    unawaited(
+        changeWindowSetup(TitleBarStyle.normal, OrientationCapability.normal));
+    super.dispose();
   }
 
   Widget _editAccountForm(BuildContext context,
@@ -282,30 +291,27 @@ class _EditAccountPageState extends State<EditAccountPage> {
                         await GoRouterHelper(context).push('/settings');
                       })
                 ]),
-            body: Column(children: [
+            body: SingleChildScrollView(
+                child: Column(children: [
               _editAccountForm(
                 context,
                 onSubmit: _onSubmit,
-              ).expanded(),
-              Text(translate('edit_account_page.remove_account_description')),
-              ElevatedButton(
-                  onPressed: _onRemoveAccount,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.person_remove_alt_1, size: 16)
-                        .paddingLTRB(0, 0, 4, 0),
-                    Text(translate('edit_account_page.remove_account'))
-                        .paddingLTRB(0, 0, 4, 0)
-                  ])).paddingLTRB(0, 8, 0, 24),
-              Text(translate('edit_account_page.destroy_account_description')),
-              ElevatedButton(
-                  onPressed: _onDestroyAccount,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.person_off, size: 16)
-                        .paddingLTRB(0, 0, 4, 0),
-                    Text(translate('edit_account_page.destroy_account'))
-                        .paddingLTRB(0, 0, 4, 0)
-                  ])).paddingLTRB(0, 8, 0, 24)
-            ]).paddingSymmetric(horizontal: 24, vertical: 8))
+              ).paddingLTRB(0, 0, 0, 32),
+              OptionBox(
+                instructions:
+                    translate('edit_account_page.remove_account_description'),
+                buttonIcon: Icons.person_remove_alt_1,
+                buttonText: translate('edit_account_page.remove_account'),
+                onClick: _onRemoveAccount,
+              ),
+              OptionBox(
+                instructions:
+                    translate('edit_account_page.destroy_account_description'),
+                buttonIcon: Icons.person_off,
+                buttonText: translate('edit_account_page.destroy_account'),
+                onClick: _onDestroyAccount,
+              )
+            ]).paddingSymmetric(horizontal: 24, vertical: 8)))
         .withModalHUD(context, displayModalHUD);
   }
 }

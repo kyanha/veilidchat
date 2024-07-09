@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../tools/responsive.dart';
+import '../theme/views/responsive.dart';
 
 export 'package:window_manager/window_manager.dart' show TitleBarStyle;
 
@@ -21,7 +21,7 @@ Future<void> initializeWindowControl() async {
 
     const windowOptions = WindowOptions(
       size: Size(768, 1024),
-      //minimumSize: Size(480, 480),
+      minimumSize: Size(400, 500),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,

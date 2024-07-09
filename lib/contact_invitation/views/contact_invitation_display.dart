@@ -11,7 +11,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../theme/theme.dart';
-import '../../tools/tools.dart';
 import '../contact_invitation.dart';
 
 class ContactInvitationDisplayDialog extends StatelessWidget {

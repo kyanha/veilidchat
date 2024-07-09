@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
-import '../theme/theme.dart';
+import '../theme.dart';
 
 class EnterPasswordDialog extends StatefulWidget {
   const EnterPasswordDialog({

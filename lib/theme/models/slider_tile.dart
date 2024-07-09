@@ -106,7 +106,7 @@ class SliderTile extends StatelessWidget {
                                       ? tileColor.border
                                       : tileColor.borderText)
                                   : scale.scale(a.actionScale).primaryText,
-                              icon: a.icon,
+                              icon: subtitle.isNotEmpty ? a.icon : null,
                               label: a.label,
                               padding: const EdgeInsets.all(2)),
                         )
@@ -129,7 +129,7 @@ class SliderTile extends StatelessWidget {
                                       ? tileColor.border
                                       : tileColor.borderText)
                                   : scale.scale(a.actionScale).primaryText,
-                              icon: a.icon,
+                              icon: subtitle.isNotEmpty ? a.icon : null,
                               label: a.label,
                               padding: const EdgeInsets.all(2)),
                         )
@@ -140,9 +140,12 @@ class SliderTile extends StatelessWidget {
                     : const EdgeInsets.fromLTRB(0, 2, 0, 2),
                 child: ListTile(
                     onTap: onTap,
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -4),
                     title: Text(
                       title,
-                      softWrap: true,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
                     ),
                     subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
                     iconColor: textColor,

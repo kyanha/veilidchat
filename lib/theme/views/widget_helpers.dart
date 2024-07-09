@@ -183,9 +183,9 @@ Widget styledTitleContainer({
       child: Column(children: [
         Text(
           title,
-          style: textTheme.titleMedium!
+          style: textTheme.titleSmall!
               .copyWith(color: titleColor ?? scale.primaryScale.borderText),
-        ).paddingLTRB(8, 8, 8, 4),
+        ).paddingLTRB(8, 6, 8, 2),
         DecoratedBox(
                 decoration: ShapeDecoration(
                     color:

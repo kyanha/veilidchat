@@ -1,7 +1,6 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,7 +19,7 @@ class DrawerMenu extends StatefulWidget {
   const DrawerMenu({super.key});
 
   @override
-  State createState() => _DrawerMenuState();
+  State<DrawerMenu> createState() => _DrawerMenuState();
 }
 
 class _DrawerMenuState extends State<DrawerMenu> {
@@ -105,10 +104,12 @@ class _DrawerMenuState extends State<DrawerMenu> {
         width: 34,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-              color: border,
-              width: 2,
-              strokeAlign: BorderSide.strokeAlignOutside),
+          border: scaleConfig.preferBorders
+              ? Border.all(
+                  color: border,
+                  width: 2,
+                  strokeAlign: BorderSide.strokeAlignOutside)
+              : null,
           color: Colors.blue,
         ),
         child: AvatarImage(
@@ -130,9 +131,18 @@ class _DrawerMenuState extends State<DrawerMenu> {
           backgroundColor: background,
           backgroundHoverColor: hoverBackground,
           backgroundFocusColor: activeBackground,
-          borderColor: border,
-          borderHoverColor: hoverBorder,
-          borderFocusColor: activeBorder,
+          borderColor:
+              (scaleConfig.preferBorders || scaleConfig.useVisualIndicators)
+                  ? border
+                  : null,
+          borderHoverColor:
+              (scaleConfig.preferBorders || scaleConfig.useVisualIndicators)
+                  ? hoverBorder
+                  : null,
+          borderFocusColor:
+              (scaleConfig.preferBorders || scaleConfig.useVisualIndicators)
+                  ? activeBorder
+                  : null,
           borderRadius: 16 * scaleConfig.borderRadiusScale,
           callback: callback,
           footerButtonIcon: loggedIn ? Icons.edit_outlined : null,
@@ -143,7 +153,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
         ));
   }
 
-  Widget _getAccountList(
+  List<Widget> _getAccountList(
       {required IList<LocalAccount> localAccounts,
       required TypedKey? activeLocalAccount,
       required PerAccountCollectionBlocMapState
@@ -164,7 +174,9 @@ class _DrawerMenuState extends State<DrawerMenu> {
       final avAccountRecordState = perAccountState?.avAccountRecordState;
       if (perAccountState != null && avAccountRecordState != null) {
         // Account is logged in
-        final scale = theme.extension<ScaleScheme>()!.primaryScale;
+        final scale = scaleConfig.useVisualIndicators
+            ? theme.extension<ScaleScheme>()!.primaryScale
+            : theme.extension<ScaleScheme>()!.tertiaryScale;
         final loggedInAccount = avAccountRecordState.when(
           data: (value) => _makeAccountWidget(
               name: value.profile.name,
@@ -209,14 +221,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
     }
 
     // Assemble main menu
-    final mainMenu = <Widget>[...loggedInAccounts, ...loggedOutAccounts];
-
-    // Return main menu widgets
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[...mainMenu],
-    );
+    return <Widget>[...loggedInAccounts, ...loggedOutAccounts];
   }
 
   Widget _getButton(
@@ -262,18 +267,18 @@ class _DrawerMenuState extends State<DrawerMenu> {
         }), shape: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.hovered)) {
             return RoundedRectangleBorder(
-                side: BorderSide(color: hoverBorder),
+                side: BorderSide(color: hoverBorder, width: 2),
                 borderRadius: BorderRadius.all(
                     Radius.circular(16 * scaleConfig.borderRadiusScale)));
           }
           if (states.contains(WidgetState.focused)) {
             return RoundedRectangleBorder(
-                side: BorderSide(color: activeBorder),
+                side: BorderSide(color: activeBorder, width: 2),
                 borderRadius: BorderRadius.all(
                     Radius.circular(16 * scaleConfig.borderRadiusScale)));
           }
           return RoundedRectangleBorder(
-              side: BorderSide(color: border),
+              side: BorderSide(color: border, width: 2),
               borderRadius: BorderRadius.all(
                   Radius.circular(16 * scaleConfig.borderRadiusScale)));
         })),
@@ -306,7 +311,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
 
     return Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [settingsButton, addButton]).paddingLTRB(0, 16, 0, 0);
+        children: [settingsButton, addButton]).paddingLTRB(0, 16, 0, 16);
   }
 
   @override
@@ -323,8 +328,8 @@ class _DrawerMenuState extends State<DrawerMenu> {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
+          scale.tertiaryScale.border,
           scale.tertiaryScale.subtleBorder,
-          scale.tertiaryScale.subtleBackground,
         ]);
 
     return DecoratedBox(
@@ -391,35 +396,21 @@ class _DrawerMenuState extends State<DrawerMenu> {
                           ? grayColorFilter
                           : null),
                 ]))),
-        const Spacer(),
-        DecoratedBox(
-            decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                    side: !scaleConfig.useVisualIndicators
-                        ? BorderSide.none
-                        : scaleConfig.preferBorders
-                            ? BorderSide(color: scale.tertiaryScale.border)
-                            : BorderSide(color: scale.tertiaryScale.primary),
-                    borderRadius: BorderRadius.circular(
-                        16 * scaleConfig.borderRadiusScale)),
-                color: scaleConfig.preferBorders
-                    ? Colors.transparent
-                    : scale.tertiaryScale.border.withAlpha(0x5F)),
-            child: Column(children: [
-              Text(translate('menu.accounts'),
-                      style: theme.textTheme.titleMedium!.copyWith(
-                          color: scaleConfig.preferBorders
-                              ? scale.tertiaryScale.border
-                              : scale.tertiaryScale.primary))
-                  .paddingLTRB(0, 0, 0, 16),
-              _getAccountList(
-                  localAccounts: localAccounts,
-                  activeLocalAccount: activeLocalAccount,
-                  perAccountCollectionBlocMapState:
-                      perAccountCollectionBlocMapState)
-            ]).paddingAll(16)),
+        Text(translate('menu.accounts'),
+                style: theme.textTheme.titleMedium!.copyWith(
+                    color: scaleConfig.preferBorders
+                        ? scale.tertiaryScale.border
+                        : scale.tertiaryScale.borderText))
+            .paddingLTRB(0, 16, 0, 16),
+        ListView(
+                shrinkWrap: true,
+                children: _getAccountList(
+                    localAccounts: localAccounts,
+                    activeLocalAccount: activeLocalAccount,
+                    perAccountCollectionBlocMapState:
+                        perAccountCollectionBlocMapState))
+            .expanded(),
         _getBottomButtons(),
-        const Spacer(),
         Row(children: [
           Text('${translate('menu.version')} $packageInfoVersion',
               style: theme.textTheme.labelMedium!

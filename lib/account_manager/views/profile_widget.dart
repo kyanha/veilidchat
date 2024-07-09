@@ -7,12 +7,15 @@ import '../../theme/theme.dart';
 class ProfileWidget extends StatelessWidget {
   const ProfileWidget({
     required proto.Profile profile,
+    required bool showPronouns,
     super.key,
-  }) : _profile = profile;
+  })  : _profile = profile,
+        _showPronouns = showPronouns;
 
   //
 
   final proto.Profile _profile;
+  final bool _showPronouns;
 
   //
 
@@ -42,22 +45,25 @@ class ProfileWidget extends StatelessWidget {
             borderRadius: BorderRadius.all(
                 Radius.circular(16 * scaleConfig.borderRadiusScale))),
       ),
-      child: Column(children: [
+      child: Row(children: [
+        const Spacer(),
         Text(
           _profile.name,
-          style: textTheme.headlineSmall!.copyWith(
+          style: textTheme.titleMedium!.copyWith(
               color: scaleConfig.preferBorders
                   ? scale.primaryScale.border
                   : scale.primaryScale.borderText),
           textAlign: TextAlign.left,
-        ).paddingAll(4),
-        if (_profile.pronouns.isNotEmpty)
-          Text(_profile.pronouns,
-                  style: textTheme.bodyMedium!.copyWith(
+        ).paddingAll(12),
+        if (_profile.pronouns.isNotEmpty && _showPronouns)
+          Text('(${_profile.pronouns})',
+                  textAlign: TextAlign.right,
+                  style: textTheme.bodySmall!.copyWith(
                       color: scaleConfig.preferBorders
                           ? scale.primaryScale.border
-                          : scale.primaryScale.borderText))
-              .paddingLTRB(4, 0, 4, 4),
+                          : scale.primaryScale.primary))
+              .paddingAll(12),
+        const Spacer()
       ]),
     );
   }

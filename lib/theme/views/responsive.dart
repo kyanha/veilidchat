@@ -9,7 +9,7 @@ bool get isWeb => kIsWeb;
 bool get isDesktop =>
     !isWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
 
-const kMobileWidthCutoff = 479.0;
+const kMobileWidthCutoff = 500.0;
 
 bool isMobileWidth(BuildContext context) =>
     MediaQuery.of(context).size.width < kMobileWidthCutoff;

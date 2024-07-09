@@ -19,7 +19,9 @@ class IdentityInstance with _$IdentityInstance {
     required PublicKey publicKey,
 
     // Secret key of identity instance
-    // Encrypted with DH(publicKey, SuperIdentity.secret) with appended salt
+    // Encrypted with appended salt, key is DeriveSharedSecret(
+    //    password = SuperIdentity.secret,
+    //    salt = publicKey)
     // Used to recover accounts without generating a new instance
     @Uint8ListJsonConverter() required Uint8List encryptedSecretKey,
 

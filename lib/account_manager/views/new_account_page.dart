@@ -70,10 +70,10 @@ class _NewAccountPageState extends State<NewAccountPage> {
         _isInAsyncCall = true;
       });
       try {
-        final superSecret = await AccountRepository.instance
+        final writableSuperIdentity = await AccountRepository.instance
             .createWithNewSuperIdentity(newProfile);
-        GoRouterHelper(context)
-            .pushReplacement('/new_account/recovery_key', extra: superSecret);
+        GoRouterHelper(context).pushReplacement('/new_account/recovery_key',
+            extra: [writableSuperIdentity, newProfile.name]);
       } finally {
         if (mounted) {
           setState(() {
@@ -94,7 +94,6 @@ class _NewAccountPageState extends State<NewAccountPage> {
     final displayModalHUD = _isInAsyncCall;
 
     return StyledScaffold(
-      // resizeToAvoidBottomInset: false,
       appBar: DefaultAppBar(
           title: Text(translate('new_account_page.titlebar')),
           leading: Navigator.canPop(context)
@@ -114,10 +113,11 @@ class _NewAccountPageState extends State<NewAccountPage> {
                   await GoRouterHelper(context).push('/settings');
                 })
           ]),
-      body: _newAccountForm(
+      body: SingleChildScrollView(
+          child: _newAccountForm(
         context,
         onSubmit: _onSubmit,
-      ).paddingSymmetric(horizontal: 24, vertical: 8),
+      )).paddingSymmetric(horizontal: 24, vertical: 8),
     ).withModalHUD(context, displayModalHUD);
   }
 }

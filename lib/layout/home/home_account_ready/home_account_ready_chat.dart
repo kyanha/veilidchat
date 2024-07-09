@@ -34,6 +34,7 @@ class HomeAccountReadyChatState extends State<HomeAccountReadyChat> {
 
   @override
   Widget build(BuildContext context) => SafeArea(
+        bottom: false,
         child: buildChatComponent(context),
       );
 }

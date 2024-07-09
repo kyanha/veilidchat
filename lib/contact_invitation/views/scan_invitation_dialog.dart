@@ -13,7 +13,6 @@ import 'package:provider/provider.dart';
 import 'package:zxing2/qrcode.dart';
 
 import '../../theme/theme.dart';
-import '../../tools/tools.dart';
 import 'invitation_dialog.dart';
 
 // class BarcodeOverlay extends CustomPainter {

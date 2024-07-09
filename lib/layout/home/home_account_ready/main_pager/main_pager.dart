@@ -113,7 +113,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             _bottomLabelList[index],
-            style: theme.textTheme.labelLarge!.copyWith(
+            style: theme.textTheme.labelMedium!.copyWith(
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 color: color),
           ),

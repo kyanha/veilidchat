@@ -46,6 +46,7 @@ class BottomSheetActionButtonState extends State<BottomSheetActionButton> {
     return _showFab
         ? FloatingActionButton(
             elevation: 0,
+            heroTag: this,
             hoverElevation: 0,
             shape: widget.shape,
             foregroundColor: widget.foregroundColor,

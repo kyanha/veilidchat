@@ -1,5 +1,4 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -9,7 +8,6 @@ import '../../../account_manager/account_manager.dart';
 import '../../../chat/chat.dart';
 import '../../../proto/proto.dart' as proto;
 import '../../../theme/theme.dart';
-import '../../../tools/tools.dart';
 import 'main_pager/main_pager.dart';
 
 class HomeAccountReadyMain extends StatefulWidget {
@@ -44,7 +42,7 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
                         ? scale.primaryScale.border
                         : scale.primaryScale.borderText,
                     constraints:
-                        const BoxConstraints.expand(height: 64, width: 64),
+                        const BoxConstraints.expand(height: 48, width: 48),
                     style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.all(
                             scaleConfig.preferBorders
@@ -61,7 +59,7 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
                                           : scale.primaryScale.borderText,
                                       width: 2),
                               borderRadius: BorderRadius.all(Radius.circular(
-                                  16 * scaleConfig.borderRadiusScale))),
+                                  12 * scaleConfig.borderRadiusScale))),
                         )),
                     tooltip: translate('menu.settings_tooltip'),
                     onPressed: () async {
@@ -69,7 +67,10 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
                       await ctrl.toggle?.call();
                       //await GoRouterHelper(context).push('/settings');
                     }).paddingLTRB(0, 0, 8, 0),
-                ProfileWidget(profile: profile).expanded(),
+                ProfileWidget(
+                  profile: profile,
+                  showPronouns: false,
+                ).expanded(),
               ]).paddingAll(8),
               MainPager(key: _mainPagerKey).expanded()
             ]));

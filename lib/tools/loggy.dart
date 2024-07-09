@@ -9,7 +9,7 @@ import 'package:loggy/loggy.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../veilid_processor/views/developer.dart';
-import 'responsive.dart';
+import '../theme/views/responsive.dart';
 import 'state_logger.dart';
 
 String wrapWithLogColor(LogLevel? level, String text) {

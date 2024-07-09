@@ -31,6 +31,7 @@ ChatTheme makeChatTheme(
         ),
         inputBackgroundColor: Colors.blue,
         inputBorderRadius: BorderRadius.zero,
+        inputTextStyle: textTheme.bodyLarge!,
         inputTextDecoration: InputDecoration(
           filled: !scaleConfig.preferBorders,
           fillColor: scale.primaryScale.subtleBackground,
@@ -77,13 +78,10 @@ ChatTheme makeChatTheme(
           color: Colors.white,
           fontSize: 64,
         ),
-        receivedMessageBodyTextStyle: TextStyle(
+        receivedMessageBodyTextStyle: textTheme.bodyLarge!.copyWith(
           color: scaleConfig.preferBorders
               ? scale.secondaryScale.calloutBackground
               : scale.secondaryScale.calloutText,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
         ),
         receivedEmojiMessageTextStyle: const TextStyle(
           color: Colors.white,

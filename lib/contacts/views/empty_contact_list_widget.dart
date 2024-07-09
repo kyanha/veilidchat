@@ -17,6 +17,7 @@ class EmptyContactListWidget extends StatelessWidget {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
@@ -25,6 +26,7 @@ class EmptyContactListWidget extends StatelessWidget {
           size: 48,
         ),
         Text(
+          textAlign: TextAlign.center,
           translate('contact_list.invite_people'),
           style: textTheme.bodyMedium?.copyWith(
             color: scale.primaryScale.subtleBorder,

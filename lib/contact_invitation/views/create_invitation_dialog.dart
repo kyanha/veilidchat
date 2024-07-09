@@ -11,7 +11,6 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../theme/theme.dart';
-import '../../tools/tools.dart';
 import '../contact_invitation.dart';
 
 class CreateInvitationDialog extends StatefulWidget {

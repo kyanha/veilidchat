@@ -270,11 +270,12 @@ class InvitationDialogState extends State<InvitationDialog> {
         if (_validInvitation != null && !_isValidating)
           Column(children: [
             Container(
-                    constraints: const BoxConstraints(maxHeight: 64),
-                    width: double.infinity,
-                    child:
-                        ProfileWidget(profile: _validInvitation!.remoteProfile))
-                .paddingLTRB(0, 0, 0, 16),
+                constraints: const BoxConstraints(maxHeight: 64),
+                width: double.infinity,
+                child: ProfileWidget(
+                  profile: _validInvitation!.remoteProfile,
+                  showPronouns: true,
+                )).paddingLTRB(0, 0, 0, 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [

@@ -149,8 +149,8 @@ class VeilidChatApp extends StatelessWidget {
                               scale.grayScale.subtleBackground,
                             ]
                           : [
-                              scale.tertiaryScale.hoverElementBackground,
-                              scale.tertiaryScale.subtleBackground,
+                              scale.primaryScale.hoverElementBackground,
+                              scale.primaryScale.subtleBackground,
                             ]);
 
                   return DecoratedBox(

@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../theme/theme.dart';
-import '../../tools/tools.dart';
 import 'invitation_dialog.dart';
 
 class PasteInvitationDialog extends StatefulWidget {

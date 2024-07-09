@@ -69,6 +69,12 @@ class WritableSuperIdentity {
   /// Delete a super identity with secrets
   Future<void> delete() async => superIdentity.delete();
 
+  /// Produce a recovery key for this superIdentity
+  Uint8List get recoveryKey => (BytesBuilder()
+        ..add(superIdentity.recordKey.decode())
+        ..add(superSecret.decode()))
+      .toBytes();
+
   /// xxx: migration support, new identities, reveal identity secret etc
 
   ////////////////////////////////////////////////////////////////////////////
@@ -113,8 +119,8 @@ class WritableSuperIdentity {
       // Make encrypted secret key
       final cs = await Veilid.instance.getCryptoSystem(identityRecordKey.kind);
 
-      final encryptionKey = await cs.generateSharedSecret(
-          identityPublicKey, superSecret, identityCryptoDomain);
+      final encryptionKey = await cs.deriveSharedSecret(
+          superSecret.decode(), identityPublicKey.decode());
       final encryptedSecretKey = await cs.encryptNoAuthWithNonce(
           identitySecretKey.decode(), encryptionKey);
 

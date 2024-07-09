@@ -74,7 +74,10 @@ class HomeScreenState extends State<HomeScreen>
         tablet: false,
         tabletLandscape: false,
         desktop: false)) {
+      final activeChatCubit = context.watch<ActiveChatCubit>();
+
       return BlocConsumer<ActiveChatCubit, TypedKey?>(
+          bloc: activeChatCubit,
           listener: (context, activeChat) {
             final hasActiveChat = activeChat != null;
             if (hasActiveChat) {
@@ -179,6 +182,7 @@ class HomeScreenState extends State<HomeScreen>
     final canClose = activeIndex != -1;
 
     return SafeArea(
+        bottom: false,
         child: DefaultTextStyle(
             style: theme.textTheme.bodySmall!,
             child: ZoomDrawer(

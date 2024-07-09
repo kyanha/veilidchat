@@ -3,7 +3,9 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  file_saver
   pasteboard
+  printing
   screen_retriever
   smart_auth
   url_launcher_linux

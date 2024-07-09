@@ -49,7 +49,7 @@ class ContactInvitationListWidgetState
           shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
       )),
-      constraints: const BoxConstraints(maxHeight: 200),
+      constraints: const BoxConstraints(maxHeight: 100),
       child: Container(
           width: double.infinity,
           decoration: ShapeDecoration(
@@ -59,6 +59,7 @@ class ContactInvitationListWidgetState
                     BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
               )),
           child: ListView.builder(
+            shrinkWrap: true,
             controller: _scrollController,
             itemCount: widget.contactInvitationRecordList.length,
             itemBuilder: (context, index) {

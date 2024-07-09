@@ -14,14 +14,13 @@ class NoConversationWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: scale.primaryScale.appBackground,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Icon(
             Icons.diversity_3,
@@ -29,6 +28,7 @@ class NoConversationWidget extends StatelessWidget {
             size: 48,
           ),
           Text(
+            textAlign: TextAlign.center,
             translate('chat.start_a_conversation'),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: scale.primaryScale.subtleBorder,

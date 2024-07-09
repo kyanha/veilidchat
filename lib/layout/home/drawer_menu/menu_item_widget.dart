@@ -72,7 +72,7 @@ class MenuItemWidget extends StatelessWidget {
                   ).paddingAll(8)),
             ),
             if (footerButtonIcon != null)
-              IconButton.outlined(
+              IconButton(
                   color: footerButtonIconColor,
                   focusColor: footerButtonIconFocusColor,
                   hoverColor: footerButtonIconHoverColor,

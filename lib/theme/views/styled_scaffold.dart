@@ -12,13 +12,15 @@ class StyledScaffold extends StatelessWidget {
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    return clipBorder(
-            clipEnabled: true,
-            borderEnabled: scaleConfig.useVisualIndicators,
-            borderRadius: 16 * scaleConfig.borderRadiusScale,
-            borderColor: scale.primaryScale.border,
-            child: Scaffold(appBar: appBar, body: body, key: key))
-        .paddingAll(32);
+    return isDesktop
+        ? clipBorder(
+                clipEnabled: true,
+                borderEnabled: scaleConfig.useVisualIndicators,
+                borderRadius: 16 * scaleConfig.borderRadiusScale,
+                borderColor: scale.primaryScale.border,
+                child: Scaffold(appBar: appBar, body: body, key: key))
+            .paddingAll(32)
+        : Scaffold(appBar: appBar, body: body, key: key);
   }
 
   ////////////////////////////////////////////////////////////////////////////

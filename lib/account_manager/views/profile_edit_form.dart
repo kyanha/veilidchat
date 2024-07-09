@@ -58,7 +58,7 @@ class _EditProfileFormState extends State<EditProfileForm> {
   ) =>
       FormBuilder(
         key: _formKey,
-        child: ListView(
+        child: Column(
           children: [
             Text(widget.header)
                 .textStyle(context.headlineSmall)

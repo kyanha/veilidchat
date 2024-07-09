@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:pinput/pinput.dart';
 
-import '../theme/theme.dart';
+import '../theme.dart';
 
 class EnterPinDialog extends StatefulWidget {
   const EnterPinDialog({

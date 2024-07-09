@@ -55,6 +55,8 @@ class AccountPageState extends State<AccountPage> {
           tilePadding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
           backgroundColor: scale.primaryScale.border,
           collapsedBackgroundColor: scale.primaryScale.border,
+          dense: true,
+          minTileHeight: 16,
           shape: RoundedRectangleBorder(
             borderRadius:
                 BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
@@ -66,10 +68,11 @@ class AccountPageState extends State<AccountPage> {
           title: Text(
             translate('account_page.contact_invitations'),
             textAlign: TextAlign.center,
-            style: textTheme.titleMedium!
+            style: textTheme.titleSmall!
                 .copyWith(color: scale.primaryScale.borderText),
           ),
           iconColor: scale.primaryScale.borderText,
+          collapsedIconColor: scale.primaryScale.borderText,
           initiallyExpanded: true,
           children: [
             ContactInvitationListWidget(

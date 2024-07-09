@@ -78,10 +78,14 @@ class RouterCubit extends Cubit<RouterState> {
           builder: (context, state) => const NewAccountPage(),
         ),
         GoRoute(
-          path: '/new_account/recovery_key',
-          builder: (context, state) =>
-              ShowRecoveryKeyPage(secretKey: state.extra! as SecretKey),
-        ),
+            path: '/new_account/recovery_key',
+            builder: (context, state) {
+              final extra = state.extra! as List<Object?>;
+
+              return ShowRecoveryKeyPage(
+                  writableSuperIdentity: extra[0]! as WritableSuperIdentity,
+                  name: extra[1]! as String);
+            }),
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsPage(),
