@@ -192,161 +192,135 @@ class ChatComponentWidget extends StatelessWidget {
       chatComponentCubit.scrollOffset = 0;
     }
 
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: scale.primaryScale.subtleBorder,
-                ),
-                child: Row(children: [
-                  Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Padding(
-                        padding:
-                            const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-                        child: Text(title,
-                            textAlign: TextAlign.start,
-                            style: textTheme.titleMedium!.copyWith(
-                                color: scale.primaryScale.borderText)),
-                      )),
-                  const Spacer(),
-                  IconButton(
-                      icon: Icon(Icons.close,
-                          color: scale.primaryScale.borderText),
-                      onPressed: () async {
-                        context.read<ActiveChatCubit>().setActiveChat(null);
-                      }).paddingLTRB(16, 0, 16, 0)
-                ]),
-              ),
-              Expanded(
-                child: DecoratedBox(
-                    decoration: BoxDecoration(
-                        color: scale.primaryScale.subtleBackground),
-                    child: NotificationListener<ScrollNotification>(
-                        onNotification: (notification) {
-                          if (chatComponentCubit.scrollOffset != 0) {
-                            return false;
-                          }
-
-                          if (!isFirstPage &&
-                              notification.metrics.pixels <=
-                                  ((notification.metrics.maxScrollExtent -
-                                              notification
-                                                  .metrics.minScrollExtent) *
-                                          (1.0 - onEndReachedThreshold) +
-                                      notification.metrics.minScrollExtent)) {
-                            //
-                            final scrollOffset =
-                                (notification.metrics.maxScrollExtent -
-                                        notification.metrics.minScrollExtent) *
-                                    (1.0 - onEndReachedThreshold);
-
-                            chatComponentCubit.scrollOffset = scrollOffset;
-
-                            //
-                            singleFuture(chatComponentState.chatKey, () async {
-                              await _handlePageForward(chatComponentCubit,
-                                  messageWindow, notification);
-                            });
-                          } else if (!isLastPage &&
-                              notification.metrics.pixels >=
-                                  ((notification.metrics.maxScrollExtent -
-                                              notification
-                                                  .metrics.minScrollExtent) *
-                                          onEndReachedThreshold +
-                                      notification.metrics.minScrollExtent)) {
-                            //
-                            final scrollOffset =
-                                -(notification.metrics.maxScrollExtent -
-                                        notification.metrics.minScrollExtent) *
-                                    (1.0 - onEndReachedThreshold);
-
-                            chatComponentCubit.scrollOffset = scrollOffset;
-                            //
-                            singleFuture(chatComponentState.chatKey, () async {
-                              await _handlePageBackward(chatComponentCubit,
-                                  messageWindow, notification);
-                            });
-                          }
-                          return false;
-                        },
-                        child: ValueListenableBuilder(
-                            valueListenable:
-                                chatComponentState.textEditingController,
-                            builder: (context, textEditingValue, __) {
-                              final messageIsValid = utf8
-                                      .encode(textEditingValue.text)
-                                      .lengthInBytes <
-                                  2048;
-
-                              return Chat(
-                                      key: chatComponentState.chatKey,
-                                      theme: messageIsValid
-                                          ? chatTheme
-                                          : errorChatTheme,
-                                      messages: messageWindow.window.toList(),
-                                      scrollToBottomOnSend: isFirstPage,
-                                      scrollController:
-                                          chatComponentState.scrollController,
-                                      inputOptions: InputOptions(
-                                          inputClearMode: messageIsValid
-                                              ? InputClearMode.always
-                                              : InputClearMode.never,
-                                          textEditingController:
-                                              chatComponentState
-                                                  .textEditingController),
-                                      // isLastPage: isLastPage,
-                                      // onEndReached: () async {
-                                      //   await _handlePageBackward(
-                                      //       chatComponentCubit, messageWindow);
-                                      // },
-                                      //onEndReachedThreshold: onEndReachedThreshold,
-                                      //onAttachmentPressed: _handleAttachmentPressed,
-                                      //onMessageTap: _handleMessageTap,
-                                      //onPreviewDataFetched: _handlePreviewDataFetched,
-                                      onSendPressed: (pt) {
-                                        try {
-                                          if (!messageIsValid) {
-                                            showErrorToast(
-                                                context,
-                                                translate(
-                                                    'chat.message_too_long'));
-                                            return;
-                                          }
-                                          _handleSendPressed(
-                                              chatComponentCubit, pt);
-                                        } on FormatException {
-                                          showErrorToast(
-                                              context,
-                                              translate(
-                                                  'chat.message_too_long'));
-                                        }
-                                      },
-                                      listBottomWidget: messageIsValid
-                                          ? null
-                                          : Text(
-                                                  translate(
-                                                      'chat.message_too_long'),
-                                                  style: TextStyle(
-                                                      color: scale
-                                                          .errorScale.primary))
-                                              .toCenter(),
-                                      //showUserAvatars: false,
-                                      //showUserNames: true,
-                                      user: localUser,
-                                      emptyState: const EmptyChatWidget())
-                                  .paddingLTRB(0, 2, 0, 0);
-                            }))),
-              ),
-            ],
+    return Column(
+      children: [
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: scale.primaryScale.subtleBorder,
           ),
-        ],
-      ),
+          child: Row(children: [
+            Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+                  child: Text(title,
+                      textAlign: TextAlign.start,
+                      style: textTheme.titleMedium!
+                          .copyWith(color: scale.primaryScale.borderText)),
+                )),
+            const Spacer(),
+            IconButton(
+                icon: Icon(Icons.close, color: scale.primaryScale.borderText),
+                onPressed: () async {
+                  context.read<ActiveChatCubit>().setActiveChat(null);
+                }).paddingLTRB(16, 0, 16, 0)
+          ]),
+        ),
+        DecoratedBox(
+            decoration:
+                BoxDecoration(color: scale.primaryScale.subtleBackground),
+            child: NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  if (chatComponentCubit.scrollOffset != 0) {
+                    return false;
+                  }
+
+                  if (!isFirstPage &&
+                      notification.metrics.pixels <=
+                          ((notification.metrics.maxScrollExtent -
+                                      notification.metrics.minScrollExtent) *
+                                  (1.0 - onEndReachedThreshold) +
+                              notification.metrics.minScrollExtent)) {
+                    //
+                    final scrollOffset = (notification.metrics.maxScrollExtent -
+                            notification.metrics.minScrollExtent) *
+                        (1.0 - onEndReachedThreshold);
+
+                    chatComponentCubit.scrollOffset = scrollOffset;
+
+                    //
+                    singleFuture(chatComponentState.chatKey, () async {
+                      await _handlePageForward(
+                          chatComponentCubit, messageWindow, notification);
+                    });
+                  } else if (!isLastPage &&
+                      notification.metrics.pixels >=
+                          ((notification.metrics.maxScrollExtent -
+                                      notification.metrics.minScrollExtent) *
+                                  onEndReachedThreshold +
+                              notification.metrics.minScrollExtent)) {
+                    //
+                    final scrollOffset =
+                        -(notification.metrics.maxScrollExtent -
+                                notification.metrics.minScrollExtent) *
+                            (1.0 - onEndReachedThreshold);
+
+                    chatComponentCubit.scrollOffset = scrollOffset;
+                    //
+                    singleFuture(chatComponentState.chatKey, () async {
+                      await _handlePageBackward(
+                          chatComponentCubit, messageWindow, notification);
+                    });
+                  }
+                  return false;
+                },
+                child: ValueListenableBuilder(
+                    valueListenable: chatComponentState.textEditingController,
+                    builder: (context, textEditingValue, __) {
+                      final messageIsValid =
+                          utf8.encode(textEditingValue.text).lengthInBytes <
+                              2048;
+
+                      return Chat(
+                              key: chatComponentState.chatKey,
+                              theme:
+                                  messageIsValid ? chatTheme : errorChatTheme,
+                              messages: messageWindow.window.toList(),
+                              scrollToBottomOnSend: isFirstPage,
+                              scrollController:
+                                  chatComponentState.scrollController,
+                              inputOptions: InputOptions(
+                                  inputClearMode: messageIsValid
+                                      ? InputClearMode.always
+                                      : InputClearMode.never,
+                                  textEditingController:
+                                      chatComponentState.textEditingController),
+                              // isLastPage: isLastPage,
+                              // onEndReached: () async {
+                              //   await _handlePageBackward(
+                              //       chatComponentCubit, messageWindow);
+                              // },
+                              //onEndReachedThreshold: onEndReachedThreshold,
+                              //onAttachmentPressed: _handleAttachmentPressed,
+                              //onMessageTap: _handleMessageTap,
+                              //onPreviewDataFetched: _handlePreviewDataFetched,
+                              onSendPressed: (pt) {
+                                try {
+                                  if (!messageIsValid) {
+                                    showErrorToast(context,
+                                        translate('chat.message_too_long'));
+                                    return;
+                                  }
+                                  _handleSendPressed(chatComponentCubit, pt);
+                                } on FormatException {
+                                  showErrorToast(context,
+                                      translate('chat.message_too_long'));
+                                }
+                              },
+                              listBottomWidget: messageIsValid
+                                  ? null
+                                  : Text(translate('chat.message_too_long'),
+                                          style: TextStyle(
+                                              color: scale.errorScale.primary))
+                                      .toCenter(),
+                              //showUserAvatars: false,
+                              //showUserNames: true,
+                              user: localUser,
+                              emptyState: const EmptyChatWidget())
+                          .paddingLTRB(0, 2, 0, 0);
+                    }))).expanded(),
+      ],
     );
   }
 }

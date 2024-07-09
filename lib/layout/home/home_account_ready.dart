@@ -4,20 +4,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 
-import '../../../account_manager/account_manager.dart';
-import '../../../chat/chat.dart';
-import '../../../proto/proto.dart' as proto;
-import '../../../theme/theme.dart';
+import '../../account_manager/account_manager.dart';
+import '../../chat/chat.dart';
+import '../../proto/proto.dart' as proto;
+import '../../theme/theme.dart';
 import 'main_pager/main_pager.dart';
 
-class HomeAccountReadyMain extends StatefulWidget {
-  const HomeAccountReadyMain({super.key});
+class HomeAccountReady extends StatefulWidget {
+  const HomeAccountReady({super.key});
 
   @override
-  State<HomeAccountReadyMain> createState() => _HomeAccountReadyMainState();
+  State<HomeAccountReady> createState() => _HomeAccountReadyState();
 }
 
-class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
+class _HomeAccountReadyState extends State<HomeAccountReady> {
   @override
   void initState() {
     super.initState();
@@ -98,7 +98,6 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
       phone: false,
     );
 
-    final w = MediaQuery.of(context).size.width;
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
@@ -111,51 +110,56 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
     //   _chatAnimationController.reset();
     // }
 
-    late final bool offstageLeft;
-    late final bool offstageRight;
-    late final double leftWidth;
-    late final double rightWidth;
-    if (isLarge) {
-      leftWidth = 300;
-      rightWidth = w - 300 - 2;
-      offstageLeft = false;
-      offstageRight = false;
-    } else {
-      leftWidth = w;
-      rightWidth = w;
-      if (hasActiveChat) {
-        offstageLeft = true;
-        offstageRight = false;
-      } else {
-        offstageLeft = false;
-        offstageRight = true;
-      }
-    }
+    return LayoutBuilder(builder: (context, constraints) {
+      const leftColumnSize = 300.0;
 
-    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Offstage(
-          offstage: offstageLeft,
-          child: ConstrainedBox(
-              constraints:
-                  BoxConstraints(minWidth: leftWidth, maxWidth: leftWidth),
-              child: buildLeftPane(context))),
-      Offstage(
-          offstage: offstageLeft || offstageRight,
-          child: SizedBox(
-              width: 2,
-              height: double.infinity,
-              child: ColoredBox(
-                  color: scaleConfig.preferBorders
-                      ? scale.primaryScale.subtleBorder
-                      : scale.primaryScale.subtleBackground))),
-      Offstage(
-          offstage: offstageRight,
-          child: ConstrainedBox(
-            constraints:
-                BoxConstraints(minWidth: rightWidth, maxWidth: rightWidth),
-            child: buildRightPane(context),
-          )),
-    ]);
+      late final bool visibleLeft;
+      late final bool visibleRight;
+      late final double leftWidth;
+      late final double rightWidth;
+      if (isLarge) {
+        visibleLeft = true;
+        visibleRight = true;
+        leftWidth = leftColumnSize;
+        rightWidth = constraints.maxWidth - leftColumnSize - 2;
+      } else {
+        if (hasActiveChat) {
+          visibleLeft = false;
+          visibleRight = true;
+          leftWidth = leftColumnSize;
+          rightWidth = constraints.maxWidth;
+        } else {
+          visibleLeft = true;
+          visibleRight = false;
+          leftWidth = constraints.maxWidth;
+          rightWidth = 400; // whatever
+        }
+      }
+
+      return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Offstage(
+            offstage: !visibleLeft,
+            child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: leftWidth),
+                child: buildLeftPane(context))),
+        Offstage(
+            offstage: !(visibleLeft && visibleRight),
+            child: SizedBox(
+                width: 2,
+                height: double.infinity,
+                child: ColoredBox(
+                    color: scaleConfig.preferBorders
+                        ? scale.primaryScale.subtleBorder
+                        : scale.primaryScale.subtleBackground))),
+        Offstage(
+            offstage: !visibleRight,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight, maxWidth: rightWidth),
+              child: buildRightPane(context),
+            )),
+      ]);
+    });
   }
 
   ////////////////////////////////////////////////////////////////////////////

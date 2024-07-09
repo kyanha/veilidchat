@@ -19,6 +19,7 @@ class NoConversationWidget extends StatelessWidget {
         color: scale.primaryScale.appBackground,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(

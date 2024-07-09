@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
-import '../../../../contact_invitation/contact_invitation.dart';
-import '../../../../contacts/contacts.dart';
-import '../../../../theme/theme.dart';
+import '../../../contact_invitation/contact_invitation.dart';
+import '../../../contacts/contacts.dart';
+import '../../../theme/theme.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({

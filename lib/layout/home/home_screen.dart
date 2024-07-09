@@ -13,7 +13,7 @@ import 'drawer_menu/drawer_menu.dart';
 import 'home_account_invalid.dart';
 import 'home_account_locked.dart';
 import 'home_account_missing.dart';
-import 'home_account_ready/home_account_ready.dart';
+import 'home_account_ready.dart';
 import 'home_no_active.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -64,7 +64,7 @@ class HomeScreenState extends State<HomeScreen>
 
         // Re-export all ready blocs to the account display subtree
         return perAccountCollectionState.provide(
-            child: const HomeAccountReadyMain());
+            child: const HomeAccountReady());
     }
   }
 

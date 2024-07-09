@@ -1,7 +1,7 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../chat_list/chat_list.dart';
+import '../../../chat_list/chat_list.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});

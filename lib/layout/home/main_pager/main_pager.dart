@@ -10,9 +10,9 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../chat/chat.dart';
-import '../../../../contact_invitation/contact_invitation.dart';
-import '../../../../theme/theme.dart';
+import '../../../chat/chat.dart';
+import '../../../contact_invitation/contact_invitation.dart';
+import '../../../theme/theme.dart';
 import 'account_page.dart';
 import 'bottom_sheet_action_button.dart';
 import 'chats_page.dart';
