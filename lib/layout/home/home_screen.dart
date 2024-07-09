@@ -1,14 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:transitioned_indexed_stack/transitioned_indexed_stack.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
-import '../../chat/chat.dart';
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import 'drawer_menu/drawer_menu.dart';
@@ -32,19 +30,6 @@ class HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   @override
   void initState() {
-    // Chat animation setup (open in phone mode)
-    _chatAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    _chatAnimation = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _chatAnimationController,
-      curve: Curves.easeInOut,
-    ));
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final localAccounts = context.read<LocalAccountsCubit>().state;
       final activeLocalAccount = context.read<ActiveLocalAccountCubit>().state;
@@ -60,44 +45,6 @@ class HomeScreenState extends State<HomeScreen>
       }
     });
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    _chatAnimationController.dispose();
-    super.dispose();
-  }
-
-  Widget _buildAccountReadyDeviceSpecific(BuildContext context) {
-    if (responsiveVisibility(
-        context: context,
-        tablet: false,
-        tabletLandscape: false,
-        desktop: false)) {
-      final activeChatCubit = context.watch<ActiveChatCubit>();
-
-      return BlocConsumer<ActiveChatCubit, TypedKey?>(
-          bloc: activeChatCubit,
-          listener: (context, activeChat) {
-            final hasActiveChat = activeChat != null;
-            if (hasActiveChat) {
-              _chatAnimationController.forward();
-            } else {
-              _chatAnimationController.reset();
-            }
-          },
-          builder: (context, activeChat) => Stack(
-                children: <Widget>[
-                  const HomeAccountReadyMain(),
-                  Offstage(
-                      offstage: activeChat == null,
-                      child: SlideTransition(
-                          position: _chatAnimation,
-                          child: const HomeAccountReadyChat())),
-                ],
-              ));
-    }
-    return const HomeAccountReadyMain();
   }
 
   Widget _buildAccountPage(
@@ -117,7 +64,7 @@ class HomeScreenState extends State<HomeScreen>
 
         // Re-export all ready blocs to the account display subtree
         return perAccountCollectionState.provide(
-            child: Builder(builder: _buildAccountReadyDeviceSpecific));
+            child: const HomeAccountReadyMain());
     }
   }
 
@@ -217,6 +164,4 @@ class HomeScreenState extends State<HomeScreen>
   ////////////////////////////////////////////////////////////////////////////
 
   final _zoomDrawerController = ZoomDrawerController();
-  late final Animation<Offset> _chatAnimation;
-  late final AnimationController _chatAnimationController;
 }

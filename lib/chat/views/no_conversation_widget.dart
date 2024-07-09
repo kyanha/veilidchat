@@ -20,7 +20,6 @@ class NoConversationWidget extends StatelessWidget {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Icon(
             Icons.diversity_3,

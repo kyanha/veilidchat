@@ -76,14 +76,11 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
             ]));
       });
 
-  Widget buildPhone(BuildContext context) =>
-      Material(color: Colors.transparent, child: buildUserPanel());
-
-  Widget buildTabletLeftPane(BuildContext context) => Builder(
+  Widget buildLeftPane(BuildContext context) => Builder(
       builder: (context) =>
           Material(color: Colors.transparent, child: buildUserPanel()));
 
-  Widget buildTabletRightPane(BuildContext context) {
+  Widget buildRightPane(BuildContext context) {
     final activeChatLocalConversationKey =
         context.watch<ActiveChatCubit>().state;
     if (activeChatLocalConversationKey == null) {
@@ -94,41 +91,72 @@ class _HomeAccountReadyMainState extends State<HomeAccountReadyMain> {
         key: ValueKey(activeChatLocalConversationKey));
   }
 
-  // ignore: prefer_expression_function_bodies
-  Widget buildTablet(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
+    final isLarge = responsiveVisibility(
+      context: context,
+      phone: false,
+    );
+
     final w = MediaQuery.of(context).size.width;
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    final children = [
-      ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 300, maxWidth: 300),
+    final activeChat = context.watch<ActiveChatCubit>().state;
+    final hasActiveChat = activeChat != null;
+    // if (hasActiveChat) {
+    //   _chatAnimationController.forward();
+    // } else {
+    //   _chatAnimationController.reset();
+    // }
+
+    late final bool offstageLeft;
+    late final bool offstageRight;
+    late final double leftWidth;
+    late final double rightWidth;
+    if (isLarge) {
+      leftWidth = 300;
+      rightWidth = w - 300 - 2;
+      offstageLeft = false;
+      offstageRight = false;
+    } else {
+      leftWidth = w;
+      rightWidth = w;
+      if (hasActiveChat) {
+        offstageLeft = true;
+        offstageRight = false;
+      } else {
+        offstageLeft = false;
+        offstageRight = true;
+      }
+    }
+
+    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Offstage(
+          offstage: offstageLeft,
           child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: w / 2),
-              child: buildTabletLeftPane(context))),
-      SizedBox(
-          width: 2,
-          height: double.infinity,
-          child: ColoredBox(
-              color: scaleConfig.preferBorders
-                  ? scale.primaryScale.subtleBorder
-                  : scale.primaryScale.subtleBackground)),
-      Expanded(child: buildTabletRightPane(context)),
-    ];
-
-    return Row(
-      children: children,
-    );
+              constraints:
+                  BoxConstraints(minWidth: leftWidth, maxWidth: leftWidth),
+              child: buildLeftPane(context))),
+      Offstage(
+          offstage: offstageLeft || offstageRight,
+          child: SizedBox(
+              width: 2,
+              height: double.infinity,
+              child: ColoredBox(
+                  color: scaleConfig.preferBorders
+                      ? scale.primaryScale.subtleBorder
+                      : scale.primaryScale.subtleBackground))),
+      Offstage(
+          offstage: offstageRight,
+          child: ConstrainedBox(
+            constraints:
+                BoxConstraints(minWidth: rightWidth, maxWidth: rightWidth),
+            child: buildRightPane(context),
+          )),
+    ]);
   }
-
-  @override
-  Widget build(BuildContext context) => responsiveVisibility(
-        context: context,
-        phone: false,
-      )
-          ? buildTablet(context)
-          : buildPhone(context);
 
   ////////////////////////////////////////////////////////////////////////////
   final _mainPagerKey = GlobalKey(debugLabel: '_mainPagerKey');
