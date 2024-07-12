@@ -97,8 +97,9 @@
         "invalid_account_title": "Invalid Account",
         "invalid_account_text": "Account is invalid, removing from list"
     },
-    "account_page": {
-        "contact_invitations": "Contact Invitations"
+    "contacts_page": {
+        "contacts": "Contacts",
+        "invitations": "Invitations"
     },
     "add_contact_sheet": {
         "new_contact": "New Contact",
@@ -176,14 +177,13 @@
         "password_does_not_match": "Password does not match"
     },
     "contact_list": {
-        "title": "Contacts",
         "invite_people": "Invite people to VeilidChat",
         "search": "Search contacts",
         "invitation": "Invitation"
     },
     "chat_list": {
         "search": "Search chats",
-        "start_a_conversation": "Start a conversation",
+        "start_a_conversation": "Start A Conversation",
         "chats": "Chats",
         "groups": "Groups"
     },

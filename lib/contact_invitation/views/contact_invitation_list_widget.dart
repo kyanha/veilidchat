@@ -2,6 +2,7 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
@@ -31,58 +32,58 @@ class ContactInvitationListWidget extends StatefulWidget {
 }
 
 class ContactInvitationListWidgetState
-    extends State<ContactInvitationListWidget> {
-  final ScrollController _scrollController = ScrollController();
+    extends State<ContactInvitationListWidget>
+    with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 250), value: 1);
+  late final _animation =
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+  bool _expanded = true;
 
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    //final textTheme = theme.textTheme;
+    // final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-      decoration: ShapeDecoration(
-          shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
-      )),
-      constraints: const BoxConstraints(maxHeight: 100),
-      child: Container(
-          width: double.infinity,
-          decoration: ShapeDecoration(
-              color: scale.primaryScale.subtleBackground,
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(16 * scaleConfig.borderRadiusScale),
-              )),
-          child: ListView.builder(
-            shrinkWrap: true,
-            controller: _scrollController,
-            itemCount: widget.contactInvitationRecordList.length,
-            itemBuilder: (context, index) {
-              if (index < 0 ||
-                  index >= widget.contactInvitationRecordList.length) {
-                return null;
-              }
-              return ContactInvitationItemWidget(
-                      contactInvitationRecord:
-                          widget.contactInvitationRecordList[index],
-                      disabled: widget.disabled,
-                      key: ObjectKey(widget.contactInvitationRecordList[index]))
-                  .paddingLTRB(4, 2, 4, 2);
-            },
-            findChildIndexCallback: (key) {
-              final index = widget.contactInvitationRecordList.indexOf(
-                  (key as ObjectKey).value! as proto.ContactInvitationRecord);
-              if (index == -1) {
-                return null;
-              }
-              return index;
-            },
-          ).paddingLTRB(4, 6, 4, 6)),
-    );
+    return styledExpandingSliver(
+        context: context,
+        animation: _animation,
+        expanded: _expanded,
+        backgroundColor: scaleConfig.preferBorders
+            ? scale.primaryScale.subtleBackground
+            : scale.primaryScale.subtleBorder,
+        onTap: () {
+          setState(() {
+            _expanded = !_expanded;
+          });
+          _controller.animateTo(_expanded ? 1 : 0);
+        },
+        title: translate('contacts_page.invitations'),
+        sliver: SliverList.builder(
+          itemCount: widget.contactInvitationRecordList.length,
+          itemBuilder: (context, index) {
+            if (index < 0 ||
+                index >= widget.contactInvitationRecordList.length) {
+              return null;
+            }
+            return ContactInvitationItemWidget(
+                    contactInvitationRecord:
+                        widget.contactInvitationRecordList[index],
+                    disabled: widget.disabled,
+                    key: ObjectKey(widget.contactInvitationRecordList[index]))
+                .paddingLTRB(4, 2, 4, 2);
+          },
+          findChildIndexCallback: (key) {
+            final index = widget.contactInvitationRecordList.indexOf(
+                (key as ObjectKey).value! as proto.ContactInvitationRecord);
+            if (index == -1) {
+              return null;
+            }
+            return index;
+          },
+        ));
   }
 }

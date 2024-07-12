@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ansicolor/ansicolor.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:cool_dropdown/cool_dropdown.dart';
@@ -44,11 +46,6 @@ class _DeveloperPageState extends State<DeveloperPage> {
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.normal);
-    });
 
     _terminalController.addListener(() {
       setState(() {});
@@ -273,61 +270,59 @@ class _DeveloperPageState extends State<DeveloperPage> {
         body: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: SafeArea(
-                bottom: false,
                 child: Column(children: [
-                  Stack(alignment: AlignmentDirectional.center, children: [
-                    Image.asset('assets/images/ellet.png'),
-                    TerminalView(globalDebugTerminal,
-                        textStyle: kDefaultTerminalStyle,
-                        controller: _terminalController,
-                        keyboardType: TextInputType.none,
-                        //autofocus: true,
-                        backgroundOpacity: _showEllet ? 0.75 : 1.0,
-                        onSecondaryTapDown: (details, offset) async {
-                      await copySelection(context);
-                    })
-                  ]).expanded(),
-                  TextField(
-                    controller: _debugCommandController,
-                    onTapOutside: (event) {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                    },
-                    decoration: InputDecoration(
-                        filled: true,
-                        contentPadding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                                8 * scaleConfig.borderRadiusScale),
-                            borderSide: BorderSide.none),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                              8 * scaleConfig.borderRadiusScale),
-                        ),
-                        fillColor: scale.primaryScale.subtleBackground,
-                        hintText: translate('developer.command'),
-                        suffixIcon: IconButton(
-                          icon: Icon(Icons.send,
-                              color: _debugCommandController.text.isEmpty
-                                  ? scale.primaryScale.primary.withAlpha(0x3F)
-                                  : scale.primaryScale.primary),
-                          onPressed: _debugCommandController.text.isEmpty
-                              ? null
-                              : () async {
-                                  final debugCommand =
-                                      _debugCommandController.text;
-                                  _debugCommandController.clear();
-                                  await _sendDebugCommand(debugCommand);
-                                },
-                        )),
-                    onChanged: (_) {
-                      setState(() => {});
-                    },
-                    onSubmitted: (debugCommand) async {
-                      _debugCommandController.clear();
-                      await _sendDebugCommand(debugCommand);
-                    },
-                  ).paddingAll(4)
-                ]))));
+              Stack(alignment: AlignmentDirectional.center, children: [
+                Image.asset('assets/images/ellet.png'),
+                TerminalView(globalDebugTerminal,
+                    textStyle: kDefaultTerminalStyle,
+                    controller: _terminalController,
+                    keyboardType: TextInputType.none,
+                    //autofocus: true,
+                    backgroundOpacity: _showEllet ? 0.75 : 1.0,
+                    onSecondaryTapDown: (details, offset) async {
+                  await copySelection(context);
+                })
+              ]).expanded(),
+              TextField(
+                controller: _debugCommandController,
+                onTapOutside: (event) {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                decoration: InputDecoration(
+                    filled: true,
+                    contentPadding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            8 * scaleConfig.borderRadiusScale),
+                        borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                          8 * scaleConfig.borderRadiusScale),
+                    ),
+                    fillColor: scale.primaryScale.subtleBackground,
+                    hintText: translate('developer.command'),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.send,
+                          color: _debugCommandController.text.isEmpty
+                              ? scale.primaryScale.primary.withAlpha(0x3F)
+                              : scale.primaryScale.primary),
+                      onPressed: _debugCommandController.text.isEmpty
+                          ? null
+                          : () async {
+                              final debugCommand = _debugCommandController.text;
+                              _debugCommandController.clear();
+                              await _sendDebugCommand(debugCommand);
+                            },
+                    )),
+                onChanged: (_) {
+                  setState(() => {});
+                },
+                onSubmitted: (debugCommand) async {
+                  _debugCommandController.clear();
+                  await _sendDebugCommand(debugCommand);
+                },
+              ).paddingAll(4)
+            ]))));
   }
 
   @override

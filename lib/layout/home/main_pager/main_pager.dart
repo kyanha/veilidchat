@@ -13,9 +13,9 @@ import 'package:provider/provider.dart';
 import '../../../chat/chat.dart';
 import '../../../contact_invitation/contact_invitation.dart';
 import '../../../theme/theme.dart';
-import 'account_page.dart';
 import 'bottom_sheet_action_button.dart';
 import 'chats_page.dart';
+import 'contacts_page.dart';
 
 class MainPager extends StatefulWidget {
   const MainPager({super.key});
@@ -39,25 +39,6 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
   void dispose() {
     pageController.dispose();
     super.dispose();
-  }
-
-  bool _onScrollNotification(ScrollNotification notification) {
-    if (notification is UserScrollNotification &&
-        notification.metrics.axis == Axis.vertical) {
-      switch (notification.direction) {
-        case ScrollDirection.forward:
-          // _hideBottomBarAnimationController.reverse();
-          // _fabAnimationController.forward(from: 0);
-          break;
-        case ScrollDirection.reverse:
-          // _hideBottomBarAnimationController.forward();
-          // _fabAnimationController.reverse(from: 1);
-          break;
-        case ScrollDirection.idle:
-          break;
-      }
-    }
-    return false;
   }
 
   Future<void> scanContactInvitationDialog(BuildContext context) async {
@@ -162,21 +143,19 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
     return Scaffold(
       //extendBody: true,
       backgroundColor: Colors.transparent,
-      body: NotificationListener<ScrollNotification>(
-          onNotification: _onScrollNotification,
-          child: PreloadPageView(
-              key: _pageViewKey,
-              controller: pageController,
-              preloadPagesCount: 2,
-              onPageChanged: (index) {
-                setState(() {
-                  currentPage = index;
-                });
-              },
-              children: const [
-                AccountPage(),
-                ChatsPage(),
-              ])),
+      body: PreloadPageView(
+          key: _pageViewKey,
+          controller: pageController,
+          preloadPagesCount: 2,
+          onPageChanged: (index) {
+            setState(() {
+              currentPage = index;
+            });
+          },
+          children: const [
+            ContactsPage(),
+            ChatsPage(),
+          ]),
       // appBar: AppBar(
       //   toolbarHeight: 24,
       //   title: Text(
@@ -240,7 +219,7 @@ class MainPagerState extends State<MainPager> with TickerProviderStateMixin {
   // ];
   final _fabIconList = <IconData>[
     Icons.person_add_sharp,
-    Icons.add_comment_sharp,
+    Icons.chat,
   ];
   final _bottomLabelList = <String>[
     translate('pager.contacts'),

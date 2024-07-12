@@ -15,7 +15,6 @@ import 'init.dart';
 import 'layout/splash.dart';
 import 'router/router.dart';
 import 'settings/settings.dart';
-import 'theme/models/theme_preference.dart';
 import 'theme/theme.dart';
 import 'tick.dart';
 import 'tools/loggy.dart';
@@ -92,7 +91,7 @@ class VeilidChatApp extends StatelessWidget {
   Widget build(BuildContext context) => FutureProvider<VeilidChatGlobalInit?>(
       initialData: null,
       create: (context) async => VeilidChatGlobalInit.initialize(),
-      builder: (context, child) {
+      builder: (context, __) {
         final globalInit = context.watch<VeilidChatGlobalInit?>();
         if (globalInit == null) {
           // Splash screen until we're done with init

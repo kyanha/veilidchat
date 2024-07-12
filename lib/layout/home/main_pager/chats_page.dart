@@ -1,4 +1,3 @@
-import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 
 import '../../../chat_list/chat_list.dart';
@@ -24,8 +23,6 @@ class ChatsPageState extends State<ChatsPage> {
   @override
   // ignore: prefer_expression_function_bodies
   Widget build(BuildContext context) {
-    return Column(children: <Widget>[
-      const ChatListWidget().expanded(),
-    ]);
+    return const ChatListWidget();
   }
 }

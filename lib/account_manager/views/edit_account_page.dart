@@ -44,25 +44,11 @@ class EditAccountPage extends StatefulWidget {
   }
 }
 
-class _EditAccountPageState extends State<EditAccountPage> {
-  bool _isInAsyncCall = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.portraitOnly);
-    });
-  }
-
-  @override
-  void dispose() {
-    unawaited(
-        changeWindowSetup(TitleBarStyle.normal, OrientationCapability.normal));
-    super.dispose();
-  }
+class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
+  _EditAccountPageState()
+      : super(
+            titleBarStyle: TitleBarStyle.normal,
+            orientationCapability: OrientationCapability.portraitOnly);
 
   Widget _editAccountForm(BuildContext context,
           {required Future<void> Function(GlobalKey<FormBuilderState>)
@@ -314,4 +300,8 @@ class _EditAccountPageState extends State<EditAccountPage> {
             ]).paddingSymmetric(horizontal: 24, vertical: 8)))
         .withModalHUD(context, displayModalHUD);
   }
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  bool _isInAsyncCall = false;
 }

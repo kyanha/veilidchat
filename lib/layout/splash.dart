@@ -11,16 +11,11 @@ class Splash extends StatefulWidget {
   State<Splash> createState() => _SplashState();
 }
 
-class _SplashState extends State<Splash> {
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.hidden, OrientationCapability.normal);
-    });
-  }
+class _SplashState extends WindowSetupState<Splash> {
+  _SplashState()
+      : super(
+            titleBarStyle: TitleBarStyle.hidden,
+            orientationCapability: OrientationCapability.portraitOnly);
 
   @override
   Widget build(BuildContext context) => PopScope(

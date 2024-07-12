@@ -143,7 +143,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
               (scaleConfig.preferBorders || scaleConfig.useVisualIndicators)
                   ? activeBorder
                   : null,
-          borderRadius: 16 * scaleConfig.borderRadiusScale,
+          borderRadius: 12 * scaleConfig.borderRadiusScale,
           callback: callback,
           footerButtonIcon: loggedIn ? Icons.edit_outlined : null,
           footerCallback: footerCallback,
@@ -197,11 +197,11 @@ class _DrawerMenuState extends State<DrawerMenu> {
           loading: () => _wrapInBox(
               child: buildProgressIndicator(),
               color: scaleScheme.grayScale.subtleBorder,
-              borderRadius: 16 * scaleConfig.borderRadiusScale),
+              borderRadius: 12 * scaleConfig.borderRadiusScale),
           error: (err, st) => _wrapInBox(
               child: errorPage(err, st),
               color: scaleScheme.errorScale.subtleBorder,
-              borderRadius: 16 * scaleConfig.borderRadiusScale),
+              borderRadius: 12 * scaleConfig.borderRadiusScale),
         );
         loggedInAccounts.add(loggedInAccount.paddingLTRB(0, 0, 0, 8));
       } else {
@@ -254,7 +254,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
     return IconButton(
         icon: icon,
         color: border,
-        constraints: const BoxConstraints.expand(height: 64, width: 64),
+        constraints: const BoxConstraints.expand(height: 48, width: 48),
         style: ButtonStyle(
             backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.hovered)) {
@@ -269,18 +269,18 @@ class _DrawerMenuState extends State<DrawerMenu> {
             return RoundedRectangleBorder(
                 side: BorderSide(color: hoverBorder, width: 2),
                 borderRadius: BorderRadius.all(
-                    Radius.circular(16 * scaleConfig.borderRadiusScale)));
+                    Radius.circular(12 * scaleConfig.borderRadiusScale)));
           }
           if (states.contains(WidgetState.focused)) {
             return RoundedRectangleBorder(
                 side: BorderSide(color: activeBorder, width: 2),
                 borderRadius: BorderRadius.all(
-                    Radius.circular(16 * scaleConfig.borderRadiusScale)));
+                    Radius.circular(12 * scaleConfig.borderRadiusScale)));
           }
           return RoundedRectangleBorder(
               side: BorderSide(color: border, width: 2),
               borderRadius: BorderRadius.all(
-                  Radius.circular(16 * scaleConfig.borderRadiusScale)));
+                  Radius.circular(12 * scaleConfig.borderRadiusScale)));
         })),
         tooltip: tooltip,
         onPressed: onPressed);
@@ -413,12 +413,18 @@ class _DrawerMenuState extends State<DrawerMenu> {
         _getBottomButtons(),
         Row(children: [
           Text('${translate('menu.version')} $packageInfoVersion',
-              style: theme.textTheme.labelMedium!
-                  .copyWith(color: scale.tertiaryScale.hoverBorder)),
+              style: theme.textTheme.labelMedium!.copyWith(
+                  color: scaleConfig.preferBorders
+                      ? scale.tertiaryScale.hoverBorder
+                      : scale.tertiaryScale.subtleBackground)),
           const Spacer(),
           SignalStrengthMeterWidget(
-            color: scale.tertiaryScale.hoverBorder,
-            inactiveColor: scale.tertiaryScale.border,
+            color: scaleConfig.preferBorders
+                ? scale.tertiaryScale.hoverBorder
+                : scale.tertiaryScale.subtleBackground,
+            inactiveColor: scaleConfig.preferBorders
+                ? scale.tertiaryScale.border
+                : scale.tertiaryScale.elementBackground,
           ),
         ])
       ]).paddingAll(16),

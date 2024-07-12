@@ -43,7 +43,7 @@ class ProfileWidget extends StatelessWidget {
                         : scale.primaryScale.borderText,
                     width: 2),
             borderRadius: BorderRadius.all(
-                Radius.circular(16 * scaleConfig.borderRadiusScale))),
+                Radius.circular(12 * scaleConfig.borderRadiusScale))),
       ),
       child: Row(children: [
         const Spacer(),

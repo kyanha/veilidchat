@@ -9,6 +9,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "67.0.0"
+  accordion:
+    dependency: "direct main"
+    description:
+      name: accordion
+      sha256: "0eca3d1c619c6df63d6e384010fd2ef1164e7385d7102f88a6b56f658f160cd0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.6.0"
   analyzer:
     dependency: transitive
     description:
@@ -449,6 +457,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.5"
+  expansion_tile_group:
+    dependency: "direct main"
+    description:
+      name: expansion_tile_group
+      sha256: "6918433891481c7d98cbc604d7b4c93509986e8134d52940853301ad6fbff404"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.4"
   fast_immutable_collections:
     dependency: "direct main"
     description:
@@ -620,6 +636,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.1"
+  flutter_sticky_header:
+    dependency: "direct main"
+    description:
+      name: flutter_sticky_header
+      sha256: "017f398fbb45a589e01491861ca20eb6570a763fd9f3888165a978e11248c709"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.5"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -681,6 +705,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  get:
+    dependency: transitive
+    description:
+      name: get
+      sha256: e4e7335ede17452b391ed3b2ede016545706c01a02292a6c97619705e7d2a85e
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.6.6"
   glob:
     dependency: transitive
     description:
@@ -897,6 +929,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.10.0"
+  native_device_orientation:
+    dependency: "direct main"
+    description:
+      name: native_device_orientation
+      sha256: "0c330c068575e4be72cce5968ca479a3f8d5d1e5dfce7d89d5c13a1e943b338c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.3"
   nested:
     dependency: transitive
     description:
@@ -1326,6 +1366,30 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.99"
+  sliver_expandable:
+    dependency: "direct main"
+    description:
+      name: sliver_expandable
+      sha256: ae20eb848bd0ba9dd704732ad654438ac5a5bea2b023fa3cf80a086166d96d97
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
+  sliver_fill_remaining_box_adapter:
+    dependency: "direct main"
+    description:
+      name: sliver_fill_remaining_box_adapter
+      sha256: "2a222c0f09eb07c37857ce2526c0fbf3b17b2bd1b1ff0e890085f2f7a9ba1927"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
+  sliver_tools:
+    dependency: "direct main"
+    description:
+      name: sliver_tools
+      sha256: eae28220badfb9d0559207badcbbc9ad5331aac829a88cb0964d330d2a4636a6
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.12"
   smart_auth:
     dependency: transitive
     description:
@@ -1583,6 +1647,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.4.0"
+  value_layout_builder:
+    dependency: transitive
+    description:
+      name: value_layout_builder
+      sha256: "98202ec1807e94ac72725b7f0d15027afde513c55c69ff3f41bcfccb950831bc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   vector_graphics:
     dependency: transitive
     description:

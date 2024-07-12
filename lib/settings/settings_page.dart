@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 
 import '../layout/default_app_bar.dart';
 import '../theme/theme.dart';
-import '../tools/tools.dart';
 import '../veilid_processor/veilid_processor.dart';
 import 'settings.dart';
 
@@ -26,11 +25,6 @@ class SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.normal);
-    });
   }
 
   @override

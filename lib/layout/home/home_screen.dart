@@ -8,7 +8,6 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../theme/theme.dart';
-import '../../tools/tools.dart';
 import 'drawer_menu/drawer_menu.dart';
 import 'home_account_invalid.dart';
 import 'home_account_locked.dart';
@@ -36,9 +35,6 @@ class HomeScreenState extends State<HomeScreen>
       final activeIndex = localAccounts
           .indexWhere((x) => x.superIdentity.recordKey == activeLocalAccount);
       final canClose = activeIndex != -1;
-
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.normal);
 
       if (!canClose) {
         await _zoomDrawerController.open!();
@@ -129,7 +125,6 @@ class HomeScreenState extends State<HomeScreen>
     final canClose = activeIndex != -1;
 
     return SafeArea(
-        bottom: false,
         child: DefaultTextStyle(
             style: theme.textTheme.bodySmall!,
             child: ZoomDrawer(

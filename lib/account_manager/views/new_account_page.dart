@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,18 +22,11 @@ class NewAccountPage extends StatefulWidget {
   State createState() => _NewAccountPageState();
 }
 
-class _NewAccountPageState extends State<NewAccountPage> {
-  bool _isInAsyncCall = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.portraitOnly);
-    });
-  }
+class _NewAccountPageState extends WindowSetupState<NewAccountPage> {
+  _NewAccountPageState()
+      : super(
+            titleBarStyle: TitleBarStyle.normal,
+            orientationCapability: OrientationCapability.portraitOnly);
 
   Widget _newAccountForm(BuildContext context,
       {required Future<void> Function(GlobalKey<FormBuilderState>) onSubmit}) {
@@ -120,4 +115,8 @@ class _NewAccountPageState extends State<NewAccountPage> {
       )).paddingSymmetric(horizontal: 24, vertical: 8),
     ).withModalHUD(context, displayModalHUD);
   }
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  bool _isInAsyncCall = false;
 }

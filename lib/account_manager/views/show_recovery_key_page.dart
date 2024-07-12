@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -29,22 +30,17 @@ class ShowRecoveryKeyPage extends StatefulWidget {
         _name = name;
 
   @override
-  ShowRecoveryKeyPageState createState() => ShowRecoveryKeyPageState();
+  State<ShowRecoveryKeyPage> createState() => _ShowRecoveryKeyPageState();
 
   final WritableSuperIdentity _writableSuperIdentity;
   final String _name;
 }
 
-class ShowRecoveryKeyPageState extends State<ShowRecoveryKeyPage> {
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await changeWindowSetup(
-          TitleBarStyle.normal, OrientationCapability.portraitOnly);
-    });
-  }
+class _ShowRecoveryKeyPageState extends WindowSetupState<ShowRecoveryKeyPage> {
+  _ShowRecoveryKeyPageState()
+      : super(
+            titleBarStyle: TitleBarStyle.normal,
+            orientationCapability: OrientationCapability.portraitOnly);
 
   Future<void> _shareRecoveryKey(
       BuildContext context, Uint8List recoveryKey, String name) async {

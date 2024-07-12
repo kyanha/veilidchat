@@ -28,49 +28,50 @@ class ContactListWidget extends StatefulWidget {
   }
 }
 
-class _ContactListWidgetState extends State<ContactListWidget> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
+class _ContactListWidgetState extends State<ContactListWidget>
+    with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    //final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    return styledTitleContainer(
-      context: context,
-      title: translate('contact_list.title'),
-      child: SearchableList<proto.Contact>(
-        shrinkWrap: true,
-        initialList: widget.contactList.toList(),
-        itemBuilder: (c) =>
-            ContactItemWidget(contact: c, disabled: widget.disabled)
-                .paddingLTRB(0, 4, 0, 0),
-        filter: (value) {
-          final lowerValue = value.toLowerCase();
-          return widget.contactList
-              .where((element) =>
-                  element.nickname.toLowerCase().contains(lowerValue) ||
-                  element.profile.name.toLowerCase().contains(lowerValue) ||
-                  element.profile.pronouns.toLowerCase().contains(lowerValue))
-              .toList();
-        },
-        searchFieldHeight: 40,
-        spaceBetweenSearchAndList: 4,
-        emptyWidget: const EmptyContactListWidget(),
-        defaultSuffixIconColor: scale.primaryScale.border,
-        closeKeyboardWhenScrolling: true,
-        inputDecoration: InputDecoration(
-          labelText: translate('contact_list.search'),
-        ),
-      ).paddingAll(8),
-    ).paddingLTRB(8, 0, 8, 8);
+    return SliverLayoutBuilder(
+        builder: (context, constraints) => styledHeaderSliver(
+            context: context,
+            backgroundColor: scaleConfig.preferBorders
+                ? scale.primaryScale.subtleBackground
+                : scale.primaryScale.subtleBorder,
+            title: translate('contacts_page.contacts'),
+            sliver: SliverFillRemaining(
+              child: SearchableList<proto.Contact>.sliver(
+                initialList: widget.contactList.toList(),
+                itemBuilder: (c) =>
+                    ContactItemWidget(contact: c, disabled: widget.disabled)
+                        .paddingLTRB(0, 4, 0, 0),
+                filter: (value) {
+                  final lowerValue = value.toLowerCase();
+                  return widget.contactList
+                      .where((element) =>
+                          element.nickname.toLowerCase().contains(lowerValue) ||
+                          element.profile.name
+                              .toLowerCase()
+                              .contains(lowerValue) ||
+                          element.profile.pronouns
+                              .toLowerCase()
+                              .contains(lowerValue))
+                      .toList();
+                },
+                searchFieldHeight: 40,
+                spaceBetweenSearchAndList: 4,
+                emptyWidget: const EmptyContactListWidget(),
+                defaultSuffixIconColor: scale.primaryScale.border,
+                closeKeyboardWhenScrolling: true,
+                inputDecoration: InputDecoration(
+                  labelText: translate('contact_list.search'),
+                ),
+              ),
+            )));
   }
 }

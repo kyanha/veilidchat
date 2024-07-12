@@ -60,36 +60,33 @@ class ChatListWidget extends StatelessWidget {
       final chatListV = context.watch<ChatListCubit>().state;
       return chatListV
           .builder((context, chatList) => SizedBox.expand(
-              child: styledTitleContainer(
-                  context: context,
-                  title: translate('chat_list.chats'),
-                  child: SizedBox.expand(
-                    child: (chatList.isEmpty)
-                        ? const EmptyChatListWidget()
-                        : SearchableList<proto.Chat>(
-                            initialList: chatList.map((x) => x.value).toList(),
-                            itemBuilder: (c) {
-                              switch (c.whichKind()) {
-                                case proto.Chat_Kind.direct:
-                                  return _itemBuilderDirect(
-                                      c.direct,
-                                      contactMap,
-                                      contactListV.busy || chatListV.busy);
-                                case proto.Chat_Kind.group:
-                                  return const Text(
-                                      'group chats not yet supported!');
-                                case proto.Chat_Kind.notSet:
-                                  throw StateError('unknown chat kind');
-                              }
-                            },
-                            filter: (value) =>
-                                _itemFilter(contactMap, chatList, value),
-                            spaceBetweenSearchAndList: 4,
-                            inputDecoration: InputDecoration(
-                              labelText: translate('chat_list.search'),
-                            ),
-                          ),
-                  ).paddingAll(8))))
+                  child: styledTitleContainer(
+                context: context,
+                title: translate('chat_list.chats'),
+                child: (chatList.isEmpty)
+                    ? const SizedBox.expand(child: EmptyChatListWidget())
+                    : SearchableList<proto.Chat>(
+                        initialList: chatList.map((x) => x.value).toList(),
+                        itemBuilder: (c) {
+                          switch (c.whichKind()) {
+                            case proto.Chat_Kind.direct:
+                              return _itemBuilderDirect(c.direct, contactMap,
+                                  contactListV.busy || chatListV.busy);
+                            case proto.Chat_Kind.group:
+                              return const Text(
+                                  'group chats not yet supported!');
+                            case proto.Chat_Kind.notSet:
+                              throw StateError('unknown chat kind');
+                          }
+                        },
+                        filter: (value) =>
+                            _itemFilter(contactMap, chatList, value),
+                        spaceBetweenSearchAndList: 4,
+                        inputDecoration: InputDecoration(
+                          labelText: translate('chat_list.search'),
+                        ),
+                      ).paddingAll(8),
+              )))
           .paddingLTRB(8, 0, 8, 8);
     });
   }
