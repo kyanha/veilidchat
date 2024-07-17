@@ -18,6 +18,7 @@ import 'package:xterm/xterm.dart';
 import '../../layout/layout.dart';
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
+import 'history_text_editing_controller.dart';
 
 final globalDebugTerminal = Terminal(
   maxLines: 50000,
@@ -36,16 +37,11 @@ class DeveloperPage extends StatefulWidget {
 }
 
 class _DeveloperPageState extends State<DeveloperPage> {
-  final _terminalController = TerminalController();
-  final _debugCommandController = TextEditingController();
-  final _logLevelController = DropdownController(duration: 250.ms);
-  final List<CoolDropdownItem<LogLevel>> _logLevelDropdownItems = [];
-  var _logLevelDropDown = log.level.logLevel;
-  var _showEllet = false;
-
   @override
   void initState() {
     super.initState();
+
+    _historyController = HistoryTextEditingController(setState: setState);
 
     _terminalController.addListener(() {
       setState(() {});
@@ -66,42 +62,71 @@ class _DeveloperPageState extends State<DeveloperPage> {
     globalDebugTerminal.write(colorOut.replaceAll('\n', '\r\n'));
   }
 
-  Future<void> _sendDebugCommand(String debugCommand) async {
-    if (debugCommand == 'pool allocations') {
-      DHTRecordPool.instance.debugPrintAllocations();
-      return;
-    }
-
-    if (debugCommand == 'pool opened') {
-      DHTRecordPool.instance.debugPrintOpened();
-      return;
-    }
-
-    if (debugCommand.startsWith('change_log_ignore ')) {
-      final args = debugCommand.split(' ');
-      if (args.length < 3) {
-        _debugOut('Incorrect number of arguments');
-        return;
-      }
-      final layer = args[1];
-      final changes = args[2].split(',');
-      Veilid.instance.changeLogIgnore(layer, changes);
-      return;
-    }
-
-    if (debugCommand == 'ellet') {
-      setState(() {
-        _showEllet = !_showEllet;
-      });
-      return;
-    }
-
-    _debugOut('DEBUG >>>\n$debugCommand\n');
+  Future<bool> _sendDebugCommand(String debugCommand) async {
     try {
-      final out = await Veilid.instance.debug(debugCommand);
-      _debugOut('<<< DEBUG\n$out\n');
-    } on Exception catch (e, st) {
-      _debugOut('<<< ERROR\n$e\n<<< STACK\n$st');
+      setState(() {
+        _busy = true;
+      });
+
+      if (debugCommand == 'pool allocations') {
+        try {
+          DHTRecordPool.instance.debugPrintAllocations();
+        } on Exception catch (e, st) {
+          _debugOut('<<< ERROR\n$e\n<<< STACK\n$st');
+          return false;
+        }
+        return true;
+      }
+
+      if (debugCommand == 'pool opened') {
+        try {
+          DHTRecordPool.instance.debugPrintOpened();
+        } on Exception catch (e, st) {
+          _debugOut('<<< ERROR\n$e\n<<< STACK\n$st');
+          return false;
+        }
+        return true;
+      }
+
+      if (debugCommand.startsWith('change_log_ignore ')) {
+        final args = debugCommand.split(' ');
+        if (args.length < 3) {
+          _debugOut('Incorrect number of arguments');
+          return false;
+        }
+        final layer = args[1];
+        final changes = args[2].split(',');
+        try {
+          Veilid.instance.changeLogIgnore(layer, changes);
+        } on Exception catch (e, st) {
+          _debugOut('<<< ERROR\n$e\n<<< STACK\n$st');
+          return false;
+        }
+
+        return true;
+      }
+
+      if (debugCommand == 'ellet') {
+        setState(() {
+          _showEllet = !_showEllet;
+        });
+        return true;
+      }
+
+      _debugOut('DEBUG >>>\n$debugCommand\n');
+      try {
+        final out = await Veilid.instance.debug(debugCommand);
+        _debugOut('<<< DEBUG\n$out\n');
+      } on Exception catch (e, st) {
+        _debugOut('<<< ERROR\n$e\n<<< STACK\n$st');
+        return false;
+      }
+
+      return true;
+    } finally {
+      setState(() {
+        _busy = false;
+      });
     }
   }
 
@@ -284,7 +309,9 @@ class _DeveloperPageState extends State<DeveloperPage> {
                 })
               ]).expanded(),
               TextField(
-                controller: _debugCommandController,
+                enabled: !_busy,
+                controller: _historyController.controller,
+                focusNode: _historyController.focusNode,
                 onTapOutside: (event) {
                   FocusManager.instance.primaryFocus?.unfocus();
                 },
@@ -303,27 +330,53 @@ class _DeveloperPageState extends State<DeveloperPage> {
                     hintText: translate('developer.command'),
                     suffixIcon: IconButton(
                       icon: Icon(Icons.send,
-                          color: _debugCommandController.text.isEmpty
+                          color: _historyController.controller.text.isEmpty
                               ? scale.primaryScale.primary.withAlpha(0x3F)
                               : scale.primaryScale.primary),
-                      onPressed: _debugCommandController.text.isEmpty
-                          ? null
-                          : () async {
-                              final debugCommand = _debugCommandController.text;
-                              _debugCommandController.clear();
-                              await _sendDebugCommand(debugCommand);
-                            },
+                      onPressed:
+                          (_historyController.controller.text.isEmpty || _busy)
+                              ? null
+                              : () async {
+                                  final debugCommand =
+                                      _historyController.controller.text;
+                                  _historyController.controller.clear();
+                                  await _sendDebugCommand(debugCommand);
+                                },
                     )),
                 onChanged: (_) {
                   setState(() => {});
                 },
+                onEditingComplete: () {
+                  // part of the default action if onEditingComplete is null
+                  _historyController.controller.clearComposing();
+                  // don't give up focus though
+                },
                 onSubmitted: (debugCommand) async {
-                  _debugCommandController.clear();
-                  await _sendDebugCommand(debugCommand);
+                  if (debugCommand.isEmpty) {
+                    return;
+                  }
+
+                  final ok = await _sendDebugCommand(debugCommand);
+                  if (ok) {
+                    setState(() {
+                      _historyController.submit(debugCommand);
+                    });
+                  }
                 },
               ).paddingAll(4)
             ]))));
   }
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  final _terminalController = TerminalController();
+  late final HistoryTextEditingController _historyController;
+
+  final _logLevelController = DropdownController(duration: 250.ms);
+  final List<CoolDropdownItem<LogLevel>> _logLevelDropdownItems = [];
+  var _logLevelDropDown = log.level.logLevel;
+  var _showEllet = false;
+  var _busy = false;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {

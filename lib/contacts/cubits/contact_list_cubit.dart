@@ -71,7 +71,7 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
           final updated = await writer.tryWriteItemProtobuf(
               proto.Contact.fromBuffer, pos, newContact);
           if (!updated) {
-            throw DHTExceptionTryAgain();
+            throw DHTExceptionOutdated();
           }
           break;
         }

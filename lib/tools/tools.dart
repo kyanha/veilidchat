@@ -1,4 +1,5 @@
 export 'animations.dart';
+export 'exceptions.dart';
 export 'loggy.dart';
 export 'misc.dart';
 export 'package_info.dart';

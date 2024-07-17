@@ -68,7 +68,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
         messagesCubit: messagesCubit,
       );
 
-  Future<void> _init() async {
+  Future<void> _init(Completer<void> _cancel) async {
     // Get local user info and account record cubit
     _localUserIdentityKey = _accountInfo.identityTypedPublicKey;
 
@@ -420,7 +420,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
 
   ////////////////////////////////////////////////////////////////////////////
 
-  final _initWait = WaitSet<void>();
+  final _initWait = WaitSet<void, void>();
   final AccountInfo _accountInfo;
   final AccountRecordCubit _accountRecordCubit;
   final ContactListCubit _contactListCubit;

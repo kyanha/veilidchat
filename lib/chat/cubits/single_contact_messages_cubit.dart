@@ -95,7 +95,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   }
 
   // Initialize everything
-  Future<void> _init() async {
+  Future<void> _init(Completer<void> _cancel) async {
     _unsentMessagesQueue = PersistentQueue<proto.Message>(
         table: 'SingleContactUnsentMessages',
         key: _remoteConversationRecordKey.toString(),
@@ -445,7 +445,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   /////////////////////////////////////////////////////////////////////////
 
-  final WaitSet<void> _initWait = WaitSet();
+  final WaitSet<void, void> _initWait = WaitSet();
   late final AccountInfo _accountInfo;
   final TypedKey _remoteIdentityPublicKey;
   final TypedKey _localConversationRecordKey;

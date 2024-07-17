@@ -44,7 +44,7 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
     await super.close();
   }
 
-  Future<void> _init() async {
+  Future<void> _init(Completer<void> _cancel) async {
     // subscribe to accountInfo changes
     _processor.follow(accountInfoCubit.stream, accountInfoCubit.state,
         _followAccountInfoState);
@@ -235,7 +235,7 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
 
   final Locator _locator;
   final _processor = SingleStateProcessor<AccountInfo>();
-  final _initWait = WaitSet<void>();
+  final _initWait = WaitSet<void, void>();
 
   // Per-account cubits regardless of login state
   final AccountInfoCubit accountInfoCubit;

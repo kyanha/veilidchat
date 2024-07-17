@@ -46,12 +46,13 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     _identityWriter = _accountInfo.identityWriter;
 
     if (_localConversationRecordKey != null) {
-      _initWait.add(() async {
+      _initWait.add((_) async {
         await _setLocalConversation(() async {
           // Open local record key if it is specified
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
           final writer = _identityWriter;
+
           final record = await pool.openRecordWrite(
               _localConversationRecordKey!, writer,
               debugName: 'ConversationCubit::LocalConversation',
@@ -64,16 +65,18 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
     }
 
     if (_remoteConversationRecordKey != null) {
-      _initWait.add(() async {
+      _initWait.add((cancel) async {
         await _setRemoteConversation(() async {
           // Open remote record key if it is specified
           final pool = DHTRecordPool.instance;
           final crypto = await _cachedConversationCrypto();
+
           final record = await pool.openRecordRead(_remoteConversationRecordKey,
               debugName: 'ConversationCubit::RemoteConversation',
               parent: pool.getParentRecordKey(_remoteConversationRecordKey) ??
                   accountInfo.accountRecordKey,
               crypto: crypto);
+
           return record;
         });
       });
@@ -326,5 +329,5 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
   ConversationState _incrementalState = const ConversationState(
       localConversation: null, remoteConversation: null);
   VeilidCrypto? _conversationCrypto;
-  final WaitSet<void> _initWait = WaitSet();
+  final WaitSet<void, void> _initWait = WaitSet();
 }
