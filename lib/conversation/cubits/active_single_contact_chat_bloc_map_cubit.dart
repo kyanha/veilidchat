@@ -37,8 +37,8 @@ class _SingleContactChatState extends Equatable {
       ];
 }
 
-// Map of localConversationRecordKey to MessagesCubit
-// Wraps a MessagesCubit to stream the latest messages to the state
+// Map of localConversationRecordKey to SingleContactMessagesCubit
+// Wraps a SingleContactMessagesCubit to stream the latest messages to the state
 // Automatically follows the state of a ActiveConversationsBlocMapCubit.
 class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
         SingleContactMessagesState, SingleContactMessagesCubit>

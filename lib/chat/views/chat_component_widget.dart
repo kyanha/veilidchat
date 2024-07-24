@@ -19,139 +19,62 @@ import '../chat.dart';
 const onEndReachedThreshold = 0.75;
 
 class ChatComponentWidget extends StatelessWidget {
-  const ChatComponentWidget._({required super.key});
-
-  // Builder wrapper function that takes care of state management requirements
-  static Widget builder(
-          {required TypedKey localConversationRecordKey, Key? key}) =>
-      Builder(builder: (context) {
-        // Get the account info
-        final accountInfo = context.watch<AccountInfoCubit>().state;
-
-        // Get the account record cubit
-        final accountRecordCubit = context.read<AccountRecordCubit>();
-
-        // Get the contact list cubit
-        final contactListCubit = context.watch<ContactListCubit>();
-
-        // Get the active conversation cubit
-        final activeConversationCubit = context
-            .select<ActiveConversationsBlocMapCubit, ActiveConversationCubit?>(
-                (x) => x.tryOperateSync(localConversationRecordKey,
-                    closure: (cubit) => cubit));
-        if (activeConversationCubit == null) {
-          return waitingPage();
-        }
-
-        // Get the messages cubit
-        final messagesCubit = context.select<
-                ActiveSingleContactChatBlocMapCubit,
-                SingleContactMessagesCubit?>(
-            (x) => x.tryOperateSync(localConversationRecordKey,
-                closure: (cubit) => cubit));
-        if (messagesCubit == null) {
-          return waitingPage();
-        }
-
-        // Make chat component state
-        return BlocProvider(
-            key: key,
-            create: (context) => ChatComponentCubit.singleContact(
-                  accountInfo: accountInfo,
-                  accountRecordCubit: accountRecordCubit,
-                  contactListCubit: contactListCubit,
-                  activeConversationCubit: activeConversationCubit,
-                  messagesCubit: messagesCubit,
-                ),
-            child: ChatComponentWidget._(key: key));
-      });
+  const ChatComponentWidget(
+      {required super.key, required TypedKey localConversationRecordKey})
+      : _localConversationRecordKey = localConversationRecordKey;
 
   /////////////////////////////////////////////////////////////////////
 
-  void _handleSendPressed(
-      ChatComponentCubit chatComponentCubit, types.PartialText message) {
-    final text = message.text;
-
-    if (text.startsWith('/')) {
-      chatComponentCubit.runCommand(text);
-      return;
-    }
-
-    chatComponentCubit.sendMessage(message);
-  }
-
-  // void _handleAttachmentPressed() async {
-  //   //
-  // }
-
-  Future<void> _handlePageForward(
-      ChatComponentCubit chatComponentCubit,
-      WindowState<types.Message> messageWindow,
-      ScrollNotification notification) async {
-    print(
-        '_handlePageForward: messagesState.length=${messageWindow.length} messagesState.windowTail=${messageWindow.windowTail} messagesState.windowCount=${messageWindow.windowCount} ScrollNotification=$notification');
-
-    // Go forward a page
-    final tail = min(messageWindow.length,
-            messageWindow.windowTail + (messageWindow.windowCount ~/ 4)) %
-        messageWindow.length;
-
-    // Set follow
-    final follow = messageWindow.length == 0 ||
-        tail == 0; // xxx incorporate scroll position
-
-    // final scrollOffset = (notification.metrics.maxScrollExtent -
-    //         notification.metrics.minScrollExtent) *
-    //     (1.0 - onEndReachedThreshold);
-
-    // chatComponentCubit.scrollOffset = scrollOffset;
-
-    await chatComponentCubit.setWindow(
-        tail: tail, count: messageWindow.windowCount, follow: follow);
-
-    // chatComponentCubit.state.scrollController.position.jumpTo(
-    //     chatComponentCubit.state.scrollController.offset + scrollOffset);
-
-    //chatComponentCubit.scrollOffset = 0;
-  }
-
-  Future<void> _handlePageBackward(
-    ChatComponentCubit chatComponentCubit,
-    WindowState<types.Message> messageWindow,
-    ScrollNotification notification,
-  ) async {
-    print(
-        '_handlePageBackward: messagesState.length=${messageWindow.length} messagesState.windowTail=${messageWindow.windowTail} messagesState.windowCount=${messageWindow.windowCount} ScrollNotification=$notification');
-
-    // Go back a page
-    final tail = max(
-        messageWindow.windowCount,
-        (messageWindow.windowTail - (messageWindow.windowCount ~/ 4)) %
-            messageWindow.length);
-
-    // Set follow
-    final follow = messageWindow.length == 0 ||
-        tail == 0; // xxx incorporate scroll position
-
-    // final scrollOffset = -(notification.metrics.maxScrollExtent -
-    //         notification.metrics.minScrollExtent) *
-    //     (1.0 - onEndReachedThreshold);
-
-    // chatComponentCubit.scrollOffset = scrollOffset;
-
-    await chatComponentCubit.setWindow(
-        tail: tail, count: messageWindow.windowCount, follow: follow);
-
-    // chatComponentCubit.scrollOffset = scrollOffset;
-
-    // chatComponentCubit.state.scrollController.position.jumpTo(
-    //     chatComponentCubit.state.scrollController.offset + scrollOffset);
-
-    //chatComponentCubit.scrollOffset = 0;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
+    final textTheme = theme.textTheme;
+
+    // Get the account info
+    final accountInfo = context.watch<AccountInfoCubit>().state;
+
+    // Get the account record cubit
+    final accountRecordCubit = context.read<AccountRecordCubit>();
+
+    // Get the contact list cubit
+    final contactListCubit = context.watch<ContactListCubit>();
+
+    // Get the active conversation cubit
+    final activeConversationCubit = context
+        .select<ActiveConversationsBlocMapCubit, ActiveConversationCubit?>(
+            (x) => x.tryOperateSync(_localConversationRecordKey,
+                closure: (cubit) => cubit));
+    if (activeConversationCubit == null) {
+      return waitingPage();
+    }
+
+    // Get the messages cubit
+    final messagesCubit = context.select<ActiveSingleContactChatBlocMapCubit,
+            SingleContactMessagesCubit?>(
+        (x) => x.tryOperateSync(_localConversationRecordKey,
+            closure: (cubit) => cubit));
+    if (messagesCubit == null) {
+      return waitingPage();
+    }
+
+    // Make chat component state
+    return BlocProvider(
+        key: key,
+        create: (context) => ChatComponentCubit.singleContact(
+              accountInfo: accountInfo,
+              accountRecordCubit: accountRecordCubit,
+              contactListCubit: contactListCubit,
+              activeConversationCubit: activeConversationCubit,
+              messagesCubit: messagesCubit,
+            ),
+        child: Builder(builder: _buildChatComponent));
+  }
+
+  /////////////////////////////////////////////////////////////////////
+
+  Widget _buildChatComponent(BuildContext context) {
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
@@ -323,4 +246,89 @@ class ChatComponentWidget extends StatelessWidget {
       ],
     );
   }
+
+  void _handleSendPressed(
+      ChatComponentCubit chatComponentCubit, types.PartialText message) {
+    final text = message.text;
+
+    if (text.startsWith('/')) {
+      chatComponentCubit.runCommand(text);
+      return;
+    }
+
+    chatComponentCubit.sendMessage(message);
+  }
+
+  // void _handleAttachmentPressed() async {
+  //   //
+  // }
+
+  Future<void> _handlePageForward(
+      ChatComponentCubit chatComponentCubit,
+      WindowState<types.Message> messageWindow,
+      ScrollNotification notification) async {
+    print(
+        '_handlePageForward: messagesState.length=${messageWindow.length} messagesState.windowTail=${messageWindow.windowTail} messagesState.windowCount=${messageWindow.windowCount} ScrollNotification=$notification');
+
+    // Go forward a page
+    final tail = min(messageWindow.length,
+            messageWindow.windowTail + (messageWindow.windowCount ~/ 4)) %
+        messageWindow.length;
+
+    // Set follow
+    final follow = messageWindow.length == 0 ||
+        tail == 0; // xxx incorporate scroll position
+
+    // final scrollOffset = (notification.metrics.maxScrollExtent -
+    //         notification.metrics.minScrollExtent) *
+    //     (1.0 - onEndReachedThreshold);
+
+    // chatComponentCubit.scrollOffset = scrollOffset;
+
+    await chatComponentCubit.setWindow(
+        tail: tail, count: messageWindow.windowCount, follow: follow);
+
+    // chatComponentCubit.state.scrollController.position.jumpTo(
+    //     chatComponentCubit.state.scrollController.offset + scrollOffset);
+
+    //chatComponentCubit.scrollOffset = 0;
+  }
+
+  Future<void> _handlePageBackward(
+    ChatComponentCubit chatComponentCubit,
+    WindowState<types.Message> messageWindow,
+    ScrollNotification notification,
+  ) async {
+    print(
+        '_handlePageBackward: messagesState.length=${messageWindow.length} messagesState.windowTail=${messageWindow.windowTail} messagesState.windowCount=${messageWindow.windowCount} ScrollNotification=$notification');
+
+    // Go back a page
+    final tail = max(
+        messageWindow.windowCount,
+        (messageWindow.windowTail - (messageWindow.windowCount ~/ 4)) %
+            messageWindow.length);
+
+    // Set follow
+    final follow = messageWindow.length == 0 ||
+        tail == 0; // xxx incorporate scroll position
+
+    // final scrollOffset = -(notification.metrics.maxScrollExtent -
+    //         notification.metrics.minScrollExtent) *
+    //     (1.0 - onEndReachedThreshold);
+
+    // chatComponentCubit.scrollOffset = scrollOffset;
+
+    await chatComponentCubit.setWindow(
+        tail: tail, count: messageWindow.windowCount, follow: follow);
+
+    // chatComponentCubit.scrollOffset = scrollOffset;
+
+    // chatComponentCubit.state.scrollController.position.jumpTo(
+    //     chatComponentCubit.state.scrollController.offset + scrollOffset);
+
+    //chatComponentCubit.scrollOffset = 0;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  final TypedKey _localConversationRecordKey;
 }

@@ -43,8 +43,7 @@ class ContactsPageState extends State<ContactsPage> {
     final ciState = context.watch<ContactListCubit>().state;
     final ciBusy = ciState.busy;
     final contactList =
-        ciState.state.asData?.value.map((x) => x.value).toIList() ??
-            const IListConst([]);
+        ciState.state.asData?.value.map((x) => x.value).toIList();
 
     return CustomScrollView(slivers: [
       if (contactInvitationRecordList.isNotEmpty)
@@ -53,7 +52,7 @@ class ContactsPageState extends State<ContactsPage> {
             sliver: ContactInvitationListWidget(
                 contactInvitationRecordList: contactInvitationRecordList,
                 disabled: cilBusy)),
-      ContactListWidget(contactList: contactList, disabled: ciBusy),
+      ContactListWidget(contactList: contactList, disabled: ciBusy)
     ]).paddingLTRB(8, 0, 8, 8);
   }
 }

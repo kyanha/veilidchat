@@ -68,7 +68,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
         }
       });
       return dhtShortArray;
-    } on Exception catch (_) {
+    } on Exception {
       await dhtRecord.close();
       await pool.deleteRecord(dhtRecord.key);
       rethrow;
@@ -89,7 +89,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
       final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
       await dhtShortArray._head.operate((head) => head._loadHead());
       return dhtShortArray;
-    } on Exception catch (_) {
+    } on Exception {
       await dhtRecord.close();
       rethrow;
     }
@@ -113,7 +113,7 @@ class DHTShortArray implements DHTDeleteable<DHTShortArray> {
       final dhtShortArray = DHTShortArray._(headRecord: dhtRecord);
       await dhtShortArray._head.operate((head) => head._loadHead());
       return dhtShortArray;
-    } on Exception catch (_) {
+    } on Exception {
       await dhtRecord.close();
       rethrow;
     }

@@ -91,7 +91,7 @@ class _DHTShortArrayHead {
           if (!await _writeHead()) {
             // Failed to write head means head got overwritten so write should
             // be considered failed
-            throw DHTExceptionOutdated();
+            throw const DHTExceptionOutdated();
           }
 
           onUpdatedHead?.call();

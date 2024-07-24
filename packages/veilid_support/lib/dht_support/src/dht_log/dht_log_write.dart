@@ -17,7 +17,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
     }
     final lookup = await _spine.lookupPosition(pos);
     if (lookup == null) {
-      throw DHTExceptionInvalidData();
+      throw const DHTExceptionInvalidData();
     }
 
     // Write item to the segment
@@ -26,7 +26,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
             final success =
                 await write.tryWriteItem(lookup.pos, newValue, output: output);
             if (!success) {
-              throw DHTExceptionOutdated();
+              throw const DHTExceptionOutdated();
             }
           }));
     } on DHTExceptionOutdated {
@@ -45,12 +45,12 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
     }
     final aLookup = await _spine.lookupPosition(aPos);
     if (aLookup == null) {
-      throw DHTExceptionInvalidData();
+      throw const DHTExceptionInvalidData();
     }
     final bLookup = await _spine.lookupPosition(bPos);
     if (bLookup == null) {
       await aLookup.close();
-      throw DHTExceptionInvalidData();
+      throw const DHTExceptionInvalidData();
     }
 
     // Swap items in the segments
@@ -65,20 +65,20 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
                 if (bItem.value == null) {
                   final aItem = await aWrite.get(aLookup.pos);
                   if (aItem == null) {
-                    throw DHTExceptionInvalidData();
+                    throw const DHTExceptionInvalidData();
                   }
                   await sb.operateWriteEventual((bWrite) async {
                     final success = await bWrite
                         .tryWriteItem(bLookup.pos, aItem, output: bItem);
                     if (!success) {
-                      throw DHTExceptionOutdated();
+                      throw const DHTExceptionOutdated();
                     }
                   });
                 }
                 final success =
                     await aWrite.tryWriteItem(aLookup.pos, bItem.value!);
                 if (!success) {
-                  throw DHTExceptionOutdated();
+                  throw const DHTExceptionOutdated();
                 }
               })));
     }
@@ -101,7 +101,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
             await write.clear();
           } else if (lookup.pos != write.length) {
             // We should always be appending at the length
-            throw DHTExceptionInvalidData();
+            throw const DHTExceptionInvalidData();
           }
           return write.add(value);
         }));
@@ -122,7 +122,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
 
       final lookup = await _spine.lookupPosition(insertPos + valueIdx);
       if (lookup == null) {
-        throw DHTExceptionInvalidData();
+        throw const DHTExceptionInvalidData();
       }
 
       final sacount = min(remaining, DHTShortArray.maxElements - lookup.pos);
@@ -137,7 +137,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
                   await write.clear();
                 } else if (lookup.pos != write.length) {
                   // We should always be appending at the length
-                  throw DHTExceptionInvalidData();
+                  throw const DHTExceptionInvalidData();
                 }
                 return write.addAll(sublistValues);
               }));
@@ -152,7 +152,7 @@ class _DHTLogWrite extends _DHTLogRead implements DHTLogWriteOperations {
     await dws();
 
     if (!success) {
-      throw DHTExceptionOutdated();
+      throw const DHTExceptionOutdated();
     }
   }
 

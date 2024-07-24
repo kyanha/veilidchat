@@ -47,11 +47,13 @@ class _DHTLogRead implements DHTLogReadOperations {
 
     final chunks = Iterable<int>.generate(length)
         .slices(kMaxDHTConcurrency)
-        .map((chunk) =>
-            chunk.map((pos) => get(pos + start, forceRefresh: forceRefresh)));
+        .map((chunk) => chunk
+            .map((pos) async => get(pos + start, forceRefresh: forceRefresh)));
 
     for (final chunk in chunks) {
       final elems = await chunk.wait;
+
+      // If any element was unavailable, return null
       if (elems.contains(null)) {
         return null;
       }

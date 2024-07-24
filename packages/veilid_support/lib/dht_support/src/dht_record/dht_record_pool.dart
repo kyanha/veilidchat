@@ -21,8 +21,11 @@ part 'dht_record_pool_private.dart';
 /// Maximum number of concurrent DHT operations to perform on the network
 const int kMaxDHTConcurrency = 8;
 
-/// Number of times to retry a 'key not found'
-const int kDHTKeyNotFoundRetry = 3;
+/// Total number of times to try in a 'VeilidAPIExceptionKeyNotFound' loop
+const int kDHTKeyNotFoundTries = 3;
+
+/// Total number of times to try in a 'VeilidAPIExceptionTryAgain' loop
+const int kDHTTryAgainTries = 3;
 
 typedef DHTRecordPoolLogger = void Function(String message);
 
@@ -280,12 +283,12 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           for (final rec in openedRecordInfo.records) {
             // See if the watch had an expiration and if it has expired
             // otherwise the renewal will keep the same parameters
-            final watchState = rec.watchState;
+            final watchState = rec._watchState;
             if (watchState != null) {
               final exp = watchState.expiration;
               if (exp != null && exp.value < now) {
                 // Has expiration, and it has expired, clear watch state
-                rec.watchState = null;
+                rec._watchState = null;
               }
             }
           }
@@ -392,7 +395,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
     if (openedRecordInfo == null) {
       // Fresh open, just open the record
-      var retry = kDHTKeyNotFoundRetry;
+      var retry = kDHTKeyNotFoundTries;
       late final DHTRecordDescriptor recordDescriptor;
       while (true) {
         try {
@@ -403,7 +406,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           await asyncSleep();
           retry--;
           if (retry == 0) {
-            rethrow;
+            throw DHTExceptionNotAvailable();
           }
         }
       }
@@ -705,7 +708,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     var cancelWatch = true;
 
     for (final rec in records) {
-      final ws = rec.watchState;
+      final ws = rec._watchState;
       if (ws != null) {
         cancelWatch = false;
         final wsCount = ws.count;
@@ -762,9 +765,9 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   static void _updateWatchRealExpirations(Iterable<DHTRecord> records,
       Timestamp realExpiration, Timestamp renewalTime) {
     for (final rec in records) {
-      final ws = rec.watchState;
+      final ws = rec._watchState;
       if (ws != null) {
-        rec.watchState = _WatchState(
+        rec._watchState = _WatchState(
             subkeys: ws.subkeys,
             expiration: ws.expiration,
             count: ws.count,

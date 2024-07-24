@@ -86,7 +86,7 @@ class _HomeAccountReadyState extends State<HomeAccountReady> {
     if (activeChatLocalConversationKey == null) {
       return const NoConversationWidget();
     }
-    return ChatComponentWidget.builder(
+    return ChatComponentWidget(
         localConversationRecordKey: activeChatLocalConversationKey,
         key: ValueKey(activeChatLocalConversationKey));
   }
@@ -104,11 +104,6 @@ class _HomeAccountReadyState extends State<HomeAccountReady> {
 
     final activeChat = context.watch<ActiveChatCubit>().state;
     final hasActiveChat = activeChat != null;
-    // if (hasActiveChat) {
-    //   _chatAnimationController.forward();
-    // } else {
-    //   _chatAnimationController.reset();
-    // }
 
     return LayoutBuilder(builder: (context, constraints) {
       const leftColumnSize = 300.0;

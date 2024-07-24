@@ -57,16 +57,11 @@ class AuthorInputSource {
         // Get another input batch futher back
         final nextWindow = await cubit.loadElementsFromReader(
             reader, last + 1, (last + 1) - first);
-        final asErr = nextWindow.asError;
-        if (asErr != null) {
-          return AsyncValue.error(asErr.error, asErr.stackTrace);
-        }
-        final asLoading = nextWindow.asLoading;
-        if (asLoading != null) {
+        if (nextWindow == null) {
           return const AsyncValue.loading();
         }
-        _currentWindow = InputWindow(
-            elements: nextWindow.asData!.value, first: first, last: last);
+        _currentWindow =
+            InputWindow(elements: nextWindow, first: first, last: last);
         return const AsyncValue.data(true);
       });
 

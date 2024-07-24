@@ -296,7 +296,7 @@ class _DHTLogSpine {
         segmentKeyBytes);
   }
 
-  Future<DHTShortArray> _openOrCreateSegment(int segmentNumber) async {
+  Future<DHTShortArray?> _openOrCreateSegment(int segmentNumber) async {
     assert(_spineMutex.isLocked, 'should be in mutex here');
     assert(_spineRecord.writer != null, 'should be writable');
 
@@ -306,51 +306,56 @@ class _DHTLogSpine {
     final subkey = l.subkey;
     final segment = l.segment;
 
-    var subkeyData = await _spineRecord.get(subkey: subkey);
-    subkeyData ??= _makeEmptySubkey();
-    while (true) {
-      final segmentKey = _getSegmentKey(subkeyData!, segment);
-      if (segmentKey == null) {
-        // Create a shortarray segment
-        final segmentRec = await DHTShortArray.create(
-          debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
-          stride: _segmentStride,
-          crypto: _spineRecord.crypto,
-          parent: _spineRecord.key,
-          routingContext: _spineRecord.routingContext,
-          writer: _spineRecord.writer,
-        );
-        var success = false;
-        try {
-          // Write it back to the spine record
-          _setSegmentKey(subkeyData, segment, segmentRec.recordKey);
-          subkeyData =
-              await _spineRecord.tryWriteBytes(subkeyData, subkey: subkey);
-          // If the write was successful then we're done
-          if (subkeyData == null) {
-            // Return it
-            success = true;
-            return segmentRec;
+    try {
+      var subkeyData = await _spineRecord.get(subkey: subkey);
+      subkeyData ??= _makeEmptySubkey();
+
+      while (true) {
+        final segmentKey = _getSegmentKey(subkeyData!, segment);
+        if (segmentKey == null) {
+          // Create a shortarray segment
+          final segmentRec = await DHTShortArray.create(
+            debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
+            stride: _segmentStride,
+            crypto: _spineRecord.crypto,
+            parent: _spineRecord.key,
+            routingContext: _spineRecord.routingContext,
+            writer: _spineRecord.writer,
+          );
+          var success = false;
+          try {
+            // Write it back to the spine record
+            _setSegmentKey(subkeyData, segment, segmentRec.recordKey);
+            subkeyData =
+                await _spineRecord.tryWriteBytes(subkeyData, subkey: subkey);
+            // If the write was successful then we're done
+            if (subkeyData == null) {
+              // Return it
+              success = true;
+              return segmentRec;
+            }
+          } finally {
+            if (!success) {
+              await segmentRec.close();
+              await segmentRec.delete();
+            }
           }
-        } finally {
-          if (!success) {
-            await segmentRec.close();
-            await segmentRec.delete();
-          }
+        } else {
+          // Open a shortarray segment
+          final segmentRec = await DHTShortArray.openWrite(
+            segmentKey,
+            _spineRecord.writer!,
+            debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
+            crypto: _spineRecord.crypto,
+            parent: _spineRecord.key,
+            routingContext: _spineRecord.routingContext,
+          );
+          return segmentRec;
         }
-      } else {
-        // Open a shortarray segment
-        final segmentRec = await DHTShortArray.openWrite(
-          segmentKey,
-          _spineRecord.writer!,
-          debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
-          crypto: _spineRecord.crypto,
-          parent: _spineRecord.key,
-          routingContext: _spineRecord.routingContext,
-        );
-        return segmentRec;
+        // Loop if we need to try again with the new data from the network
       }
-      // Loop if we need to try again with the new data from the network
+    } on DHTExceptionNotAvailable {
+      return null;
     }
   }
 
@@ -364,34 +369,38 @@ class _DHTLogSpine {
     final segment = l.segment;
 
     // See if we have the segment key locally
-    TypedKey? segmentKey;
-    var subkeyData = await _spineRecord.get(
-        subkey: subkey, refreshMode: DHTRecordRefreshMode.local);
-    if (subkeyData != null) {
-      segmentKey = _getSegmentKey(subkeyData, segment);
-    }
-    if (segmentKey == null) {
-      // If not, try from the network
-      subkeyData = await _spineRecord.get(
-          subkey: subkey, refreshMode: DHTRecordRefreshMode.network);
-      if (subkeyData == null) {
-        return null;
+    try {
+      TypedKey? segmentKey;
+      var subkeyData = await _spineRecord.get(
+          subkey: subkey, refreshMode: DHTRecordRefreshMode.local);
+      if (subkeyData != null) {
+        segmentKey = _getSegmentKey(subkeyData, segment);
       }
-      segmentKey = _getSegmentKey(subkeyData, segment);
       if (segmentKey == null) {
-        return null;
+        // If not, try from the network
+        subkeyData = await _spineRecord.get(
+            subkey: subkey, refreshMode: DHTRecordRefreshMode.network);
+        if (subkeyData == null) {
+          return null;
+        }
+        segmentKey = _getSegmentKey(subkeyData, segment);
+        if (segmentKey == null) {
+          return null;
+        }
       }
-    }
 
-    // Open a shortarray segment
-    final segmentRec = await DHTShortArray.openRead(
-      segmentKey,
-      debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
-      crypto: _spineRecord.crypto,
-      parent: _spineRecord.key,
-      routingContext: _spineRecord.routingContext,
-    );
-    return segmentRec;
+      // Open a shortarray segment
+      final segmentRec = await DHTShortArray.openRead(
+        segmentKey,
+        debugName: '${_spineRecord.debugName}_spine_${subkey}_$segment',
+        crypto: _spineRecord.crypto,
+        parent: _spineRecord.key,
+        routingContext: _spineRecord.routingContext,
+      );
+      return segmentRec;
+    } on DHTExceptionNotAvailable {
+      return null;
+    }
   }
 
   _DHTLogSegmentLookup _lookupSegment(int segmentNumber) {

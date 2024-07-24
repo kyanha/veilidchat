@@ -8,6 +8,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:meta/meta.dart';
 
 import '../../../veilid_support.dart';
+import '../interfaces/refreshable_cubit.dart';
 
 @immutable
 class DHTShortArrayElementState<T> extends Equatable {
@@ -24,7 +25,7 @@ typedef DHTShortArrayState<T> = AsyncValue<IList<DHTShortArrayElementState<T>>>;
 typedef DHTShortArrayBusyState<T> = BlocBusyState<DHTShortArrayState<T>>;
 
 class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
-    with BlocBusyWrapper<DHTShortArrayState<T>> {
+    with BlocBusyWrapper<DHTShortArrayState<T>>, RefreshableCubit {
   DHTShortArrayCubit({
     required Future<DHTShortArray> Function() open,
     required T Function(List<int> data) decodeElement,
@@ -39,7 +40,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
             _shortArray = await open();
             _wantsCloseRecord = true;
             break;
-          } on VeilidAPIExceptionTryAgain {
+          } on DHTExceptionNotAvailable {
             // Wait for a bit
             await asyncSleep();
           }
@@ -57,6 +58,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
     });
   }
 
+  @override
   Future<void> refresh({bool forceRefresh = false}) async {
     await _initWait();
     await _refreshNoWait(forceRefresh: forceRefresh);
@@ -87,9 +89,13 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
             .toIList();
         return allItems;
       });
-      if (newState != null) {
-        emit(AsyncValue.data(newState));
+      if (newState == null) {
+        // Mark us as needing refresh
+        setWantsRefresh();
+        return;
       }
+      emit(AsyncValue.data(newState));
+      setRefreshed();
     } on Exception catch (e) {
       emit(AsyncValue.error(e));
     }

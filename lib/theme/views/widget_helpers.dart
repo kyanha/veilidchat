@@ -37,10 +37,12 @@ extension ModalProgressExt on Widget {
 Widget buildProgressIndicator() => Builder(builder: (context) {
       final theme = Theme.of(context);
       final scale = theme.extension<ScaleScheme>()!;
-      return SpinKitFoldingCube(
-        color: scale.tertiaryScale.primary,
-        size: 80,
-      );
+      return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SpinKitFoldingCube(
+            color: scale.tertiaryScale.primary,
+            size: 80,
+          ));
     });
 
 Widget waitingPage({String? text}) => Builder(builder: (context) {
@@ -48,11 +50,17 @@ Widget waitingPage({String? text}) => Builder(builder: (context) {
       final scale = theme.extension<ScaleScheme>()!;
       return ColoredBox(
           color: scale.tertiaryScale.appBackground,
-          child: Center(
-              child: Column(children: [
-            buildProgressIndicator().expanded(),
-            if (text != null) Text(text)
-          ])));
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                buildProgressIndicator(),
+                if (text != null)
+                  Text(text,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall!
+                          .copyWith(color: scale.tertiaryScale.appText))
+              ]));
     });
 
 Widget debugPage(String text) => Builder(

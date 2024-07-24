@@ -134,11 +134,25 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
       return null;
     }
 
-    final valueData = await _routingContext.getDHTValue(key, subkey,
-        forceRefresh: refreshMode._forceRefresh);
+    var retry = kDHTTryAgainTries;
+    ValueData? valueData;
+    while (true) {
+      try {
+        valueData = await _routingContext.getDHTValue(key, subkey,
+            forceRefresh: refreshMode._forceRefresh);
+        break;
+      } on VeilidAPIExceptionTryAgain {
+        retry--;
+        if (retry == 0) {
+          throw const DHTExceptionNotAvailable();
+        }
+        await asyncSleep();
+      }
+    }
     if (valueData == null) {
       return null;
     }
+
     // See if this get resulted in a newer sequence number
     if (refreshMode == DHTRecordRefreshMode.update &&
         lastSeq != null &&
@@ -415,10 +429,10 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
       Timestamp? expiration,
       int? count}) async {
     // Set up watch requirements which will get picked up by the next tick
-    final oldWatchState = watchState;
-    watchState =
+    final oldWatchState = _watchState;
+    _watchState =
         _WatchState(subkeys: subkeys, expiration: expiration, count: count);
-    if (oldWatchState != watchState) {
+    if (oldWatchState != _watchState) {
       _sharedDHTRecordData.needsWatchStateUpdate = true;
     }
   }
@@ -476,8 +490,8 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   /// Takes effect on the next DHTRecordPool tick
   Future<void> cancelWatch() async {
     // Tear down watch requirements
-    if (watchState != null) {
-      watchState = null;
+    if (_watchState != null) {
+      _watchState = null;
       _sharedDHTRecordData.needsWatchStateUpdate = true;
     }
   }
@@ -503,7 +517,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
       {required bool local,
       required Uint8List? data,
       required List<ValueSubkeyRange> subkeys}) {
-    final ws = watchState;
+    final ws = _watchState;
     if (ws != null) {
       final watchedSubkeys = ws.subkeys;
       if (watchedSubkeys == null) {
@@ -551,6 +565,5 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   final _mutex = Mutex();
   int _openCount;
   StreamController<DHTRecordWatchChange>? _watchController;
-  @internal
-  _WatchState? watchState;
+  _WatchState? _watchState;
 }

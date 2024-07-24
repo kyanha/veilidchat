@@ -13,7 +13,7 @@ import 'empty_contact_list_widget.dart';
 class ContactListWidget extends StatefulWidget {
   const ContactListWidget(
       {required this.contactList, required this.disabled, super.key});
-  final IList<proto.Contact> contactList;
+  final IList<proto.Contact>? contactList;
   final bool disabled;
 
   @override
@@ -46,13 +46,18 @@ class _ContactListWidgetState extends State<ContactListWidget>
             title: translate('contacts_page.contacts'),
             sliver: SliverFillRemaining(
               child: SearchableList<proto.Contact>.sliver(
-                initialList: widget.contactList.toList(),
+                initialList: widget.contactList == null
+                    ? []
+                    : widget.contactList!.toList(),
                 itemBuilder: (c) =>
                     ContactItemWidget(contact: c, disabled: widget.disabled)
                         .paddingLTRB(0, 4, 0, 0),
                 filter: (value) {
                   final lowerValue = value.toLowerCase();
-                  return widget.contactList
+                  if (widget.contactList == null) {
+                    return [];
+                  }
+                  return widget.contactList!
                       .where((element) =>
                           element.nickname.toLowerCase().contains(lowerValue) ||
                           element.profile.name
@@ -65,9 +70,13 @@ class _ContactListWidgetState extends State<ContactListWidget>
                 },
                 searchFieldHeight: 40,
                 spaceBetweenSearchAndList: 4,
-                emptyWidget: const EmptyContactListWidget(),
+                emptyWidget: widget.contactList == null
+                    ? waitingPage(
+                        text: translate('contacts_page.loading_contacts'))
+                    : const EmptyContactListWidget(),
                 defaultSuffixIconColor: scale.primaryScale.border,
                 closeKeyboardWhenScrolling: true,
+                searchFieldEnabled: widget.contactList != null,
                 inputDecoration: InputDecoration(
                   labelText: translate('contact_list.search'),
                 ),

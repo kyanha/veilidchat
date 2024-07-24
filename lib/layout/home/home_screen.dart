@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:provider/provider.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:transitioned_indexed_stack/transitioned_indexed_stack.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
@@ -36,11 +41,43 @@ class HomeScreenState extends State<HomeScreen>
           .indexWhere((x) => x.superIdentity.recordKey == activeLocalAccount);
       final canClose = activeIndex != -1;
 
+      unawaited(_doBetaDialog(context));
+
       if (!canClose) {
         await _zoomDrawerController.open!();
       }
     });
     super.initState();
+  }
+
+  Future<void> _doBetaDialog(BuildContext context) async {
+    await QuickAlert.show(
+        context: context,
+        title: translate('splash.beta_title'),
+        widget: RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            children: <TextSpan>[
+              TextSpan(
+                text: translate('splash.beta_text'),
+                style: const TextStyle(
+                  color: Colors.black87,
+                ),
+              ),
+              TextSpan(
+                text: 'https://veilid.com/chat/beta',
+                style: const TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+                recognizer: TapGestureRecognizer()
+                  ..onTap =
+                      () => launchUrlString('https://veilid.com/chat/beta'),
+              ),
+            ],
+          ),
+        ),
+        type: QuickAlertType.warning);
   }
 
   Widget _buildAccountPage(

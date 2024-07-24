@@ -17,21 +17,25 @@ class _DHTShortArrayRead implements DHTShortArrayReadOperations {
       throw IndexError.withLength(pos, length);
     }
 
-    final lookup = await _head.lookupPosition(pos, false);
+    try {
+      final lookup = await _head.lookupPosition(pos, false);
 
-    final refresh = forceRefresh || _head.positionNeedsRefresh(pos);
-    final outSeqNum = Output<int>();
-    final out = lookup.record.get(
-        subkey: lookup.recordSubkey,
-        refreshMode: refresh
-            ? DHTRecordRefreshMode.network
-            : DHTRecordRefreshMode.cached,
-        outSeqNum: outSeqNum);
-    if (outSeqNum.value != null) {
-      _head.updatePositionSeq(pos, false, outSeqNum.value!);
+      final refresh = forceRefresh || _head.positionNeedsRefresh(pos);
+      final outSeqNum = Output<int>();
+      final out = await lookup.record.get(
+          subkey: lookup.recordSubkey,
+          refreshMode: refresh
+              ? DHTRecordRefreshMode.network
+              : DHTRecordRefreshMode.cached,
+          outSeqNum: outSeqNum);
+      if (outSeqNum.value != null) {
+        _head.updatePositionSeq(pos, false, outSeqNum.value!);
+      }
+      return out;
+    } on DHTExceptionNotAvailable {
+      // If any element is not available, return null
+      return null;
     }
-
-    return out;
   }
 
   (int, int) _clampStartLen(int start, int? len) {
@@ -56,11 +60,13 @@ class _DHTShortArrayRead implements DHTShortArrayReadOperations {
 
     final chunks = Iterable<int>.generate(length)
         .slices(kMaxDHTConcurrency)
-        .map((chunk) =>
-            chunk.map((pos) => get(pos + start, forceRefresh: forceRefresh)));
+        .map((chunk) => chunk
+            .map((pos) async => get(pos + start, forceRefresh: forceRefresh)));
 
     for (final chunk in chunks) {
       final elems = await chunk.wait;
+
+      // If any element was unavailable, return null
       if (elems.contains(null)) {
         return null;
       }

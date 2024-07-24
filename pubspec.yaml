@@ -96,6 +96,7 @@ dependencies:
   stack_trace: ^1.11.1
   stream_transform: ^2.1.0
   transitioned_indexed_stack: ^1.0.2
+  url_launcher: ^6.3.0
   uuid: ^4.4.0
   veilid:
     #   veilid: ^0.0.1

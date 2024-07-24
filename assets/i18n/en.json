@@ -8,6 +8,10 @@
         "accounts": "Accounts",
         "version": "Version"
     },
+    "splash": {
+        "beta_title": "VeilidChat is BETA SOFTWARE",
+        "beta_text": "DO NOT USE THIS FOR ANYTHING IMPORTANT\n\nUntil 1.0 is released:\n\n• You should have no expectations of actual privacy, or guarantees of security.\n• You will likely lose accounts, contacts, and messages and need to recreate them.\n\nPlease read our BETA PARTICIPATION GUIDE located here:\n\n"
+    },
     "pager": {
         "chats": "Chats",
         "contacts": "Contacts"
@@ -99,7 +103,8 @@
     },
     "contacts_page": {
         "contacts": "Contacts",
-        "invitations": "Invitations"
+        "invitations": "Invitations",
+        "loading_contacts": "Loading contacts..."
     },
     "add_contact_sheet": {
         "new_contact": "New Contact",

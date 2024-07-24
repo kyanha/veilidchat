@@ -29,8 +29,7 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
             _record = await open();
             _wantsCloseRecord = true;
             break;
-          } on VeilidAPIExceptionKeyNotFound {
-          } on VeilidAPIExceptionTryAgain {
+          } on DHTExceptionNotAvailable {
             // Wait for a bit
             await asyncSleep();
           }
