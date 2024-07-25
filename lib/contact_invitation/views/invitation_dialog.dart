@@ -9,6 +9,7 @@ import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../contacts/contacts.dart';
+import '../../notifications/notifications.dart';
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import '../contact_invitation.dart';
@@ -102,7 +103,9 @@ class InvitationDialogState extends State<InvitationDialog> {
         }
       } else {
         if (mounted) {
-          showErrorToast(context, 'invitation_dialog.failed_to_accept');
+          context
+              .read<NotificationsCubit>()
+              .error(text: 'invitation_dialog.failed_to_accept');
         }
       }
     }
@@ -124,7 +127,9 @@ class InvitationDialogState extends State<InvitationDialog> {
         // do nothing right now
       } else {
         if (mounted) {
-          showErrorToast(context, 'invitation_dialog.failed_to_reject');
+          context
+              .read<NotificationsCubit>()
+              .error(text: 'invitation_dialog.failed_to_reject');
         }
       }
     }
@@ -218,7 +223,7 @@ class InvitationDialogState extends State<InvitationDialog> {
           errorText = translate('invitation_dialog.invalid_password');
       }
       if (mounted) {
-        showErrorToast(context, errorText);
+        context.read<NotificationsCubit>().error(text: errorText);
       }
       setState(() {
         _isValidating = false;
@@ -233,7 +238,7 @@ class InvitationDialogState extends State<InvitationDialog> {
         errorText = translate('invitation_dialog.invalid_invitation');
       }
       if (mounted) {
-        showErrorToast(context, errorText);
+        context.read<NotificationsCubit>().error(text: errorText);
       }
       setState(() {
         _isValidating = false;

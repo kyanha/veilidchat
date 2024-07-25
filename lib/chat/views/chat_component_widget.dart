@@ -13,6 +13,7 @@ import 'package:veilid_support/veilid_support.dart';
 import '../../account_manager/account_manager.dart';
 import '../../contacts/contacts.dart';
 import '../../conversation/conversation.dart';
+import '../../notifications/notifications.dart';
 import '../../theme/theme.dart';
 import '../chat.dart';
 
@@ -27,10 +28,10 @@ class ChatComponentWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scale = theme.extension<ScaleScheme>()!;
-    final scaleConfig = theme.extension<ScaleConfig>()!;
-    final textTheme = theme.textTheme;
+    // final theme = Theme.of(context);
+    // final scale = theme.extension<ScaleScheme>()!;
+    // final scaleConfig = theme.extension<ScaleConfig>()!;
+    // final textTheme = theme.textTheme;
 
     // Get the account info
     final accountInfo = context.watch<AccountInfoCubit>().state;
@@ -221,14 +222,15 @@ class ChatComponentWidget extends StatelessWidget {
                               onSendPressed: (pt) {
                                 try {
                                   if (!messageIsValid) {
-                                    showErrorToast(context,
-                                        translate('chat.message_too_long'));
+                                    context.read<NotificationsCubit>().error(
+                                        text:
+                                            translate('chat.message_too_long'));
                                     return;
                                   }
                                   _handleSendPressed(chatComponentCubit, pt);
                                 } on FormatException {
-                                  showErrorToast(context,
-                                      translate('chat.message_too_long'));
+                                  context.read<NotificationsCubit>().error(
+                                      text: translate('chat.message_too_long'));
                                 }
                               },
                               listBottomWidget: messageIsValid
@@ -267,8 +269,11 @@ class ChatComponentWidget extends StatelessWidget {
       ChatComponentCubit chatComponentCubit,
       WindowState<types.Message> messageWindow,
       ScrollNotification notification) async {
-    print(
-        '_handlePageForward: messagesState.length=${messageWindow.length} messagesState.windowTail=${messageWindow.windowTail} messagesState.windowCount=${messageWindow.windowCount} ScrollNotification=$notification');
+    debugPrint(
+        '_handlePageForward: messagesState.length=${messageWindow.length} '
+        'messagesState.windowTail=${messageWindow.windowTail} '
+        'messagesState.windowCount=${messageWindow.windowCount} '
+        'ScrollNotification=$notification');
 
     // Go forward a page
     final tail = min(messageWindow.length,
@@ -299,8 +304,11 @@ class ChatComponentWidget extends StatelessWidget {
     WindowState<types.Message> messageWindow,
     ScrollNotification notification,
   ) async {
-    print(
-        '_handlePageBackward: messagesState.length=${messageWindow.length} messagesState.windowTail=${messageWindow.windowTail} messagesState.windowCount=${messageWindow.windowCount} ScrollNotification=$notification');
+    debugPrint(
+        '_handlePageBackward: messagesState.length=${messageWindow.length} '
+        'messagesState.windowTail=${messageWindow.windowTail} '
+        'messagesState.windowCount=${messageWindow.windowCount} '
+        'ScrollNotification=$notification');
 
     // Go back a page
     final tail = max(

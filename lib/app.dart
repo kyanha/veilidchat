@@ -1,5 +1,6 @@
 import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:async_tools/async_tools.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,7 @@ import 'package:veilid_support/veilid_support.dart';
 import 'account_manager/account_manager.dart';
 import 'init.dart';
 import 'layout/splash.dart';
+import 'notifications/notifications.dart';
 import 'router/router.dart';
 import 'settings/settings.dart';
 import 'theme/theme.dart';
@@ -24,8 +26,8 @@ class ReloadThemeIntent extends Intent {
   const ReloadThemeIntent();
 }
 
-class AttachDetachThemeIntent extends Intent {
-  const AttachDetachThemeIntent();
+class AttachDetachIntent extends Intent {
+  const AttachDetachIntent();
 }
 
 class VeilidChatApp extends StatelessWidget {
@@ -55,7 +57,7 @@ class VeilidChatApp extends StatelessWidget {
     });
   }
 
-  void _attachDetachTheme(BuildContext context) {
+  void _attachDetach(BuildContext context) {
     singleFuture(this, () async {
       if (ProcessorRepository.instance.processorConnectionState.isAttached) {
         log.info('Detaching');
@@ -77,14 +79,13 @@ class VeilidChatApp extends StatelessWidget {
                         const ReloadThemeIntent(),
                     LogicalKeySet(
                             LogicalKeyboardKey.alt, LogicalKeyboardKey.keyD):
-                        const AttachDetachThemeIntent(),
+                        const AttachDetachIntent(),
                   },
                   child: Actions(actions: <Type, Action<Intent>>{
                     ReloadThemeIntent: CallbackAction<ReloadThemeIntent>(
                         onInvoke: (intent) => _reloadTheme(context)),
-                    AttachDetachThemeIntent:
-                        CallbackAction<AttachDetachThemeIntent>(
-                            onInvoke: (intent) => _attachDetachTheme(context)),
+                    AttachDetachIntent: CallbackAction<AttachDetachIntent>(
+                        onInvoke: (intent) => _attachDetach(context)),
                   }, child: Focus(autofocus: true, child: builder(context)))));
 
   @override
@@ -101,10 +102,17 @@ class VeilidChatApp extends StatelessWidget {
         final localizationDelegate = LocalizedApp.of(context).delegate;
         return ThemeProvider(
           initTheme: initialThemeData,
-          builder: (_, theme) => LocalizationProvider(
+          builder: (context, theme) => LocalizationProvider(
               state: LocalizationProvider.of(context).state,
               child: MultiBlocProvider(
                 providers: [
+                  BlocProvider<PreferencesCubit>(
+                    create: (context) =>
+                        PreferencesCubit(PreferencesRepository.instance),
+                  ),
+                  BlocProvider<NotificationsCubit>(
+                      create: (context) => NotificationsCubit(
+                          const NotificationsState(queue: IList.empty()))),
                   BlocProvider<ConnectionStateCubit>(
                       create: (context) =>
                           ConnectionStateCubit(ProcessorRepository.instance)),
@@ -123,10 +131,6 @@ class VeilidChatApp extends StatelessWidget {
                   BlocProvider<ActiveLocalAccountCubit>(
                     create: (context) =>
                         ActiveLocalAccountCubit(AccountRepository.instance),
-                  ),
-                  BlocProvider<PreferencesCubit>(
-                    create: (context) =>
-                        PreferencesCubit(PreferencesRepository.instance),
                   ),
                   BlocProvider<PerAccountCollectionBlocMapCubit>(
                       create: (context) => PerAccountCollectionBlocMapCubit(

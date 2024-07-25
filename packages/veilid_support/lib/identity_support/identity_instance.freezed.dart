@@ -25,7 +25,9 @@ mixin _$IdentityInstance {
       throw _privateConstructorUsedError; // Public key of identity instance
   FixedEncodedString43 get publicKey =>
       throw _privateConstructorUsedError; // Secret key of identity instance
-// Encrypted with DH(publicKey, SuperIdentity.secret) with appended salt
+// Encrypted with appended salt, key is DeriveSharedSecret(
+//    password = SuperIdentity.secret,
+//    salt = publicKey)
 // Used to recover accounts without generating a new instance
   @Uint8ListJsonConverter()
   Uint8List get encryptedSecretKey =>
@@ -179,7 +181,9 @@ class _$IdentityInstanceImpl extends _IdentityInstance {
   @override
   final FixedEncodedString43 publicKey;
 // Secret key of identity instance
-// Encrypted with DH(publicKey, SuperIdentity.secret) with appended salt
+// Encrypted with appended salt, key is DeriveSharedSecret(
+//    password = SuperIdentity.secret,
+//    salt = publicKey)
 // Used to recover accounts without generating a new instance
   @override
   @Uint8ListJsonConverter()
@@ -257,7 +261,9 @@ abstract class _IdentityInstance extends IdentityInstance {
   @override // Public key of identity instance
   FixedEncodedString43 get publicKey;
   @override // Secret key of identity instance
-// Encrypted with DH(publicKey, SuperIdentity.secret) with appended salt
+// Encrypted with appended salt, key is DeriveSharedSecret(
+//    password = SuperIdentity.secret,
+//    salt = publicKey)
 // Used to recover accounts without generating a new instance
   @Uint8ListJsonConverter()
   Uint8List get encryptedSecretKey;

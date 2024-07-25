@@ -11,6 +11,7 @@ import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../layout/default_app_bar.dart';
+import '../../notifications/notifications.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
@@ -106,12 +107,14 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
           final success = await AccountRepository.instance.deleteLocalAccount(
               widget.superIdentityRecordKey, widget.accountRecord);
           if (success && mounted) {
-            showInfoToast(
-                context, translate('edit_account_page.account_removed'));
+            context
+                .read<NotificationsCubit>()
+                .info(text: translate('edit_account_page.account_removed'));
             GoRouterHelper(context).pop();
           } else if (mounted) {
-            showErrorToast(
-                context, translate('edit_account_page.failed_to_remove'));
+            context
+                .read<NotificationsCubit>()
+                .error(text: translate('edit_account_page.failed_to_remove'));
           }
         } finally {
           if (mounted) {
@@ -172,12 +175,14 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
           final success = await AccountRepository.instance.destroyAccount(
               widget.superIdentityRecordKey, widget.accountRecord);
           if (success && mounted) {
-            showInfoToast(
-                context, translate('edit_account_page.account_destroyed'));
+            context
+                .read<NotificationsCubit>()
+                .info(text: translate('edit_account_page.account_destroyed'));
             GoRouterHelper(context).pop();
           } else if (mounted) {
-            showErrorToast(
-                context, translate('edit_account_page.failed_to_destroy'));
+            context
+                .read<NotificationsCubit>()
+                .error(text: translate('edit_account_page.failed_to_destroy'));
           }
         } finally {
           if (mounted) {

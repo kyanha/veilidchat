@@ -54,7 +54,7 @@ class ContactInvitationListCubit
     return dhtRecord;
   }
 
-  Future<Uint8List> createInvitation(
+  Future<(Uint8List, TypedKey)> createInvitation(
       {required proto.Profile profile,
       required EncryptionKeyType encryptionKeyType,
       required String encryptionKey,
@@ -82,6 +82,7 @@ class ContactInvitationListCubit
     // to and it will be eventually encrypted with the DH of the contact's
     // identity key
     late final Uint8List signedContactInvitationBytes;
+    late final TypedKey contactRequestInboxKey;
     await (await pool.createRecord(
             debugName: 'ContactInvitationListCubit::createInvitation::'
                 'LocalConversation',
@@ -119,6 +120,9 @@ class ContactInvitationListCubit
               ]),
               crypto: const VeilidCryptoPublic()))
           .deleteScope((contactRequestInbox) async {
+        // Keep the contact request inbox key
+        contactRequestInboxKey = contactRequestInbox.key;
+
         // Store ContactRequest in owner subkey
         await contactRequestInbox.eventualWriteProtobuf(creq);
         // Store an empty invitation response
@@ -158,7 +162,7 @@ class ContactInvitationListCubit
       });
     });
 
-    return signedContactInvitationBytes;
+    return (signedContactInvitationBytes, contactRequestInboxKey);
   }
 
   Future<void> deleteInvitation(

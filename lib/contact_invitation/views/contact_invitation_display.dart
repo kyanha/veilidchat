@@ -7,19 +7,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../notifications/notifications.dart';
+import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../contact_invitation.dart';
 
 class ContactInvitationDisplayDialog extends StatelessWidget {
   const ContactInvitationDisplayDialog._({
-    required this.modalContext,
+    required this.locator,
     required this.message,
   });
 
-  final BuildContext modalContext;
+  final Locator locator;
   final String message;
 
   @override
@@ -27,7 +30,7 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
     super.debugFillProperties(properties);
     properties
       ..add(StringProperty('message', message))
-      ..add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
+      ..add(DiagnosticsProperty<Locator>('locator', locator));
   }
 
   String makeTextInvite(String message, Uint8List data) {
@@ -48,72 +51,87 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
     final textTheme = theme.textTheme;
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    final signedContactInvitationBytesV =
-        context.watch<InvitationGeneratorCubit>().state;
+    final generatorOutputV = context.watch<InvitationGeneratorCubit>().state;
 
     final cardsize =
         min<double>(MediaQuery.of(context).size.shortestSide - 48.0, 400);
 
-    return PopControl(
-        dismissible: !signedContactInvitationBytesV.isLoading,
-        child: Dialog(
-            shape: RoundedRectangleBorder(
-                side: const BorderSide(width: 2),
-                borderRadius:
-                    BorderRadius.circular(16 * scaleConfig.borderRadiusScale)),
-            backgroundColor: Colors.white,
-            child: ConstrainedBox(
-                constraints: BoxConstraints(
-                    minWidth: cardsize,
-                    maxWidth: cardsize,
-                    minHeight: cardsize,
-                    maxHeight: cardsize),
-                child: signedContactInvitationBytesV.when(
-                    loading: buildProgressIndicator,
-                    data: (data) => Column(children: [
-                          FittedBox(
-                                  child: Text(
-                                      translate(
-                                          'create_invitation_dialog.contact_invitation'),
-                                      style: textTheme.headlineSmall!
-                                          .copyWith(color: Colors.black)))
-                              .paddingAll(8),
-                          FittedBox(
-                                  child: QrImageView.withQr(
-                                      size: 300,
-                                      qr: QrCode.fromUint8List(
-                                          data: data,
-                                          errorCorrectLevel:
-                                              QrErrorCorrectLevel.L)))
-                              .expanded(),
-                          Text(message,
-                                  softWrap: true,
-                                  style: textTheme.labelLarge!
-                                      .copyWith(color: Colors.black))
-                              .paddingAll(8),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.copy),
-                            style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.black,
-                                backgroundColor: Colors.white,
-                                side: const BorderSide()),
-                            label: Text(translate(
-                                'create_invitation_dialog.copy_invitation')),
-                            onPressed: () async {
-                              showInfoToast(
-                                  context,
-                                  translate(
-                                      'create_invitation_dialog.invitation_copied'));
-                              await Clipboard.setData(ClipboardData(
-                                  text: makeTextInvite(message, data)));
-                            },
-                          ).paddingAll(16),
-                        ]),
-                    error: errorPage))));
+    return BlocListener<ContactInvitationListCubit,
+            ContactInvitiationListState>(
+        bloc: locator<ContactInvitationListCubit>(),
+        listener: (context, state) {
+          final listState = state.state.asData?.value;
+          final data = generatorOutputV.asData?.value;
+
+          if (listState != null && data != null) {
+            final idx = listState.indexWhere((x) =>
+                x.value.contactRequestInbox.recordKey.toVeilid() == data.$2);
+            if (idx == -1) {
+              // This invitation is gone, close it
+              Navigator.pop(context);
+            }
+          }
+        },
+        child: PopControl(
+            dismissible: !generatorOutputV.isLoading,
+            child: Dialog(
+                shape: RoundedRectangleBorder(
+                    side: const BorderSide(width: 2),
+                    borderRadius: BorderRadius.circular(
+                        16 * scaleConfig.borderRadiusScale)),
+                backgroundColor: Colors.white,
+                child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                        minWidth: cardsize,
+                        maxWidth: cardsize,
+                        minHeight: cardsize,
+                        maxHeight: cardsize),
+                    child: generatorOutputV.when(
+                        loading: buildProgressIndicator,
+                        data: (data) => Column(children: [
+                              FittedBox(
+                                      child: Text(
+                                          translate('create_invitation_dialog'
+                                              '.contact_invitation'),
+                                          style: textTheme.headlineSmall!
+                                              .copyWith(color: Colors.black)))
+                                  .paddingAll(8),
+                              FittedBox(
+                                      child: QrImageView.withQr(
+                                          size: 300,
+                                          qr: QrCode.fromUint8List(
+                                              data: data.$1,
+                                              errorCorrectLevel:
+                                                  QrErrorCorrectLevel.L)))
+                                  .expanded(),
+                              Text(message,
+                                      softWrap: true,
+                                      style: textTheme.labelLarge!
+                                          .copyWith(color: Colors.black))
+                                  .paddingAll(8),
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.copy),
+                                style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.black,
+                                    backgroundColor: Colors.white,
+                                    side: const BorderSide()),
+                                label: Text(translate(
+                                    'create_invitation_dialog.copy_invitation')),
+                                onPressed: () async {
+                                  context.read<NotificationsCubit>().info(
+                                      text: translate('create_invitation_dialog'
+                                          '.invitation_copied'));
+                                  await Clipboard.setData(ClipboardData(
+                                      text: makeTextInvite(message, data.$1)));
+                                },
+                              ).paddingAll(16),
+                            ]),
+                        error: errorPage)))));
   }
 
   static Future<void> show(
       {required BuildContext context,
+      required Locator locator,
       required InvitationGeneratorCubit Function(BuildContext) create,
       required String message}) async {
     await showPopControlDialog<void>(
@@ -121,7 +139,7 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
         builder: (context) => BlocProvider(
             create: create,
             child: ContactInvitationDisplayDialog._(
-              modalContext: context,
+              locator: locator,
               message: message,
             )));
   }

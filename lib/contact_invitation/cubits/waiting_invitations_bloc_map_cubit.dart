@@ -1,9 +1,11 @@
 import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../contacts/contacts.dart';
+import '../../notifications/notifications.dart';
 import '../../proto/proto.dart' as proto;
 import 'cubits.dart';
 
@@ -22,11 +24,13 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
       {required AccountInfo accountInfo,
       required AccountRecordCubit accountRecordCubit,
       required ContactInvitationListCubit contactInvitationListCubit,
-      required ContactListCubit contactListCubit})
+      required ContactListCubit contactListCubit,
+      required NotificationsCubit notificationsCubit})
       : _accountInfo = accountInfo,
         _accountRecordCubit = accountRecordCubit,
         _contactInvitationListCubit = contactInvitationListCubit,
-        _contactListCubit = contactListCubit {
+        _contactListCubit = contactListCubit,
+        _notificationsCubit = notificationsCubit {
     // React to invitation status changes
     _singleInvitationStatusProcessor.follow(
         stream, state, _invitationStatusListener);
@@ -81,11 +85,22 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
           localConversationRecordKey:
               acceptedContact.localConversationRecordKey,
         );
+
+        // Notify about acceptance
+        _notificationsCubit.info(
+            text: translate('waiting_invitation.accepted',
+                args: {'name': acceptedContact.remoteProfile.name}));
       } else {
         // Reject
         await _contactInvitationListCubit.deleteInvitation(
             accepted: false,
             contactRequestInboxRecordKey: contactRequestInboxRecordKey);
+
+        // Notify about rejection
+        _notificationsCubit.info(
+            text: translate(
+          'waiting_invitation.rejected',
+        ));
       }
     }
   }
@@ -108,6 +123,7 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
   final AccountRecordCubit _accountRecordCubit;
   final ContactInvitationListCubit _contactInvitationListCubit;
   final ContactListCubit _contactListCubit;
+  final NotificationsCubit _notificationsCubit;
   final _singleInvitationStatusProcessor =
       SingleStateProcessor<WaitingInvitationsBlocMapState>();
 }

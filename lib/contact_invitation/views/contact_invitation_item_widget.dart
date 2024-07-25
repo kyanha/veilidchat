@@ -52,9 +52,13 @@ class ContactInvitationItemWidget extends StatelessWidget {
         }
         await ContactInvitationDisplayDialog.show(
             context: context,
+            locator: context.read,
             message: contactInvitationRecord.message,
-            create: (context) => InvitationGeneratorCubit.value(
-                Uint8List.fromList(contactInvitationRecord.invitation)));
+            create: (context) => InvitationGeneratorCubit.value((
+                  Uint8List.fromList(contactInvitationRecord.invitation),
+                  contactInvitationRecord.contactRequestInbox.recordKey
+                      .toVeilid()
+                )));
       },
       endActions: [
         SliderTileAction(

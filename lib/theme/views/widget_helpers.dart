@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
-import 'package:motion_toast/motion_toast.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:sliver_expandable/sliver_expandable.dart';
 
@@ -130,46 +129,6 @@ Future<void> showErrorModal(
     //titleColor: Colors.white,
     //textColor: Colors.white,
   );
-}
-
-void showErrorToast(BuildContext context, String message) {
-  final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  final scaleConfig = theme.extension<ScaleConfig>()!;
-
-  MotionToast(
-    //title: Text(translate('toast.error')),
-    description: Text(message),
-    constraints: BoxConstraints.loose(const Size(400, 100)),
-    contentPadding: const EdgeInsets.all(16),
-    primaryColor: scale.errorScale.elementBackground,
-    secondaryColor: scale.errorScale.calloutBackground,
-    borderRadius: 12 * scaleConfig.borderRadiusScale,
-    toastDuration: const Duration(seconds: 4),
-    animationDuration: const Duration(milliseconds: 1000),
-    displayBorder: scaleConfig.useVisualIndicators,
-    icon: Icons.error,
-  ).show(context);
-}
-
-void showInfoToast(BuildContext context, String message) {
-  final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  final scaleConfig = theme.extension<ScaleConfig>()!;
-
-  MotionToast(
-    //title: Text(translate('toast.info')),
-    description: Text(message),
-    constraints: BoxConstraints.loose(const Size(400, 100)),
-    contentPadding: const EdgeInsets.all(16),
-    primaryColor: scale.tertiaryScale.elementBackground,
-    secondaryColor: scale.tertiaryScale.calloutBackground,
-    borderRadius: 12 * scaleConfig.borderRadiusScale,
-    toastDuration: const Duration(seconds: 2),
-    animationDuration: const Duration(milliseconds: 500),
-    displayBorder: scaleConfig.useVisualIndicators,
-    icon: Icons.info,
-  ).show(context);
 }
 
 SliverAppBar styledSliverAppBar(

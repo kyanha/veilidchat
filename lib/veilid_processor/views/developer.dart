@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
@@ -16,6 +17,7 @@ import 'package:veilid_support/veilid_support.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../layout/layout.dart';
+import '../../notifications/notifications.dart';
 import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import 'history_text_editing_controller.dart';
@@ -133,7 +135,9 @@ class _DeveloperPageState extends State<DeveloperPage> {
   Future<void> clear(BuildContext context) async {
     globalDebugTerminal.buffer.clear();
     if (context.mounted) {
-      showInfoToast(context, translate('developer.cleared'));
+      context
+          .read<NotificationsCubit>()
+          .info(text: translate('developer.cleared'));
     }
   }
 
@@ -144,7 +148,9 @@ class _DeveloperPageState extends State<DeveloperPage> {
       _terminalController.clearSelection();
       await Clipboard.setData(ClipboardData(text: text));
       if (context.mounted) {
-        showInfoToast(context, translate('developer.copied'));
+        context
+            .read<NotificationsCubit>()
+            .info(text: translate('developer.copied'));
       }
     }
   }
@@ -153,7 +159,9 @@ class _DeveloperPageState extends State<DeveloperPage> {
     final text = globalDebugTerminal.buffer.getText();
     await Clipboard.setData(ClipboardData(text: text));
     if (context.mounted) {
-      showInfoToast(context, translate('developer.copied_all'));
+      context
+          .read<NotificationsCubit>()
+          .info(text: translate('developer.copied_all'));
     }
   }
 

@@ -12,6 +12,7 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:provider/provider.dart';
 import 'package:zxing2/qrcode.dart';
 
+import '../../notifications/notifications.dart';
 import '../../theme/theme.dart';
 import 'invitation_dialog.dart';
 
@@ -269,13 +270,18 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
               ));
     } on MobileScannerException catch (e) {
       if (e.errorCode == MobileScannerErrorCode.permissionDenied) {
-        showErrorToast(
-            context, translate('scan_invitation_dialog.permission_error'));
+        context
+            .read<NotificationsCubit>()
+            .error(text: translate('scan_invitation_dialog.permission_error'));
       } else {
-        showErrorToast(context, translate('scan_invitation_dialog.error'));
+        context
+            .read<NotificationsCubit>()
+            .error(text: translate('scan_invitation_dialog.error'));
       }
     } on Exception catch (_) {
-      showErrorToast(context, translate('scan_invitation_dialog.error'));
+      context
+          .read<NotificationsCubit>()
+          .error(text: translate('scan_invitation_dialog.error'));
     }
 
     return null;
@@ -285,8 +291,9 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
     final imageBytes = await Pasteboard.image;
     if (imageBytes == null) {
       if (context.mounted) {
-        showErrorToast(
-            context, translate('scan_invitation_dialog.not_an_image'));
+        context
+            .read<NotificationsCubit>()
+            .error(text: translate('scan_invitation_dialog.not_an_image'));
       }
       return null;
     }
@@ -294,8 +301,8 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
     final image = img.decodeImage(imageBytes);
     if (image == null) {
       if (context.mounted) {
-        showErrorToast(context,
-            translate('scan_invitation_dialog.could_not_decode_image'));
+        context.read<NotificationsCubit>().error(
+            text: translate('scan_invitation_dialog.could_not_decode_image'));
       }
       return null;
     }
@@ -319,8 +326,8 @@ class ScanInvitationDialogState extends State<ScanInvitationDialog> {
       return Uint8List.fromList(segs[0].toList());
     } on Exception catch (_) {
       if (context.mounted) {
-        showErrorToast(
-            context, translate('scan_invitation_dialog.not_a_valid_qr_code'));
+        context.read<NotificationsCubit>().error(
+            text: translate('scan_invitation_dialog.not_a_valid_qr_code'));
       }
       return null;
     }

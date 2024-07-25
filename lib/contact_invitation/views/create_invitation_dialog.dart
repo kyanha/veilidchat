@@ -5,16 +5,17 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:provider/provider.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../notifications/notifications.dart';
 import '../../theme/theme.dart';
 import '../contact_invitation.dart';
 
 class CreateInvitationDialog extends StatefulWidget {
-  const CreateInvitationDialog._({required this.modalContext});
+  const CreateInvitationDialog._({required this.locator});
 
   @override
   CreateInvitationDialogState createState() => CreateInvitationDialogState();
@@ -23,16 +24,15 @@ class CreateInvitationDialog extends StatefulWidget {
     await StyledDialog.show<void>(
         context: context,
         title: translate('create_invitation_dialog.title'),
-        child: CreateInvitationDialog._(modalContext: context));
+        child: CreateInvitationDialog._(locator: context.read));
   }
 
-  final BuildContext modalContext;
+  final Locator locator;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties
-        .add(DiagnosticsProperty<BuildContext>('modalContext', modalContext));
+    properties.add(DiagnosticsProperty<Locator>('locator', locator));
   }
 }
 
@@ -86,8 +86,8 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
       if (!mounted) {
         return;
       }
-      showErrorToast(
-          context, translate('create_invitation_dialog.pin_does_not_match'));
+      context.read<NotificationsCubit>().error(
+          text: translate('create_invitation_dialog.pin_does_not_match'));
       setState(() {
         _encryptionKeyType = EncryptionKeyType.none;
         _encryptionKey = '';
@@ -124,8 +124,8 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
       if (!mounted) {
         return;
       }
-      showErrorToast(context,
-          translate('create_invitation_dialog.password_does_not_match'));
+      context.read<NotificationsCubit>().error(
+          text: translate('create_invitation_dialog.password_does_not_match'));
       setState(() {
         _encryptionKeyType = EncryptionKeyType.none;
         _encryptionKey = '';
@@ -138,13 +138,9 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
 
     // Start generation
     final contactInvitationListCubit =
-        widget.modalContext.read<ContactInvitationListCubit>();
-    final profile = widget.modalContext
-        .read<AccountRecordCubit>()
-        .state
-        .asData
-        ?.value
-        .profile;
+        widget.locator<ContactInvitationListCubit>();
+    final profile =
+        widget.locator<AccountRecordCubit>().state.asData?.value.profile;
     if (profile == null) {
       return;
     }
@@ -158,6 +154,7 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
 
     await ContactInvitationDisplayDialog.show(
         context: context,
+        locator: widget.locator,
         message: _messageTextController.text,
         create: (context) => InvitationGeneratorCubit(generator));
 

@@ -11,6 +11,7 @@ import '../../chat_list/chat_list.dart';
 import '../../contact_invitation/contact_invitation.dart';
 import '../../contacts/contacts.dart';
 import '../../conversation/conversation.dart';
+import '../../notifications/notifications.dart';
 import '../../proto/proto.dart' as proto;
 import '../account_manager.dart';
 
@@ -146,6 +147,7 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
                 accountRecordCubit!,
                 contactInvitationListCubit,
                 contactListCubit,
+                _locator<NotificationsCubit>(),
               ));
 
     // ActiveChatCubit
@@ -262,13 +264,15 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
             AccountInfo,
             AccountRecordCubit,
             ContactInvitationListCubit,
-            ContactListCubit
+            ContactListCubit,
+            NotificationsCubit,
           )>(
       create: (params) => WaitingInvitationsBlocMapCubit(
             accountInfo: params.$1,
             accountRecordCubit: params.$2,
             contactInvitationListCubit: params.$3,
             contactListCubit: params.$4,
+            notificationsCubit: params.$5,
           ));
   final activeChatCubitUpdater =
       BlocUpdater<ActiveChatCubit, bool>(create: (_) => ActiveChatCubit(null));

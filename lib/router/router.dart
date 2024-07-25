@@ -1,1 +1,2 @@
-export 'cubit/router_cubit.dart';
+export 'cubits/router_cubit.dart';
+export 'views/router_shell.dart';

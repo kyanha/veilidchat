@@ -15,6 +15,7 @@ import '../../proto/proto.dart' as proto;
 import '../../settings/settings.dart';
 import '../../tools/tools.dart';
 import '../../veilid_processor/views/developer.dart';
+import '../views/router_shell.dart';
 
 part 'router_cubit.freezed.dart';
 part 'router_cubit.g.dart';
@@ -58,42 +59,47 @@ class RouterCubit extends Cubit<RouterState> {
 
   /// Our application routes
   List<RouteBase> get routes => [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const HomeScreen(),
-        ),
-        GoRoute(
-          path: '/edit_account',
-          builder: (context, state) {
-            final extra = state.extra! as List<Object?>;
-            return EditAccountPage(
-              superIdentityRecordKey: extra[0]! as TypedKey,
-              existingProfile: extra[1]! as proto.Profile,
-              accountRecord: extra[2]! as OwnedDHTRecordPointer,
-            );
-          },
-        ),
-        GoRoute(
-          path: '/new_account',
-          builder: (context, state) => const NewAccountPage(),
-        ),
-        GoRoute(
-            path: '/new_account/recovery_key',
-            builder: (context, state) {
-              final extra = state.extra! as List<Object?>;
+        ShellRoute(
+            builder: (context, state, child) => RouterShell(child: child),
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const HomeScreen(),
+              ),
+              GoRoute(
+                path: '/edit_account',
+                builder: (context, state) {
+                  final extra = state.extra! as List<Object?>;
+                  return EditAccountPage(
+                    superIdentityRecordKey: extra[0]! as TypedKey,
+                    existingProfile: extra[1]! as proto.Profile,
+                    accountRecord: extra[2]! as OwnedDHTRecordPointer,
+                  );
+                },
+              ),
+              GoRoute(
+                path: '/new_account',
+                builder: (context, state) => const NewAccountPage(),
+              ),
+              GoRoute(
+                  path: '/new_account/recovery_key',
+                  builder: (context, state) {
+                    final extra = state.extra! as List<Object?>;
 
-              return ShowRecoveryKeyPage(
-                  writableSuperIdentity: extra[0]! as WritableSuperIdentity,
-                  name: extra[1]! as String);
-            }),
-        GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsPage(),
-        ),
-        GoRoute(
-          path: '/developer',
-          builder: (context, state) => const DeveloperPage(),
-        )
+                    return ShowRecoveryKeyPage(
+                        writableSuperIdentity:
+                            extra[0]! as WritableSuperIdentity,
+                        name: extra[1]! as String);
+                  }),
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsPage(),
+              ),
+              GoRoute(
+                path: '/developer',
+                builder: (context, state) => const DeveloperPage(),
+              )
+            ])
       ];
 
   /// Redirects when our state changes

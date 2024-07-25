@@ -153,6 +153,10 @@
         "invalid_pin": "Invalid PIN",
         "invalid_password": "Invalid password"
     },
+    "waiting_invitation": {
+        "accepted": "Contact invitation accepted from {name}",
+        "reject": "Contact invitation was rejected"
+    },
     "paste_invitation_dialog": {
         "title": "Paste Contact Invite",
         "paste_invite_here": "Paste your contact invite here:",
