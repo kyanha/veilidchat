@@ -19,6 +19,14 @@ extension BorderExt on Widget {
       child: this);
 }
 
+extension SizeToFixExt on Widget {
+  FittedBox fit({BoxFit? fit, Key? key}) => FittedBox(
+        key: key,
+        fit: fit ?? BoxFit.scaleDown,
+        child: this,
+      );
+}
+
 extension ModalProgressExt on Widget {
   BlurryModalProgressHUD withModalHUD(BuildContext context, bool isLoading) {
     final theme = Theme.of(context);

@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../account_manager/account_manager.dart';
+import '../../settings/settings.dart';
 import '../../theme/theme.dart';
 import 'drawer_menu/drawer_menu.dart';
 import 'home_account_invalid.dart';
@@ -41,7 +42,17 @@ class HomeScreenState extends State<HomeScreen>
           .indexWhere((x) => x.superIdentity.recordKey == activeLocalAccount);
       final canClose = activeIndex != -1;
 
-      unawaited(_doBetaDialog(context));
+      final displayBetaWarning = context
+              .read<PreferencesCubit>()
+              .state
+              .asData
+              ?.value
+              .notificationsPreference
+              .displayBetaWarning ??
+          true;
+      if (displayBetaWarning) {
+        await _doBetaDialog(context);
+      }
 
       if (!canClose) {
         await _zoomDrawerController.open!();
@@ -51,10 +62,13 @@ class HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _doBetaDialog(BuildContext context) async {
+    var displayBetaWarning = true;
+
     await QuickAlert.show(
-        context: context,
-        title: translate('splash.beta_title'),
-        widget: RichText(
+      context: context,
+      title: translate('splash.beta_title'),
+      widget: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        RichText(
           textAlign: TextAlign.center,
           text: TextSpan(
             children: <TextSpan>[
@@ -77,7 +91,28 @@ class HomeScreenState extends State<HomeScreen>
             ],
           ),
         ),
-        type: QuickAlertType.warning);
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          StatefulBuilder(
+              builder: (context, setState) => Checkbox.adaptive(
+                    value: displayBetaWarning,
+                    onChanged: (value) {
+                      setState(() {
+                        displayBetaWarning = value ?? true;
+                      });
+                    },
+                  )),
+          Text(translate('settings_page.display_beta_warning'),
+              style: const TextStyle(color: Colors.black)),
+        ]),
+      ]),
+      type: QuickAlertType.warning,
+    );
+
+    final preferencesInstance = PreferencesRepository.instance;
+    await preferencesInstance.set(preferencesInstance.value.copyWith(
+        notificationsPreference: preferencesInstance
+            .value.notificationsPreference
+            .copyWith(displayBetaWarning: displayBetaWarning)));
   }
 
   Widget _buildAccountPage(

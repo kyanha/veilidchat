@@ -34,7 +34,7 @@ List<DropdownMenuItem<dynamic>> _getThemeDropdownItems() {
 Widget buildSettingsPageColorPreferences(
     {required BuildContext context, required void Function() onChanged}) {
   final preferencesRepository = PreferencesRepository.instance;
-  final themePreferences = preferencesRepository.value.themePreferences;
+  final themePreferences = preferencesRepository.value.themePreference;
   return ThemeSwitcher.withTheme(
       builder: (_, switcher, theme) => FormBuilderDropdown(
           name: formFieldTheme,
@@ -46,7 +46,7 @@ Widget buildSettingsPageColorPreferences(
             final newThemePrefs = themePreferences.copyWith(
                 colorPreference: value as ColorPreference);
             final newPrefs = preferencesRepository.value
-                .copyWith(themePreferences: newThemePrefs);
+                .copyWith(themePreference: newThemePrefs);
 
             await preferencesRepository.set(newPrefs);
             switcher.changeTheme(theme: newThemePrefs.themeData());

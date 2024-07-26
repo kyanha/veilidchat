@@ -49,19 +49,16 @@ enum ColorPreference {
 @freezed
 class ThemePreferences with _$ThemePreferences {
   const factory ThemePreferences({
-    required BrightnessPreference brightnessPreference,
-    required ColorPreference colorPreference,
-    required double displayScale,
+    @Default(BrightnessPreference.system)
+    BrightnessPreference brightnessPreference,
+    @Default(ColorPreference.vapor) ColorPreference colorPreference,
+    @Default(1) double displayScale,
   }) = _ThemePreferences;
 
   factory ThemePreferences.fromJson(dynamic json) =>
       _$ThemePreferencesFromJson(json as Map<String, dynamic>);
 
-  static const ThemePreferences defaults = ThemePreferences(
-    colorPreference: ColorPreference.vapor,
-    brightnessPreference: BrightnessPreference.system,
-    displayScale: 1,
-  );
+  static const ThemePreferences defaults = ThemePreferences();
 }
 
 extension ThemePreferencesExt on ThemePreferences {

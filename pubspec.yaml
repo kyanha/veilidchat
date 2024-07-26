@@ -160,6 +160,11 @@ flutter:
     - assets/images/ellet.png
     # Printing
     - assets/js/pdf/3.2.146/pdf.min.js
+    # Sounds
+    - assets/sounds/bonk.wav
+    - assets/sounds/boop.wav
+    - assets/sounds/badeep.wav
+    - assets/sounds/beepbadeep.wav
     # Fonts
   fonts:
     - family: Source Code Pro

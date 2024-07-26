@@ -219,7 +219,26 @@
     "settings_page": {
         "titlebar": "Settings",
         "color_theme": "Color Theme",
-        "brightness_mode": "Brightness Mode"
+        "brightness_mode": "Brightness Mode",
+        "display_beta_warning": "Display beta warning on startup",
+        "none": "None",
+        "in_app": "In-app",
+        "push": "Push",
+        "in_app_or_push": "In-app or Push",
+        "enable_badge": "Enable icon 'badge' bubble",
+        "enable_notifications": "Enable notifications",
+        "message_notification_content": "Message notification content",
+        "invitation_accepted": "On invitation accept/reject",
+        "message_received": "On message received",
+        "message_sent": "On message sent",
+        "name_and_content": "Name and content",
+        "name_only": "Name only",
+        "nothing": "Nothing",
+        "bonk": "Bonk",
+        "boop": "Boop",
+        "badeep": "Badeep",
+        "beep_badeep": "Beep-Badeep",
+        "custom": "Custom"
     },
     "developer": {
         "title": "Developer Logs",

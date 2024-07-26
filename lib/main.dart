@@ -36,7 +36,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     await PreferencesRepository.instance.init();
     final initialThemeData =
-        PreferencesRepository.instance.value.themePreferences.themeData();
+        PreferencesRepository.instance.value.themePreference.themeData();
 
     // Manage window on desktop platforms
     await initializeWindowControl();

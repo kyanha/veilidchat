@@ -6,6 +6,7 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../layout/default_app_bar.dart';
+import '../notifications/notifications.dart';
 import '../theme/theme.dart';
 import '../veilid_processor/veilid_processor.dart';
 import 'settings.dart';
@@ -48,6 +49,8 @@ class SettingsPageState extends State<SettingsPage> {
                       buildSettingsPageColorPreferences(
                           context: context, onChanged: () => setState(() {})),
                       buildSettingsPageBrightnessPreferences(
+                          context: context, onChanged: () => setState(() {})),
+                      buildSettingsPageNotificationPreferences(
                           context: context, onChanged: () => setState(() {})),
                     ].map((x) => x.paddingLTRB(0, 0, 0, 8)).toList(),
                   ),

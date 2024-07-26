@@ -43,7 +43,7 @@ class VeilidChatApp extends StatelessWidget {
   void _reloadTheme(BuildContext context) {
     log.info('Reloading theme');
     final theme =
-        PreferencesRepository.instance.value.themePreferences.themeData();
+        PreferencesRepository.instance.value.themePreference.themeData();
     ThemeSwitcher.of(context).changeTheme(theme: theme);
 
     // Hack to reload translations

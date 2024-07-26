@@ -1,6 +1,7 @@
 import 'package:change_case/change_case.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../notifications/notifications.dart';
 import '../../theme/theme.dart';
 
 part 'preferences.freezed.dart';
@@ -11,19 +12,15 @@ part 'preferences.g.dart';
 @freezed
 class LockPreference with _$LockPreference {
   const factory LockPreference({
-    required int inactivityLockSecs,
-    required bool lockWhenSwitching,
-    required bool lockWithSystemLock,
+    @Default(0) int inactivityLockSecs,
+    @Default(false) bool lockWhenSwitching,
+    @Default(false) bool lockWithSystemLock,
   }) = _LockPreference;
 
   factory LockPreference.fromJson(dynamic json) =>
       _$LockPreferenceFromJson(json as Map<String, dynamic>);
 
-  static const LockPreference defaults = LockPreference(
-    inactivityLockSecs: 0,
-    lockWhenSwitching: false,
-    lockWithSystemLock: false,
-  );
+  static const LockPreference defaults = LockPreference();
 }
 
 // Theme supports multiple translations
@@ -42,16 +39,15 @@ enum LanguagePreference {
 @freezed
 class Preferences with _$Preferences {
   const factory Preferences({
-    required ThemePreferences themePreferences,
-    required LanguagePreference language,
-    required LockPreference locking,
+    @Default(ThemePreferences.defaults) ThemePreferences themePreference,
+    @Default(LanguagePreference.defaults) LanguagePreference languagePreference,
+    @Default(LockPreference.defaults) LockPreference lockPreference,
+    @Default(NotificationsPreference.defaults)
+    NotificationsPreference notificationsPreference,
   }) = _Preferences;
 
   factory Preferences.fromJson(dynamic json) =>
       _$PreferencesFromJson(json as Map<String, dynamic>);
 
-  static const Preferences defaults = Preferences(
-      themePreferences: ThemePreferences.defaults,
-      language: LanguagePreference.defaults,
-      locking: LockPreference.defaults);
+  static const Preferences defaults = Preferences();
 }

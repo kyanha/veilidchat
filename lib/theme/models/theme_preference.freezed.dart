@@ -127,18 +127,21 @@ class __$$ThemePreferencesImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ThemePreferencesImpl implements _ThemePreferences {
   const _$ThemePreferencesImpl(
-      {required this.brightnessPreference,
-      required this.colorPreference,
-      required this.displayScale});
+      {this.brightnessPreference = BrightnessPreference.system,
+      this.colorPreference = ColorPreference.vapor,
+      this.displayScale = 1});
 
   factory _$ThemePreferencesImpl.fromJson(Map<String, dynamic> json) =>
       _$$ThemePreferencesImplFromJson(json);
 
   @override
+  @JsonKey()
   final BrightnessPreference brightnessPreference;
   @override
+  @JsonKey()
   final ColorPreference colorPreference;
   @override
+  @JsonKey()
   final double displayScale;
 
   @override
@@ -181,9 +184,9 @@ class _$ThemePreferencesImpl implements _ThemePreferences {
 
 abstract class _ThemePreferences implements ThemePreferences {
   const factory _ThemePreferences(
-      {required final BrightnessPreference brightnessPreference,
-      required final ColorPreference colorPreference,
-      required final double displayScale}) = _$ThemePreferencesImpl;
+      {final BrightnessPreference brightnessPreference,
+      final ColorPreference colorPreference,
+      final double displayScale}) = _$ThemePreferencesImpl;
 
   factory _ThemePreferences.fromJson(Map<String, dynamic> json) =
       _$ThemePreferencesImpl.fromJson;

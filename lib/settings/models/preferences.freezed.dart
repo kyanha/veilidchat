@@ -126,18 +126,21 @@ class __$$LockPreferenceImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$LockPreferenceImpl implements _LockPreference {
   const _$LockPreferenceImpl(
-      {required this.inactivityLockSecs,
-      required this.lockWhenSwitching,
-      required this.lockWithSystemLock});
+      {this.inactivityLockSecs = 0,
+      this.lockWhenSwitching = false,
+      this.lockWithSystemLock = false});
 
   factory _$LockPreferenceImpl.fromJson(Map<String, dynamic> json) =>
       _$$LockPreferenceImplFromJson(json);
 
   @override
+  @JsonKey()
   final int inactivityLockSecs;
   @override
+  @JsonKey()
   final bool lockWhenSwitching;
   @override
+  @JsonKey()
   final bool lockWithSystemLock;
 
   @override
@@ -180,9 +183,9 @@ class _$LockPreferenceImpl implements _LockPreference {
 
 abstract class _LockPreference implements LockPreference {
   const factory _LockPreference(
-      {required final int inactivityLockSecs,
-      required final bool lockWhenSwitching,
-      required final bool lockWithSystemLock}) = _$LockPreferenceImpl;
+      {final int inactivityLockSecs,
+      final bool lockWhenSwitching,
+      final bool lockWithSystemLock}) = _$LockPreferenceImpl;
 
   factory _LockPreference.fromJson(Map<String, dynamic> json) =
       _$LockPreferenceImpl.fromJson;
@@ -205,9 +208,12 @@ Preferences _$PreferencesFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Preferences {
-  ThemePreferences get themePreferences => throw _privateConstructorUsedError;
-  LanguagePreference get language => throw _privateConstructorUsedError;
-  LockPreference get locking => throw _privateConstructorUsedError;
+  ThemePreferences get themePreference => throw _privateConstructorUsedError;
+  LanguagePreference get languagePreference =>
+      throw _privateConstructorUsedError;
+  LockPreference get lockPreference => throw _privateConstructorUsedError;
+  NotificationsPreference get notificationsPreference =>
+      throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -222,12 +228,14 @@ abstract class $PreferencesCopyWith<$Res> {
       _$PreferencesCopyWithImpl<$Res, Preferences>;
   @useResult
   $Res call(
-      {ThemePreferences themePreferences,
-      LanguagePreference language,
-      LockPreference locking});
+      {ThemePreferences themePreference,
+      LanguagePreference languagePreference,
+      LockPreference lockPreference,
+      NotificationsPreference notificationsPreference});
 
-  $ThemePreferencesCopyWith<$Res> get themePreferences;
-  $LockPreferenceCopyWith<$Res> get locking;
+  $ThemePreferencesCopyWith<$Res> get themePreference;
+  $LockPreferenceCopyWith<$Res> get lockPreference;
+  $NotificationsPreferenceCopyWith<$Res> get notificationsPreference;
 }
 
 /// @nodoc
@@ -243,39 +251,53 @@ class _$PreferencesCopyWithImpl<$Res, $Val extends Preferences>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? themePreferences = null,
-    Object? language = null,
-    Object? locking = null,
+    Object? themePreference = null,
+    Object? languagePreference = null,
+    Object? lockPreference = null,
+    Object? notificationsPreference = null,
   }) {
     return _then(_value.copyWith(
-      themePreferences: null == themePreferences
-          ? _value.themePreferences
-          : themePreferences // ignore: cast_nullable_to_non_nullable
+      themePreference: null == themePreference
+          ? _value.themePreference
+          : themePreference // ignore: cast_nullable_to_non_nullable
               as ThemePreferences,
-      language: null == language
-          ? _value.language
-          : language // ignore: cast_nullable_to_non_nullable
+      languagePreference: null == languagePreference
+          ? _value.languagePreference
+          : languagePreference // ignore: cast_nullable_to_non_nullable
               as LanguagePreference,
-      locking: null == locking
-          ? _value.locking
-          : locking // ignore: cast_nullable_to_non_nullable
+      lockPreference: null == lockPreference
+          ? _value.lockPreference
+          : lockPreference // ignore: cast_nullable_to_non_nullable
               as LockPreference,
+      notificationsPreference: null == notificationsPreference
+          ? _value.notificationsPreference
+          : notificationsPreference // ignore: cast_nullable_to_non_nullable
+              as NotificationsPreference,
     ) as $Val);
   }
 
   @override
   @pragma('vm:prefer-inline')
-  $ThemePreferencesCopyWith<$Res> get themePreferences {
-    return $ThemePreferencesCopyWith<$Res>(_value.themePreferences, (value) {
-      return _then(_value.copyWith(themePreferences: value) as $Val);
+  $ThemePreferencesCopyWith<$Res> get themePreference {
+    return $ThemePreferencesCopyWith<$Res>(_value.themePreference, (value) {
+      return _then(_value.copyWith(themePreference: value) as $Val);
     });
   }
 
   @override
   @pragma('vm:prefer-inline')
-  $LockPreferenceCopyWith<$Res> get locking {
-    return $LockPreferenceCopyWith<$Res>(_value.locking, (value) {
-      return _then(_value.copyWith(locking: value) as $Val);
+  $LockPreferenceCopyWith<$Res> get lockPreference {
+    return $LockPreferenceCopyWith<$Res>(_value.lockPreference, (value) {
+      return _then(_value.copyWith(lockPreference: value) as $Val);
+    });
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $NotificationsPreferenceCopyWith<$Res> get notificationsPreference {
+    return $NotificationsPreferenceCopyWith<$Res>(
+        _value.notificationsPreference, (value) {
+      return _then(_value.copyWith(notificationsPreference: value) as $Val);
     });
   }
 }
@@ -289,14 +311,17 @@ abstract class _$$PreferencesImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {ThemePreferences themePreferences,
-      LanguagePreference language,
-      LockPreference locking});
+      {ThemePreferences themePreference,
+      LanguagePreference languagePreference,
+      LockPreference lockPreference,
+      NotificationsPreference notificationsPreference});
 
   @override
-  $ThemePreferencesCopyWith<$Res> get themePreferences;
+  $ThemePreferencesCopyWith<$Res> get themePreference;
   @override
-  $LockPreferenceCopyWith<$Res> get locking;
+  $LockPreferenceCopyWith<$Res> get lockPreference;
+  @override
+  $NotificationsPreferenceCopyWith<$Res> get notificationsPreference;
 }
 
 /// @nodoc
@@ -310,23 +335,28 @@ class __$$PreferencesImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? themePreferences = null,
-    Object? language = null,
-    Object? locking = null,
+    Object? themePreference = null,
+    Object? languagePreference = null,
+    Object? lockPreference = null,
+    Object? notificationsPreference = null,
   }) {
     return _then(_$PreferencesImpl(
-      themePreferences: null == themePreferences
-          ? _value.themePreferences
-          : themePreferences // ignore: cast_nullable_to_non_nullable
+      themePreference: null == themePreference
+          ? _value.themePreference
+          : themePreference // ignore: cast_nullable_to_non_nullable
               as ThemePreferences,
-      language: null == language
-          ? _value.language
-          : language // ignore: cast_nullable_to_non_nullable
+      languagePreference: null == languagePreference
+          ? _value.languagePreference
+          : languagePreference // ignore: cast_nullable_to_non_nullable
               as LanguagePreference,
-      locking: null == locking
-          ? _value.locking
-          : locking // ignore: cast_nullable_to_non_nullable
+      lockPreference: null == lockPreference
+          ? _value.lockPreference
+          : lockPreference // ignore: cast_nullable_to_non_nullable
               as LockPreference,
+      notificationsPreference: null == notificationsPreference
+          ? _value.notificationsPreference
+          : notificationsPreference // ignore: cast_nullable_to_non_nullable
+              as NotificationsPreference,
     ));
   }
 }
@@ -335,23 +365,30 @@ class __$$PreferencesImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$PreferencesImpl implements _Preferences {
   const _$PreferencesImpl(
-      {required this.themePreferences,
-      required this.language,
-      required this.locking});
+      {this.themePreference = ThemePreferences.defaults,
+      this.languagePreference = LanguagePreference.defaults,
+      this.lockPreference = LockPreference.defaults,
+      this.notificationsPreference = NotificationsPreference.defaults});
 
   factory _$PreferencesImpl.fromJson(Map<String, dynamic> json) =>
       _$$PreferencesImplFromJson(json);
 
   @override
-  final ThemePreferences themePreferences;
+  @JsonKey()
+  final ThemePreferences themePreference;
   @override
-  final LanguagePreference language;
+  @JsonKey()
+  final LanguagePreference languagePreference;
   @override
-  final LockPreference locking;
+  @JsonKey()
+  final LockPreference lockPreference;
+  @override
+  @JsonKey()
+  final NotificationsPreference notificationsPreference;
 
   @override
   String toString() {
-    return 'Preferences(themePreferences: $themePreferences, language: $language, locking: $locking)';
+    return 'Preferences(themePreference: $themePreference, languagePreference: $languagePreference, lockPreference: $lockPreference, notificationsPreference: $notificationsPreference)';
   }
 
   @override
@@ -359,17 +396,21 @@ class _$PreferencesImpl implements _Preferences {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$PreferencesImpl &&
-            (identical(other.themePreferences, themePreferences) ||
-                other.themePreferences == themePreferences) &&
-            (identical(other.language, language) ||
-                other.language == language) &&
-            (identical(other.locking, locking) || other.locking == locking));
+            (identical(other.themePreference, themePreference) ||
+                other.themePreference == themePreference) &&
+            (identical(other.languagePreference, languagePreference) ||
+                other.languagePreference == languagePreference) &&
+            (identical(other.lockPreference, lockPreference) ||
+                other.lockPreference == lockPreference) &&
+            (identical(
+                    other.notificationsPreference, notificationsPreference) ||
+                other.notificationsPreference == notificationsPreference));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, themePreferences, language, locking);
+  int get hashCode => Object.hash(runtimeType, themePreference,
+      languagePreference, lockPreference, notificationsPreference);
 
   @JsonKey(ignore: true)
   @override
@@ -387,19 +428,23 @@ class _$PreferencesImpl implements _Preferences {
 
 abstract class _Preferences implements Preferences {
   const factory _Preferences(
-      {required final ThemePreferences themePreferences,
-      required final LanguagePreference language,
-      required final LockPreference locking}) = _$PreferencesImpl;
+          {final ThemePreferences themePreference,
+          final LanguagePreference languagePreference,
+          final LockPreference lockPreference,
+          final NotificationsPreference notificationsPreference}) =
+      _$PreferencesImpl;
 
   factory _Preferences.fromJson(Map<String, dynamic> json) =
       _$PreferencesImpl.fromJson;
 
   @override
-  ThemePreferences get themePreferences;
+  ThemePreferences get themePreference;
   @override
-  LanguagePreference get language;
+  LanguagePreference get languagePreference;
   @override
-  LockPreference get locking;
+  LockPreference get lockPreference;
+  @override
+  NotificationsPreference get notificationsPreference;
   @override
   @JsonKey(ignore: true)
   _$$PreferencesImplCopyWith<_$PreferencesImpl> get copyWith =>

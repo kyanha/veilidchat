@@ -24,7 +24,7 @@ List<DropdownMenuItem<dynamic>> _getBrightnessDropdownItems() {
 Widget buildSettingsPageBrightnessPreferences(
     {required BuildContext context, required void Function() onChanged}) {
   final preferencesRepository = PreferencesRepository.instance;
-  final themePreferences = preferencesRepository.value.themePreferences;
+  final themePreferences = preferencesRepository.value.themePreference;
   return ThemeSwitcher.withTheme(
       builder: (_, switcher, theme) => FormBuilderDropdown(
           name: formFieldBrightness,
@@ -36,7 +36,7 @@ Widget buildSettingsPageBrightnessPreferences(
             final newThemePrefs = themePreferences.copyWith(
                 brightnessPreference: value as BrightnessPreference);
             final newPrefs = preferencesRepository.value
-                .copyWith(themePreferences: newThemePrefs);
+                .copyWith(themePreference: newThemePrefs);
 
             await preferencesRepository.set(newPrefs);
             switcher.changeTheme(theme: newThemePrefs.themeData());
