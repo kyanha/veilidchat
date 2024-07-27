@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:bloc_advanced_tools/bloc_advanced_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:fixnum/fixnum.dart';
@@ -214,9 +215,11 @@ class ContactInvitationListCubit
     }
   }
 
-  Future<ValidContactInvitation?> validateInvitation(
-      {required Uint8List inviteData,
-      required GetEncryptionKeyCallback getEncryptionKeyCallback}) async {
+  Future<ValidContactInvitation?> validateInvitation({
+    required Uint8List inviteData,
+    required GetEncryptionKeyCallback getEncryptionKeyCallback,
+    required CancelRequest cancelRequest,
+  }) async {
     final pool = DHTRecordPool.instance;
 
     // Get contact request inbox from invitation
@@ -245,15 +248,18 @@ class ContactInvitationListCubit
             contactRequestInboxKey) !=
         -1;
 
-    await (await pool.openRecordRead(contactRequestInboxKey,
-            debugName: 'ContactInvitationListCubit::validateInvitation::'
-                'ContactRequestInbox',
-            parent: pool.getParentRecordKey(contactRequestInboxKey) ??
-                _accountInfo.accountRecordKey))
+    await (await pool
+            .openRecordRead(contactRequestInboxKey,
+                debugName: 'ContactInvitationListCubit::validateInvitation::'
+                    'ContactRequestInbox',
+                parent: pool.getParentRecordKey(contactRequestInboxKey) ??
+                    _accountInfo.accountRecordKey)
+            .withCancel(cancelRequest))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {
       //
       final contactRequest = await contactRequestInbox
-          .getProtobuf(proto.ContactRequest.fromBuffer);
+          .getProtobuf(proto.ContactRequest.fromBuffer)
+          .withCancel(cancelRequest);
 
       final cs = await pool.veilid.getCryptoSystem(contactRequestInboxKey.kind);
 
@@ -281,7 +287,8 @@ class ContactInvitationListCubit
 
       // Fetch the account master
       final contactSuperIdentity = await SuperIdentity.open(
-          superRecordKey: contactSuperIdentityRecordKey);
+              superRecordKey: contactSuperIdentityRecordKey)
+          .withCancel(cancelRequest);
 
       // Verify
       final idcs = await contactSuperIdentity.currentInstance.cryptoSystem;

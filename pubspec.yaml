@@ -107,11 +107,11 @@ dependencies:
   xterm: ^4.0.0
   zxing2: ^0.2.3
 
-# dependency_overrides:
-#   async_tools: 
-#     path: ../dart_async_tools
-#   bloc_advanced_tools: 
-#     path: ../bloc_advanced_tools
+dependency_overrides:
+  async_tools: 
+    path: ../dart_async_tools
+  bloc_advanced_tools: 
+    path: ../bloc_advanced_tools
 #   flutter_chat_ui:
 #    path: ../flutter_chat_ui
 

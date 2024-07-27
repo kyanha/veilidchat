@@ -122,7 +122,9 @@
     },
     "create_invitation_dialog": {
         "title": "Create Contact Invitation",
-        "connect_with_me": "Connect with me on VeilidChat!",
+        "me": "me",
+        "fingerprint": "Fingerprint:",
+        "connect_with_me": "Connect with {name} on VeilidChat!",
         "enter_message_hint": "Enter message for contact (optional)",
         "message_to_contact": "Message to send with invitation (not encrypted)",
         "generate": "Generate Invitation",
@@ -148,6 +150,7 @@
         "failed_to_reject": "Failed to reject contact invitation",
         "invalid_invitation": "Invalid invitation",
         "try_again_online": "Invitation could not be reached, try again when online",
+        "key_not_found": "Invitation could not be found, it may not be on the network yet",
         "protected_with_pin": "Contact invitation is protected with a PIN",
         "protected_with_password": "Contact invitation is protected with a password",
         "invalid_pin": "Invalid PIN",
@@ -155,7 +158,7 @@
     },
     "waiting_invitation": {
         "accepted": "Contact invitation accepted from {name}",
-        "reject": "Contact invitation was rejected"
+        "rejected": "Contact invitation was rejected"
     },
     "paste_invitation_dialog": {
         "title": "Paste Contact Invite",
@@ -225,6 +228,10 @@
         "in_app": "In-app",
         "push": "Push",
         "in_app_or_push": "In-app or Push",
+        "notifications": "Notifications",
+        "event": "Event",
+        "sound": "Sound",
+        "delivery": "Delivery",
         "enable_badge": "Enable icon 'badge' bubble",
         "enable_notifications": "Enable notifications",
         "message_notification_content": "Message notification content",

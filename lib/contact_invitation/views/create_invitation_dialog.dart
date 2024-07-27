@@ -37,8 +37,7 @@ class CreateInvitationDialog extends StatefulWidget {
 }
 
 class CreateInvitationDialogState extends State<CreateInvitationDialog> {
-  final _messageTextController = TextEditingController(
-      text: translate('create_invitation_dialog.connect_with_me'));
+  late final TextEditingController _messageTextController;
 
   EncryptionKeyType _encryptionKeyType = EncryptionKeyType.none;
   String _encryptionKey = '';
@@ -46,6 +45,12 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
 
   @override
   void initState() {
+    final accountInfo = widget.locator<AccountRecordCubit>().state;
+    final name = accountInfo.asData?.value.profile.name ??
+        translate('create_invitation_dialog.me');
+    _messageTextController = TextEditingController(
+        text: translate('create_invitation_dialog.connect_with_me',
+            args: {'name': name}));
     super.initState();
   }
 
@@ -152,13 +157,13 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
         message: _messageTextController.text,
         expiration: _expiration);
 
+    navigator.pop();
+
     await ContactInvitationDisplayDialog.show(
         context: context,
         locator: widget.locator,
         message: _messageTextController.text,
         create: (context) => InvitationGeneratorCubit(generator));
-
-    navigator.pop();
   }
 
   @override
