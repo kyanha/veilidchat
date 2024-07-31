@@ -41,6 +41,44 @@ extension ModalProgressExt on Widget {
   }
 }
 
+extension LabelExt on Widget {
+  Widget decoratorLabel(BuildContext context, String label,
+      {ScaleColor? scale}) {
+    final theme = Theme.of(context);
+    final scaleScheme = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
+    scale = scale ?? scaleScheme.primaryScale;
+
+    final border = scale.border;
+    final disabledBorder = scaleScheme.grayScale.border;
+    final hoverBorder = scale.hoverBorder;
+    final focusedErrorBorder = scaleScheme.errorScale.border;
+    final errorBorder = scaleScheme.errorScale.primary;
+    OutlineInputBorder makeBorder(Color color) => OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
+          borderSide: BorderSide(color: color),
+        );
+    OutlineInputBorder makeFocusedBorder(Color color) => OutlineInputBorder(
+          borderRadius:
+              BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
+          borderSide: BorderSide(width: 2, color: color),
+        );
+    return InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          floatingLabelStyle: TextStyle(color: hoverBorder),
+          border: makeBorder(border),
+          enabledBorder: makeBorder(border),
+          disabledBorder: makeBorder(disabledBorder),
+          focusedBorder: makeFocusedBorder(hoverBorder),
+          errorBorder: makeBorder(errorBorder),
+          focusedErrorBorder: makeFocusedBorder(focusedErrorBorder),
+        ),
+        child: this);
+  }
+}
+
 Widget buildProgressIndicator() => Builder(builder: (context) {
       final theme = Theme.of(context);
       final scale = theme.extension<ScaleScheme>()!;
@@ -290,6 +328,23 @@ Widget styledExpandingSliver(
                     )))),
         animation: animation,
       ));
+}
+
+Widget styledHeader({required BuildContext context, required Widget child}) {
+  final theme = Theme.of(context);
+  final scale = theme.extension<ScaleScheme>()!;
+  final scaleConfig = theme.extension<ScaleConfig>()!;
+  // final textTheme = theme.textTheme;
+
+  return DecoratedBox(
+      decoration: ShapeDecoration(
+          color: scale.primaryScale.border,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12 * scaleConfig.borderRadiusScale),
+                  topRight:
+                      Radius.circular(12 * scaleConfig.borderRadiusScale)))),
+      child: child);
 }
 
 Widget styledTitleContainer({

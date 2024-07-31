@@ -3,7 +3,9 @@
         "title": "VeilidChat"
     },
     "menu": {
-        "settings_tooltip": "Settings",
+        "accounts_menu_tooltip": "Accounts Menu",
+        "contacts_tooltip": "Contacts List",
+        "new_chat_tooltip": "Start New Chat",
         "add_account_tooltip": "Add Account",
         "accounts": "Accounts",
         "version": "Version"
@@ -12,13 +14,23 @@
         "beta_title": "VeilidChat is BETA SOFTWARE",
         "beta_text": "DO NOT USE THIS FOR ANYTHING IMPORTANT\n\nUntil 1.0 is released:\n\n• You should have no expectations of actual privacy, or guarantees of security.\n• You will likely lose accounts, contacts, and messages and need to recreate them.\n\nPlease read our BETA PARTICIPATION GUIDE located here:\n\n"
     },
-    "pager": {
-        "chats": "Chats",
-        "contacts": "Contacts"
-    },
     "account": {
         "form_name": "Name",
-        "form_pronouns": "Pronouns (optional)",
+        "empty_name": "Your name (required)",
+        "form_pronouns": "Pronouns",
+        "empty_pronouns": "(optional pronouns)",
+        "form_about": "About Me",
+        "empty_about": "Tell your contacts about yourself",
+        "form_free_message": "Free Message",
+        "empty_free_message": "Status when availability is 'Free'",
+        "form_away_message": "Away Message",
+        "empty_away_message": "Status when availability is 'Away'",
+        "form_busy_message": "Free Message",
+        "empty_busy_message": "Status when availability is 'Busy'",
+        "form_availability": "Availability",
+        "form_avatar": "Avatar",
+        "form_auto_away": "Automatic 'away' detection",
+        "form_auto_away_timeout": "Auto-away timeout (in minutes)",
         "form_lock_type": "Lock Type",
         "lock_type_none": "none",
         "lock_type_pin": "pin",
@@ -101,10 +113,39 @@
         "invalid_account_title": "Invalid Account",
         "invalid_account_text": "Account is invalid, removing from list"
     },
-    "contacts_page": {
+    "contacts_dialog": {
         "contacts": "Contacts",
+        "edit_contact": "Edit Contact",
         "invitations": "Invitations",
+        "no_contact_selected": "No contact selected",
+        "new_chat": "New Chat"
+    },
+    "contact_list": {
+        "contacts": "Contacts",
+        "invite_people": "Invite people to VeilidChat",
+        "search": "Search contacts",
+        "invitation": "Invitation",
         "loading_contacts": "Loading contacts..."
+    },
+    "contact_form": {
+        "form_name": "Name",
+        "form_pronouns": "Pronouns",
+        "form_about": "About",
+        "form_status": "Current Status",
+        "form_nickname": "Nickname",
+        "form_notes": "Notes",
+        "form_fingerprint": "Fingerprint",
+        "form_show_availability": "Show availability",
+        "save": "Save",
+        "save_disabled": "Save"
+    },
+    "availability": {
+        "unspecified": "Unspecified",
+        "offline": "Offline",
+        "always_show_offline": "Always Show Offline",
+        "free": "Free",
+        "busy": "Busy",
+        "away": "Away"
     },
     "add_contact_sheet": {
         "new_contact": "New Contact",
@@ -187,11 +228,6 @@
         "enter_password": "Enter Password",
         "reenter_password": "Re-Enter Password To Confirm",
         "password_does_not_match": "Password does not match"
-    },
-    "contact_list": {
-        "invite_people": "Invite people to VeilidChat",
-        "search": "Search contacts",
-        "invitation": "Invitation"
     },
     "chat_list": {
         "search": "Search chats",

@@ -71,7 +71,43 @@ class ContactListCubit extends DHTShortArrayCubit<proto.Contact> {
           final updated = await writer.tryWriteItemProtobuf(
               proto.Contact.fromBuffer, pos, newContact);
           if (!updated) {
-            throw DHTExceptionOutdated();
+            throw const DHTExceptionOutdated();
+          }
+          break;
+        }
+      }
+    });
+  }
+
+  Future<void> updateContactFields({
+    required TypedKey localConversationRecordKey,
+    String? nickname,
+    String? notes,
+    bool? showAvailability,
+  }) async {
+    // Update contact's locally-modifiable fields
+    await operateWriteEventual((writer) async {
+      for (var pos = 0; pos < writer.length; pos++) {
+        final c = await writer.getProtobuf(proto.Contact.fromBuffer, pos);
+        if (c != null &&
+            c.localConversationRecordKey.toVeilid() ==
+                localConversationRecordKey) {
+          final newContact = c.deepCopy();
+
+          if (nickname != null) {
+            newContact.nickname = nickname;
+          }
+          if (notes != null) {
+            newContact.notes = notes;
+          }
+          if (showAvailability != null) {
+            newContact.showAvailability = showAvailability;
+          }
+
+          final updated = await writer.tryWriteItemProtobuf(
+              proto.Contact.fromBuffer, pos, newContact);
+          if (!updated) {
+            throw const DHTExceptionOutdated();
           }
           break;
         }

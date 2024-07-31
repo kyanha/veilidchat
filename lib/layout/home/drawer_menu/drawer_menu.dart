@@ -40,10 +40,10 @@ class _DrawerMenuState extends State<DrawerMenu> {
   }
 
   void _doEditClick(TypedKey superIdentityRecordKey,
-      proto.Profile existingProfile, OwnedDHTRecordPointer accountRecord) {
+      proto.Account existingAccount, OwnedDHTRecordPointer accountRecord) {
     singleFuture(this, () async {
       await GoRouterHelper(context).push('/edit_account',
-          extra: [superIdentityRecordKey, existingProfile, accountRecord]);
+          extra: [superIdentityRecordKey, existingAccount, accountRecord]);
     });
   }
 
@@ -58,6 +58,45 @@ class _DrawerMenuState extends State<DrawerMenu> {
                   borderRadius: BorderRadius.circular(borderRadius))),
           child: child);
 
+  Widget _makeAvatarWidget({
+    required String name,
+    required double size,
+    required Color borderColor,
+    required Color foregroundColor,
+    required Color backgroundColor,
+    required ScaleConfig scaleConfig,
+    required TextStyle textStyle,
+    ImageProvider<Object>? imageProvider,
+  }) {
+    final abbrev = name.split(' ').map((s) => s.isEmpty ? '' : s[0]).join();
+    late final String shortname;
+    if (abbrev.length >= 3) {
+      shortname = abbrev[0] + abbrev[1] + abbrev[abbrev.length - 1];
+    } else {
+      shortname = abbrev;
+    }
+
+    return Container(
+        height: size,
+        width: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: scaleConfig.preferBorders
+              ? Border.all(
+                  color: borderColor,
+                  width: 2 * (size ~/ 32 + 1),
+                  strokeAlign: BorderSide.strokeAlignOutside)
+              : null,
+          color: Colors.blue,
+        ),
+        child: AvatarImage(
+            //size: 32,
+            backgroundImage: imageProvider,
+            backgroundColor: backgroundColor,
+            foregroundColor: foregroundColor,
+            child: Text(shortname, style: textStyle)));
+  }
+
   Widget _makeAccountWidget(
       {required String name,
       required bool selected,
@@ -67,13 +106,6 @@ class _DrawerMenuState extends State<DrawerMenu> {
       required void Function()? callback,
       required void Function()? footerCallback}) {
     final theme = Theme.of(context);
-    final abbrev = name.split(' ').map((s) => s.isEmpty ? '' : s[0]).join();
-    late final String shortname;
-    if (abbrev.length >= 3) {
-      shortname = abbrev[0] + abbrev[1] + abbrev[abbrev.length - 1];
-    } else {
-      shortname = abbrev;
-    }
 
     late final Color background;
     late final Color hoverBackground;
@@ -99,24 +131,15 @@ class _DrawerMenuState extends State<DrawerMenu> {
       activeBorder = scale.primary;
     }
 
-    final avatar = Container(
-        height: 34,
-        width: 34,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: scaleConfig.preferBorders
-              ? Border.all(
-                  color: border,
-                  width: 2,
-                  strokeAlign: BorderSide.strokeAlignOutside)
-              : null,
-          color: Colors.blue,
-        ),
-        child: AvatarImage(
-            //size: 32,
-            backgroundColor: loggedIn ? scale.primary : scale.elementBackground,
-            foregroundColor: loggedIn ? scale.primaryText : scale.subtleText,
-            child: Text(shortname, style: theme.textTheme.titleLarge)));
+    final avatar = AvatarWidget(
+      name: name,
+      size: 34,
+      borderColor: border,
+      foregroundColor: loggedIn ? scale.primaryText : scale.subtleText,
+      backgroundColor: loggedIn ? scale.primary : scale.elementBackground,
+      scaleConfig: scaleConfig,
+      textStyle: theme.textTheme.titleLarge!,
+    );
 
     return AnimatedPadding(
         padding: EdgeInsets.fromLTRB(selected ? 0 : 8, selected ? 0 : 2,
@@ -190,7 +213,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
               footerCallback: () {
                 _doEditClick(
                     superIdentityRecordKey,
-                    value.profile,
+                    value,
                     perAccountState.accountInfo.userLogin!.accountRecordInfo
                         .accountRecord);
               }),

@@ -40,12 +40,43 @@ class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
   ////////////////////////////////////////////////////////////////////////////
   // Public Interface
 
-  Future<void> updateProfile(proto.Profile profile) async {
+  Future<void> updateAccount(
+    AccountSpec accountSpec,
+  ) async {
     await record.eventualUpdateProtobuf(proto.Account.fromBuffer, (old) async {
-      if (old == null || old.profile == profile) {
+      if (old == null) {
         return null;
       }
-      return old.deepCopy()..profile = profile;
+
+      final newAccount = old.deepCopy()
+        ..profile.name = accountSpec.name
+        ..profile.pronouns = accountSpec.pronouns
+        ..profile.about = accountSpec.about
+        ..profile.availability = accountSpec.availability
+        ..profile.status = accountSpec.status
+        //..profile.avatar =
+        ..profile.timestamp = Veilid.instance.now().toInt64()
+        ..invisible = accountSpec.invisible
+        ..autodetectAway = accountSpec.autoAway
+        ..autoAwayTimeoutMin = accountSpec.autoAwayTimeout
+        ..freeMessage = accountSpec.freeMessage
+        ..awayMessage = accountSpec.awayMessage
+        ..busyMessage = accountSpec.busyMessage;
+
+      var changed = false;
+      if (newAccount.profile != old.profile ||
+          newAccount.invisible != old.invisible ||
+          newAccount.autodetectAway != old.autodetectAway ||
+          newAccount.autoAwayTimeoutMin != old.autoAwayTimeoutMin ||
+          newAccount.freeMessage != old.freeMessage ||
+          newAccount.busyMessage != old.busyMessage ||
+          newAccount.awayMessage != old.awayMessage) {
+        changed = true;
+      }
+      if (changed) {
+        return newAccount;
+      }
+      return null;
     });
   }
 }

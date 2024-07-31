@@ -61,7 +61,7 @@ class ContactInvitationListWidgetState
           });
           _controller.animateTo(_expanded ? 1 : 0);
         },
-        title: translate('contacts_page.invitations'),
+        title: translate('contacts_dialog.invitations'),
         sliver: SliverList.builder(
           itemCount: widget.contactInvitationRecordList.length,
           itemBuilder: (context, index) {

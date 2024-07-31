@@ -47,7 +47,9 @@ class SettingsPageState extends State<SettingsPage> {
                   child: ListView(
                     children: [
                       buildSettingsPageColorPreferences(
-                          context: context, onChanged: () => setState(() {})),
+                              context: context,
+                              onChanged: () => setState(() {}))
+                          .paddingLTRB(0, 8, 0, 0),
                       buildSettingsPageBrightnessPreferences(
                           context: context, onChanged: () => setState(() {})),
                       buildSettingsPageNotificationPreferences(

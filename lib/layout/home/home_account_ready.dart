@@ -6,9 +6,10 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 
 import '../../account_manager/account_manager.dart';
 import '../../chat/chat.dart';
+import '../../chat_list/chat_list.dart';
+import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
-import 'main_pager/main_pager.dart';
 
 class HomeAccountReady extends StatefulWidget {
   const HomeAccountReady({super.key});
@@ -23,6 +24,75 @@ class _HomeAccountReadyState extends State<HomeAccountReady> {
     super.initState();
   }
 
+  Widget buildMenuButton() => Builder(builder: (context) {
+        final theme = Theme.of(context);
+        final scale = theme.extension<ScaleScheme>()!;
+        final scaleConfig = theme.extension<ScaleConfig>()!;
+        return IconButton(
+            icon: const Icon(Icons.menu),
+            color: scaleConfig.preferBorders
+                ? scale.primaryScale.border
+                : scale.primaryScale.borderText,
+            constraints: const BoxConstraints.expand(height: 48, width: 48),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(
+                    scaleConfig.preferBorders
+                        ? scale.primaryScale.hoverElementBackground
+                        : scale.primaryScale.hoverBorder),
+                shape: WidgetStateProperty.all(
+                  RoundedRectangleBorder(
+                      side: !scaleConfig.useVisualIndicators
+                          ? BorderSide.none
+                          : BorderSide(
+                              strokeAlign: BorderSide.strokeAlignCenter,
+                              color: scaleConfig.preferBorders
+                                  ? scale.primaryScale.border
+                                  : scale.primaryScale.borderText,
+                              width: 2),
+                      borderRadius: BorderRadius.all(
+                          Radius.circular(12 * scaleConfig.borderRadiusScale))),
+                )),
+            tooltip: translate('menu.accounts_menu_tooltip'),
+            onPressed: () async {
+              final ctrl = context.read<ZoomDrawerController>();
+              await ctrl.toggle?.call();
+            });
+      });
+
+  Widget buildContactsButton() => Builder(builder: (context) {
+        final theme = Theme.of(context);
+        final scale = theme.extension<ScaleScheme>()!;
+        final scaleConfig = theme.extension<ScaleConfig>()!;
+        return IconButton(
+            icon: const Icon(Icons.contacts),
+            color: scaleConfig.preferBorders
+                ? scale.primaryScale.border
+                : scale.primaryScale.borderText,
+            constraints: const BoxConstraints.expand(height: 48, width: 48),
+            style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(
+                    scaleConfig.preferBorders
+                        ? scale.primaryScale.hoverElementBackground
+                        : scale.primaryScale.hoverBorder),
+                shape: WidgetStateProperty.all(
+                  RoundedRectangleBorder(
+                      side: !scaleConfig.useVisualIndicators
+                          ? BorderSide.none
+                          : BorderSide(
+                              strokeAlign: BorderSide.strokeAlignCenter,
+                              color: scaleConfig.preferBorders
+                                  ? scale.primaryScale.border
+                                  : scale.primaryScale.borderText,
+                              width: 2),
+                      borderRadius: BorderRadius.all(
+                          Radius.circular(12 * scaleConfig.borderRadiusScale))),
+                )),
+            tooltip: translate('menu.contacts_tooltip'),
+            onPressed: () async {
+              await ContactsDialog.show(context);
+            });
+      });
+
   Widget buildUserPanel() => Builder(builder: (context) {
         final profile = context.select<AccountRecordCubit, proto.Profile>(
             (c) => c.state.asData!.value.profile);
@@ -36,43 +106,14 @@ class _HomeAccountReadyState extends State<HomeAccountReady> {
                 : scale.primaryScale.subtleBorder,
             child: Column(children: <Widget>[
               Row(children: [
-                IconButton(
-                    icon: const Icon(Icons.menu),
-                    color: scaleConfig.preferBorders
-                        ? scale.primaryScale.border
-                        : scale.primaryScale.borderText,
-                    constraints:
-                        const BoxConstraints.expand(height: 48, width: 48),
-                    style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(
-                            scaleConfig.preferBorders
-                                ? scale.primaryScale.hoverElementBackground
-                                : scale.primaryScale.hoverBorder),
-                        shape: WidgetStateProperty.all(
-                          RoundedRectangleBorder(
-                              side: !scaleConfig.useVisualIndicators
-                                  ? BorderSide.none
-                                  : BorderSide(
-                                      strokeAlign: BorderSide.strokeAlignCenter,
-                                      color: scaleConfig.preferBorders
-                                          ? scale.primaryScale.border
-                                          : scale.primaryScale.borderText,
-                                      width: 2),
-                              borderRadius: BorderRadius.all(Radius.circular(
-                                  12 * scaleConfig.borderRadiusScale))),
-                        )),
-                    tooltip: translate('menu.settings_tooltip'),
-                    onPressed: () async {
-                      final ctrl = context.read<ZoomDrawerController>();
-                      await ctrl.toggle?.call();
-                      //await GoRouterHelper(context).push('/settings');
-                    }).paddingLTRB(0, 0, 8, 0),
+                buildMenuButton().paddingLTRB(0, 0, 8, 0),
                 ProfileWidget(
                   profile: profile,
                   showPronouns: false,
                 ).expanded(),
+                buildContactsButton().paddingLTRB(8, 0, 0, 0),
               ]).paddingAll(8),
-              MainPager(key: _mainPagerKey).expanded()
+              const ChatListWidget().expanded()
             ]));
       });
 
@@ -156,7 +197,4 @@ class _HomeAccountReadyState extends State<HomeAccountReady> {
       ]);
     });
   }
-
-  ////////////////////////////////////////////////////////////////////////////
-  final _mainPagerKey = GlobalKey(debugLabel: '_mainPagerKey');
 }

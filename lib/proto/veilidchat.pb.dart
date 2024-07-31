@@ -1647,11 +1647,15 @@ class Account extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Account', package: const $pb.PackageName(_omitMessageNames ? '' : 'veilidchat'), createEmptyInstance: create)
     ..aOM<Profile>(1, _omitFieldNames ? '' : 'profile', subBuilder: Profile.create)
     ..aOB(2, _omitFieldNames ? '' : 'invisible')
-    ..a<$core.int>(3, _omitFieldNames ? '' : 'autoAwayTimeoutSec', $pb.PbFieldType.OU3)
+    ..a<$core.int>(3, _omitFieldNames ? '' : 'autoAwayTimeoutMin', $pb.PbFieldType.OU3)
     ..aOM<$1.OwnedDHTRecordPointer>(4, _omitFieldNames ? '' : 'contactList', subBuilder: $1.OwnedDHTRecordPointer.create)
     ..aOM<$1.OwnedDHTRecordPointer>(5, _omitFieldNames ? '' : 'contactInvitationRecords', subBuilder: $1.OwnedDHTRecordPointer.create)
     ..aOM<$1.OwnedDHTRecordPointer>(6, _omitFieldNames ? '' : 'chatList', subBuilder: $1.OwnedDHTRecordPointer.create)
     ..aOM<$1.OwnedDHTRecordPointer>(7, _omitFieldNames ? '' : 'groupChatList', subBuilder: $1.OwnedDHTRecordPointer.create)
+    ..aOS(8, _omitFieldNames ? '' : 'freeMessage')
+    ..aOS(9, _omitFieldNames ? '' : 'busyMessage')
+    ..aOS(10, _omitFieldNames ? '' : 'awayMessage')
+    ..aOB(11, _omitFieldNames ? '' : 'autodetectAway')
     ..hasRequiredFields = false
   ;
 
@@ -1697,13 +1701,13 @@ class Account extends $pb.GeneratedMessage {
   void clearInvisible() => clearField(2);
 
   @$pb.TagNumber(3)
-  $core.int get autoAwayTimeoutSec => $_getIZ(2);
+  $core.int get autoAwayTimeoutMin => $_getIZ(2);
   @$pb.TagNumber(3)
-  set autoAwayTimeoutSec($core.int v) { $_setUnsignedInt32(2, v); }
+  set autoAwayTimeoutMin($core.int v) { $_setUnsignedInt32(2, v); }
   @$pb.TagNumber(3)
-  $core.bool hasAutoAwayTimeoutSec() => $_has(2);
+  $core.bool hasAutoAwayTimeoutMin() => $_has(2);
   @$pb.TagNumber(3)
-  void clearAutoAwayTimeoutSec() => clearField(3);
+  void clearAutoAwayTimeoutMin() => clearField(3);
 
   @$pb.TagNumber(4)
   $1.OwnedDHTRecordPointer get contactList => $_getN(3);
@@ -1748,6 +1752,42 @@ class Account extends $pb.GeneratedMessage {
   void clearGroupChatList() => clearField(7);
   @$pb.TagNumber(7)
   $1.OwnedDHTRecordPointer ensureGroupChatList() => $_ensure(6);
+
+  @$pb.TagNumber(8)
+  $core.String get freeMessage => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set freeMessage($core.String v) { $_setString(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasFreeMessage() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearFreeMessage() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.String get busyMessage => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set busyMessage($core.String v) { $_setString(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasBusyMessage() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearBusyMessage() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get awayMessage => $_getSZ(9);
+  @$pb.TagNumber(10)
+  set awayMessage($core.String v) { $_setString(9, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasAwayMessage() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearAwayMessage() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.bool get autodetectAway => $_getBF(10);
+  @$pb.TagNumber(11)
+  set autodetectAway($core.bool v) { $_setBool(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasAutodetectAway() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearAutodetectAway() => clearField(11);
 }
 
 class Contact extends $pb.GeneratedMessage {

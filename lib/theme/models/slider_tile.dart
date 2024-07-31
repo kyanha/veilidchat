@@ -30,6 +30,7 @@ class SliderTile extends StatelessWidget {
       this.endActions = const [],
       this.startActions = const [],
       this.onTap,
+      this.onDoubleTap,
       this.icon,
       super.key});
 
@@ -39,6 +40,7 @@ class SliderTile extends StatelessWidget {
   final List<SliderTileAction> endActions;
   final List<SliderTileAction> startActions;
   final GestureTapCallback? onTap;
+  final GestureTapCallback? onDoubleTap;
   final IconData? icon;
   final String title;
   final String subtitle;
@@ -55,7 +57,9 @@ class SliderTile extends StatelessWidget {
       ..add(ObjectFlagProperty<GestureTapCallback?>.has('onTap', onTap))
       ..add(DiagnosticsProperty<IconData?>('icon', icon))
       ..add(StringProperty('title', title))
-      ..add(StringProperty('subtitle', subtitle));
+      ..add(StringProperty('subtitle', subtitle))
+      ..add(ObjectFlagProperty<GestureTapCallback?>.has(
+          'onDoubleTap', onDoubleTap));
   }
 
   @override
@@ -138,18 +142,20 @@ class SliderTile extends StatelessWidget {
                 padding: scaleConfig.useVisualIndicators
                     ? EdgeInsets.zero
                     : const EdgeInsets.fromLTRB(0, 2, 0, 2),
-                child: ListTile(
-                    onTap: onTap,
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -4),
-                    title: Text(
-                      title,
-                      overflow: TextOverflow.fade,
-                      softWrap: false,
-                    ),
-                    subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
-                    iconColor: textColor,
-                    textColor: textColor,
-                    leading: icon == null ? null : Icon(icon)))));
+                child: GestureDetector(
+                    onDoubleTap: onDoubleTap,
+                    child: ListTile(
+                        onTap: onTap,
+                        dense: true,
+                        visualDensity: const VisualDensity(vertical: -4),
+                        title: Text(
+                          title,
+                          overflow: TextOverflow.fade,
+                          softWrap: false,
+                        ),
+                        subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
+                        iconColor: textColor,
+                        textColor: textColor,
+                        leading: icon == null ? null : Icon(icon))))));
   }
 }

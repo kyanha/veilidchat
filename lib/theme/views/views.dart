@@ -1,3 +1,4 @@
+export 'avatar_widget.dart';
 export 'brightness_preferences.dart';
 export 'color_preferences.dart';
 export 'enter_password.dart';
