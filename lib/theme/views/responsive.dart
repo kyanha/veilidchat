@@ -14,6 +14,10 @@ const kMobileWidthCutoff = 500.0;
 bool isMobileWidth(BuildContext context) =>
     MediaQuery.of(context).size.width < kMobileWidthCutoff;
 
+bool isMobileSize(BuildContext context) =>
+    MediaQuery.of(context).size.width < kMobileWidthCutoff ||
+    MediaQuery.of(context).size.height < kMobileWidthCutoff;
+
 bool responsiveVisibility({
   required BuildContext context,
   bool phone = true,

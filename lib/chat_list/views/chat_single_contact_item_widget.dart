@@ -11,7 +11,7 @@ import '../chat_list.dart';
 class ChatSingleContactItemWidget extends StatelessWidget {
   const ChatSingleContactItemWidget({
     required proto.Contact contact,
-    required bool disabled,
+    bool disabled = false,
     super.key,
   })  : _contact = contact,
         _disabled = disabled;

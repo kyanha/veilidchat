@@ -230,7 +230,7 @@ class HomeScreenState extends State<HomeScreen>
               menuScreenTapClose: canClose,
               mainScreenTapClose: canClose,
               disableDragGesture: !canClose,
-              mainScreenScale: .15,
+              mainScreenScale: .25,
               slideWidth: min(360, MediaQuery.of(context).size.width * 0.9),
             )));
   }

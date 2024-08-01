@@ -12,7 +12,7 @@ class StyledScaffold extends StatelessWidget {
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    final enableBorder = !isMobileWidth(context);
+    final enableBorder = !isMobileSize(context);
 
     final scaffold = clipBorder(
             clipEnabled: enableBorder,

@@ -15,13 +15,13 @@ import '../chat_list.dart';
 class ChatListWidget extends StatelessWidget {
   const ChatListWidget({super.key});
 
-  Widget _itemBuilderDirect(proto.DirectChat direct,
-      IMap<proto.TypedKey, proto.Contact> contactMap, bool busy) {
+  Widget _itemBuilderDirect(
+      proto.DirectChat direct, IMap<proto.TypedKey, proto.Contact> contactMap) {
     final contact = contactMap[direct.localConversationRecordKey];
     if (contact == null) {
       return const Text('...');
     }
-    return ChatSingleContactItemWidget(contact: contact, disabled: busy)
+    return ChatSingleContactItemWidget(contact: contact)
         .paddingLTRB(0, 4, 0, 0);
   }
 
@@ -70,8 +70,10 @@ class ChatListWidget extends StatelessWidget {
                         itemBuilder: (c) {
                           switch (c.whichKind()) {
                             case proto.Chat_Kind.direct:
-                              return _itemBuilderDirect(c.direct, contactMap,
-                                  contactListV.busy || chatListV.busy);
+                              return _itemBuilderDirect(
+                                c.direct,
+                                contactMap,
+                              );
                             case proto.Chat_Kind.group:
                               return const Text(
                                   'group chats not yet supported!');

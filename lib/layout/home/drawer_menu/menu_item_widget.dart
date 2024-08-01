@@ -27,36 +27,34 @@ class MenuItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-      onPressed: callback,
-      style: TextButton.styleFrom(foregroundColor: foregroundColor).copyWith(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.hovered)) {
-              return backgroundHoverColor;
-            }
-            if (states.contains(WidgetState.focused)) {
-              return backgroundFocusColor;
-            }
-            return backgroundColor;
-          }),
-          side: WidgetStateBorderSide.resolveWith((states) {
-            if (states.contains(WidgetState.hovered)) {
+        onPressed: callback,
+        style: TextButton.styleFrom(foregroundColor: foregroundColor).copyWith(
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.hovered)) {
+                return backgroundHoverColor;
+              }
+              if (states.contains(WidgetState.focused)) {
+                return backgroundFocusColor;
+              }
+              return backgroundColor;
+            }),
+            side: WidgetStateBorderSide.resolveWith((states) {
+              if (states.contains(WidgetState.hovered)) {
+                return borderColor != null
+                    ? BorderSide(width: 2, color: borderHoverColor!)
+                    : null;
+              }
+              if (states.contains(WidgetState.focused)) {
+                return borderColor != null
+                    ? BorderSide(width: 2, color: borderFocusColor!)
+                    : null;
+              }
               return borderColor != null
-                  ? BorderSide(width: 2, color: borderHoverColor!)
+                  ? BorderSide(width: 2, color: borderColor!)
                   : null;
-            }
-            if (states.contains(WidgetState.focused)) {
-              return borderColor != null
-                  ? BorderSide(width: 2, color: borderFocusColor!)
-                  : null;
-            }
-            return borderColor != null
-                ? BorderSide(width: 2, color: borderColor!)
-                : null;
-          }),
-          shape: WidgetStateProperty.all(RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius ?? 0)))),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+            }),
+            shape: WidgetStateProperty.all(RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(borderRadius ?? 0)))),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -83,7 +81,7 @@ class MenuItemWidget extends StatelessWidget {
                   onPressed: footerCallback),
           ],
         ),
-      ));
+      );
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {

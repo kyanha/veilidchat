@@ -242,7 +242,7 @@ class _ContactsBrowserState extends State<ContactsBrowser>
                       contact: contact,
                       selected: widget.selectedContactRecordKey ==
                           contact.localConversationRecordKey.toVeilid(),
-                      disabled: ciBusy,
+                      disabled: false,
                       onTap: _onTapContact,
                       onDoubleTap: _onStartChat,
                       onDelete: _onDeleteContact)
@@ -250,7 +250,7 @@ class _ContactsBrowserState extends State<ContactsBrowser>
             case ContactsBrowserElementKind.invitation:
               final invitation = element.invitation!;
               return ContactInvitationItemWidget(
-                      contactInvitationRecord: invitation, disabled: cilBusy)
+                      contactInvitationRecord: invitation, disabled: false)
                   .paddingLTRB(0, 4, 0, 0);
           }
         },
