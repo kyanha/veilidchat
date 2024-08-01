@@ -1,3 +1,4 @@
+import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
@@ -5,21 +6,27 @@ import 'package:flutter_translate/flutter_translate.dart';
 import '../../proto/proto.dart' as proto;
 
 class AvailabilityWidget extends StatelessWidget {
-  const AvailabilityWidget({required this.availability, super.key});
+  const AvailabilityWidget(
+      {required this.availability,
+      this.vertical = true,
+      this.iconSize = 32,
+      super.key});
 
-  static IconData availabilityIcon(proto.Availability availability) {
-    late final IconData iconData;
+  static Widget availabilityIcon(proto.Availability availability,
+      {double size = 32}) {
+    late final Widget iconData;
     switch (availability) {
       case proto.Availability.AVAILABILITY_AWAY:
-        iconData = Icons.hot_tub;
+        iconData =
+            ImageIcon(const AssetImage('assets/images/toilet.png'), size: size);
       case proto.Availability.AVAILABILITY_BUSY:
-        iconData = Icons.event_busy;
+        iconData = Icon(Icons.event_busy, size: size);
       case proto.Availability.AVAILABILITY_FREE:
-        iconData = Icons.event_available;
+        iconData = Icon(Icons.event_available, size: size);
       case proto.Availability.AVAILABILITY_OFFLINE:
-        iconData = Icons.cloud_off;
+        iconData = Icon(Icons.cloud_off, size: size);
       case proto.Availability.AVAILABILITY_UNSPECIFIED:
-        iconData = Icons.question_mark;
+        iconData = Icon(Icons.question_mark, size: size);
     }
     return iconData;
   }
@@ -49,20 +56,35 @@ class AvailabilityWidget extends StatelessWidget {
     // final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final name = availabilityName(availability);
-    final iconData = availabilityIcon(availability);
+    final icon = availabilityIcon(availability, size: iconSize);
 
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(iconData, size: 32),
-      Text(name, style: textTheme.labelSmall)
-    ]);
+    return vertical
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            //mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+                icon,
+                Text(name, style: textTheme.labelSmall).paddingLTRB(0, 0, 0, 0)
+              ])
+        : Row(mainAxisSize: MainAxisSize.min, children: [
+            icon,
+            Text(name, style: textTheme.labelSmall).paddingLTRB(8, 0, 0, 0)
+          ]);
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+
   final proto.Availability availability;
+  final bool vertical;
+  final double iconSize;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(
-        DiagnosticsProperty<proto.Availability>('availability', availability));
+    properties
+      ..add(
+          DiagnosticsProperty<proto.Availability>('availability', availability))
+      ..add(DiagnosticsProperty<bool>('vertical', vertical))
+      ..add(DoubleProperty('iconSize', iconSize));
   }
 }

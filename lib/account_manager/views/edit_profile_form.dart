@@ -1,3 +1,4 @@
+import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,15 +11,18 @@ import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../models/models.dart';
 
+const _kDoUpdateSubmit = 'doUpdateSubmit';
+
 class EditProfileForm extends StatefulWidget {
   const EditProfileForm({
     required this.header,
     required this.instructions,
     required this.submitText,
     required this.submitDisabledText,
-    super.key,
+    required this.initialValueCallback,
+    this.onUpdate,
     this.onSubmit,
-    this.initialValueCallback,
+    super.key,
   });
 
   @override
@@ -26,10 +30,11 @@ class EditProfileForm extends StatefulWidget {
 
   final String header;
   final String instructions;
+  final Future<void> Function(AccountSpec)? onUpdate;
   final Future<void> Function(AccountSpec)? onSubmit;
   final String submitText;
   final String submitDisabledText;
-  final Object? Function(String key)? initialValueCallback;
+  final Object Function(String key) initialValueCallback;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -38,11 +43,13 @@ class EditProfileForm extends StatefulWidget {
       ..add(StringProperty('header', header))
       ..add(StringProperty('instructions', instructions))
       ..add(ObjectFlagProperty<Future<void> Function(AccountSpec)?>.has(
-          'onSubmit', onSubmit))
+          'onUpdate', onUpdate))
       ..add(StringProperty('submitText', submitText))
       ..add(StringProperty('submitDisabledText', submitDisabledText))
-      ..add(ObjectFlagProperty<Object? Function(String key)?>.has(
-          'initialValueCallback', initialValueCallback));
+      ..add(ObjectFlagProperty<Object Function(String key)?>.has(
+          'initialValueCallback', initialValueCallback))
+      ..add(ObjectFlagProperty<Future<void> Function(AccountSpec)?>.has(
+          'onSubmit', onSubmit));
   }
 
   static const String formFieldName = 'name';
@@ -62,15 +69,17 @@ class _EditProfileFormState extends State<EditProfileForm> {
 
   @override
   void initState() {
+    _autoAwayEnabled =
+        widget.initialValueCallback(EditProfileForm.formFieldAutoAway) as bool;
+
     super.initState();
   }
 
   FormBuilderDropdown<proto.Availability> _availabilityDropDown(
       BuildContext context) {
     final initialValueX =
-        widget.initialValueCallback?.call(EditProfileForm.formFieldAvailability)
-                as proto.Availability? ??
-            proto.Availability.AVAILABILITY_FREE;
+        widget.initialValueCallback(EditProfileForm.formFieldAvailability)
+            as proto.Availability;
     final initialValue =
         initialValueX == proto.Availability.AVAILABILITY_UNSPECIFIED
             ? proto.Availability.AVAILABILITY_FREE
@@ -86,14 +95,19 @@ class _EditProfileFormState extends State<EditProfileForm> {
     return FormBuilderDropdown<proto.Availability>(
       name: EditProfileForm.formFieldAvailability,
       initialValue: initialValue,
+      decoration: InputDecoration(
+          floatingLabelBehavior: FloatingLabelBehavior.always,
+          labelText: translate('account.form_availability'),
+          hintText: translate('account.empty_busy_message')),
       items: availabilities
           .map((x) => DropdownMenuItem<proto.Availability>(
               value: x,
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(AvailabilityWidget.availabilityIcon(x)),
+                AvailabilityWidget.availabilityIcon(x),
                 Text(x == proto.Availability.AVAILABILITY_OFFLINE
-                    ? translate('availability.always_show_offline')
-                    : AvailabilityWidget.availabilityName(x)),
+                        ? translate('availability.always_show_offline')
+                        : AvailabilityWidget.availabilityName(x))
+                    .paddingLTRB(8, 0, 0, 0),
               ])))
           .toList(),
     );
@@ -103,34 +117,26 @@ class _EditProfileFormState extends State<EditProfileForm> {
     final name = _formKey
         .currentState!.fields[EditProfileForm.formFieldName]!.value as String;
     final pronouns = _formKey.currentState!
-            .fields[EditProfileForm.formFieldPronouns]!.value as String? ??
-        '';
-    final about = _formKey.currentState!.fields[EditProfileForm.formFieldAbout]!
-            .value as String? ??
-        '';
+        .fields[EditProfileForm.formFieldPronouns]!.value as String;
+    final about = _formKey
+        .currentState!.fields[EditProfileForm.formFieldAbout]!.value as String;
     final availability = _formKey
-            .currentState!
-            .fields[EditProfileForm.formFieldAvailability]!
-            .value as proto.Availability? ??
-        proto.Availability.AVAILABILITY_FREE;
+        .currentState!
+        .fields[EditProfileForm.formFieldAvailability]!
+        .value as proto.Availability;
 
     final invisible = availability == proto.Availability.AVAILABILITY_OFFLINE;
-
     final freeMessage = _formKey.currentState!
-            .fields[EditProfileForm.formFieldFreeMessage]!.value as String? ??
-        '';
+        .fields[EditProfileForm.formFieldFreeMessage]!.value as String;
     final awayMessage = _formKey.currentState!
-            .fields[EditProfileForm.formFieldAwayMessage]!.value as String? ??
-        '';
+        .fields[EditProfileForm.formFieldAwayMessage]!.value as String;
     final busyMessage = _formKey.currentState!
-            .fields[EditProfileForm.formFieldBusyMessage]!.value as String? ??
-        '';
-    final autoAway = _formKey.currentState!
-            .fields[EditProfileForm.formFieldAutoAway]!.value as bool? ??
-        false;
-    final autoAwayTimeout = _formKey.currentState!
-            .fields[EditProfileForm.formFieldAutoAwayTimeout]!.value as int? ??
-        30;
+        .fields[EditProfileForm.formFieldBusyMessage]!.value as String;
+    final autoAway = _formKey
+        .currentState!.fields[EditProfileForm.formFieldAutoAway]!.value as bool;
+    final autoAwayTimeoutString = _formKey.currentState!
+        .fields[EditProfileForm.formFieldAutoAwayTimeout]!.value as String;
+    final autoAwayTimeout = int.parse(autoAwayTimeoutString);
 
     return AccountSpec(
         name: name,
@@ -163,6 +169,7 @@ class _EditProfileFormState extends State<EditProfileForm> {
 
     return FormBuilder(
       key: _formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         children: [
           AvatarWidget(
@@ -179,9 +186,10 @@ class _EditProfileFormState extends State<EditProfileForm> {
           FormBuilderTextField(
             autofocus: true,
             name: EditProfileForm.formFieldName,
-            initialValue: widget.initialValueCallback
-                ?.call(EditProfileForm.formFieldName) as String?,
+            initialValue: widget
+                .initialValueCallback(EditProfileForm.formFieldName) as String,
             decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 labelText: translate('account.form_name'),
                 hintText: translate('account.empty_name')),
             maxLength: 64,
@@ -190,113 +198,149 @@ class _EditProfileFormState extends State<EditProfileForm> {
               FormBuilderValidators.required(),
             ]),
             textInputAction: TextInputAction.next,
-          ),
+          ).onFocusChange(_onFocusChange),
           FormBuilderTextField(
             name: EditProfileForm.formFieldPronouns,
-            initialValue: widget.initialValueCallback
-                ?.call(EditProfileForm.formFieldPronouns) as String?,
+            initialValue:
+                widget.initialValueCallback(EditProfileForm.formFieldPronouns)
+                    as String,
             maxLength: 64,
             decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 labelText: translate('account.form_pronouns'),
                 hintText: translate('account.empty_pronouns')),
             textInputAction: TextInputAction.next,
-          ),
+          ).onFocusChange(_onFocusChange),
           FormBuilderTextField(
             name: EditProfileForm.formFieldAbout,
-            initialValue: widget.initialValueCallback
-                ?.call(EditProfileForm.formFieldAbout) as String?,
+            initialValue: widget
+                .initialValueCallback(EditProfileForm.formFieldAbout) as String,
             maxLength: 1024,
             maxLines: 8,
             minLines: 1,
             decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 labelText: translate('account.form_about'),
                 hintText: translate('account.empty_about')),
             textInputAction: TextInputAction.newline,
-          ),
-          _availabilityDropDown(context),
+          ).onFocusChange(_onFocusChange),
+          _availabilityDropDown(context)
+              .paddingLTRB(0, 0, 0, 16)
+              .onFocusChange(_onFocusChange),
           FormBuilderTextField(
             name: EditProfileForm.formFieldFreeMessage,
-            initialValue: widget.initialValueCallback
-                ?.call(EditProfileForm.formFieldFreeMessage) as String?,
+            initialValue: widget.initialValueCallback(
+                EditProfileForm.formFieldFreeMessage) as String,
             maxLength: 128,
             decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 labelText: translate('account.form_free_message'),
                 hintText: translate('account.empty_free_message')),
             textInputAction: TextInputAction.next,
-          ),
+          ).onFocusChange(_onFocusChange),
           FormBuilderTextField(
             name: EditProfileForm.formFieldAwayMessage,
-            initialValue: widget.initialValueCallback
-                ?.call(EditProfileForm.formFieldAwayMessage) as String?,
+            initialValue: widget.initialValueCallback(
+                EditProfileForm.formFieldAwayMessage) as String,
             maxLength: 128,
             decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 labelText: translate('account.form_away_message'),
                 hintText: translate('account.empty_away_message')),
             textInputAction: TextInputAction.next,
-          ),
+          ).onFocusChange(_onFocusChange),
           FormBuilderTextField(
             name: EditProfileForm.formFieldBusyMessage,
-            initialValue: widget.initialValueCallback
-                ?.call(EditProfileForm.formFieldBusyMessage) as String?,
+            initialValue: widget.initialValueCallback(
+                EditProfileForm.formFieldBusyMessage) as String,
             maxLength: 128,
             decoration: InputDecoration(
+                floatingLabelBehavior: FloatingLabelBehavior.always,
                 labelText: translate('account.form_busy_message'),
                 hintText: translate('account.empty_busy_message')),
             textInputAction: TextInputAction.next,
-          ),
+          ).onFocusChange(_onFocusChange),
           FormBuilderCheckbox(
             name: EditProfileForm.formFieldAutoAway,
-            initialValue: widget.initialValueCallback
-                    ?.call(EditProfileForm.formFieldAutoAway) as bool? ??
-                false,
+            initialValue:
+                widget.initialValueCallback(EditProfileForm.formFieldAutoAway)
+                    as bool,
             side: BorderSide(color: scale.primaryScale.border, width: 2),
             title: Text(translate('account.form_auto_away'),
                 style: textTheme.labelMedium),
-          ),
+            onChanged: (v) {
+              setState(() {
+                _autoAwayEnabled = v ?? false;
+              });
+            },
+          ).onFocusChange(_onFocusChange),
           FormBuilderTextField(
             name: EditProfileForm.formFieldAutoAwayTimeout,
-            enabled: _formKey.currentState
-                    ?.value[EditProfileForm.formFieldAutoAway] as bool? ??
-                false,
-            initialValue: widget.initialValueCallback
-                        ?.call(EditProfileForm.formFieldAutoAwayTimeout)
-                    as String? ??
-                '15',
+            enabled: _autoAwayEnabled,
+            initialValue: widget.initialValueCallback(
+                EditProfileForm.formFieldAutoAwayTimeout) as String,
             decoration: InputDecoration(
               labelText: translate('account.form_auto_away_timeout'),
             ),
             validator: FormBuilderValidators.positiveNumber(),
             textInputAction: TextInputAction.next,
-          ),
+          ).onFocusChange(_onFocusChange),
           Row(children: [
             const Spacer(),
             Text(widget.instructions).toCenter().flexible(flex: 6),
             const Spacer(),
           ]).paddingSymmetric(vertical: 4),
-          ElevatedButton(
-            onPressed: widget.onSubmit == null
-                ? null
-                : () async {
-                    if (_formKey.currentState?.saveAndValidate() ?? false) {
-                      final aus = _makeAccountSpec();
-                      await widget.onSubmit!(aus);
-                    }
-                  },
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
-              Text((widget.onSubmit == null)
-                      ? widget.submitDisabledText
-                      : widget.submitText)
-                  .paddingLTRB(0, 0, 4, 0)
-            ]),
-          ).paddingSymmetric(vertical: 4).alignAtCenterRight(),
+          if (widget.onSubmit != null)
+            ElevatedButton(
+              onPressed: widget.onSubmit == null ? null : _doSubmit,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
+                Text((widget.onSubmit == null)
+                        ? widget.submitDisabledText
+                        : widget.submitText)
+                    .paddingLTRB(0, 0, 4, 0)
+              ]),
+            )
         ],
       ),
     );
+  }
+
+  void _onFocusChange(bool focused) {
+    if (!focused) {
+      _doUpdate();
+    }
+  }
+
+  void _doUpdate() {
+    final onUpdate = widget.onUpdate;
+    if (onUpdate != null) {
+      singleFuture((this, _kDoUpdateSubmit), () async {
+        if (_formKey.currentState?.saveAndValidate() ?? false) {
+          final aus = _makeAccountSpec();
+          await onUpdate(aus);
+        }
+      });
+    }
+  }
+
+  void _doSubmit() {
+    final onSubmit = widget.onSubmit;
+    if (onSubmit != null) {
+      singleFuture((this, _kDoUpdateSubmit), () async {
+        if (_formKey.currentState?.saveAndValidate() ?? false) {
+          final aus = _makeAccountSpec();
+          await onSubmit(aus);
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) => _editProfileForm(
         context,
       );
+
+  ///////////////////////////////////////////////////////////////////////////
+  late bool _autoAwayEnabled;
 }

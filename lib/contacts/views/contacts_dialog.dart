@@ -1,18 +1,14 @@
 import 'package:awesome_extensions/awesome_extensions.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../chat/chat.dart';
 import '../../chat_list/chat_list.dart';
-import '../../proto/proto.dart' as proto;
-import '../../contact_invitation/contact_invitation.dart';
 import '../../layout/layout.dart';
+import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
-import '../../veilid_processor/veilid_processor.dart';
 import '../contacts.dart';
 
 class ContactsDialog extends StatefulWidget {
@@ -48,9 +44,9 @@ class _ContactsDialogState extends State<ContactsDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
+    // final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
-    final scaleConfig = theme.extension<ScaleConfig>()!;
+    // final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final enableSplit = !isMobileWidth(context);
     final enableLeft = enableSplit || _selectedContact == null;
@@ -105,7 +101,7 @@ class _ContactsDialogState extends State<ContactsDialog> {
                                   .toVeilid(),
                               onContactSelected: onContactSelected,
                               onChatStarted: onChatStarted,
-                            ).paddingAll(8)))),
+                            ).paddingLTRB(8, 0, 8, 8)))),
                 if (enableRight)
                   if (_selectedContact == null)
                     const NoContactWidget().expanded()

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -7,6 +8,10 @@ import '../../proto/proto.dart' as proto;
 import '../account_manager.dart';
 
 typedef AccountRecordState = proto.Account;
+typedef _sspUpdateState = (
+  AccountSpec accountSpec,
+  Future<void> Function() onSuccess
+);
 
 /// The saved state of a VeilidChat Account on the DHT
 /// Used to synchronize status, profile, and options for a specific account
@@ -34,16 +39,25 @@ class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
 
   @override
   Future<void> close() async {
+    await _sspUpdate.close();
     await super.close();
   }
 
   ////////////////////////////////////////////////////////////////////////////
   // Public Interface
 
-  Future<void> updateAccount(
-    AccountSpec accountSpec,
-  ) async {
+  void updateAccount(
+      AccountSpec accountSpec, Future<void> Function() onSuccess) {
+    _sspUpdate.updateState((accountSpec, onSuccess), (state) async {
+      await _updateAccountAsync(state.$1, state.$2);
+    });
+  }
+
+  Future<void> _updateAccountAsync(
+      AccountSpec accountSpec, Future<void> Function() onSuccess) async {
+    var changed = false;
     await record.eventualUpdateProtobuf(proto.Account.fromBuffer, (old) async {
+      changed = false;
       if (old == null) {
         return null;
       }
@@ -63,7 +77,6 @@ class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
         ..awayMessage = accountSpec.awayMessage
         ..busyMessage = accountSpec.busyMessage;
 
-      var changed = false;
       if (newAccount.profile != old.profile ||
           newAccount.invisible != old.invisible ||
           newAccount.autodetectAway != old.autodetectAway ||
@@ -78,5 +91,10 @@ class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
       }
       return null;
     });
+    if (changed) {
+      await onSuccess();
+    }
   }
+
+  final _sspUpdate = SingleStateProcessor<_sspUpdateState>();
 }

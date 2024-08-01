@@ -50,13 +50,13 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
             orientationCapability: OrientationCapability.portraitOnly);
 
   Widget _editAccountForm(BuildContext context,
-          {required Future<void> Function(AccountSpec) onSubmit}) =>
+          {required Future<void> Function(AccountSpec) onUpdate}) =>
       EditProfileForm(
         header: translate('edit_account_page.header'),
         instructions: translate('edit_account_page.instructions'),
         submitText: translate('edit_account_page.update'),
         submitDisabledText: translate('button.waiting_for_network'),
-        onSubmit: onSubmit,
+        onUpdate: onUpdate,
         initialValueCallback: (key) => switch (key) {
           EditProfileForm.formFieldName => widget.existingAccount.profile.name,
           EditProfileForm.formFieldPronouns =>
@@ -76,7 +76,7 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
           EditProfileForm.formFieldAutoAway =>
             widget.existingAccount.autodetectAway,
           EditProfileForm.formFieldAutoAwayTimeout =>
-            widget.existingAccount.autoAwayTimeoutMin,
+            widget.existingAccount.autoAwayTimeoutMin.toString(),
           String() => throw UnimplementedError(),
         },
       );
@@ -214,51 +214,24 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
     }
   }
 
-  Future<void> _onSubmit(AccountSpec accountSpec) async {
-    // dismiss the keyboard by unfocusing the textfield
-    FocusScope.of(context).unfocus();
-
-    try {
-      setState(() {
-        _isInAsyncCall = true;
-      });
-      try {
-        // Look up account cubit for this specific account
-        final perAccountCollectionBlocMapCubit =
-            context.read<PerAccountCollectionBlocMapCubit>();
-        final accountRecordCubit = await perAccountCollectionBlocMapCubit
-            .operate(widget.superIdentityRecordKey,
-                closure: (c) async => c.accountRecordCubit);
-        if (accountRecordCubit == null) {
-          return;
-        }
-
-        // Update account profile DHT record
-        // This triggers ConversationCubits to update
-        await accountRecordCubit.updateAccount(accountSpec);
-
-        // Update local account profile
-        await AccountRepository.instance
-            .updateLocalAccount(widget.superIdentityRecordKey, accountSpec);
-
-        if (mounted) {
-          Navigator.canPop(context)
-              ? GoRouterHelper(context).pop()
-              : GoRouterHelper(context).go('/');
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isInAsyncCall = false;
-          });
-        }
-      }
-    } on Exception catch (e) {
-      if (mounted) {
-        await showErrorModal(
-            context, translate('edit_account_page.error'), 'Exception: $e');
-      }
+  Future<void> _onUpdate(AccountSpec accountSpec) async {
+    // Look up account cubit for this specific account
+    final perAccountCollectionBlocMapCubit =
+        context.read<PerAccountCollectionBlocMapCubit>();
+    final accountRecordCubit = await perAccountCollectionBlocMapCubit.operate(
+        widget.superIdentityRecordKey,
+        closure: (c) async => c.accountRecordCubit);
+    if (accountRecordCubit == null) {
+      return;
     }
+
+    // Update account profile DHT record
+    // This triggers ConversationCubits to update
+    accountRecordCubit.updateAccount(accountSpec, () async {
+      // Update local account profile
+      await AccountRepository.instance
+          .updateLocalAccount(widget.superIdentityRecordKey, accountSpec);
+    });
   }
 
   @override
@@ -290,7 +263,7 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
                 child: Column(children: [
               _editAccountForm(
                 context,
-                onSubmit: _onSubmit,
+                onUpdate: _onUpdate,
               ).paddingLTRB(0, 0, 0, 32),
               OptionBox(
                 instructions:

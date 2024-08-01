@@ -31,7 +31,8 @@ class SliderTile extends StatelessWidget {
       this.startActions = const [],
       this.onTap,
       this.onDoubleTap,
-      this.icon,
+      this.leading,
+      this.trailing,
       super.key});
 
   final bool disabled;
@@ -41,7 +42,8 @@ class SliderTile extends StatelessWidget {
   final List<SliderTileAction> startActions;
   final GestureTapCallback? onTap;
   final GestureTapCallback? onDoubleTap;
-  final IconData? icon;
+  final Widget? leading;
+  final Widget? trailing;
   final String title;
   final String subtitle;
 
@@ -55,11 +57,12 @@ class SliderTile extends StatelessWidget {
       ..add(IterableProperty<SliderTileAction>('endActions', endActions))
       ..add(IterableProperty<SliderTileAction>('startActions', startActions))
       ..add(ObjectFlagProperty<GestureTapCallback?>.has('onTap', onTap))
-      ..add(DiagnosticsProperty<IconData?>('icon', icon))
+      ..add(DiagnosticsProperty<Widget?>('leading', leading))
       ..add(StringProperty('title', title))
       ..add(StringProperty('subtitle', subtitle))
       ..add(ObjectFlagProperty<GestureTapCallback?>.has(
-          'onDoubleTap', onDoubleTap));
+          'onDoubleTap', onDoubleTap))
+      ..add(DiagnosticsProperty<Widget?>('trailing', trailing));
   }
 
   @override
@@ -156,6 +159,7 @@ class SliderTile extends StatelessWidget {
                         subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
                         iconColor: textColor,
                         textColor: textColor,
-                        leading: icon == null ? null : Icon(icon))))));
+                        leading: FittedBox(child: leading),
+                        trailing: FittedBox(child: trailing))))));
   }
 }

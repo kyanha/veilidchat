@@ -28,24 +28,28 @@ class ContactItemWidget extends StatelessWidget {
   Widget build(
     BuildContext context,
   ) {
-    late final String title;
-    late final String subtitle;
+    final theme = Theme.of(context);
+    final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    if (_contact.nickname.isNotEmpty) {
-      title = _contact.nickname;
-      if (_contact.profile.pronouns.isNotEmpty) {
-        subtitle = '${_contact.profile.name} (${_contact.profile.pronouns})';
-      } else {
-        subtitle = _contact.profile.name;
-      }
-    } else {
-      title = _contact.profile.name;
-      if (_contact.profile.pronouns.isNotEmpty) {
-        subtitle = '(${_contact.profile.pronouns})';
-      } else {
-        subtitle = '';
-      }
-    }
+    final name = _contact.nameOrNickname;
+    final title = _contact.displayName;
+    final subtitle = _contact.profile.status;
+
+    final avatar = AvatarWidget(
+      name: name,
+      size: 34,
+      borderColor: _disabled
+          ? scale.grayScale.primaryText
+          : scale.primaryScale.primaryText,
+      foregroundColor: _disabled
+          ? scale.grayScale.primaryText
+          : scale.primaryScale.primaryText,
+      backgroundColor:
+          _disabled ? scale.grayScale.primary : scale.primaryScale.primary,
+      scaleConfig: scaleConfig,
+      textStyle: theme.textTheme.titleLarge!,
+    );
 
     return SliderTile(
       key: ObjectKey(_contact),
@@ -54,7 +58,7 @@ class ContactItemWidget extends StatelessWidget {
       tileScale: ScaleKind.primary,
       title: title,
       subtitle: subtitle,
-      icon: Icons.person,
+      leading: avatar,
       onDoubleTap: _onDoubleTap == null
           ? null
           : () => singleFuture<void>((this, _kOnTap), () async {

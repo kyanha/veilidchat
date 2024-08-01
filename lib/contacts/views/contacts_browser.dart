@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:searchable_listview/searchable_listview.dart';
+import 'package:star_menu/star_menu.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../chat_list/chat_list.dart';
@@ -71,6 +72,75 @@ class _ContactsBrowserState extends State<ContactsBrowser>
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
+    final menuIconColor = scaleConfig.preferBorders
+        ? scale.primaryScale.hoverBorder
+        : scale.primaryScale.borderText;
+    final menuBackgroundColor = scaleConfig.preferBorders
+        ? scale.primaryScale.elementBackground
+        : scale.primaryScale.border;
+    // final menuHoverColor = scaleConfig.preferBorders
+    //     ? scale.primaryScale.hoverElementBackground
+    //     : scale.primaryScale.hoverBorder;
+
+    final menuBorderColor = scale.primaryScale.hoverBorder;
+
+    final menuParams = StarMenuParameters(
+        shape: MenuShape.grid,
+        checkItemsScreenBoundaries: true,
+        centerOffset: const Offset(0, 64),
+        backgroundParams:
+            BackgroundParams(backgroundColor: theme.shadowColor.withAlpha(128)),
+        boundaryBackground: BoundaryBackground(
+            color: menuBackgroundColor,
+            decoration: ShapeDecoration(
+                color: menuBackgroundColor,
+                shape: RoundedRectangleBorder(
+                    side: scaleConfig.useVisualIndicators
+                        ? BorderSide(
+                            width: 2, color: menuBorderColor, strokeAlign: 0)
+                        : BorderSide.none,
+                    borderRadius: BorderRadius.circular(
+                        8 * scaleConfig.borderRadiusScale)))));
+
+    final receiveInviteMenuItems = [
+      Column(mainAxisSize: MainAxisSize.min, children: [
+        IconButton(
+          onPressed: () async {
+            _receiveInviteMenuController.closeMenu!();
+            await ScanInvitationDialog.show(context);
+          },
+          iconSize: 32,
+          icon: Icon(
+            Icons.qr_code_scanner,
+            size: 32,
+            color: menuIconColor,
+          ),
+        ),
+        Text(translate('add_contact_sheet.scan_invite'),
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            style: textTheme.labelSmall!.copyWith(color: menuIconColor))
+      ]).paddingAll(4),
+      Column(mainAxisSize: MainAxisSize.min, children: [
+        IconButton(
+          onPressed: () async {
+            _receiveInviteMenuController.closeMenu!();
+            await PasteInvitationDialog.show(context);
+          },
+          iconSize: 32,
+          icon: Icon(
+            Icons.paste,
+            size: 32,
+            color: menuIconColor,
+          ),
+        ),
+        Text(translate('add_contact_sheet.paste_invite'),
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            style: textTheme.labelSmall!.copyWith(color: menuIconColor))
+      ]).paddingAll(4)
+    ];
+
     return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
       Column(mainAxisSize: MainAxisSize.min, children: [
         IconButton(
@@ -80,30 +150,36 @@ class _ContactsBrowserState extends State<ContactsBrowser>
           iconSize: 32,
           icon: const Icon(Icons.contact_page),
           color: scale.primaryScale.hoverBorder,
-          tooltip: translate('add_contact_sheet.create_invite'),
-        )
-      ]),
-      Column(mainAxisSize: MainAxisSize.min, children: [
-        IconButton(
-            onPressed: () async {
-              await ScanInvitationDialog.show(context);
-            },
-            iconSize: 32,
-            icon: const Icon(Icons.qr_code_scanner),
-            color: scale.primaryScale.hoverBorder,
-            tooltip: translate('add_contact_sheet.scan_invite')),
-      ]),
-      Column(mainAxisSize: MainAxisSize.min, children: [
-        IconButton(
-          onPressed: () async {
-            await PasteInvitationDialog.show(context);
-          },
-          iconSize: 32,
-          icon: const Icon(Icons.paste),
-          color: scale.primaryScale.hoverBorder,
-          tooltip: translate('add_contact_sheet.paste_invite'),
         ),
-      ])
+        Text(translate('add_contact_sheet.create_invite'),
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            style: textTheme.labelSmall!
+                .copyWith(color: scale.primaryScale.hoverBorder))
+      ]),
+      StarMenu(
+        items: receiveInviteMenuItems,
+        onItemTapped: (_index, controller) {
+          controller.closeMenu!();
+        },
+        controller: _receiveInviteMenuController,
+        params: menuParams,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          IconButton(
+              onPressed: () {},
+              iconSize: 32,
+              icon: ImageIcon(
+                const AssetImage('assets/images/handshake.png'),
+                size: 32,
+                color: scale.primaryScale.hoverBorder,
+              )),
+          Text(translate('add_contact_sheet.receive_invite'),
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              style: textTheme.labelSmall!
+                  .copyWith(color: scale.primaryScale.hoverBorder))
+        ]),
+      ),
     ]).paddingAll(16);
   }
 
@@ -112,7 +188,7 @@ class _ContactsBrowserState extends State<ContactsBrowser>
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
-    final scaleConfig = theme.extension<ScaleConfig>()!;
+    //final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final cilState = context.watch<ContactInvitationListCubit>().state;
     final cilBusy = cilState.busy;
@@ -244,4 +320,7 @@ class _ContactsBrowserState extends State<ContactsBrowser>
     await chatListCubit.deleteChat(
         localConversationRecordKey: localConversationRecordKey);
   }
+
+  ////////////////////////////////////////////////////////////////////////////
+  final _receiveInviteMenuController = StarMenuController();
 }

@@ -97,6 +97,7 @@ dependencies:
       ref: main
   split_view: ^3.2.1
   stack_trace: ^1.11.1
+  star_menu: ^4.0.1
   stream_transform: ^2.1.0
   transitioned_indexed_stack: ^1.0.2
   url_launcher: ^6.3.0
@@ -163,6 +164,8 @@ flutter:
     - assets/images/title.svg
     - assets/images/vlogo.svg
     - assets/images/ellet.png
+    - assets/images/toilet.png
+    - assets/images/handshake.png
     # Printing
     - assets/js/pdf/3.2.146/pdf.min.js
     # Sounds

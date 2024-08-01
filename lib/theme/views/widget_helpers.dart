@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
+import 'package:meta/meta.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:sliver_expandable/sliver_expandable.dart';
 
@@ -25,6 +26,38 @@ extension SizeToFixExt on Widget {
         fit: fit ?? BoxFit.scaleDown,
         child: this,
       );
+}
+
+extension FocusExt<T> on Widget {
+  Focus focus(
+          {Key? key,
+          FocusNode? focusNode,
+          FocusNode? parentNode,
+          bool autofocus = false,
+          ValueChanged<bool>? onFocusChange,
+          FocusOnKeyEventCallback? onKeyEvent,
+          bool? canRequestFocus,
+          bool? skipTraversal,
+          bool? descendantsAreFocusable,
+          bool? descendantsAreTraversable,
+          bool includeSemantics = true,
+          String? debugLabel}) =>
+      Focus(
+          key: key,
+          focusNode: focusNode,
+          parentNode: parentNode,
+          autofocus: autofocus,
+          onFocusChange: onFocusChange,
+          onKeyEvent: onKeyEvent,
+          canRequestFocus: canRequestFocus,
+          skipTraversal: skipTraversal,
+          descendantsAreFocusable: descendantsAreFocusable,
+          descendantsAreTraversable: descendantsAreTraversable,
+          includeSemantics: includeSemantics,
+          debugLabel: debugLabel,
+          child: this);
+  Focus onFocusChange(void Function(bool) onFocusChange) =>
+      Focus(onFocusChange: onFocusChange, child: this);
 }
 
 extension ModalProgressExt on Widget {

@@ -25,7 +25,7 @@
         "empty_free_message": "Status when availability is 'Free'",
         "form_away_message": "Away Message",
         "empty_away_message": "Status when availability is 'Away'",
-        "form_busy_message": "Free Message",
+        "form_busy_message": "Busy Message",
         "empty_busy_message": "Status when availability is 'Busy'",
         "form_availability": "Availability",
         "form_avatar": "Avatar",
@@ -42,6 +42,7 @@
         "create": "Create",
         "instructions": "This information will be shared with the people you invite to connect with you on VeilidChat.",
         "error": "Account creation error",
+        "network_is_offline": "Network is offline, try again when you're connected",
         "name": "Name",
         "pronouns": "Pronouns"
     },
@@ -149,9 +150,10 @@
     },
     "add_contact_sheet": {
         "new_contact": "New Contact",
-        "create_invite": "Create Invitation",
-        "scan_invite": "Scan Invitation",
-        "paste_invite": "Paste Invitation"
+        "create_invite": "Create\nInvitation",
+        "receive_invite": "Receive\nInvitation",
+        "scan_invite": "Scan\nInvitation",
+        "paste_invite": "Paste\nInvitation"
     },
     "add_chat_sheet": {
         "new_chat": "New Chat"
