@@ -36,10 +36,11 @@ packages:
   async_tools:
     dependency: "direct main"
     description:
-      path: "../../../dart_async_tools"
-      relative: true
-    source: path
-    version: "0.1.4"
+      name: async_tools
+      sha256: "9166e8fe65fc65eb79202a6d540f4de768553d78141b885f5bd3f8d7d30eef5e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.5"
   bloc:
     dependency: "direct main"
     description:
@@ -51,10 +52,11 @@ packages:
   bloc_advanced_tools:
     dependency: "direct main"
     description:
-      path: "../../../bloc_advanced_tools"
-      relative: true
-    source: path
-    version: "0.1.4"
+      name: bloc_advanced_tools
+      sha256: "2b2dd492a350e7192a933d09f15ea04d5d00e7bd3fe2a906fe629cd461ddbf94"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.5"
   boolean_selector:
     dependency: transitive
     description:
