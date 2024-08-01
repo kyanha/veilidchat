@@ -467,24 +467,31 @@ const Account$json = {
   '2': [
     {'1': 'profile', '3': 1, '4': 1, '5': 11, '6': '.veilidchat.Profile', '10': 'profile'},
     {'1': 'invisible', '3': 2, '4': 1, '5': 8, '10': 'invisible'},
-    {'1': 'auto_away_timeout_sec', '3': 3, '4': 1, '5': 13, '10': 'autoAwayTimeoutSec'},
+    {'1': 'auto_away_timeout_min', '3': 3, '4': 1, '5': 13, '10': 'autoAwayTimeoutMin'},
     {'1': 'contact_list', '3': 4, '4': 1, '5': 11, '6': '.dht.OwnedDHTRecordPointer', '10': 'contactList'},
     {'1': 'contact_invitation_records', '3': 5, '4': 1, '5': 11, '6': '.dht.OwnedDHTRecordPointer', '10': 'contactInvitationRecords'},
     {'1': 'chat_list', '3': 6, '4': 1, '5': 11, '6': '.dht.OwnedDHTRecordPointer', '10': 'chatList'},
     {'1': 'group_chat_list', '3': 7, '4': 1, '5': 11, '6': '.dht.OwnedDHTRecordPointer', '10': 'groupChatList'},
+    {'1': 'free_message', '3': 8, '4': 1, '5': 9, '10': 'freeMessage'},
+    {'1': 'busy_message', '3': 9, '4': 1, '5': 9, '10': 'busyMessage'},
+    {'1': 'away_message', '3': 10, '4': 1, '5': 9, '10': 'awayMessage'},
+    {'1': 'autodetect_away', '3': 11, '4': 1, '5': 8, '10': 'autodetectAway'},
   ],
 };
 
 /// Descriptor for `Account`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List accountDescriptor = $convert.base64Decode(
     'CgdBY2NvdW50Ei0KB3Byb2ZpbGUYASABKAsyEy52ZWlsaWRjaGF0LlByb2ZpbGVSB3Byb2ZpbG'
-    'USHAoJaW52aXNpYmxlGAIgASgIUglpbnZpc2libGUSMQoVYXV0b19hd2F5X3RpbWVvdXRfc2Vj'
-    'GAMgASgNUhJhdXRvQXdheVRpbWVvdXRTZWMSPQoMY29udGFjdF9saXN0GAQgASgLMhouZGh0Lk'
+    'USHAoJaW52aXNpYmxlGAIgASgIUglpbnZpc2libGUSMQoVYXV0b19hd2F5X3RpbWVvdXRfbWlu'
+    'GAMgASgNUhJhdXRvQXdheVRpbWVvdXRNaW4SPQoMY29udGFjdF9saXN0GAQgASgLMhouZGh0Lk'
     '93bmVkREhUUmVjb3JkUG9pbnRlclILY29udGFjdExpc3QSWAoaY29udGFjdF9pbnZpdGF0aW9u'
     'X3JlY29yZHMYBSABKAsyGi5kaHQuT3duZWRESFRSZWNvcmRQb2ludGVyUhhjb250YWN0SW52aX'
     'RhdGlvblJlY29yZHMSNwoJY2hhdF9saXN0GAYgASgLMhouZGh0Lk93bmVkREhUUmVjb3JkUG9p'
     'bnRlclIIY2hhdExpc3QSQgoPZ3JvdXBfY2hhdF9saXN0GAcgASgLMhouZGh0Lk93bmVkREhUUm'
-    'Vjb3JkUG9pbnRlclINZ3JvdXBDaGF0TGlzdA==');
+    'Vjb3JkUG9pbnRlclINZ3JvdXBDaGF0TGlzdBIhCgxmcmVlX21lc3NhZ2UYCCABKAlSC2ZyZWVN'
+    'ZXNzYWdlEiEKDGJ1c3lfbWVzc2FnZRgJIAEoCVILYnVzeU1lc3NhZ2USIQoMYXdheV9tZXNzYW'
+    'dlGAogASgJUgthd2F5TWVzc2FnZRInCg9hdXRvZGV0ZWN0X2F3YXkYCyABKAhSDmF1dG9kZXRl'
+    'Y3RBd2F5');
 
 @$core.Deprecated('Use contactDescriptor instead')
 const Contact$json = {

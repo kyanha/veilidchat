@@ -50,6 +50,7 @@ class StyledDialog extends StatelessWidget {
           required Widget child}) async =>
       showDialog<T>(
           context: context,
+          useRootNavigator: false,
           builder: (context) => StyledDialog(title: title, child: child));
 
   final String title;

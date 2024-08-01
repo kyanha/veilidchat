@@ -30,7 +30,9 @@ class SliderTile extends StatelessWidget {
       this.endActions = const [],
       this.startActions = const [],
       this.onTap,
-      this.icon,
+      this.onDoubleTap,
+      this.leading,
+      this.trailing,
       super.key});
 
   final bool disabled;
@@ -39,7 +41,9 @@ class SliderTile extends StatelessWidget {
   final List<SliderTileAction> endActions;
   final List<SliderTileAction> startActions;
   final GestureTapCallback? onTap;
-  final IconData? icon;
+  final GestureTapCallback? onDoubleTap;
+  final Widget? leading;
+  final Widget? trailing;
   final String title;
   final String subtitle;
 
@@ -53,9 +57,12 @@ class SliderTile extends StatelessWidget {
       ..add(IterableProperty<SliderTileAction>('endActions', endActions))
       ..add(IterableProperty<SliderTileAction>('startActions', startActions))
       ..add(ObjectFlagProperty<GestureTapCallback?>.has('onTap', onTap))
-      ..add(DiagnosticsProperty<IconData?>('icon', icon))
+      ..add(DiagnosticsProperty<Widget?>('leading', leading))
       ..add(StringProperty('title', title))
-      ..add(StringProperty('subtitle', subtitle));
+      ..add(StringProperty('subtitle', subtitle))
+      ..add(ObjectFlagProperty<GestureTapCallback?>.has(
+          'onDoubleTap', onDoubleTap))
+      ..add(DiagnosticsProperty<Widget?>('trailing', trailing));
   }
 
   @override
@@ -138,18 +145,21 @@ class SliderTile extends StatelessWidget {
                 padding: scaleConfig.useVisualIndicators
                     ? EdgeInsets.zero
                     : const EdgeInsets.fromLTRB(0, 2, 0, 2),
-                child: ListTile(
-                    onTap: onTap,
-                    dense: true,
-                    visualDensity: const VisualDensity(vertical: -4),
-                    title: Text(
-                      title,
-                      overflow: TextOverflow.fade,
-                      softWrap: false,
-                    ),
-                    subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
-                    iconColor: textColor,
-                    textColor: textColor,
-                    leading: icon == null ? null : Icon(icon)))));
+                child: GestureDetector(
+                    onDoubleTap: onDoubleTap,
+                    child: ListTile(
+                        onTap: onTap,
+                        dense: true,
+                        visualDensity: const VisualDensity(vertical: -4),
+                        title: Text(
+                          title,
+                          overflow: TextOverflow.fade,
+                          softWrap: false,
+                        ),
+                        subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
+                        iconColor: textColor,
+                        textColor: textColor,
+                        leading: FittedBox(child: leading),
+                        trailing: FittedBox(child: trailing))))));
   }
 }

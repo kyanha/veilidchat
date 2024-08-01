@@ -133,14 +133,14 @@ class AccountRepository {
   /// with the identity instance, stores the account in the identity key and
   /// then logs into that account with no password set at this time
   Future<WritableSuperIdentity> createWithNewSuperIdentity(
-      proto.Profile newProfile) async {
+      AccountSpec accountSpec) async {
     log.debug('Creating super identity');
     final wsi = await WritableSuperIdentity.create();
     try {
       final localAccount = await _newLocalAccount(
           superIdentity: wsi.superIdentity,
           identitySecret: wsi.identitySecret,
-          newProfile: newProfile);
+          accountSpec: accountSpec);
 
       // Log in the new account by default with no pin
       final ok = await login(
@@ -154,15 +154,13 @@ class AccountRepository {
     }
   }
 
-  Future<void> editAccountProfile(
-      TypedKey superIdentityRecordKey, proto.Profile newProfile) async {
-    log.debug('Editing profile for $superIdentityRecordKey');
-
+  Future<void> updateLocalAccount(
+      TypedKey superIdentityRecordKey, AccountSpec accountSpec) async {
     final localAccounts = await _localAccounts.get();
 
     final newLocalAccounts = localAccounts.replaceFirstWhere(
         (x) => x.superIdentity.recordKey == superIdentityRecordKey,
-        (localAccount) => localAccount!.copyWith(name: newProfile.name));
+        (localAccount) => localAccount!.copyWith(name: accountSpec.name));
 
     await _localAccounts.set(newLocalAccounts);
     _streamController.add(AccountRepositoryChange.localAccounts);
@@ -248,7 +246,7 @@ class AccountRepository {
   Future<LocalAccount> _newLocalAccount(
       {required SuperIdentity superIdentity,
       required SecretKey identitySecret,
-      required proto.Profile newProfile,
+      required AccountSpec accountSpec,
       EncryptionKeyType encryptionKeyType = EncryptionKeyType.none,
       String encryptionKey = ''}) async {
     log.debug('Creating new local account');
@@ -285,7 +283,10 @@ class AccountRepository {
 
           // Make account object
           final account = proto.Account()
-            ..profile = newProfile
+            ..profile.name = accountSpec.name
+            ..profile.pronouns = accountSpec.pronouns
+            ..profile.about = accountSpec.about
+            ..profile.status = accountSpec.status
             ..contactList = contactList.toProto()
             ..contactInvitationRecords = contactInvitationRecords.toProto()
             ..chatList = chatRecords.toProto();
@@ -309,7 +310,7 @@ class AccountRepository {
       encryptionKeyType: encryptionKeyType,
       biometricsEnabled: false,
       hiddenAccount: false,
-      name: newProfile.name,
+      name: accountSpec.name,
     );
 
     // Add local account object to internal store

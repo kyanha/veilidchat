@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:veilid_support/veilid_support.dart';
 
+import '../../account_manager/account_manager.dart';
 import '../../notifications/notifications.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
@@ -20,17 +21,20 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
   const ContactInvitationDisplayDialog._({
     required this.locator,
     required this.message,
+    required this.fingerprint,
   });
 
   final Locator locator;
   final String message;
+  final String fingerprint;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
       ..add(StringProperty('message', message))
-      ..add(DiagnosticsProperty<Locator>('locator', locator));
+      ..add(DiagnosticsProperty<Locator>('locator', locator))
+      ..add(StringProperty('fingerprint', fingerprint));
   }
 
   String makeTextInvite(String message, Uint8List data) {
@@ -38,10 +42,12 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
         base64UrlNoPadEncode(data), '\n', 40,
         repeat: true);
     final msg = message.isNotEmpty ? '$message\n' : '';
+
     return '$msg'
         '--- BEGIN VEILIDCHAT CONTACT INVITE ----\n'
         '$invite\n'
-        '---- END VEILIDCHAT CONTACT INVITE -----\n';
+        '---- END VEILIDCHAT CONTACT INVITE -----\n'
+        'Fingerprint:\n$fingerprint\n';
   }
 
   @override
@@ -97,18 +103,27 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
                                               .copyWith(color: Colors.black)))
                                   .paddingAll(8),
                               FittedBox(
-                                      child: QrImageView.withQr(
-                                          size: 300,
-                                          qr: QrCode.fromUint8List(
-                                              data: data.$1,
-                                              errorCorrectLevel:
-                                                  QrErrorCorrectLevel.L)))
-                                  .expanded(),
+                                child: QrImageView.withQr(
+                                    size: 300,
+                                    qr: QrCode.fromUint8List(
+                                        data: data.$1,
+                                        errorCorrectLevel:
+                                            QrErrorCorrectLevel.L)),
+                              ).expanded(),
                               Text(message,
                                       softWrap: true,
                                       style: textTheme.labelLarge!
                                           .copyWith(color: Colors.black))
                                   .paddingAll(8),
+                              Text(
+                                      '${translate('create_invitation_dialog.fingerprint')}\n'
+                                      '$fingerprint',
+                                      softWrap: true,
+                                      textAlign: TextAlign.center,
+                                      style: textTheme.labelSmall!.copyWith(
+                                          color: Colors.black,
+                                          fontFamily: 'Source Code Pro'))
+                                  .paddingAll(2),
                               ElevatedButton.icon(
                                 icon: const Icon(Icons.copy),
                                 style: ElevatedButton.styleFrom(
@@ -129,11 +144,15 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
                         error: errorPage)))));
   }
 
-  static Future<void> show(
-      {required BuildContext context,
-      required Locator locator,
-      required InvitationGeneratorCubit Function(BuildContext) create,
-      required String message}) async {
+  static Future<void> show({
+    required BuildContext context,
+    required Locator locator,
+    required InvitationGeneratorCubit Function(BuildContext) create,
+    required String message,
+  }) async {
+    final fingerprint =
+        locator<AccountInfoCubit>().state.identityPublicKey.toString();
+
     await showPopControlDialog<void>(
         context: context,
         builder: (context) => BlocProvider(
@@ -141,6 +160,7 @@ class ContactInvitationDisplayDialog extends StatelessWidget {
             child: ContactInvitationDisplayDialog._(
               locator: locator,
               message: message,
+              fingerprint: fingerprint,
             )));
   }
 }
