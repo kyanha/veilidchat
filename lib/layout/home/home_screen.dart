@@ -132,7 +132,14 @@ class HomeScreenState extends State<HomeScreen>
 
         // Re-export all ready blocs to the account display subtree
         return perAccountCollectionState.provide(
-            child: const HomeAccountReady());
+            child: Navigator(
+                onPopPage: (route, result) {
+                  if (!route.didPop(result)) {
+                    return false;
+                  }
+                  return true;
+                },
+                pages: const [MaterialPage(child: HomeAccountReady())]));
     }
   }
 

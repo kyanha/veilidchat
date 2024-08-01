@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import '../../chat/cubits/active_chat_cubit.dart';
+import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 import '../chat_list.dart';
@@ -23,28 +24,33 @@ class ChatSingleContactItemWidget extends StatelessWidget {
   Widget build(
     BuildContext context,
   ) {
+    final theme = Theme.of(context);
+    final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
+
     final activeChatCubit = context.watch<ActiveChatCubit>();
     final localConversationRecordKey =
         _contact.localConversationRecordKey.toVeilid();
     final selected = activeChatCubit.state == localConversationRecordKey;
 
-    late final String title;
-    late final String subtitle;
-    if (_contact.nickname.isNotEmpty) {
-      title = _contact.nickname;
-      if (_contact.profile.pronouns.isNotEmpty) {
-        subtitle = '${_contact.profile.name} (${_contact.profile.pronouns})';
-      } else {
-        subtitle = _contact.profile.name;
-      }
-    } else {
-      title = _contact.profile.name;
-      if (_contact.profile.pronouns.isNotEmpty) {
-        subtitle = '(${_contact.profile.pronouns})';
-      } else {
-        subtitle = '';
-      }
-    }
+    final name = _contact.nameOrNickname;
+    final title = _contact.displayName;
+    final subtitle = _contact.profile.status;
+
+    final avatar = AvatarWidget(
+      name: name,
+      size: 34,
+      borderColor: _disabled
+          ? scale.grayScale.primaryText
+          : scale.secondaryScale.primaryText,
+      foregroundColor: _disabled
+          ? scale.grayScale.primaryText
+          : scale.secondaryScale.primaryText,
+      backgroundColor:
+          _disabled ? scale.grayScale.primary : scale.secondaryScale.primary,
+      scaleConfig: scaleConfig,
+      textStyle: theme.textTheme.titleLarge!,
+    );
 
     return SliderTile(
       key: ObjectKey(_contact),
@@ -53,7 +59,8 @@ class ChatSingleContactItemWidget extends StatelessWidget {
       tileScale: ScaleKind.secondary,
       title: title,
       subtitle: subtitle,
-      icon: Icons.chat,
+      leading: avatar,
+      trailing: AvailabilityWidget(availability: _contact.profile.availability),
       onTap: () {
         singleFuture(activeChatCubit, () async {
           activeChatCubit.setActiveChat(localConversationRecordKey);

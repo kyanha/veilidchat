@@ -31,6 +31,7 @@ extension MessageExt on proto.Message {
 }
 
 extension ContactExt on proto.Contact {
+  String get nameOrNickname => nickname.isNotEmpty ? nickname : profile.name;
   String get displayName =>
       nickname.isNotEmpty ? '$nickname (${profile.name})' : profile.name;
 }

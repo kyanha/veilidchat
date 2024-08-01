@@ -45,7 +45,7 @@ class ContactInvitationItemWidget extends StatelessWidget {
       title: contactInvitationRecord.message.isEmpty
           ? translate('contact_list.invitation')
           : contactInvitationRecord.message,
-      icon: Icons.person_add,
+      leading: const Icon(Icons.person_add),
       onTap: () async {
         if (!context.mounted) {
           return;

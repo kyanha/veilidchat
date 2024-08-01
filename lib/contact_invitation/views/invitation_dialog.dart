@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -61,17 +62,19 @@ class InvitationDialog extends StatefulWidget {
 }
 
 class InvitationDialogState extends State<InvitationDialog> {
-  ValidContactInvitation? _validInvitation;
-  bool _isValidating = false;
-  bool _isAccepting = false;
-
   @override
   void initState() {
     super.initState();
   }
 
-  bool get isValidating => _isValidating;
-  bool get isAccepting => _isAccepting;
+  Future<void> _onCancel() async {
+    final navigator = Navigator.of(context);
+    _cancelRequest.cancel();
+    setState(() {
+      _isAccepting = false;
+    });
+    navigator.pop();
+  }
 
   Future<void> _onAccept() async {
     final navigator = Navigator.of(context);
@@ -153,6 +156,7 @@ class InvitationDialogState extends State<InvitationDialog> {
       final validatedContactInvitation =
           await contactInvitationListCubit.validateInvitation(
               inviteData: inviteData,
+              cancelRequest: _cancelRequest,
               getEncryptionKeyCallback:
                   (cs, encryptionKeyType, encryptedSecret) async {
                 String encryptionKey;
@@ -234,6 +238,9 @@ class InvitationDialogState extends State<InvitationDialog> {
       late final String errorText;
       if (e is VeilidAPIExceptionTryAgain) {
         errorText = translate('invitation_dialog.try_again_online');
+      }
+      if (e is VeilidAPIExceptionKeyNotFound) {
+        errorText = translate('invitation_dialog.key_not_found');
       } else {
         errorText = translate('invitation_dialog.invalid_invitation');
       }
@@ -244,6 +251,12 @@ class InvitationDialogState extends State<InvitationDialog> {
         _isValidating = false;
         _validInvitation = null;
         widget.onValidationFailed();
+      });
+    } on CancelException {
+      setState(() {
+        _isValidating = false;
+        _validInvitation = null;
+        widget.onValidationCancelled();
       });
     } on Exception catch (e) {
       log.debug('exception: $e', e);
@@ -264,6 +277,11 @@ class InvitationDialogState extends State<InvitationDialog> {
             Text(translate('invitation_dialog.validating'))
                 .paddingLTRB(0, 0, 0, 16),
             buildProgressIndicator().paddingAll(16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.cancel),
+              label: Text(translate('button.cancel')),
+              onPressed: _onCancel,
+            ).paddingAll(16),
           ]).toCenter(),
         if (_validInvitation == null &&
             !_isValidating &&
@@ -315,12 +333,24 @@ class InvitationDialogState extends State<InvitationDialog> {
         child: Column(
             mainAxisSize: MainAxisSize.min,
             children: _isAccepting
-                ? [buildProgressIndicator().paddingAll(16)]
+                ? [
+                    buildProgressIndicator().paddingAll(16),
+                  ]
                 : _buildPreAccept()),
       ),
     );
     return PopControl(dismissible: dismissible, child: dialog);
   }
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  ValidContactInvitation? _validInvitation;
+  bool _isValidating = false;
+  bool _isAccepting = false;
+  final _cancelRequest = CancelRequest();
+
+  bool get isValidating => _isValidating;
+  bool get isAccepting => _isAccepting;
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {

@@ -4,10 +4,8 @@ import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:protobuf/protobuf.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../../layout/default_app_bar.dart';
@@ -17,12 +15,12 @@ import '../../theme/theme.dart';
 import '../../tools/tools.dart';
 import '../../veilid_processor/veilid_processor.dart';
 import '../account_manager.dart';
-import 'profile_edit_form.dart';
+import 'edit_profile_form.dart';
 
 class EditAccountPage extends StatefulWidget {
   const EditAccountPage(
       {required this.superIdentityRecordKey,
-      required this.existingProfile,
+      required this.existingAccount,
       required this.accountRecord,
       super.key});
 
@@ -30,7 +28,7 @@ class EditAccountPage extends StatefulWidget {
   State createState() => _EditAccountPageState();
 
   final TypedKey superIdentityRecordKey;
-  final proto.Profile existingProfile;
+  final proto.Account existingAccount;
   final OwnedDHTRecordPointer accountRecord;
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -38,8 +36,8 @@ class EditAccountPage extends StatefulWidget {
     properties
       ..add(DiagnosticsProperty<TypedKey>(
           'superIdentityRecordKey', superIdentityRecordKey))
-      ..add(DiagnosticsProperty<proto.Profile>(
-          'existingProfile', existingProfile))
+      ..add(DiagnosticsProperty<proto.Account>(
+          'existingAccount', existingAccount))
       ..add(DiagnosticsProperty<OwnedDHTRecordPointer>(
           'accountRecord', accountRecord));
   }
@@ -52,17 +50,33 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
             orientationCapability: OrientationCapability.portraitOnly);
 
   Widget _editAccountForm(BuildContext context,
-          {required Future<void> Function(GlobalKey<FormBuilderState>)
-              onSubmit}) =>
+          {required Future<void> Function(AccountSpec) onUpdate}) =>
       EditProfileForm(
         header: translate('edit_account_page.header'),
         instructions: translate('edit_account_page.instructions'),
         submitText: translate('edit_account_page.update'),
         submitDisabledText: translate('button.waiting_for_network'),
-        onSubmit: onSubmit,
+        onUpdate: onUpdate,
         initialValueCallback: (key) => switch (key) {
-          EditProfileForm.formFieldName => widget.existingProfile.name,
-          EditProfileForm.formFieldPronouns => widget.existingProfile.pronouns,
+          EditProfileForm.formFieldName => widget.existingAccount.profile.name,
+          EditProfileForm.formFieldPronouns =>
+            widget.existingAccount.profile.pronouns,
+          EditProfileForm.formFieldAbout =>
+            widget.existingAccount.profile.about,
+          EditProfileForm.formFieldAvailability =>
+            widget.existingAccount.profile.availability,
+          EditProfileForm.formFieldFreeMessage =>
+            widget.existingAccount.freeMessage,
+          EditProfileForm.formFieldAwayMessage =>
+            widget.existingAccount.awayMessage,
+          EditProfileForm.formFieldBusyMessage =>
+            widget.existingAccount.busyMessage,
+          EditProfileForm.formFieldAvatar =>
+            widget.existingAccount.profile.avatar,
+          EditProfileForm.formFieldAutoAway =>
+            widget.existingAccount.autodetectAway,
+          EditProfileForm.formFieldAutoAwayTimeout =>
+            widget.existingAccount.autoAwayTimeoutMin.toString(),
           String() => throw UnimplementedError(),
         },
       );
@@ -200,61 +214,24 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
     }
   }
 
-  Future<void> _onSubmit(GlobalKey<FormBuilderState> formKey) async {
-    // dismiss the keyboard by unfocusing the textfield
-    FocusScope.of(context).unfocus();
-
-    try {
-      final name = formKey
-          .currentState!.fields[EditProfileForm.formFieldName]!.value as String;
-      final pronouns = formKey.currentState!
-              .fields[EditProfileForm.formFieldPronouns]!.value as String? ??
-          '';
-      final newProfile = widget.existingProfile.deepCopy()
-        ..name = name
-        ..pronouns = pronouns
-        ..timestamp = Veilid.instance.now().toInt64();
-
-      setState(() {
-        _isInAsyncCall = true;
-      });
-      try {
-        // Look up account cubit for this specific account
-        final perAccountCollectionBlocMapCubit =
-            context.read<PerAccountCollectionBlocMapCubit>();
-        final accountRecordCubit = await perAccountCollectionBlocMapCubit
-            .operate(widget.superIdentityRecordKey,
-                closure: (c) async => c.accountRecordCubit);
-        if (accountRecordCubit == null) {
-          return;
-        }
-
-        // Update account profile DHT record
-        // This triggers ConversationCubits to update
-        await accountRecordCubit.updateProfile(newProfile);
-
-        // Update local account profile
-        await AccountRepository.instance
-            .editAccountProfile(widget.superIdentityRecordKey, newProfile);
-
-        if (mounted) {
-          Navigator.canPop(context)
-              ? GoRouterHelper(context).pop()
-              : GoRouterHelper(context).go('/');
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isInAsyncCall = false;
-          });
-        }
-      }
-    } on Exception catch (e) {
-      if (mounted) {
-        await showErrorModal(
-            context, translate('edit_account_page.error'), 'Exception: $e');
-      }
+  Future<void> _onUpdate(AccountSpec accountSpec) async {
+    // Look up account cubit for this specific account
+    final perAccountCollectionBlocMapCubit =
+        context.read<PerAccountCollectionBlocMapCubit>();
+    final accountRecordCubit = await perAccountCollectionBlocMapCubit.operate(
+        widget.superIdentityRecordKey,
+        closure: (c) async => c.accountRecordCubit);
+    if (accountRecordCubit == null) {
+      return;
     }
+
+    // Update account profile DHT record
+    // This triggers ConversationCubits to update
+    accountRecordCubit.updateAccount(accountSpec, () async {
+      // Update local account profile
+      await AccountRepository.instance
+          .updateLocalAccount(widget.superIdentityRecordKey, accountSpec);
+    });
   }
 
   @override
@@ -286,7 +263,7 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
                 child: Column(children: [
               _editAccountForm(
                 context,
-                onSubmit: _onSubmit,
+                onUpdate: _onUpdate,
               ).paddingLTRB(0, 0, 0, 32),
               OptionBox(
                 instructions:

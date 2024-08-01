@@ -319,13 +319,13 @@ message Chat {
 // Pronouns - Pronouns of user
 // Icon - Little picture to represent user in contact list
 message Profile  {
-    // Friendy name
+    // Friendy name (max length 64)
     string name = 1;
-    // Pronouns of user
+    // Pronouns of user (max length 64)
     string pronouns = 2;
-    // Description of the user
+    // Description of the user (max length 1024)
     string about = 3;
-    // Status/away message
+    // Status/away message (max length 128)
     string status = 4;
     // Availability
     Availability availability = 5;
@@ -345,8 +345,8 @@ message Account {
     Profile profile = 1;
     // Invisibility makes you always look 'Offline'
     bool invisible = 2;
-    // Auto-away sets 'away' mode after an inactivity time
-    uint32 auto_away_timeout_sec = 3;
+    // Auto-away sets 'away' mode after an inactivity time (only if autodetect_away is set)
+    uint32 auto_away_timeout_min = 3;
     // The contacts DHTList for this account
     // DHT Private
     dht.OwnedDHTRecordPointer contact_list = 4;
@@ -359,6 +359,15 @@ message Account {
     // The GroupChats DHTList for this account
     // DHT Private
     dht.OwnedDHTRecordPointer group_chat_list = 7;
+    // Free message (max length 128)
+    string free_message = 8;
+    // Busy message (max length 128)
+    string busy_message = 9;
+    // Away message (max length 128)
+    string away_message = 10;
+    // Auto-detect away
+    bool autodetect_away = 11;
+
 }
 
 // A record of a contact that has accepted a contact invitation

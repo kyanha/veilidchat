@@ -12,15 +12,15 @@ class StyledScaffold extends StatelessWidget {
     final scale = theme.extension<ScaleScheme>()!;
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
-    final scaffold = isDesktop
-        ? clipBorder(
-                clipEnabled: true,
-                borderEnabled: scaleConfig.useVisualIndicators,
-                borderRadius: 16 * scaleConfig.borderRadiusScale,
-                borderColor: scale.primaryScale.border,
-                child: Scaffold(appBar: appBar, body: body, key: key))
-            .paddingAll(32)
-        : Scaffold(appBar: appBar, body: body, key: key);
+    final enableBorder = !isMobileWidth(context);
+
+    final scaffold = clipBorder(
+            clipEnabled: enableBorder,
+            borderEnabled: scaleConfig.useVisualIndicators,
+            borderRadius: 16 * scaleConfig.borderRadiusScale,
+            borderColor: scale.primaryScale.border,
+            child: Scaffold(appBar: appBar, body: body, key: key))
+        .paddingAll(enableBorder ? 32 : 0);
 
     return GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),

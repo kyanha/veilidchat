@@ -37,8 +37,7 @@ class CreateInvitationDialog extends StatefulWidget {
 }
 
 class CreateInvitationDialogState extends State<CreateInvitationDialog> {
-  final _messageTextController = TextEditingController(
-      text: translate('create_invitation_dialog.connect_with_me'));
+  late final TextEditingController _messageTextController;
 
   EncryptionKeyType _encryptionKeyType = EncryptionKeyType.none;
   String _encryptionKey = '';
@@ -46,6 +45,12 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
 
   @override
   void initState() {
+    final accountInfo = widget.locator<AccountRecordCubit>().state;
+    final name = accountInfo.asData?.value.profile.name ??
+        translate('create_invitation_dialog.me');
+    _messageTextController = TextEditingController(
+        text: translate('create_invitation_dialog.connect_with_me',
+            args: {'name': name}));
     super.initState();
   }
 
@@ -152,13 +157,13 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
         message: _messageTextController.text,
         expiration: _expiration);
 
+    navigator.pop();
+
     await ContactInvitationDisplayDialog.show(
         context: context,
         locator: widget.locator,
         message: _messageTextController.text,
         create: (context) => InvitationGeneratorCubit(generator));
-
-    navigator.pop();
   }
 
   @override
@@ -198,34 +203,37 @@ class CreateInvitationDialogState extends State<CreateInvitationDialog> {
             Text(translate('create_invitation_dialog.protect_this_invitation'),
                     style: textTheme.labelLarge)
                 .paddingAll(8),
-            Wrap(spacing: 5, children: [
-              ChoiceChip(
-                label: Text(translate('create_invitation_dialog.unlocked')),
-                selected: _encryptionKeyType == EncryptionKeyType.none,
-                onSelected: _onNoneEncryptionSelected,
-              ),
-              ChoiceChip(
-                label: Text(translate('create_invitation_dialog.pin')),
-                selected: _encryptionKeyType == EncryptionKeyType.pin,
-                onSelected: _onPinEncryptionSelected,
-              ),
-              ChoiceChip(
-                label: Text(translate('create_invitation_dialog.password')),
-                selected: _encryptionKeyType == EncryptionKeyType.password,
-                onSelected: _onPasswordEncryptionSelected,
-              )
-            ]).paddingAll(8),
+            Wrap(
+                alignment: WrapAlignment.center,
+                runAlignment: WrapAlignment.center,
+                runSpacing: 8,
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: Text(translate('create_invitation_dialog.unlocked')),
+                    selected: _encryptionKeyType == EncryptionKeyType.none,
+                    onSelected: _onNoneEncryptionSelected,
+                  ),
+                  ChoiceChip(
+                    label: Text(translate('create_invitation_dialog.pin')),
+                    selected: _encryptionKeyType == EncryptionKeyType.pin,
+                    onSelected: _onPinEncryptionSelected,
+                  ),
+                  ChoiceChip(
+                    label: Text(translate('create_invitation_dialog.password')),
+                    selected: _encryptionKeyType == EncryptionKeyType.password,
+                    onSelected: _onPasswordEncryptionSelected,
+                  )
+                ]).paddingAll(8).toCenter(),
             Container(
-              width: double.infinity,
-              height: 60,
               padding: const EdgeInsets.all(8),
               child: ElevatedButton(
                 onPressed: _onGenerateButtonPressed,
                 child: Text(
                   translate('create_invitation_dialog.generate'),
-                ),
+                ).paddingAll(16),
               ),
-            ),
+            ).toCenter(),
             Text(translate('create_invitation_dialog.note')).paddingAll(8),
             Text(
               translate('create_invitation_dialog.note_text'),

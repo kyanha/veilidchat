@@ -52,7 +52,11 @@ Widget buildSettingsPageNotificationPreferences(
       out.add(DropdownMenuItem(
           value: x.$1,
           enabled: x.$2,
-          child: Text(x.$3, style: textTheme.labelSmall)));
+          child: Text(
+            x.$3,
+            style: textTheme.labelSmall,
+            textAlign: TextAlign.center,
+          )));
     }
     return out;
   }
@@ -71,7 +75,11 @@ Widget buildSettingsPageNotificationPreferences(
       out.add(DropdownMenuItem(
           value: x.$1,
           enabled: x.$2,
-          child: Text(x.$3, style: textTheme.labelSmall)));
+          child: Text(
+            x.$3,
+            style: textTheme.labelSmall,
+            textAlign: TextAlign.center,
+          )));
     }
     return out;
   }
@@ -100,17 +108,23 @@ Widget buildSettingsPageNotificationPreferences(
       out.add(DropdownMenuItem(
           value: x.$1,
           enabled: x.$2,
-          child: Text(x.$3, style: textTheme.labelSmall)));
+          child: Text(
+            x.$3,
+            style: textTheme.labelSmall,
+            textAlign: TextAlign.center,
+          )));
     }
     return out;
   }
 
-  return DecoratedBox(
-    decoration: ShapeDecoration(
-        shape: RoundedRectangleBorder(
-            side: BorderSide(width: 2, color: scale.primaryScale.border),
-            borderRadius:
-                BorderRadius.circular(8 * scaleConfig.borderRadiusScale))),
+  return InputDecorator(
+    decoration: InputDecoration(
+      labelText: translate('settings_page.notifications'),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8 * scaleConfig.borderRadiusScale),
+        borderSide: BorderSide(width: 2, color: scale.primaryScale.border),
+      ),
+    ),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       // Display Beta Warning
       FormBuilderCheckbox(
@@ -175,12 +189,35 @@ Widget buildSettingsPageNotificationPreferences(
           await updatePreferences(newNotificationsPreference);
         },
         items: messageNotificationContentItems(),
-      ).paddingAll(8),
+      ).paddingLTRB(0, 4, 0, 4),
 
       // Notifications
       Table(
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           children: [
+            TableRow(children: [
+              Text(translate('settings_page.event'),
+                      textAlign: TextAlign.center,
+                      style: textTheme.titleMedium!.copyWith(
+                          color: scale.primaryScale.border,
+                          decorationColor: scale.primaryScale.border,
+                          decoration: TextDecoration.underline))
+                  .paddingAll(8),
+              Text(translate('settings_page.delivery'),
+                      textAlign: TextAlign.center,
+                      style: textTheme.titleMedium!.copyWith(
+                          color: scale.primaryScale.border,
+                          decorationColor: scale.primaryScale.border,
+                          decoration: TextDecoration.underline))
+                  .paddingAll(8),
+              Text(translate('settings_page.sound'),
+                      textAlign: TextAlign.center,
+                      style: textTheme.titleMedium!.copyWith(
+                          color: scale.primaryScale.border,
+                          decorationColor: scale.primaryScale.border,
+                          decoration: TextDecoration.underline))
+                  .paddingAll(8),
+            ]),
             TableRow(children: [
               // Invitation accepted
               Text(
@@ -216,7 +253,7 @@ Widget buildSettingsPageNotificationPreferences(
                   await updatePreferences(newNotificationsPreference);
                 },
                 items: soundEffectItems(),
-              ).paddingAll(4)
+              ).paddingLTRB(4, 4, 0, 4)
             ]),
             // Message received
             TableRow(children: [
@@ -253,7 +290,7 @@ Widget buildSettingsPageNotificationPreferences(
                   await updatePreferences(newNotificationsPreference);
                 },
                 items: soundEffectItems(),
-              ).paddingAll(4)
+              ).paddingLTRB(4, 4, 0, 4)
             ]),
 
             // Message sent
@@ -277,9 +314,9 @@ Widget buildSettingsPageNotificationPreferences(
                   await updatePreferences(newNotificationsPreference);
                 },
                 items: soundEffectItems(),
-              ).paddingAll(4)
+              ).paddingLTRB(4, 4, 0, 4)
             ]),
-          ]).paddingAll(8)
+          ])
     ]).paddingAll(8),
   );
 }

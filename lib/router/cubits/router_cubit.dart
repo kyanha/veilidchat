@@ -72,7 +72,7 @@ class RouterCubit extends Cubit<RouterState> {
                   final extra = state.extra! as List<Object?>;
                   return EditAccountPage(
                     superIdentityRecordKey: extra[0]! as TypedKey,
-                    existingProfile: extra[1]! as proto.Profile,
+                    existingAccount: extra[1]! as proto.Account,
                     accountRecord: extra[2]! as OwnedDHTRecordPointer,
                   );
                 },

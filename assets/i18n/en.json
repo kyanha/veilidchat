@@ -3,7 +3,9 @@
         "title": "VeilidChat"
     },
     "menu": {
-        "settings_tooltip": "Settings",
+        "accounts_menu_tooltip": "Accounts Menu",
+        "contacts_tooltip": "Contacts List",
+        "new_chat_tooltip": "Start New Chat",
         "add_account_tooltip": "Add Account",
         "accounts": "Accounts",
         "version": "Version"
@@ -12,13 +14,23 @@
         "beta_title": "VeilidChat is BETA SOFTWARE",
         "beta_text": "DO NOT USE THIS FOR ANYTHING IMPORTANT\n\nUntil 1.0 is released:\n\n• You should have no expectations of actual privacy, or guarantees of security.\n• You will likely lose accounts, contacts, and messages and need to recreate them.\n\nPlease read our BETA PARTICIPATION GUIDE located here:\n\n"
     },
-    "pager": {
-        "chats": "Chats",
-        "contacts": "Contacts"
-    },
     "account": {
         "form_name": "Name",
-        "form_pronouns": "Pronouns (optional)",
+        "empty_name": "Your name (required)",
+        "form_pronouns": "Pronouns",
+        "empty_pronouns": "(optional pronouns)",
+        "form_about": "About Me",
+        "empty_about": "Tell your contacts about yourself",
+        "form_free_message": "Free Message",
+        "empty_free_message": "Status when availability is 'Free'",
+        "form_away_message": "Away Message",
+        "empty_away_message": "Status when availability is 'Away'",
+        "form_busy_message": "Busy Message",
+        "empty_busy_message": "Status when availability is 'Busy'",
+        "form_availability": "Availability",
+        "form_avatar": "Avatar",
+        "form_auto_away": "Automatic 'away' detection",
+        "form_auto_away_timeout": "Auto-away timeout (in minutes)",
         "form_lock_type": "Lock Type",
         "lock_type_none": "none",
         "lock_type_pin": "pin",
@@ -30,6 +42,7 @@
         "create": "Create",
         "instructions": "This information will be shared with the people you invite to connect with you on VeilidChat.",
         "error": "Account creation error",
+        "network_is_offline": "Network is offline, try again when you're connected",
         "name": "Name",
         "pronouns": "Pronouns"
     },
@@ -101,16 +114,46 @@
         "invalid_account_title": "Invalid Account",
         "invalid_account_text": "Account is invalid, removing from list"
     },
-    "contacts_page": {
+    "contacts_dialog": {
         "contacts": "Contacts",
+        "edit_contact": "Edit Contact",
         "invitations": "Invitations",
+        "no_contact_selected": "No contact selected",
+        "new_chat": "New Chat"
+    },
+    "contact_list": {
+        "contacts": "Contacts",
+        "invite_people": "Invite people to VeilidChat",
+        "search": "Search contacts",
+        "invitation": "Invitation",
         "loading_contacts": "Loading contacts..."
+    },
+    "contact_form": {
+        "form_name": "Name",
+        "form_pronouns": "Pronouns",
+        "form_about": "About",
+        "form_status": "Current Status",
+        "form_nickname": "Nickname",
+        "form_notes": "Notes",
+        "form_fingerprint": "Fingerprint",
+        "form_show_availability": "Show availability",
+        "save": "Save",
+        "save_disabled": "Save"
+    },
+    "availability": {
+        "unspecified": "Unspecified",
+        "offline": "Offline",
+        "always_show_offline": "Always Show Offline",
+        "free": "Free",
+        "busy": "Busy",
+        "away": "Away"
     },
     "add_contact_sheet": {
         "new_contact": "New Contact",
-        "create_invite": "Create Invitation",
-        "scan_invite": "Scan Invitation",
-        "paste_invite": "Paste Invitation"
+        "create_invite": "Create\nInvitation",
+        "receive_invite": "Receive\nInvitation",
+        "scan_invite": "Scan\nInvitation",
+        "paste_invite": "Paste\nInvitation"
     },
     "add_chat_sheet": {
         "new_chat": "New Chat"
@@ -122,7 +165,9 @@
     },
     "create_invitation_dialog": {
         "title": "Create Contact Invitation",
-        "connect_with_me": "Connect with me on VeilidChat!",
+        "me": "me",
+        "fingerprint": "Fingerprint:",
+        "connect_with_me": "Connect with {name} on VeilidChat!",
         "enter_message_hint": "Enter message for contact (optional)",
         "message_to_contact": "Message to send with invitation (not encrypted)",
         "generate": "Generate Invitation",
@@ -148,6 +193,7 @@
         "failed_to_reject": "Failed to reject contact invitation",
         "invalid_invitation": "Invalid invitation",
         "try_again_online": "Invitation could not be reached, try again when online",
+        "key_not_found": "Invitation could not be found, it may not be on the network yet",
         "protected_with_pin": "Contact invitation is protected with a PIN",
         "protected_with_password": "Contact invitation is protected with a password",
         "invalid_pin": "Invalid PIN",
@@ -155,7 +201,7 @@
     },
     "waiting_invitation": {
         "accepted": "Contact invitation accepted from {name}",
-        "reject": "Contact invitation was rejected"
+        "rejected": "Contact invitation was rejected"
     },
     "paste_invitation_dialog": {
         "title": "Paste Contact Invite",
@@ -184,11 +230,6 @@
         "enter_password": "Enter Password",
         "reenter_password": "Re-Enter Password To Confirm",
         "password_does_not_match": "Password does not match"
-    },
-    "contact_list": {
-        "invite_people": "Invite people to VeilidChat",
-        "search": "Search contacts",
-        "invitation": "Invitation"
     },
     "chat_list": {
         "search": "Search chats",
@@ -225,6 +266,10 @@
         "in_app": "In-app",
         "push": "Push",
         "in_app_or_push": "In-app or Push",
+        "notifications": "Notifications",
+        "event": "Event",
+        "sound": "Sound",
+        "delivery": "Delivery",
         "enable_badge": "Enable icon 'badge' bubble",
         "enable_notifications": "Enable notifications",
         "message_notification_content": "Message notification content",
