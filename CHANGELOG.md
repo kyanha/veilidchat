@@ -1,3 +1,7 @@
+## v0.4.1 ##
+- Fix creating new accounts
+- Switch to non-bounce scroll physics because a lot of views want 'stick to bottom' scroll behavior
+
 ## v0.4.0 ##
 - Long conversation support
 - Account and consistency update
