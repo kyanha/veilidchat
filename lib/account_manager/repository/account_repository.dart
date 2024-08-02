@@ -281,15 +281,33 @@ class AccountRepository {
                   parent: parent))
               .scope((r) async => r.recordPointer);
 
+          final groupChatRecords = await (await DHTShortArray.create(
+                  debugName: 'AccountRepository::_newLocalAccount::GroupChats',
+                  parent: parent))
+              .scope((r) async => r.recordPointer);
+
           // Make account object
+          final profile = proto.Profile()
+            ..name = accountSpec.name
+            ..pronouns = accountSpec.pronouns
+            ..about = accountSpec.about
+            ..status = accountSpec.status
+            ..availability = accountSpec.availability
+            ..timestamp = Veilid.instance.now().toInt64();
+
           final account = proto.Account()
-            ..profile.name = accountSpec.name
-            ..profile.pronouns = accountSpec.pronouns
-            ..profile.about = accountSpec.about
-            ..profile.status = accountSpec.status
+            ..profile = profile
+            ..invisible = accountSpec.invisible
+            ..autoAwayTimeoutMin = accountSpec.autoAwayTimeout
             ..contactList = contactList.toProto()
             ..contactInvitationRecords = contactInvitationRecords.toProto()
-            ..chatList = chatRecords.toProto();
+            ..chatList = chatRecords.toProto()
+            ..groupChatList = groupChatRecords.toProto()
+            ..freeMessage = accountSpec.freeMessage
+            ..awayMessage = accountSpec.awayMessage
+            ..busyMessage = accountSpec.busyMessage
+            ..autodetectAway = accountSpec.autoAway;
+
           return account.writeToBuffer();
         });
 

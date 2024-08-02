@@ -30,6 +30,13 @@ class AttachDetachIntent extends Intent {
   const AttachDetachIntent();
 }
 
+class ScrollBehaviorModified extends ScrollBehavior {
+  const ScrollBehaviorModified();
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const ClampingScrollPhysics();
+}
+
 class VeilidChatApp extends StatelessWidget {
   const VeilidChatApp({
     required this.initialThemeData,
@@ -159,6 +166,7 @@ class VeilidChatApp extends StatelessWidget {
                   return DecoratedBox(
                       decoration: BoxDecoration(gradient: gradient),
                       child: MaterialApp.router(
+                        scrollBehavior: const ScrollBehaviorModified(),
                         debugShowCheckedModeBanner: false,
                         routerConfig: context.read<RouterCubit>().router(),
                         title: translate('app.title'),
