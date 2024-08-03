@@ -209,7 +209,7 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
       return;
     }
     serialFuture((this, _sfUpdateAccountChange), () async {
-      await cubit.record.eventualUpdateProtobuf(proto.Conversation.fromBuffer,
+      await cubit.record?.eventualUpdateProtobuf(proto.Conversation.fromBuffer,
           (old) async {
         if (old == null || old.profile == account.profile) {
           return null;

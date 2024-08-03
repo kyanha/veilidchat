@@ -39,7 +39,7 @@ class AvatarWidget extends StatelessWidget {
         width: _size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: _scaleConfig.preferBorders
+          border: _scaleConfig.useVisualIndicators
               ? Border.all(
                   color: _borderColor,
                   width: 1 * (_size ~/ 32 + 1),

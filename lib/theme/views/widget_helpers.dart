@@ -116,7 +116,7 @@ Widget buildProgressIndicator() => Builder(builder: (context) {
       return FittedBox(
           fit: BoxFit.scaleDown,
           child: SpinKitFoldingCube(
-            color: scale.tertiaryScale.primary,
+            color: scale.tertiaryScale.border,
             size: 80,
           ));
     });

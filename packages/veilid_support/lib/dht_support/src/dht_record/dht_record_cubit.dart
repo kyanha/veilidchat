@@ -26,7 +26,7 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
         // Do record open/create
         while (!cancel.isCompleted) {
           try {
-            _record = await open();
+            record = await open();
             _wantsCloseRecord = true;
             break;
           } on DHTExceptionNotAvailable {
@@ -49,7 +49,7 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
   ) async {
     // Make initial state update
     try {
-      final initialState = await initialStateFunction(_record);
+      final initialState = await initialStateFunction(record!);
       if (initialState != null) {
         emit(AsyncValue.data(initialState));
       }
@@ -57,7 +57,7 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       emit(AsyncValue.error(e));
     }
 
-    _subscription = await _record.listen((record, data, subkeys) async {
+    _subscription = await record!.listen((record, data, subkeys) async {
       try {
         final newState = await stateFunction(record, subkeys, data);
         if (newState != null) {
@@ -68,17 +68,17 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       }
     });
 
-    await watchFunction(_record);
+    await watchFunction(record!);
   }
 
   @override
   Future<void> close() async {
     await initWait(cancelValue: true);
-    await _record.cancelWatch();
+    await record?.cancelWatch();
     await _subscription?.cancel();
     _subscription = null;
     if (_wantsCloseRecord) {
-      await _record.close();
+      await record?.close();
       _wantsCloseRecord = false;
     }
     await super.close();
@@ -91,10 +91,10 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
 
     for (final skr in subkeys) {
       for (var sk = skr.low; sk <= skr.high; sk++) {
-        final data = await _record.get(
-            subkey: sk, refreshMode: DHTRecordRefreshMode.update);
+        final data = await record!
+            .get(subkey: sk, refreshMode: DHTRecordRefreshMode.update);
         if (data != null) {
-          final newState = await _stateFunction(_record, updateSubkeys, data);
+          final newState = await _stateFunction(record!, updateSubkeys, data);
           if (newState != null) {
             // Emit the new state
             emit(AsyncValue.data(newState));
@@ -108,13 +108,13 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
     }
   }
 
-  DHTRecord get record => _record;
+  // DHTRecord get record => _record;
 
   @protected
   final WaitSet<void, bool> initWait = WaitSet();
 
   StreamSubscription<DHTRecordWatchChange>? _subscription;
-  late DHTRecord _record;
+  DHTRecord? record;
   bool _wantsCloseRecord;
   final StateFunction<T> _stateFunction;
 }

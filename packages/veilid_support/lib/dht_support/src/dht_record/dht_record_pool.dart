@@ -849,7 +849,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
         openedRecordInfo.shared.needsWatchStateUpdate = false;
       }
     } on VeilidAPIException catch (e) {
-      // Failed to cancel DHT watch, try again next tick
+      // Failed to update DHT watch, try again next tick
       log('Exception in watch update: $e');
     }
   }

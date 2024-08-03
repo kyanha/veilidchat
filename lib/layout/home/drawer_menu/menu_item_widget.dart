@@ -80,7 +80,7 @@ class MenuItemWidget extends StatelessWidget {
                   ),
                   onPressed: footerCallback),
           ],
-        ),
+        ).paddingAll(2),
       );
 
   @override

@@ -41,7 +41,7 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
 
   @override
   Future<void> close() async {
-    await _singleInvitationStatusProcessor.unfollow();
+    await _singleInvitationStatusProcessor.close();
     await super.close();
   }
 
