@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:sliver_expandable/sliver_expandable.dart';
 
 import '../theme.dart';
@@ -194,19 +193,6 @@ class AsyncBlocBuilder<B extends StateStreamable<AsyncValue<S>>, S>
                 loading: () => (loading ?? waitingPage)(),
                 error: (e, st) => (error ?? errorPage)(e, st),
                 data: (d) => builder(context, d)));
-}
-
-Future<void> showErrorModal(
-    BuildContext context, String title, String text) async {
-  await QuickAlert.show(
-    context: context,
-    type: QuickAlertType.error,
-    title: title,
-    text: text,
-    //backgroundColor: Colors.black,
-    //titleColor: Colors.white,
-    //textColor: Colors.white,
-  );
 }
 
 SliverAppBar styledSliverAppBar(

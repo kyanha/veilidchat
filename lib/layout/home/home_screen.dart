@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:provider/provider.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:transitioned_indexed_stack/transitioned_indexed_stack.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:veilid_support/veilid_support.dart';
@@ -63,25 +62,26 @@ class HomeScreenState extends State<HomeScreen>
 
   Future<void> _doBetaDialog(BuildContext context) async {
     var displayBetaWarning = true;
+    final theme = Theme.of(context);
+    final scale = theme.extension<ScaleScheme>()!;
 
-    await QuickAlert.show(
+    await showWarningWidgetModal(
       context: context,
       title: translate('splash.beta_title'),
-      widget: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         RichText(
           textAlign: TextAlign.center,
           text: TextSpan(
             children: <TextSpan>[
               TextSpan(
                 text: translate('splash.beta_text'),
-                style: const TextStyle(
-                  color: Colors.black87,
-                ),
+                style: theme.textTheme.bodyMedium!
+                    .copyWith(color: scale.primaryScale.appText),
               ),
               TextSpan(
                 text: 'https://veilid.com/chat/beta',
-                style: const TextStyle(
-                  color: Colors.blue,
+                style: theme.textTheme.bodyMedium!.copyWith(
+                  color: scale.primaryScale.primary,
                   decoration: TextDecoration.underline,
                 ),
                 recognizer: TapGestureRecognizer()
@@ -101,11 +101,13 @@ class HomeScreenState extends State<HomeScreen>
                       });
                     },
                   )),
-          Text(translate('settings_page.display_beta_warning'),
-              style: const TextStyle(color: Colors.black)),
+          Text(
+            translate('settings_page.display_beta_warning'),
+            style: theme.textTheme.bodyMedium!
+                .copyWith(color: scale.primaryScale.appText),
+          ),
         ]),
       ]),
-      type: QuickAlertType.warning,
     );
 
     final preferencesInstance = PreferencesRepository.instance;

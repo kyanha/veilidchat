@@ -94,6 +94,7 @@
         "waiting_for_network": "Waiting For Network"
     },
     "toast": {
+        "confirm": "Confirm",
         "error": "Error",
         "info": "Info"
     },

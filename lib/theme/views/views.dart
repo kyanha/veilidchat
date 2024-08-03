@@ -8,6 +8,7 @@ export 'pop_control.dart';
 export 'recovery_key_widget.dart';
 export 'responsive.dart';
 export 'scanner_error_widget.dart';
+export 'styled_alert.dart';
 export 'styled_dialog.dart';
 export 'styled_scaffold.dart';
 export 'widget_helpers.dart';

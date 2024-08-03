@@ -137,10 +137,10 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
             });
           }
         }
-      } on Exception catch (e) {
+      } on Exception catch (e, st) {
         if (mounted) {
-          await showErrorModal(
-              context, translate('new_account_page.error'), 'Exception: $e');
+          await showErrorStacktraceModal(
+              context: context, error: e, stackTrace: st);
         }
       }
     }
@@ -205,10 +205,10 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
             });
           }
         }
-      } on Exception catch (e) {
+      } on Exception catch (e, st) {
         if (mounted) {
-          await showErrorModal(
-              context, translate('new_account_page.error'), 'Exception: $e');
+          await showErrorStacktraceModal(
+              context: context, error: e, stackTrace: st);
         }
       }
     }

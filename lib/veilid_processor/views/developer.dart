@@ -12,7 +12,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loggy/loggy.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:veilid_support/veilid_support.dart';
 import 'package:xterm/xterm.dart';
 
@@ -208,27 +207,14 @@ class _DeveloperPageState extends State<DeveloperPage> {
                 color: scale.primaryScale.primaryText,
                 disabledColor: scale.primaryScale.primaryText.withAlpha(0x3F),
                 onPressed: () async {
-                  await QuickAlert.show(
-                      context: context,
-                      type: QuickAlertType.confirm,
-                      title: translate('developer.are_you_sure_clear'),
-                      titleColor: scale.primaryScale.appText,
-                      textColor: scale.primaryScale.subtleText,
-                      confirmBtnColor: scale.primaryScale.primary,
-                      cancelBtnTextStyle: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                          color: scale.primaryScale.appText),
-                      backgroundColor: scale.primaryScale.appBackground,
-                      headerBackgroundColor: scale.primaryScale.primary,
-                      confirmBtnText: translate('button.ok'),
-                      cancelBtnText: translate('button.cancel'),
-                      onConfirmBtnTap: () async {
-                        Navigator.pop(context);
-                        if (context.mounted) {
-                          await clear(context);
-                        }
-                      });
+                  final confirm = await showConfirmModal(
+                    context: context,
+                    title: translate('toast.confirm'),
+                    text: translate('developer.are_you_sure_clear'),
+                  );
+                  if (confirm && context.mounted) {
+                    await clear(context);
+                  }
                 }),
             CoolDropdown<LogLevel>(
               controller: _logLevelController,

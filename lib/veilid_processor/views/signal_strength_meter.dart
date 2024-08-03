@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quickalert/quickalert.dart';
 import 'package:signal_strength_indicator/signal_strength_indicator.dart';
 import 'package:veilid_support/veilid_support.dart';
 
@@ -75,11 +74,8 @@ class SignalStrengthMeterWidget extends StatelessWidget {
           loading: () => {iconWidget = const Icon(Icons.warning)},
           error: (e, st) => {
                 iconWidget = const Icon(Icons.error).onTap(
-                  () async => QuickAlert.show(
-                      type: QuickAlertType.error,
-                      context: context,
-                      title: 'Error',
-                      text: 'Error: {e}\n StackTrace: {st}'),
+                  () async => showErrorStacktraceModal(
+                      context: context, error: e, stackTrace: st),
                 )
               });
 

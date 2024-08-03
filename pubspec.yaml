@@ -76,9 +76,9 @@ dependencies:
   provider: ^6.1.2
   qr_code_dart_scan: ^0.8.0
   qr_flutter: ^4.1.0
-  quickalert: ^1.1.0
   radix_colors: ^1.0.4
   reorderable_grid: ^1.0.10
+  rflutter_alert: ^2.0.7
   screenshot: ^3.0.0
   scroll_to_index: ^3.0.1
   searchable_listview:
