@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:sliver_expandable/sliver_expandable.dart';
 
 import '../theme.dart';
@@ -121,7 +122,8 @@ Widget buildProgressIndicator() => Builder(builder: (context) {
           ));
     });
 
-Widget waitingPage({String? text}) => Builder(builder: (context) {
+Widget waitingPage({String? text, void Function()? onCancel}) =>
+    Builder(builder: (context) {
       final theme = Theme.of(context);
       final scale = theme.extension<ScaleScheme>()!;
       return ColoredBox(
@@ -130,12 +132,20 @@ Widget waitingPage({String? text}) => Builder(builder: (context) {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                buildProgressIndicator(),
+                buildProgressIndicator().paddingAll(24),
                 if (text != null)
                   Text(text,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall!
-                          .copyWith(color: scale.tertiaryScale.appText))
+                          .copyWith(color: scale.tertiaryScale.appText)),
+                if (onCancel != null)
+                  ElevatedButton(
+                          onPressed: onCancel,
+                          child: Text(translate('button.cancel'),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall!.copyWith(
+                                  color: scale.tertiaryScale.appText)))
+                      .alignAtCenter(),
               ]));
     });
 

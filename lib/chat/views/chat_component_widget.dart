@@ -20,9 +20,14 @@ import '../chat.dart';
 const onEndReachedThreshold = 0.75;
 
 class ChatComponentWidget extends StatelessWidget {
-  const ChatComponentWidget(
-      {required super.key, required TypedKey localConversationRecordKey})
-      : _localConversationRecordKey = localConversationRecordKey;
+  const ChatComponentWidget({
+    required super.key,
+    required TypedKey localConversationRecordKey,
+    required void Function() onCancel,
+    required void Function() onClose,
+  })  : _localConversationRecordKey = localConversationRecordKey,
+        _onCancel = onCancel,
+        _onClose = onClose;
 
   /////////////////////////////////////////////////////////////////////
 
@@ -48,7 +53,7 @@ class ChatComponentWidget extends StatelessWidget {
             (x) => x.tryOperateSync(_localConversationRecordKey,
                 closure: (cubit) => cubit));
     if (activeConversationCubit == null) {
-      return waitingPage();
+      return waitingPage(onCancel: _onCancel);
     }
 
     // Get the messages cubit
@@ -57,7 +62,7 @@ class ChatComponentWidget extends StatelessWidget {
         (x) => x.tryOperateSync(_localConversationRecordKey,
             closure: (cubit) => cubit));
     if (messagesCubit == null) {
-      return waitingPage();
+      return waitingPage(onCancel: _onCancel);
     }
 
     // Make chat component state
@@ -97,7 +102,7 @@ class ChatComponentWidget extends StatelessWidget {
 
     final localUser = chatComponentState.localUser;
     if (localUser == null) {
-      return waitingPage();
+      return const EmptyChatWidget();
     }
 
     final messageWindow = chatComponentState.messageWindow.asData?.value;
@@ -135,10 +140,10 @@ class ChatComponentWidget extends StatelessWidget {
                 )),
             const Spacer(),
             IconButton(
-                icon: Icon(Icons.close, color: scale.primaryScale.borderText),
-                onPressed: () async {
-                  context.read<ActiveChatCubit>().setActiveChat(null);
-                }).paddingLTRB(16, 0, 16, 0)
+                    icon:
+                        Icon(Icons.close, color: scale.primaryScale.borderText),
+                    onPressed: _onClose)
+                .paddingLTRB(16, 0, 16, 0)
           ]),
         ),
         DecoratedBox(
@@ -339,4 +344,6 @@ class ChatComponentWidget extends StatelessWidget {
 
   ////////////////////////////////////////////////////////////////////////////
   final TypedKey _localConversationRecordKey;
+  final void Function() _onCancel;
+  final void Function() _onClose;
 }

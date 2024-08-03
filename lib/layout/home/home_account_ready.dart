@@ -122,13 +122,19 @@ class _HomeAccountReadyState extends State<HomeAccountReady> {
           Material(color: Colors.transparent, child: buildUserPanel()));
 
   Widget buildRightPane(BuildContext context) {
-    final activeChatLocalConversationKey =
-        context.watch<ActiveChatCubit>().state;
+    final activeChatCubit = context.watch<ActiveChatCubit>();
+    final activeChatLocalConversationKey = activeChatCubit.state;
     if (activeChatLocalConversationKey == null) {
       return const NoConversationWidget();
     }
     return ChatComponentWidget(
         localConversationRecordKey: activeChatLocalConversationKey,
+        onCancel: () {
+          activeChatCubit.setActiveChat(null);
+        },
+        onClose: () {
+          activeChatCubit.setActiveChat(null);
+        },
         key: ValueKey(activeChatLocalConversationKey));
   }
 
