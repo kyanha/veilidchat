@@ -252,7 +252,7 @@ class ContactInvitationListCubit
             .openRecordRead(contactRequestInboxKey,
                 debugName: 'ContactInvitationListCubit::validateInvitation::'
                     'ContactRequestInbox',
-                parent: pool.getParentRecordKey(contactRequestInboxKey) ??
+                parent: await pool.getParentRecordKey(contactRequestInboxKey) ??
                     _accountInfo.accountRecordKey)
             .withCancel(cancelRequest))
         .maybeDeleteScope(!isSelf, (contactRequestInbox) async {

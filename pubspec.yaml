@@ -14,12 +14,12 @@ dependencies:
   animated_theme_switcher: ^2.0.10
   ansicolor: ^2.0.2
   archive: ^3.6.1
-  async_tools: ^0.1.5
+  async_tools: ^0.1.6
   awesome_extensions: ^2.0.16
   badges: ^3.1.2
   basic_utils: ^5.7.0
   bloc: ^8.1.4
-  bloc_advanced_tools: ^0.1.6
+  bloc_advanced_tools: ^0.1.7
   blurry_modal_progress_hud: ^1.1.1
   change_case: ^2.1.0
   charcode: ^1.3.1
@@ -114,8 +114,8 @@ dependencies:
 # dependency_overrides:
 #   async_tools: 
 #     path: ../dart_async_tools
-#  bloc_advanced_tools: 
-#    path: ../bloc_advanced_tools
+#   bloc_advanced_tools: 
+#     path: ../bloc_advanced_tools
 #   searchable_listview:
 #     path: ../Searchable-Listview
 #   flutter_chat_ui:

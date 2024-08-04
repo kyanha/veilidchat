@@ -24,13 +24,13 @@ class PerAccountCollectionBlocMapCubit extends BlocMapCubit<TypedKey,
   // Add account record cubit
   Future<void> _addPerAccountCollectionCubit(
           {required TypedKey superIdentityRecordKey}) async =>
-      add(() => MapEntry(
+      add(
           superIdentityRecordKey,
-          PerAccountCollectionCubit(
+          () async => PerAccountCollectionCubit(
               locator: _locator,
               accountInfoCubit: AccountInfoCubit(
                   accountRepository: _accountRepository,
-                  superIdentityRecordKey: superIdentityRecordKey))));
+                  superIdentityRecordKey: superIdentityRecordKey)));
 
   /// StateFollower /////////////////////////
 

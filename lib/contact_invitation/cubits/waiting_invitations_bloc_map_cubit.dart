@@ -48,15 +48,15 @@ class WaitingInvitationsBlocMapCubit extends BlocMapCubit<TypedKey,
   Future<void> _addWaitingInvitation(
           {required proto.ContactInvitationRecord
               contactInvitationRecord}) async =>
-      add(() => MapEntry(
+      add(
           contactInvitationRecord.contactRequestInbox.recordKey.toVeilid(),
-          WaitingInvitationCubit(
+          () async => WaitingInvitationCubit(
               ContactRequestInboxCubit(
                   accountInfo: _accountInfo,
                   contactInvitationRecord: contactInvitationRecord),
               accountInfo: _accountInfo,
               accountRecordCubit: _accountRecordCubit,
-              contactInvitationRecord: contactInvitationRecord)));
+              contactInvitationRecord: contactInvitationRecord));
 
   // Process all accepted or rejected invitations
   Future<void> _invitationStatusListener(

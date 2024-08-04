@@ -73,8 +73,9 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
 
           final record = await pool.openRecordRead(_remoteConversationRecordKey,
               debugName: 'ConversationCubit::RemoteConversation',
-              parent: pool.getParentRecordKey(_remoteConversationRecordKey) ??
-                  accountInfo.accountRecordKey,
+              parent:
+                  await pool.getParentRecordKey(_remoteConversationRecordKey) ??
+                      accountInfo.accountRecordKey,
               crypto: crypto);
 
           return record;

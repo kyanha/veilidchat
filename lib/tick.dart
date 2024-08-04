@@ -28,11 +28,7 @@ class BackgroundTickerState extends State<BackgroundTicker> {
 
   @override
   void dispose() {
-    final tickTimer = _tickTimer;
-    if (tickTimer != null) {
-      tickTimer.cancel();
-    }
-
+    _tickTimer?.cancel();
     super.dispose();
   }
 

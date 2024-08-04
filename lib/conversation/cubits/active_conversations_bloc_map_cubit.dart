@@ -78,7 +78,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
           {required TypedKey remoteIdentityPublicKey,
           required TypedKey localConversationRecordKey,
           required TypedKey remoteConversationRecordKey}) async =>
-      add(() {
+      add(localConversationRecordKey, () async {
         // Conversation cubit the tracks the state between the local
         // and remote halves of a contact's relationship with this account
         final conversationCubit = ConversationCubit(
@@ -123,7 +123,7 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
                 loading: AsyncValue.loading,
                 error: AsyncValue.error));
 
-        return MapEntry(localConversationRecordKey, transformedCubit);
+        return transformedCubit;
       });
 
   /// StateFollower /////////////////////////

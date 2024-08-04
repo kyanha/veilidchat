@@ -4,6 +4,7 @@
     },
     "menu": {
         "accounts_menu_tooltip": "Accounts Menu",
+        "settings_tooltip": "Settings",
         "contacts_tooltip": "Contacts List",
         "new_chat_tooltip": "Start New Chat",
         "add_account_tooltip": "Add Account",

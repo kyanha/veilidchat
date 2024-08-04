@@ -79,7 +79,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
           return false;
         }
 
-        await serialFuturePause((this, _sfListen));
+        await serialFutureClose((this, _sfListen));
         await _watchController?.close();
         _watchController = null;
         await DHTRecordPool.instance._recordClosed(this);

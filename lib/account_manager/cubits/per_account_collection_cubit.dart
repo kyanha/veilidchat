@@ -78,13 +78,13 @@ class PerAccountCollectionCubit extends Cubit<PerAccountCollectionState> {
       await _accountRecordSubscription?.cancel();
       _accountRecordSubscription = null;
 
-      // Update state to 'loading'
-      nextState = _updateAccountRecordState(nextState, null);
-      emit(nextState);
-
       // Close AccountRecordCubit
       await accountRecordCubit?.close();
       accountRecordCubit = null;
+
+      // Update state to 'loading'
+      nextState = _updateAccountRecordState(nextState, null);
+      emit(nextState);
     } else {
       ///////////////// Logged in ///////////////////
 

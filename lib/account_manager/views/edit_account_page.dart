@@ -120,22 +120,22 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
         try {
           final success = await AccountRepository.instance.deleteLocalAccount(
               widget.superIdentityRecordKey, widget.accountRecord);
-          if (success && mounted) {
-            context
-                .read<NotificationsCubit>()
-                .info(text: translate('edit_account_page.account_removed'));
-            GoRouterHelper(context).pop();
-          } else if (mounted) {
-            context
-                .read<NotificationsCubit>()
-                .error(text: translate('edit_account_page.failed_to_remove'));
+          if (mounted) {
+            if (success) {
+              context
+                  .read<NotificationsCubit>()
+                  .info(text: translate('edit_account_page.account_removed'));
+              GoRouterHelper(context).pop();
+            } else {
+              context
+                  .read<NotificationsCubit>()
+                  .error(text: translate('edit_account_page.failed_to_remove'));
+            }
           }
         } finally {
-          if (mounted) {
-            setState(() {
-              _isInAsyncCall = false;
-            });
-          }
+          setState(() {
+            _isInAsyncCall = false;
+          });
         }
       } on Exception catch (e, st) {
         if (mounted) {
@@ -188,22 +188,21 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
         try {
           final success = await AccountRepository.instance.destroyAccount(
               widget.superIdentityRecordKey, widget.accountRecord);
-          if (success && mounted) {
-            context
-                .read<NotificationsCubit>()
-                .info(text: translate('edit_account_page.account_destroyed'));
-            GoRouterHelper(context).pop();
-          } else if (mounted) {
-            context
-                .read<NotificationsCubit>()
-                .error(text: translate('edit_account_page.failed_to_destroy'));
+          if (mounted) {
+            if (success) {
+              context
+                  .read<NotificationsCubit>()
+                  .info(text: translate('edit_account_page.account_destroyed'));
+              GoRouterHelper(context).pop();
+            } else {
+              context.read<NotificationsCubit>().error(
+                  text: translate('edit_account_page.failed_to_destroy'));
+            }
           }
         } finally {
-          if (mounted) {
-            setState(() {
-              _isInAsyncCall = false;
-            });
-          }
+          setState(() {
+            _isInAsyncCall = false;
+          });
         }
       } on Exception catch (e, st) {
         if (mounted) {

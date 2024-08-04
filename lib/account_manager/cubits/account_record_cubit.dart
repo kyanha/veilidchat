@@ -8,7 +8,7 @@ import '../../proto/proto.dart' as proto;
 import '../account_manager.dart';
 
 typedef AccountRecordState = proto.Account;
-typedef _sspUpdateState = (
+typedef _SspUpdateState = (
   AccountSpec accountSpec,
   Future<void> Function() onSuccess
 );
@@ -96,5 +96,5 @@ class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
     }
   }
 
-  final _sspUpdate = SingleStateProcessor<_sspUpdateState>();
+  final _sspUpdate = SingleStateProcessor<_SspUpdateState>();
 }

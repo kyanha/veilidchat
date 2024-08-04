@@ -55,24 +55,17 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
 
   Future<void> _addConversationMessages(_SingleContactChatState state) async {
     // xxx could use atomic update() function
-
-    final cubit = await tryOperateAsync<SingleContactMessagesCubit>(
-        state.localConversationRecordKey, closure: (cubit) async {
-      await cubit.updateRemoteMessagesRecordKey(state.remoteMessagesRecordKey);
-      return cubit;
-    });
-    if (cubit == null) {
-      await add(() => MapEntry(
-          state.localConversationRecordKey,
-          SingleContactMessagesCubit(
-            accountInfo: _accountInfo,
-            remoteIdentityPublicKey: state.remoteIdentityPublicKey,
-            localConversationRecordKey: state.localConversationRecordKey,
-            remoteConversationRecordKey: state.remoteConversationRecordKey,
-            localMessagesRecordKey: state.localMessagesRecordKey,
-            remoteMessagesRecordKey: state.remoteMessagesRecordKey,
-          )));
-    }
+    await update(state.localConversationRecordKey,
+        onUpdate: (cubit) async =>
+            cubit.updateRemoteMessagesRecordKey(state.remoteMessagesRecordKey),
+        onCreate: () async => SingleContactMessagesCubit(
+              accountInfo: _accountInfo,
+              remoteIdentityPublicKey: state.remoteIdentityPublicKey,
+              localConversationRecordKey: state.localConversationRecordKey,
+              remoteConversationRecordKey: state.remoteConversationRecordKey,
+              localMessagesRecordKey: state.localMessagesRecordKey,
+              remoteMessagesRecordKey: state.remoteMessagesRecordKey,
+            ));
   }
 
   _SingleContactChatState? _mapStateValue(

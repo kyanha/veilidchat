@@ -14,7 +14,7 @@ dependencies:
     path: ../
 
 dev_dependencies:
-  async_tools: ^0.1.5
+  async_tools: ^0.1.6
   integration_test:
     sdk: flutter
   lint_hard: ^4.0.0

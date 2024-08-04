@@ -37,7 +37,7 @@ class ValidContactInvitation {
       return (await pool.openRecordWrite(_contactRequestInboxKey, _writer,
               debugName: 'ValidContactInvitation::accept::'
                   'ContactRequestInbox',
-              parent: pool.getParentRecordKey(_contactRequestInboxKey) ??
+              parent: await pool.getParentRecordKey(_contactRequestInboxKey) ??
                   _accountInfo.accountRecordKey))
           // ignore: prefer_expression_function_bodies
           .maybeDeleteScope(!isSelf, (contactRequestInbox) async {

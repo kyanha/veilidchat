@@ -95,8 +95,8 @@ Future<void> showErrorModal(
     required String title,
     required String text}) async {
   final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  final scaleConfig = theme.extension<ScaleConfig>()!;
+  // final scale = theme.extension<ScaleScheme>()!;
+  // final scaleConfig = theme.extension<ScaleConfig>()!;
 
   await Alert(
     context: context,
@@ -145,8 +145,8 @@ Future<void> showWarningModal(
     required String title,
     required String text}) async {
   final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  final scaleConfig = theme.extension<ScaleConfig>()!;
+  // final scale = theme.extension<ScaleScheme>()!;
+  // final scaleConfig = theme.extension<ScaleConfig>()!;
 
   await Alert(
     context: context,
@@ -184,8 +184,8 @@ Future<void> showWarningWidgetModal(
     required String title,
     required Widget child}) async {
   final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  final scaleConfig = theme.extension<ScaleConfig>()!;
+  // final scale = theme.extension<ScaleScheme>()!;
+  // final scaleConfig = theme.extension<ScaleConfig>()!;
 
   await Alert(
     context: context,
@@ -223,8 +223,8 @@ Future<bool> showConfirmModal(
     required String title,
     required String text}) async {
   final theme = Theme.of(context);
-  final scale = theme.extension<ScaleScheme>()!;
-  final scaleConfig = theme.extension<ScaleConfig>()!;
+  // final scale = theme.extension<ScaleScheme>()!;
+  // final scaleConfig = theme.extension<ScaleConfig>()!;
 
   var confirm = false;
 

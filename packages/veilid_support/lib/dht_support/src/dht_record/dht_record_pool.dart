@@ -65,7 +65,7 @@ class OwnedDHTRecordPointer with _$OwnedDHTRecordPointer {
 class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   DHTRecordPool._(Veilid veilid, VeilidRoutingContext routingContext)
       : _state = const DHTRecordPoolAllocations(),
-        _mutex = Mutex(),
+        _mutex = Mutex(debugLockTimeout: 30),
         _recordTagLock = AsyncTagLock(),
         _opened = <TypedKey, _OpenedRecordInfo>{},
         _markedForDelete = <TypedKey>{},
@@ -207,10 +207,8 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       );
 
   /// Get the parent of a DHTRecord key if it exists
-  TypedKey? getParentRecordKey(TypedKey child) {
-    final childJson = child.toJson();
-    return _state.parentByChild[childJson];
-  }
+  Future<TypedKey?> getParentRecordKey(TypedKey child) =>
+      _mutex.protect(() async => _getParentRecordKeyInner(child));
 
   /// Check if record is allocated
   Future<bool> isValidRecordKey(TypedKey key) =>
@@ -505,12 +503,16 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   // Check to see if this key can finally be deleted
   // If any parents are marked for deletion, try them first
   Future<void> _checkForLateDeletesInner(TypedKey key) async {
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
+
     // Get parent list in bottom up order including our own key
     final parents = <TypedKey>[];
     TypedKey? nextParent = key;
     while (nextParent != null) {
       parents.add(nextParent);
-      nextParent = getParentRecordKey(nextParent);
+      nextParent = _getParentRecordKeyInner(nextParent);
     }
 
     // If any parent is ready to delete all its children do it
@@ -547,6 +549,10 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
   // Actual delete function
   Future<void> _finalizeDeleteRecordInner(TypedKey recordKey) async {
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
+
     log('_finalizeDeleteRecordInner: key=$recordKey');
 
     // Remove this child from parents
@@ -557,6 +563,10 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
   // Deep delete mechanism inside mutex
   Future<bool> _deleteRecordInner(TypedKey recordKey) async {
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
+
     final toDelete = _readyForDeleteInner(recordKey);
     if (toDelete.isNotEmpty) {
       // delete now
@@ -656,7 +666,20 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
     }
   }
 
+  TypedKey? _getParentRecordKeyInner(TypedKey child) {
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
+
+    final childJson = child.toJson();
+    return _state.parentByChild[childJson];
+  }
+
   bool _isValidRecordKeyInner(TypedKey key) {
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
+
     if (_state.rootRecords.contains(key)) {
       return true;
     }
@@ -667,6 +690,10 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   }
 
   bool _isDeletedRecordKeyInner(TypedKey key) {
+    if (!_mutex.isLocked) {
+      throw StateError('should be locked here');
+    }
+
     // Is this key gone?
     if (!_isValidRecordKeyInner(key)) {
       return true;
@@ -679,7 +706,7 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
       if (_markedForDelete.contains(nextParent)) {
         return true;
       }
-      nextParent = getParentRecordKey(nextParent);
+      nextParent = _getParentRecordKeyInner(nextParent);
     }
 
     return false;

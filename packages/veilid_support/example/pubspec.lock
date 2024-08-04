@@ -37,10 +37,10 @@ packages:
     dependency: "direct dev"
     description:
       name: async_tools
-      sha256: "9166e8fe65fc65eb79202a6d540f4de768553d78141b885f5bd3f8d7d30eef5e"
+      sha256: "93df8b92d54d92e3323c630277e902b4ad4f05f798b55cfbc451e98c3e2fb7ba"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.5"
+    version: "0.1.6"
   bloc:
     dependency: transitive
     description:
@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: bloc_advanced_tools
-      sha256: "2b2dd492a350e7192a933d09f15ea04d5d00e7bd3fe2a906fe629cd461ddbf94"
+      sha256: f0b2dbe028792c97d1eb30480ed4e8035b5c70ea3bcc95a9c5255142592857f7
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.5"
+    version: "0.1.7"
   boolean_selector:
     dependency: transitive
     description:
@@ -650,7 +650,7 @@ packages:
       path: "../../../../veilid/veilid-flutter"
       relative: true
     source: path
-    version: "0.3.3"
+    version: "0.3.4"
   veilid_support:
     dependency: "direct main"
     description:
