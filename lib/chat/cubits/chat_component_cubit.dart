@@ -233,7 +233,8 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
 
     return types.User(
         id: remoteIdentityPublicKey.toString(),
-        firstName: activeConversationState.remoteConversation.profile.name,
+        firstName: activeConversationState.remoteConversation?.profile.name ??
+            '<unnamed>',
         metadata: {metadataKeyIdentityPublicKey: remoteIdentityPublicKey});
   }
 

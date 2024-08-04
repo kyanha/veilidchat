@@ -25,7 +25,7 @@ class _SingleContactChatState extends Equatable {
   final TypedKey localConversationRecordKey;
   final TypedKey remoteConversationRecordKey;
   final TypedKey localMessagesRecordKey;
-  final TypedKey remoteMessagesRecordKey;
+  final TypedKey? remoteMessagesRecordKey;
 
   @override
   List<Object?> get props => [
@@ -53,8 +53,16 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
     follow(activeConversationsBlocMapCubit);
   }
 
-  Future<void> _addConversationMessages(_SingleContactChatState state) async =>
-      add(() => MapEntry(
+  Future<void> _addConversationMessages(_SingleContactChatState state) async {
+    // xxx could use atomic update() function
+
+    final cubit = await tryOperateAsync<SingleContactMessagesCubit>(
+        state.localConversationRecordKey, closure: (cubit) async {
+      await cubit.updateRemoteMessagesRecordKey(state.remoteMessagesRecordKey);
+      return cubit;
+    });
+    if (cubit == null) {
+      await add(() => MapEntry(
           state.localConversationRecordKey,
           SingleContactMessagesCubit(
             accountInfo: _accountInfo,
@@ -64,6 +72,8 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
             localMessagesRecordKey: state.localMessagesRecordKey,
             remoteMessagesRecordKey: state.remoteMessagesRecordKey,
           )));
+    }
+  }
 
   _SingleContactChatState? _mapStateValue(
       AsyncValue<ActiveConversationState> avInputState) {
@@ -78,7 +88,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
         localMessagesRecordKey:
             inputState.localConversation.messages.toVeilid(),
         remoteMessagesRecordKey:
-            inputState.remoteConversation.messages.toVeilid());
+            inputState.remoteConversation?.messages.toVeilid());
   }
 
   /// StateFollower /////////////////////////

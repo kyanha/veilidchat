@@ -226,13 +226,11 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
             localConversation: conv,
             remoteConversation: _incrementalState.remoteConversation);
         // return loading still if state isn't complete
-        if ((_localConversationRecordKey != null &&
-                _incrementalState.localConversation == null) ||
-            (_remoteConversationRecordKey != null &&
-                _incrementalState.remoteConversation == null)) {
+        if (_localConversationRecordKey != null &&
+            _incrementalState.localConversation == null) {
           return const AsyncValue<ConversationState>.loading();
         }
-        // state is complete, all required keys are open
+        // local state is complete, all remote state is emitted incrementally
         return AsyncValue.data(_incrementalState);
       },
       loading: AsyncValue<ConversationState>.loading,
@@ -247,14 +245,12 @@ class ConversationCubit extends Cubit<AsyncValue<ConversationState>> {
         _incrementalState = ConversationState(
             localConversation: _incrementalState.localConversation,
             remoteConversation: conv);
-        // return loading still if state isn't complete
-        if ((_localConversationRecordKey != null &&
-                _incrementalState.localConversation == null) ||
-            (_remoteConversationRecordKey != null &&
-                _incrementalState.remoteConversation == null)) {
+        // return loading still if the local state isn't complete
+        if (_localConversationRecordKey != null &&
+            _incrementalState.localConversation == null) {
           return const AsyncValue<ConversationState>.loading();
         }
-        // state is complete, all required keys are open
+        // local state is complete, all remote state is emitted incrementally
         return AsyncValue.data(_incrementalState);
       },
       loading: AsyncValue<ConversationState>.loading,

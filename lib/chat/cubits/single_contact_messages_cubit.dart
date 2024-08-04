@@ -55,7 +55,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     required TypedKey localConversationRecordKey,
     required TypedKey localMessagesRecordKey,
     required TypedKey remoteConversationRecordKey,
-    required TypedKey remoteMessagesRecordKey,
+    required TypedKey? remoteMessagesRecordKey,
   })  : _accountInfo = accountInfo,
         _remoteIdentityPublicKey = remoteIdentityPublicKey,
         _localConversationRecordKey = localConversationRecordKey,
@@ -147,8 +147,14 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
 
   // Open remote messages key
   Future<void> _initRcvdMessagesCubit() async {
+    // Don't bother if we don't have a remote messages record key yet
+    if (_remoteMessagesRecordKey == null) {
+      return;
+    }
+
+    // Open new cubit if one is desired
     _rcvdMessagesCubit = DHTLogCubit(
-        open: () async => DHTLog.openRead(_remoteMessagesRecordKey,
+        open: () async => DHTLog.openRead(_remoteMessagesRecordKey!,
             debugName: 'SingleContactMessagesCubit::_initRcvdMessagesCubit::'
                 'RcvdMessages',
             parent: _remoteConversationRecordKey,
@@ -157,6 +163,31 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _rcvdSubscription =
         _rcvdMessagesCubit!.stream.listen(_updateRcvdMessagesState);
     _updateRcvdMessagesState(_rcvdMessagesCubit!.state);
+  }
+
+  Future<void> updateRemoteMessagesRecordKey(
+      TypedKey? remoteMessagesRecordKey) async {
+    await _initWait();
+
+    _sspRemoteConversationRecordKey.updateState(remoteMessagesRecordKey,
+        (remoteMessagesRecordKey) async {
+      // Don't bother if nothing is changing
+      if (_remoteMessagesRecordKey == remoteMessagesRecordKey) {
+        return;
+      }
+
+      // Close existing cubit if we have one
+      final rcvdMessagesCubit = _rcvdMessagesCubit;
+      _rcvdMessagesCubit = null;
+      _remoteMessagesRecordKey = null;
+      await _rcvdSubscription?.cancel();
+      _rcvdSubscription = null;
+      await rcvdMessagesCubit?.close();
+
+      // Init the new cubit if we should
+      _remoteMessagesRecordKey = remoteMessagesRecordKey;
+      await _initRcvdMessagesCubit();
+    });
   }
 
   Future<VeilidCrypto> _makeLocalMessagesCrypto() async =>
@@ -452,7 +483,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   final TypedKey _localConversationRecordKey;
   final TypedKey _localMessagesRecordKey;
   final TypedKey _remoteConversationRecordKey;
-  final TypedKey _remoteMessagesRecordKey;
+  TypedKey? _remoteMessagesRecordKey;
 
   late final VeilidCrypto _conversationCrypto;
   late final MessageIntegrity _senderMessageIntegrity;
@@ -471,4 +502,6 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
       _reconciledSubscription;
   final StreamController<Future<void> Function()> _commandController;
   late final Future<void> _commandRunnerFut;
+
+  final _sspRemoteConversationRecordKey = SingleStateProcessor<TypedKey?>();
 }

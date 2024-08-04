@@ -24,7 +24,7 @@ class ActiveConversationState extends Equatable {
   final TypedKey localConversationRecordKey;
   final TypedKey remoteConversationRecordKey;
   final proto.Conversation localConversation;
-  final proto.Conversation remoteConversation;
+  final proto.Conversation? remoteConversation;
 
   @override
   List<Object?> get props => [
@@ -102,7 +102,8 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
         conversationCubit.watchAccountChanges(
             _accountRecordCubit.stream, _accountRecordCubit.state);
 
-        // Transformer that only passes through completed/active conversations
+        // Transformer that only passes through conversations where the local
+        // portion is not loading
         // along with the contact that corresponds to the completed
         // conversation
         final transformedCubit = TransformerCubit<
@@ -110,12 +111,11 @@ class ActiveConversationsBlocMapCubit extends BlocMapCubit<TypedKey,
                 AsyncValue<ConversationState>,
                 ConversationCubit>(conversationCubit,
             transform: (avstate) => avstate.when(
-                data: (data) => (data.localConversation == null ||
-                        data.remoteConversation == null)
+                data: (data) => (data.localConversation == null)
                     ? const AsyncValue.loading()
                     : AsyncValue.data(ActiveConversationState(
                         localConversation: data.localConversation!,
-                        remoteConversation: data.remoteConversation!,
+                        remoteConversation: data.remoteConversation,
                         remoteIdentityPublicKey: remoteIdentityPublicKey,
                         localConversationRecordKey: localConversationRecordKey,
                         remoteConversationRecordKey:

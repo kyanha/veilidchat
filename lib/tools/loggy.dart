@@ -112,9 +112,9 @@ class CallbackPrinter extends LoggyPrinter {
   @override
   void onLog(LogRecord record) {
     final out = record.pretty();
-    if (isDesktop) {
-      debugPrintSynchronously(out);
-    }
+    //if (isDesktop) {
+    debugPrintSynchronously(out);
+    //}
     globalDebugTerminal.write('$out\n'.replaceAll('\n', '\r\n'));
     callback?.call(record);
   }
