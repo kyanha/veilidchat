@@ -141,10 +141,10 @@ packages:
     dependency: "direct main"
     description:
       name: bloc_advanced_tools
-      sha256: "2b2dd492a350e7192a933d09f15ea04d5d00e7bd3fe2a906fe629cd461ddbf94"
+      sha256: "2ad82be752ab5e983ad9097ed9f334e47a4472c04d5c6b61c99a1bb14a039053"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.5"
+    version: "0.1.6"
   blurry_modal_progress_hud:
     dependency: "direct main"
     description:

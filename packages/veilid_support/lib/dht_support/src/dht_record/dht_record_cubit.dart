@@ -35,6 +35,7 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
           }
         }
       } on Exception catch (e, st) {
+        addError(e, st);
         emit(AsyncValue.error(e, st));
         return;
       }
@@ -53,8 +54,9 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
       if (initialState != null) {
         emit(AsyncValue.data(initialState));
       }
-    } on Exception catch (e) {
-      emit(AsyncValue.error(e));
+    } on Exception catch (e, st) {
+      addError(e, st);
+      emit(AsyncValue.error(e, st));
     }
 
     _subscription = await record!.listen((record, data, subkeys) async {
@@ -63,8 +65,9 @@ abstract class DHTRecordCubit<T> extends Cubit<AsyncValue<T>> {
         if (newState != null) {
           emit(AsyncValue.data(newState));
         }
-      } on Exception catch (e) {
-        emit(AsyncValue.error(e));
+      } on Exception catch (e, st) {
+        addError(e, st);
+        emit(AsyncValue.error(e, st));
       }
     });
 

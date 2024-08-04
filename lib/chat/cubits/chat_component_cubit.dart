@@ -358,6 +358,7 @@ class ChatComponentCubit extends Cubit<ChatComponentState> {
 
     final asError = avMessagesState.asError;
     if (asError != null) {
+      addError(asError.error, asError.stackTrace);
       return currentState.copyWith(
           unknownUsers: const IMap.empty(),
           messageWindow: AsyncValue.error(asError.error, asError.stackTrace));

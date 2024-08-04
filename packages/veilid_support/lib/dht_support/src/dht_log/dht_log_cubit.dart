@@ -58,6 +58,7 @@ class DHTLogCubit<T> extends Cubit<DHTLogBusyState<T>>
           }
         }
       } on Exception catch (e, st) {
+        addError(e, st);
         emit(DHTLogBusyState(AsyncValue.error(e, st)));
         return;
       }

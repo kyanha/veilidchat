@@ -7,7 +7,6 @@ class EmptyChatWidget extends StatelessWidget {
   const EmptyChatWidget({super.key});
 
   @override
-  // ignore: prefer_expression_function_bodies
   Widget build(
     BuildContext context,
   ) {

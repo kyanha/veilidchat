@@ -27,8 +27,9 @@ abstract class AsyncTableDBBackedCubit<T> extends Cubit<AsyncValue<T?>>
       await _mutex.protect(() async {
         emit(AsyncValue.data(await load()));
       });
-    } on Exception catch (e, stackTrace) {
-      emit(AsyncValue.error(e, stackTrace));
+    } on Exception catch (e, st) {
+      addError(e, st);
+      emit(AsyncValue.error(e, st));
     }
   }
 
@@ -37,8 +38,9 @@ abstract class AsyncTableDBBackedCubit<T> extends Cubit<AsyncValue<T?>>
     await _initWait();
     try {
       emit(AsyncValue.data(await store(newState)));
-    } on Exception catch (e, stackTrace) {
-      emit(AsyncValue.error(e, stackTrace));
+    } on Exception catch (e, st) {
+      addError(e, st);
+      emit(AsyncValue.error(e, st));
     }
   }
 

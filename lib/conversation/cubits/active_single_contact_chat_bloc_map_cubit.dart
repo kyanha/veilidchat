@@ -105,6 +105,7 @@ class ActiveSingleContactChatBlocMapCubit extends BlocMapCubit<TypedKey,
     } else {
       final (error, stackTrace) =
           (newValue.asError!.error, newValue.asError!.stackTrace);
+      addError(error, stackTrace);
       await addState(key, AsyncValue.error(error, stackTrace));
     }
   }

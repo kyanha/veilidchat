@@ -180,6 +180,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
     _reconciliation = MessageReconciliation(
         output: _reconciledMessagesCubit!,
         onError: (e, st) {
+          addError(e, st);
           emit(AsyncValue.error(e, st));
         });
 

@@ -402,11 +402,13 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           recordDescriptor =
               await dhtctx.openDHTRecord(recordKey, writer: writer);
           break;
+        } on VeilidAPIExceptionTryAgain {
+          throw const DHTExceptionNotAvailable();
         } on VeilidAPIExceptionKeyNotFound {
           await asyncSleep();
           retry--;
           if (retry == 0) {
-            throw DHTExceptionNotAvailable();
+            throw const DHTExceptionNotAvailable();
           }
         }
       }

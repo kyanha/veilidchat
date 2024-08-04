@@ -46,6 +46,7 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
           }
         }
       } on Exception catch (e, st) {
+        addError(e, st);
         emit(DHTShortArrayBusyState<T>(AsyncValue.error(e, st)));
         return;
       }
@@ -96,8 +97,9 @@ class DHTShortArrayCubit<T> extends Cubit<DHTShortArrayBusyState<T>>
       }
       emit(AsyncValue.data(newState));
       setRefreshed();
-    } on Exception catch (e) {
-      emit(AsyncValue.error(e));
+    } on Exception catch (e, st) {
+      addError(e, st);
+      emit(AsyncValue.error(e, st));
     }
   }
 
