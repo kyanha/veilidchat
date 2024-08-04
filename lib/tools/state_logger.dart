@@ -4,12 +4,12 @@ import 'loggy.dart';
 
 const Map<String, LogLevel> _blocChangeLogLevels = {
   'ConnectionStateCubit': LogLevel.off,
-  //'ActiveSingleContactChatBlocMapCubit': LogLevel.off,
-  //'ActiveConversationsBlocMapCubit': LogLevel.off,
+  'ActiveSingleContactChatBlocMapCubit': LogLevel.off,
+  'ActiveConversationsBlocMapCubit': LogLevel.off,
   'PersistentQueueCubit<Message>': LogLevel.off,
   'TableDBArrayProtobufCubit<ReconciledMessage>': LogLevel.off,
   'DHTLogCubit<Message>': LogLevel.off,
-  //'SingleContactMessagesCubit': LogLevel.off,
+  'SingleContactMessagesCubit': LogLevel.off,
   'ChatComponentCubit': LogLevel.off,
 };
 

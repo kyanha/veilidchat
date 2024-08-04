@@ -18,10 +18,10 @@ class ChatListWidget extends StatelessWidget {
   Widget _itemBuilderDirect(
       proto.DirectChat direct, IMap<proto.TypedKey, proto.Contact> contactMap) {
     final contact = contactMap[direct.localConversationRecordKey];
-    if (contact == null) {
-      return const Text('...');
-    }
-    return ChatSingleContactItemWidget(contact: contact)
+    return ChatSingleContactItemWidget(
+            localConversationRecordKey:
+                direct.localConversationRecordKey.toVeilid(),
+            contact: contact)
         .paddingLTRB(0, 4, 0, 0);
   }
 

@@ -233,6 +233,7 @@
         "password_does_not_match": "Password does not match"
     },
     "chat_list": {
+        "deleted_contact": "Deleted Contact",
         "search": "Search chats",
         "start_a_conversation": "Start A Conversation",
         "chats": "Chats",

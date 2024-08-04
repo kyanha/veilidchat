@@ -2,6 +2,7 @@ import 'package:async_tools/async_tools.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_translate/flutter_translate.dart';
+import 'package:veilid_support/veilid_support.dart';
 import '../../chat/cubits/active_chat_cubit.dart';
 import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
@@ -10,13 +11,16 @@ import '../chat_list.dart';
 
 class ChatSingleContactItemWidget extends StatelessWidget {
   const ChatSingleContactItemWidget({
-    required proto.Contact contact,
+    required TypedKey localConversationRecordKey,
+    required proto.Contact? contact,
     bool disabled = false,
     super.key,
-  })  : _contact = contact,
+  })  : _localConversationRecordKey = localConversationRecordKey,
+        _contact = contact,
         _disabled = disabled;
 
-  final proto.Contact _contact;
+  final TypedKey _localConversationRecordKey;
+  final proto.Contact? _contact;
   final bool _disabled;
 
   @override
@@ -29,13 +33,16 @@ class ChatSingleContactItemWidget extends StatelessWidget {
     final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final activeChatCubit = context.watch<ActiveChatCubit>();
-    final localConversationRecordKey =
-        _contact.localConversationRecordKey.toVeilid();
-    final selected = activeChatCubit.state == localConversationRecordKey;
+    final selected = activeChatCubit.state == _localConversationRecordKey;
 
-    final name = _contact.nameOrNickname;
-    final title = _contact.displayName;
-    final subtitle = _contact.profile.status;
+    final name = _contact == null ? '?' : _contact.nameOrNickname;
+    final title = _contact == null
+        ? translate('chat_list.deleted_contact')
+        : _contact.displayName;
+    final subtitle = _contact == null ? '' : _contact.profile.status;
+    final availability = _contact == null
+        ? proto.Availability.AVAILABILITY_UNSPECIFIED
+        : _contact.profile.availability;
 
     final avatar = AvatarWidget(
       name: name,
@@ -53,17 +60,17 @@ class ChatSingleContactItemWidget extends StatelessWidget {
     );
 
     return SliderTile(
-      key: ObjectKey(_contact),
+      key: ValueKey(_localConversationRecordKey),
       disabled: _disabled,
       selected: selected,
       tileScale: ScaleKind.secondary,
       title: title,
       subtitle: subtitle,
       leading: avatar,
-      trailing: AvailabilityWidget(availability: _contact.profile.availability),
+      trailing: AvailabilityWidget(availability: availability),
       onTap: () {
         singleFuture(activeChatCubit, () async {
-          activeChatCubit.setActiveChat(localConversationRecordKey);
+          activeChatCubit.setActiveChat(_localConversationRecordKey);
         });
       },
       endActions: [
@@ -74,7 +81,7 @@ class ChatSingleContactItemWidget extends StatelessWidget {
             onPressed: (context) async {
               final chatListCubit = context.read<ChatListCubit>();
               await chatListCubit.deleteChat(
-                  localConversationRecordKey: localConversationRecordKey);
+                  localConversationRecordKey: _localConversationRecordKey);
             })
       ],
     );

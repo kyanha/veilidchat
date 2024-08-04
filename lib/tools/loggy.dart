@@ -9,7 +9,6 @@ import 'package:loggy/loggy.dart';
 import 'package:veilid_support/veilid_support.dart';
 
 import '../veilid_processor/views/developer.dart';
-import '../theme/views/responsive.dart';
 import 'state_logger.dart';
 
 String wrapWithLogColor(LogLevel? level, String text) {
@@ -112,13 +111,16 @@ class CallbackPrinter extends LoggyPrinter {
   @override
   void onLog(LogRecord record) {
     final out = record.pretty();
-    //if (isDesktop) {
-    debugPrintSynchronously(out);
-    //}
+    if (Platform.isAndroid) {
+      debugPrint(out);
+    } else {
+      debugPrintSynchronously(out);
+    }
     globalDebugTerminal.write('$out\n'.replaceAll('\n', '\r\n'));
     callback?.call(record);
   }
 
+  // ignore: use_setters_to_change_properties
   void setCallback(void Function(LogRecord)? cb) {
     callback = cb;
   }
