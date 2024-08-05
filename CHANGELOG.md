@@ -1,3 +1,13 @@
+## v0.4.2 ##
+- Dialogs cleanup
+- Incremental chat state work
+- Exception handling work
+- Cancellable waiting page
+- Fix DHTRecordCubit open() retry bug
+- Log fix for iOS
+- Add ability to delete orphaned chats
+- Fix deadlock
+
 ## v0.4.1 ##
 - Fix creating new accounts
 - Switch to non-bounce scroll physics because a lot of views want 'stick to bottom' scroll behavior
