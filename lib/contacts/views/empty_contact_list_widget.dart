@@ -1,3 +1,4 @@
+import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
@@ -15,7 +16,8 @@ class EmptyContactListWidget extends StatelessWidget {
     final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
 
-    return Column(
+    return Expanded(
+        child: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -33,6 +35,6 @@ class EmptyContactListWidget extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ));
   }
 }

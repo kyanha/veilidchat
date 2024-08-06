@@ -56,6 +56,7 @@ class AccountRecordCubit extends DefaultDHTRecordCubit<AccountRecordState> {
   Future<void> _updateAccountAsync(
       AccountSpec accountSpec, Future<void> Function() onSuccess) async {
     var changed = false;
+
     await record?.eventualUpdateProtobuf(proto.Account.fromBuffer, (old) async {
       changed = false;
       if (old == null) {

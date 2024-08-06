@@ -65,7 +65,7 @@ class OwnedDHTRecordPointer with _$OwnedDHTRecordPointer {
 class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
   DHTRecordPool._(Veilid veilid, VeilidRoutingContext routingContext)
       : _state = const DHTRecordPoolAllocations(),
-        _mutex = Mutex(debugLockTimeout: 30),
+        _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null),
         _recordTagLock = AsyncTagLock(),
         _opened = <TypedKey, _OpenedRecordInfo>{},
         _markedForDelete = <TypedKey>{},
@@ -835,9 +835,11 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
 
         openedRecordInfo.shared.unionWatchState = null;
         openedRecordInfo.shared.needsWatchStateUpdate = false;
+      } on VeilidAPIExceptionTimeout {
+        log('Timeout in watch cancel for key=$openedRecordKey');
       } on VeilidAPIException catch (e) {
         // Failed to cancel DHT watch, try again next tick
-        log('Exception in watch cancel: $e');
+        log('Exception in watch cancel for key=$openedRecordKey: $e');
       }
       return;
     }
@@ -877,12 +879,22 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
             openedRecordInfo.records, realExpiration, renewalTime);
         openedRecordInfo.shared.needsWatchStateUpdate = false;
       }
+    } on VeilidAPIExceptionTimeout {
+      log('Timeout in watch update for key=$openedRecordKey');
     } on VeilidAPIException catch (e) {
       // Failed to update DHT watch, try again next tick
-      log('Exception in watch update: $e');
+      log('Exception in watch update for key=$openedRecordKey: $e');
+    }
+
+    // If we still need a state update after this then do a poll instead
+    if (openedRecordInfo.shared.needsWatchStateUpdate) {
+      _pollWatch(openedRecordKey, openedRecordInfo, unionWatchState);
     }
   }
 
+  // In lieu of a completed watch, set off a polling operation
+  // on the first value of the watched range, which, due to current
+  // veilid limitations can only be one subkey at a time right now
   void _pollWatch(TypedKey openedRecordKey, _OpenedRecordInfo openedRecordInfo,
       _WatchState unionWatchState) {
     singleFuture((this, _sfPollWatch, openedRecordKey), () async {
@@ -942,18 +954,11 @@ class DHTRecordPool with TableDBBackedJson<DHTRecordPoolAllocations> {
           final unionWatchState =
               _collectUnionWatchState(openedRecordInfo.records);
 
-          final processed = _watchStateProcessors.updateState(
+          _watchStateProcessors.updateState(
               openedRecordKey,
               unionWatchState,
               (newState) =>
                   _watchStateChange(openedRecordKey, unionWatchState));
-
-          // In lieu of a completed watch, set off a polling operation
-          // on the first value of the watched range, which, due to current
-          // veilid limitations can only be one subkey at a time right now
-          if (!processed && unionWatchState != null) {
-            _pollWatch(openedRecordKey, openedRecordInfo, unionWatchState);
-          }
         }
       }
     });

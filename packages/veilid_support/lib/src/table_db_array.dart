@@ -614,7 +614,7 @@ class _TableDBArrayBase {
   var _initDone = false;
   final VeilidCrypto _crypto;
   final WaitSet<void, void> _initWait = WaitSet();
-  final Mutex _mutex = Mutex();
+  final Mutex _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
 
   // Change tracking
   int _headDelta = 0;

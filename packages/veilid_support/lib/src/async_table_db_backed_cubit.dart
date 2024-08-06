@@ -4,6 +4,7 @@ import 'package:async_tools/async_tools.dart';
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
+import 'config.dart';
 import 'table_db.dart';
 
 abstract class AsyncTableDBBackedCubit<T> extends Cubit<AsyncValue<T?>>
@@ -45,5 +46,5 @@ abstract class AsyncTableDBBackedCubit<T> extends Cubit<AsyncValue<T?>>
   }
 
   final WaitSet<void, void> _initWait = WaitSet();
-  final Mutex _mutex = Mutex();
+  final Mutex _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
 }

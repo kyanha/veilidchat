@@ -5,6 +5,7 @@ import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:protobuf/protobuf.dart';
 
+import 'config.dart';
 import 'table_db.dart';
 
 class PersistentQueue<T extends GeneratedMessage>
@@ -203,7 +204,7 @@ class PersistentQueue<T extends GeneratedMessage>
   final T Function(Uint8List) _fromBuffer;
   final bool _deleteOnClose;
   final WaitSet<void, void> _initWait = WaitSet();
-  final Mutex _queueMutex = Mutex();
+  final Mutex _queueMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   IList<T> _queue = IList<T>.empty();
   final StreamController<Iterable<T>> _syncAddController = StreamController();
   final StreamController<void> _queueReady = StreamController();

@@ -134,7 +134,7 @@ class RouterCubit extends Cubit<RouterState> {
     return _router = GoRouter(
       navigatorKey: _rootNavKey,
       refreshListenable: StreamListenable(stream.startWith(state).distinct()),
-      debugLogDiagnostics: kDebugMode,
+      debugLogDiagnostics: kIsDebugMode,
       initialLocation: '/',
       routes: routes,
       redirect: redirect,

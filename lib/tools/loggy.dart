@@ -152,7 +152,7 @@ void initLoggy() {
   if (isTrace) {
     logLevel = traceLevel;
   } else {
-    logLevel = kDebugMode ? LogLevel.debug : LogLevel.info;
+    logLevel = kIsDebugMode ? LogLevel.debug : LogLevel.info;
   }
 
   Loggy('').level = getLogOptions(logLevel);

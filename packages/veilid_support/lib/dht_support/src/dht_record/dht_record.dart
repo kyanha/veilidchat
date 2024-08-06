@@ -562,7 +562,7 @@ class DHTRecord implements DHTDeleteable<DHTRecord> {
   final KeyPair? _writer;
   final VeilidCrypto _crypto;
   final String debugName;
-  final _mutex = Mutex();
+  final _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   int _openCount;
   StreamController<DHTRecordWatchChange>? _watchController;
   _WatchState? _watchState;

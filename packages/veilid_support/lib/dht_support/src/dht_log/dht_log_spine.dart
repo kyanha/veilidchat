@@ -713,7 +713,7 @@ class _DHTLogSpine {
       DHTShortArray.maxElements;
 
   // Spine head mutex to ensure we keep the representation valid
-  final Mutex _spineMutex = Mutex();
+  final Mutex _spineMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   // Subscription to head record internal changes
   StreamSubscription<DHTRecordWatchChange>? _subscription;
   // Notify closure for external spine head changes
@@ -733,7 +733,8 @@ class _DHTLogSpine {
 
   // LRU cache of DHT spine elements accessed recently
   // Pair of position and associated shortarray segment
-  final Mutex _spineCacheMutex = Mutex();
+  final Mutex _spineCacheMutex =
+      Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   final List<int> _openCache;
   final Map<int, DHTShortArray> _openedSegments;
   static const int _openCacheSize = 3;

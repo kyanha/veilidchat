@@ -2,6 +2,7 @@ import 'package:async_tools/async_tools.dart';
 import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -9,6 +10,7 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import '../../contacts/contacts.dart';
 import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
+import '../../veilid_processor/veilid_processor.dart';
 import '../models/models.dart';
 
 const _kDoUpdateSubmit = 'doUpdateSubmit';
@@ -291,16 +293,26 @@ class _EditProfileFormState extends State<EditProfileForm> {
             const Spacer(),
           ]).paddingSymmetric(vertical: 4),
           if (widget.onSubmit != null)
-            ElevatedButton(
-              onPressed: widget.onSubmit == null ? null : _doSubmit,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
-                Text((widget.onSubmit == null)
-                        ? widget.submitDisabledText
-                        : widget.submitText)
-                    .paddingLTRB(0, 0, 4, 0)
-              ]),
-            )
+            Builder(builder: (context) {
+              final networkReady = context
+                      .watch<ConnectionStateCubit>()
+                      .state
+                      .asData
+                      ?.value
+                      .isPublicInternetReady ??
+                  false;
+
+              return ElevatedButton(
+                onPressed: networkReady ? _doSubmit : null,
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
+                  Text(networkReady
+                          ? widget.submitText
+                          : widget.submitDisabledText)
+                      .paddingLTRB(0, 0, 4, 0)
+                ]),
+              );
+            }),
         ],
       ),
     );

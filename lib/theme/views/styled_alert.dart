@@ -246,7 +246,7 @@ Future<bool> showConfirmModal(
           Navigator.pop(context);
         },
         child: Text(
-          translate('button.no_cancel'),
+          translate('button.no'),
           style: _buttonTextStyle(context),
         ),
       ),
@@ -261,7 +261,7 @@ Future<bool> showConfirmModal(
           Navigator.pop(context);
         },
         child: Text(
-          translate('button.yes_proceed'),
+          translate('button.yes'),
           style: _buttonTextStyle(context),
         ),
       )

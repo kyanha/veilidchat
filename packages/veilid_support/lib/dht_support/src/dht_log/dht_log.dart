@@ -305,10 +305,10 @@ class DHTLog implements DHTDeleteable<DHTLog> {
 
   // Openable
   int _openCount;
-  final _mutex = Mutex();
+  final _mutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
 
   // Watch mutex to ensure we keep the representation valid
-  final Mutex _listenMutex = Mutex();
+  final Mutex _listenMutex = Mutex(debugLockTimeout: kIsDebugMode ? 60 : null);
   // Stream of external changes
   StreamController<DHTLogUpdate>? _watchController;
 }

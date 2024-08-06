@@ -90,8 +90,8 @@
         "accept": "Accept",
         "reject": "Reject",
         "finish": "Finish",
-        "yes_proceed": "Yes, proceed",
-        "no_cancel": "No, cancel",
+        "yes": "Yes",
+        "no": "No",
         "waiting_for_network": "Waiting For Network"
     },
     "toast": {

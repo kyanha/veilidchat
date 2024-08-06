@@ -97,7 +97,7 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
                 },
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.cancel, size: 16).paddingLTRB(0, 0, 4, 0),
-                  Text(translate('button.no_cancel')).paddingLTRB(0, 0, 4, 0)
+                  Text(translate('button.no')).paddingLTRB(0, 0, 4, 0)
                 ])),
             ElevatedButton(
                 onPressed: () {
@@ -105,7 +105,7 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
                 },
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
-                  Text(translate('button.yes_proceed')).paddingLTRB(0, 0, 4, 0)
+                  Text(translate('button.yes')).paddingLTRB(0, 0, 4, 0)
                 ]))
           ]).paddingAll(24)
         ]));
@@ -165,7 +165,7 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
                 },
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.cancel, size: 16).paddingLTRB(0, 0, 4, 0),
-                  Text(translate('button.no_cancel')).paddingLTRB(0, 0, 4, 0)
+                  Text(translate('button.no')).paddingLTRB(0, 0, 4, 0)
                 ])),
             ElevatedButton(
                 onPressed: () {
@@ -173,7 +173,7 @@ class _EditAccountPageState extends WindowSetupState<EditAccountPage> {
                 },
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.check, size: 16).paddingLTRB(0, 0, 4, 0),
-                  Text(translate('button.yes_proceed')).paddingLTRB(0, 0, 4, 0)
+                  Text(translate('button.yes')).paddingLTRB(0, 0, 4, 0)
                 ]))
           ]).paddingAll(24)
         ]));

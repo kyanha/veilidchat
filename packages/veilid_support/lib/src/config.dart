@@ -5,10 +5,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:veilid/veilid.dart';
 
 // ignore: do_not_use_environment
-const bool _kReleaseMode = bool.fromEnvironment('dart.vm.product');
+const bool kIsReleaseMode = bool.fromEnvironment('dart.vm.product');
 // ignore: do_not_use_environment
-const bool _kProfileMode = bool.fromEnvironment('dart.vm.profile');
-const bool _kDebugMode = !_kReleaseMode && !_kProfileMode;
+const bool kIsProfileMode = bool.fromEnvironment('dart.vm.profile');
+const bool kIsDebugMode = !kIsReleaseMode && !kIsProfileMode;
 
 Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
     bool isWeb, String appName) async {
@@ -34,7 +34,7 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
             logging: VeilidWASMConfigLogging(
                 performance: VeilidWASMConfigLoggingPerformance(
                     enabled: true,
-                    level: _kDebugMode
+                    level: kIsDebugMode
                         ? VeilidConfigLogLevel.debug
                         : VeilidConfigLogLevel.info,
                     logsInTimings: true,
@@ -50,8 +50,8 @@ Future<Map<String, dynamic>> getDefaultVeilidPlatformConfig(
           logging: VeilidFFIConfigLogging(
               terminal: VeilidFFIConfigLoggingTerminal(
                   enabled:
-                      _kDebugMode && (Platform.isIOS || Platform.isAndroid),
-                  level: _kDebugMode
+                      kIsDebugMode && (Platform.isIOS || Platform.isAndroid),
+                  level: kIsDebugMode
                       ? VeilidConfigLogLevel.debug
                       : VeilidConfigLogLevel.info,
                   ignoreLogTargets: ignoreLogTargets),

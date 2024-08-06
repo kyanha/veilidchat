@@ -249,7 +249,7 @@ class SingleContactMessagesCubit extends Cubit<SingleContactMessagesState> {
   void runCommand(String command) {
     final (cmd, rest) = command.splitOnce(' ');
 
-    if (kDebugMode) {
+    if (kIsDebugMode) {
       if (cmd == '/repeat' && rest != null) {
         final (countStr, text) = rest.splitOnce(' ');
         final count = int.tryParse(countStr);

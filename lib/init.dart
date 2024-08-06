@@ -18,7 +18,7 @@ class VeilidChatGlobalInit {
         await getDefaultVeilidPlatformConfig(kIsWeb, VeilidChatApp.name));
 
     // Veilid logging
-    initVeilidLog(kDebugMode);
+    initVeilidLog(kIsDebugMode);
 
     // Startup Veilid
     await ProcessorRepository.instance.startup();
