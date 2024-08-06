@@ -75,12 +75,29 @@ class _ContactsDialogState extends State<ContactsDialog> {
                     : null,
                 actions: [
                   if (_selectedContact != null)
-                    IconButton(
-                        icon: const Icon(Icons.chat_bubble),
-                        tooltip: translate('contacts_dialog.new_chat'),
-                        onPressed: () async {
-                          await onChatStarted(_selectedContact!);
-                        })
+                    Column(mainAxisSize: MainAxisSize.min, children: [
+                      IconButton(
+                          icon: const Icon(Icons.chat_bubble),
+                          tooltip: translate('contacts_dialog.new_chat'),
+                          onPressed: () async {
+                            await onChatStarted(_selectedContact!);
+                          }),
+                      Text(translate('contacts_dialog.new_chat'),
+                          style: theme.textTheme.labelSmall!
+                              .copyWith(color: scale.primaryScale.borderText)),
+                    ]).paddingLTRB(8, 0, 8, 0),
+                  if (enableSplit && _selectedContact != null)
+                    Column(mainAxisSize: MainAxisSize.min, children: [
+                      IconButton(
+                          icon: const Icon(Icons.close),
+                          tooltip: translate('contacts_dialog.close_contact'),
+                          onPressed: () async {
+                            await onContactSelected(null);
+                          }),
+                      Text(translate('contacts_dialog.close_contact'),
+                          style: theme.textTheme.labelSmall!
+                              .copyWith(color: scale.primaryScale.borderText)),
+                    ]).paddingLTRB(8, 0, 8, 0),
                 ]),
             body: LayoutBuilder(builder: (context, constraint) {
               final maxWidth = constraint.maxWidth;

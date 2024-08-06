@@ -94,7 +94,7 @@ Future<void> showErrorModal(
     {required BuildContext context,
     required String title,
     required String text}) async {
-  final theme = Theme.of(context);
+  // final theme = Theme.of(context);
   // final scale = theme.extension<ScaleScheme>()!;
   // final scaleConfig = theme.extension<ScaleConfig>()!;
 
@@ -144,7 +144,7 @@ Future<void> showWarningModal(
     {required BuildContext context,
     required String title,
     required String text}) async {
-  final theme = Theme.of(context);
+  // final theme = Theme.of(context);
   // final scale = theme.extension<ScaleScheme>()!;
   // final scaleConfig = theme.extension<ScaleConfig>()!;
 
@@ -183,7 +183,7 @@ Future<void> showWarningWidgetModal(
     {required BuildContext context,
     required String title,
     required Widget child}) async {
-  final theme = Theme.of(context);
+  // final theme = Theme.of(context);
   // final scale = theme.extension<ScaleScheme>()!;
   // final scaleConfig = theme.extension<ScaleConfig>()!;
 
@@ -222,7 +222,7 @@ Future<bool> showConfirmModal(
     {required BuildContext context,
     required String title,
     required String text}) async {
-  final theme = Theme.of(context);
+  // final theme = Theme.of(context);
   // final scale = theme.extension<ScaleScheme>()!;
   // final scaleConfig = theme.extension<ScaleConfig>()!;
 

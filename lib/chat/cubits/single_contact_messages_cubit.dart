@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:async_tools/async_tools.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:veilid_support/veilid_support.dart';
 

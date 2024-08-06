@@ -67,6 +67,7 @@ class _EditContactFormState extends State<EditContactForm> {
     return FormBuilder(
       key: widget.formKey,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AvatarWidget(
             name: widget.contact.profile.name,
@@ -79,53 +80,53 @@ class _EditContactFormState extends State<EditContactForm> {
           ).paddingLTRB(0, 0, 0, 16),
           SelectableText(widget.contact.profile.name,
                   style: textTheme.headlineMedium)
-              .decoratorLabel(
+              .noEditDecoratorLabel(
                 context,
                 translate('contact_form.form_name'),
                 scale: scale.secondaryScale,
               )
-              .paddingSymmetric(vertical: 8),
+              .paddingSymmetric(vertical: 4),
           SelectableText(widget.contact.profile.pronouns,
                   style: textTheme.headlineSmall)
-              .decoratorLabel(
+              .noEditDecoratorLabel(
                 context,
                 translate('contact_form.form_pronouns'),
                 scale: scale.secondaryScale,
               )
-              .paddingSymmetric(vertical: 8),
-          Row(children: [
+              .paddingSymmetric(vertical: 4),
+          Row(mainAxisSize: MainAxisSize.min, children: [
             _availabilityWidget(context, widget.contact.profile.availability),
             SelectableText(widget.contact.profile.status,
                     style: textTheme.bodyMedium)
                 .paddingSymmetric(horizontal: 8)
           ])
-              .decoratorLabel(
+              .noEditDecoratorLabel(
                 context,
                 translate('contact_form.form_status'),
                 scale: scale.secondaryScale,
               )
-              .paddingSymmetric(vertical: 8),
+              .paddingSymmetric(vertical: 4),
           SelectableText(widget.contact.profile.about,
                   minLines: 1, maxLines: 8, style: textTheme.bodyMedium)
-              .decoratorLabel(
+              .noEditDecoratorLabel(
                 context,
                 translate('contact_form.form_about'),
                 scale: scale.secondaryScale,
               )
-              .paddingSymmetric(vertical: 8),
+              .paddingSymmetric(vertical: 4),
           SelectableText(
                   widget.contact.identityPublicKey.value.toVeilid().toString(),
                   style: textTheme.labelMedium!
                       .copyWith(fontFamily: 'Source Code Pro'))
-              .decoratorLabel(
+              .noEditDecoratorLabel(
                 context,
                 translate('contact_form.form_fingerprint'),
                 scale: scale.secondaryScale,
               )
-              .paddingSymmetric(vertical: 8),
+              .paddingSymmetric(vertical: 4),
           Divider(color: border).paddingLTRB(8, 0, 8, 8),
           FormBuilderTextField(
-            autofocus: true,
+            //autofocus: true,
             name: EditContactForm.formFieldNickname,
             initialValue: widget.contact.nickname,
             decoration: InputDecoration(

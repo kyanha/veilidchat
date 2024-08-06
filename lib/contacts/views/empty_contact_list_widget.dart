@@ -1,4 +1,3 @@
-import 'package:awesome_extensions/awesome_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 
@@ -22,14 +21,15 @@ class EmptyContactListWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.person_add_sharp,
-          color: scale.primaryScale.subtleBorder,
-          size: 48,
-        ),
+        // Icon(
+        //   Icons.person_add_sharp,
+        //   color: scale.primaryScale.subtleBorder,
+        //   size: 48,
+        // ),
         Text(
           textAlign: TextAlign.center,
           translate('contact_list.invite_people'),
+          //maxLines: 3,
           style: textTheme.bodyMedium?.copyWith(
             color: scale.primaryScale.subtleBorder,
           ),

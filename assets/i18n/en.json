@@ -86,10 +86,12 @@
     "button": {
         "ok": "Ok",
         "cancel": "Cancel",
+        "edit": "Edit",
         "delete": "Delete",
         "accept": "Accept",
         "reject": "Reject",
         "finish": "Finish",
+        "close": "Close",
         "yes": "Yes",
         "no": "No",
         "waiting_for_network": "Waiting For Network"
@@ -120,12 +122,13 @@
         "contacts": "Contacts",
         "edit_contact": "Edit Contact",
         "invitations": "Invitations",
-        "no_contact_selected": "No contact selected",
-        "new_chat": "New Chat"
+        "no_contact_selected": "Double-click a contact to edit it",
+        "new_chat": "Open Chat",
+        "close_contact": "Close Contact"
     },
     "contact_list": {
         "contacts": "Contacts",
-        "invite_people": "Invite people to VeilidChat",
+        "invite_people": "No contacts\n\nPress 'Create Invitation' to invite a contact to VeilidChat",
         "search": "Search contacts",
         "invitation": "Invitation",
         "loading_contacts": "Loading contacts..."
@@ -134,7 +137,7 @@
         "form_name": "Name",
         "form_pronouns": "Pronouns",
         "form_about": "About",
-        "form_status": "Current Status",
+        "form_status": "Status",
         "form_nickname": "Nickname",
         "form_notes": "Notes",
         "form_fingerprint": "Fingerprint",

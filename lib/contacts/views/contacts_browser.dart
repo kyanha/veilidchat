@@ -191,13 +191,13 @@ class _ContactsBrowserState extends State<ContactsBrowser>
     //final scaleConfig = theme.extension<ScaleConfig>()!;
 
     final cilState = context.watch<ContactInvitationListCubit>().state;
-    final cilBusy = cilState.busy;
+    //final cilBusy = cilState.busy;
     final contactInvitationRecordList =
         cilState.state.asData?.value.map((x) => x.value).toIList() ??
             const IListConst([]);
 
     final ciState = context.watch<ContactListCubit>().state;
-    final ciBusy = ciState.busy;
+    //final ciBusy = ciState.busy;
     final contactList =
         ciState.state.asData?.value.map((x) => x.value).toIList();
 
@@ -243,8 +243,8 @@ class _ContactsBrowserState extends State<ContactsBrowser>
                       selected: widget.selectedContactRecordKey ==
                           contact.localConversationRecordKey.toVeilid(),
                       disabled: false,
-                      onTap: _onTapContact,
-                      onDoubleTap: _onStartChat,
+                      onDoubleTap: _onTapContact,
+                      onTap: _onStartChat,
                       onDelete: _onDeleteContact)
                   .paddingLTRB(0, 4, 0, 0);
             case ContactsBrowserElementKind.invitation:

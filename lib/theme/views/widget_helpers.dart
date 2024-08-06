@@ -109,6 +109,22 @@ extension LabelExt on Widget {
         ),
         child: this);
   }
+
+  Widget noEditDecoratorLabel(BuildContext context, String label,
+      {ScaleColor? scale}) {
+    final theme = Theme.of(context);
+    final scaleScheme = theme.extension<ScaleScheme>()!;
+    // final scaleConfig = theme.extension<ScaleConfig>()!;
+    scale = scale ?? scaleScheme.primaryScale;
+
+    return Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
+      Text(
+        '$label:',
+        style: theme.textTheme.titleLarge!.copyWith(color: scale.border),
+      ).paddingLTRB(0, 0, 8, 8),
+      this
+    ]);
+  }
 }
 
 Widget buildProgressIndicator() => Builder(builder: (context) {

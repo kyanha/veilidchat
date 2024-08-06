@@ -5,7 +5,6 @@ import '../../proto/proto.dart' as proto;
 import '../../theme/theme.dart';
 
 const _kOnTap = 'onTap';
-const _kOnDelete = 'onDelete';
 
 class ContactItemWidget extends StatelessWidget {
   const ContactItemWidget(
@@ -70,13 +69,23 @@ class ContactItemWidget extends StatelessWidget {
                 await _onTap(_contact);
               }),
       endActions: [
+        if (_onDoubleTap != null)
+          SliderTileAction(
+            icon: Icons.edit,
+            label: translate('button.edit'),
+            actionScale: ScaleKind.secondary,
+            onPressed: (_context) =>
+                singleFuture<void>((this, _kOnTap), () async {
+              await _onDoubleTap(_contact);
+            }),
+          ),
         if (_onDelete != null)
           SliderTileAction(
             icon: Icons.delete,
             label: translate('button.delete'),
             actionScale: ScaleKind.tertiary,
             onPressed: (_context) =>
-                singleFuture<void>((this, _kOnDelete), () async {
+                singleFuture<void>((this, _kOnTap), () async {
               await _onDelete(_contact);
             }),
           ),
