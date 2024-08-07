@@ -64,6 +64,7 @@ class HomeScreenState extends State<HomeScreen>
     var displayBetaWarning = true;
     final theme = Theme.of(context);
     final scale = theme.extension<ScaleScheme>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
 
     await showWarningWidgetModal(
       context: context,
@@ -79,14 +80,16 @@ class HomeScreenState extends State<HomeScreen>
                     .copyWith(color: scale.primaryScale.appText),
               ),
               TextSpan(
-                text: 'https://veilid.com/chat/beta',
+                text: 'https://veilid.com/chat/knownissues',
                 style: theme.textTheme.bodyMedium!.copyWith(
-                  color: scale.primaryScale.primary,
+                  color: scaleConfig.useVisualIndicators
+                      ? scale.secondaryScale.primaryText
+                      : scale.secondaryScale.primary,
                   decoration: TextDecoration.underline,
                 ),
                 recognizer: TapGestureRecognizer()
-                  ..onTap =
-                      () => launchUrlString('https://veilid.com/chat/beta'),
+                  ..onTap = () =>
+                      launchUrlString('https://veilid.com/chat/knownissues'),
               ),
             ],
           ),

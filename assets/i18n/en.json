@@ -13,7 +13,7 @@
     },
     "splash": {
         "beta_title": "VeilidChat is BETA SOFTWARE",
-        "beta_text": "DO NOT USE THIS FOR ANYTHING IMPORTANT\n\nUntil 1.0 is released:\n\n• You should have no expectations of actual privacy, or guarantees of security.\n• You will likely lose accounts, contacts, and messages and need to recreate them.\n\nPlease read our BETA PARTICIPATION GUIDE located here:\n\n"
+        "beta_text": "DO NOT USE THIS FOR ANYTHING IMPORTANT\n\nUntil 1.0 is released:\n\n• You should have no expectations of actual privacy, or guarantees of security.\n• You will likely lose accounts, contacts, and messages and need to recreate them.\n\nTo know what to expect, review our known issues located here:\n\n"
     },
     "account": {
         "form_name": "Name",
