@@ -1,3 +1,9 @@
+## v0.4.3 ##
+- Flutter upgrade to 3.24.0
+- Contacts UI cleanup
+- Incorporate symmetric NAT fix from veilid-core
+- Initial public beta release
+
 ## v0.4.2 ##
 - Dialogs cleanup
 - Incremental chat state work
