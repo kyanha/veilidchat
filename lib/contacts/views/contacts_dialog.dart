@@ -46,7 +46,11 @@ class _ContactsDialogState extends State<ContactsDialog> {
     final theme = Theme.of(context);
     // final textTheme = theme.textTheme;
     final scale = theme.extension<ScaleScheme>()!;
-    // final scaleConfig = theme.extension<ScaleConfig>()!;
+    final scaleConfig = theme.extension<ScaleConfig>()!;
+
+    final appBarIconColor = scaleConfig.useVisualIndicators
+        ? scale.secondaryScale.border
+        : scale.secondaryScale.borderText;
 
     final enableSplit = !isMobileWidth(context);
     final enableLeft = enableSplit || _selectedContact == null;
@@ -86,8 +90,8 @@ class _ContactsDialogState extends State<ContactsDialog> {
                                 await onChatStarted(_selectedContact!);
                               }),
                           Text(translate('contacts_dialog.new_chat'),
-                              style: theme.textTheme.labelSmall!.copyWith(
-                                  color: scale.primaryScale.borderText)),
+                              style: theme.textTheme.labelSmall!
+                                  .copyWith(color: appBarIconColor)),
                         ])).paddingLTRB(8, 0, 8, 0),
                   if (enableSplit && _selectedContact != null)
                     FittedBox(
@@ -102,38 +106,40 @@ class _ContactsDialogState extends State<ContactsDialog> {
                                 await onContactSelected(null);
                               }),
                           Text(translate('contacts_dialog.close_contact'),
-                              style: theme.textTheme.labelSmall!.copyWith(
-                                  color: scale.primaryScale.borderText)),
+                              style: theme.textTheme.labelSmall!
+                                  .copyWith(color: appBarIconColor)),
                         ])).paddingLTRB(8, 0, 8, 0),
                 ]),
             body: LayoutBuilder(builder: (context, constraint) {
               final maxWidth = constraint.maxWidth;
 
-              return Row(children: [
-                Offstage(
-                    offstage: !enableLeft,
-                    child: SizedBox(
-                        width: enableLeft && !enableRight
-                            ? maxWidth
-                            : (maxWidth / 3).clamp(200, 500),
-                        child: DecoratedBox(
-                            decoration: BoxDecoration(
-                                color: scale.primaryScale.subtleBackground),
-                            child: ContactsBrowser(
-                              selectedContactRecordKey: _selectedContact
-                                  ?.localConversationRecordKey
-                                  .toVeilid(),
-                              onContactSelected: onContactSelected,
-                              onChatStarted: onChatStarted,
-                            ).paddingLTRB(8, 0, 8, 8)))),
-                if (enableRight)
-                  if (_selectedContact == null)
-                    const NoContactWidget().expanded()
-                  else
-                    ContactDetailsWidget(contact: _selectedContact!)
-                        .paddingAll(8)
-                        .expanded(),
-              ]);
+              return ColoredBox(
+                  color: scale.primaryScale.appBackground,
+                  child: Row(children: [
+                    Offstage(
+                        offstage: !enableLeft,
+                        child: SizedBox(
+                            width: enableLeft && !enableRight
+                                ? maxWidth
+                                : (maxWidth / 3).clamp(200, 500),
+                            child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                    color: scale.primaryScale.subtleBackground),
+                                child: ContactsBrowser(
+                                  selectedContactRecordKey: _selectedContact
+                                      ?.localConversationRecordKey
+                                      .toVeilid(),
+                                  onContactSelected: onContactSelected,
+                                  onChatStarted: onChatStarted,
+                                ).paddingLTRB(8, 0, 8, 8)))),
+                    if (enableRight)
+                      if (_selectedContact == null)
+                        const NoContactWidget().expanded()
+                      else
+                        ContactDetailsWidget(contact: _selectedContact!)
+                            .paddingAll(8)
+                            .expanded(),
+                  ]));
             })));
   }
 
