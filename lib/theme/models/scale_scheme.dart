@@ -94,10 +94,10 @@ class ScaleScheme extends ThemeExtension<ScaleScheme> {
         // onErrorContainer: errorScale.subtleText,
         background: grayScale.appBackground, // reviewed
         onBackground: grayScale.appText, // reviewed
-        surface: primaryScale.primary, // reviewed
-        onSurface: primaryScale.primaryText, // reviewed
-        surfaceVariant: secondaryScale.primary,
-        onSurfaceVariant: secondaryScale.primaryText, // ?? reviewed a little
+        surface: primaryScale.appBackground, // reviewed
+        onSurface: primaryScale.appText, // reviewed
+        surfaceVariant: secondaryScale.appBackground,
+        onSurfaceVariant: secondaryScale.appText,
         outline: primaryScale.border,
         outlineVariant: secondaryScale.border,
         shadow: primaryScale.primary.darken(80),

@@ -17,7 +17,7 @@ class EmptyChatWidget extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: scale.primaryScale.appBackground,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

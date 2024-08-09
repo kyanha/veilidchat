@@ -265,6 +265,9 @@ ThemeData contrastGenerator({
   final themeData = ThemeData.from(
       colorScheme: colorScheme, textTheme: textTheme, useMaterial3: true);
   return themeData.copyWith(
+      appBarTheme: themeData.appBarTheme.copyWith(
+          backgroundColor: scaleScheme.primaryScale.border,
+          foregroundColor: scaleScheme.primaryScale.borderText),
       bottomSheetTheme: themeData.bottomSheetTheme.copyWith(
           elevation: 0,
           modalElevation: 0,

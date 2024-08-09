@@ -123,7 +123,7 @@ extension ThemePreferencesExt on ThemePreferences {
                 scaleConfig: ScaleConfig(
                     useVisualIndicators: true,
                     preferBorders: true,
-                    borderRadiusScale: 0.5),
+                    borderRadiusScale: 0.2),
                 primaryFront: const Color(0xFF000000),
                 primaryBack: const Color(0xFF00FF00),
                 secondaryFront: const Color(0xFF000000),

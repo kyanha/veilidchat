@@ -636,6 +636,9 @@ ThemeData radixGenerator(Brightness brightness, RadixThemeColor themeColor) {
         }
         return scaleScheme.primaryScale.subtleBorder;
       })),
+      appBarTheme: themeData.appBarTheme.copyWith(
+          backgroundColor: scaleScheme.primaryScale.border,
+          foregroundColor: scaleScheme.primaryScale.borderText),
       bottomSheetTheme: themeData.bottomSheetTheme.copyWith(
           elevation: 0,
           modalElevation: 0,
