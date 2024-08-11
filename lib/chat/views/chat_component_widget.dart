@@ -224,6 +224,7 @@ class ChatComponentWidget extends StatelessWidget {
                               //onAttachmentPressed: _handleAttachmentPressed,
                               //onMessageTap: _handleMessageTap,
                               //onPreviewDataFetched: _handlePreviewDataFetched,
+                              usePreviewData: false, //
                               onSendPressed: (pt) {
                                 try {
                                   if (!messageIsValid) {
